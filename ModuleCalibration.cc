@@ -59,8 +59,8 @@ int main (int argc, char** argv)
   {
     std::cout << " Usage: " 							<< std::endl;
     std::cout << " ModuleCalibration [-c config file ] <input-files> " 		<< std::endl;
-    std::cout << "   note: -c option is optional" 				<< std::endl;
-    std::cout << "         without it, a configFile.txt will be assumed" 	<< std::endl;
+    std::cout << "   note: -c option is optional, but if you use it, it has to be the first argument"	<< std::endl;
+    std::cout << "         without it, a configFile.cfg will be assumed" 	<< std::endl;
     return 0;
   }
   
@@ -75,31 +75,40 @@ int main (int argc, char** argv)
   std::cout<<"###########################################################"<<std::endl;
   std::cout<<"\n\n"<<std::endl;
   std::cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<std::endl;
-   
+  
+  
+  
+  
   //----------------------------------------------------------//
-  //  Parse the config file                                   //
+  //  Import input and parse the config file                  //
   //----------------------------------------------------------//
   // Set a default config file name
   std::string ConfigFileName = "config.cfg"; 
-  // and assume there is no config input from command line 
-  bool configIsFromCommandLine = false;
-  // if passed by command line, override the config file name
-  for (int i = 0; i < argc ; i++)
+  // and prepare the TChain
+  TChain *chain =  new TChain("adc");
+  // and assume as default that there is no config file name from command line 
+  //then check
+  if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
-    if(std::string(argv[i]) == std::string("-c")) 
+    ConfigFileName = argv[2];
+    std::cout << "Configuration file: '" << argv[2] << "'"<< std::endl;
+    for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
     {
-      ConfigFileName = argv[i+1];
-      std::cout << "Configuration file: '" << argv[i+1] << "'"<< std::endl;
-      configIsFromCommandLine = true;
+      std::cout << "Adding file " << argv[i] << std::endl;
+      chain->Add(argv[i]);
     }
   }
-  if(!configIsFromCommandLine)
+  else // the config file was indeed the default one
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
+    for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
+    {
+      std::cout << "Adding file " << argv[i] << std::endl;
+      chain->Add(argv[i]);
+    }
   }
   //open the config file
   ConfigFile config(ConfigFileName);
-  
   //read crystal dimensions
   std::string dummy = config.read<std::string>("dummy");
   int d1 = config.read<int>("ddd");
