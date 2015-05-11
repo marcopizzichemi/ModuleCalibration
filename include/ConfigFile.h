@@ -49,6 +49,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <cstddef>
+
 using std::string;
 
 class ConfigFile {
@@ -97,10 +99,21 @@ public:
   friend std::ostream& operator<<( std::ostream& os, const ConfigFile& cf );
   friend std::istream& operator>>( std::istream& is, ConfigFile& cf );
   
+  
+  struct split_t
+  {
+    enum empties_t { empties_ok, no_empties };
+  };
+  
+  template <typename Container>
+Container& split(Container& result,const typename Container::value_type& s,const typename Container::value_type& delimiters,split_t::empties_t empties /*= split_t::empties_ok*/);
+  
+  
+  static void trim( string& s );
+  
 protected:
   template<class T> static string T_as_string( const T& t );
   template<class T> static T string_as_T( const string& s );
-  static void trim( string& s );
   
   
   // Exception types
@@ -113,6 +126,8 @@ public:
       string key;
       key_not_found( const string& key_ = string() )
       : key(key_) {} };
+  
+  
 };
 
 
@@ -149,6 +164,34 @@ inline string ConfigFile::string_as_T<string>( const string& s )
   // In other words, do nothing
   return s;
 }
+
+//split strings
+template <typename Container>
+Container& ConfigFile::split(Container& result,const typename Container::value_type& s,const typename Container::value_type& delimiters,split_t::empties_t empties = split_t::empties_ok)
+{
+  // splits the strings into individual fields
+  // useful if you want to pass many parameters in the same string
+  result.clear();
+  size_t current;
+  size_t next = -1;
+  do
+  {
+    if (empties == split_t::no_empties)
+    {
+      next = s.find_first_not_of( delimiters, next + 1 );
+      if (next == Container::value_type::npos) break;
+      next -= 1;
+    }
+    current = next + 1;
+    next = s.find_first_of( delimiters, current );
+    result.push_back( s.substr( current, next - current ) );
+  }
+  while (next != Container::value_type::npos);
+  return result;
+}
+
+
+
 
 
 /* static */
@@ -251,3 +294,6 @@ void ConfigFile::add( string key, const T& value )
 //   + Enabled blank line termination for multiple-line values
 //   + Added optional sentry to detect end of configuration file
 //   + Rewrote messy trimWhitespace() function as elegant trim()
+// v2.2  11 May 2015
+//   + Added method to split the strings into single fields (taken from cplusplus.com)
+//   + Moved trim() to public so the fields can be polished from the main program
