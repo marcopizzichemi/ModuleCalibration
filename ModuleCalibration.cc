@@ -7,6 +7,18 @@
 // compile with 
 // g++ -o ModuleCalibration ModuleCalibration.cpp `root-config --cflags --glibs` -lSpectrum -lMLP -lTreePlayer
 
+// this program is meant to read a "short" acquisition data and find the limits that will be used by the reconstruction algorithm to 
+// do the images. Limits will be searched on u,v,w and e, i.e
+
+// u = weighted average in the x direction
+// v = weighted average in the y direction
+// w = ratio highest charge / total charge collected -> converted to z 
+// e = energy of the incident particle, to select photopeaks
+
+// CAREFUL: this program is meant to run on a single module, so if the acquisition is done in parallel on the two modules, it is 
+// supposed to be run twice, with different configuration files that will select the proper input channels, and with, as an output,
+// different text files 
+
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TSystem.h"
@@ -114,6 +126,7 @@ int main (int argc, char** argv)
   //confif.read on a std::vector<std::string>, it automatically does
   //the split and trim part
   ConfigFile config(ConfigFileName);
+  //--------------------------------------------------------------------------------------------------------------
   //read the strings that describe the input channels
   std::string digitizer_s    = config.read<std::string>("digitizer");
   std::string mppc_s         = config.read<std::string>("mppc");
@@ -164,10 +177,14 @@ int main (int argc, char** argv)
     config.trim(yPositions_f[i]);
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
-  std::cout <<yPositions.size();
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
   
+  if(digitizer.size() > 16) 
+  {
+    std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
+    return 1;
+  }
   //feedback to the user
   std::cout << std::endl;
   std::cout << "------------------------" << std::endl;
@@ -181,11 +198,10 @@ int main (int argc, char** argv)
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
-  
-  
+  //--------------------------------------------------------------------------------------------------------------
   
   std::string chainName = config.read<std::string>("chainName");
-  InputFile input(argc,argv,chainName); // read the input chain of root files, produces the ttree that will be used in the analysis
+  InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, produces the ttree that will be used in the analysis
   
   
   
