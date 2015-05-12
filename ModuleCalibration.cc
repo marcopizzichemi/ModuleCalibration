@@ -43,9 +43,11 @@
 #include <unistd.h>
 #include <cmath> 
 #include <assert.h>
-#include "ConfigFile.h"
 #include <cstddef>
 
+
+#include "ConfigFile.h"
+#include "InputFile.h"
 
 int main (int argc, char** argv)
 {
@@ -83,27 +85,27 @@ int main (int argc, char** argv)
   // Set a default config file name
   std::string ConfigFileName = "config.cfg"; 
   // and prepare the TChain
-  TChain *chain =  new TChain("adc");
+//   TChain *chain =  new TChain("adc");
   // and assume as default that there is no config file name from command line 
   //then check
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
     ConfigFileName = argv[2];
     std::cout << "Configuration file: '" << argv[2] << "'"<< std::endl;
-    for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
-    {
-      std::cout << "Adding file " << argv[i] << std::endl;
-      chain->Add(argv[i]);
-    }
+//     for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
+//     {
+//       std::cout << "Adding file " << argv[i] << std::endl;
+//       chain->Add(argv[i]);
+//     }
   }
   else // the config file was indeed the default one
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
-    for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
-    {
-      std::cout << "Adding file " << argv[i] << std::endl;
-      chain->Add(argv[i]);
-    }
+//     for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
+//     {
+//       std::cout << "Adding file " << argv[i] << std::endl;
+//       chain->Add(argv[i]);
+//     }
   }
   
   
@@ -179,6 +181,13 @@ int main (int argc, char** argv)
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
+  
+  
+  
+  std::string chainName = config.read<std::string>("chainName");
+  InputFile input(argc,argv,chainName); // read the input chain of root files, produces the ttree that will be used in the analysis
+  
+  
   
   
   
