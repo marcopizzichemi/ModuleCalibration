@@ -60,6 +60,8 @@
 
 #include "ConfigFile.h"
 #include "InputFile.h"
+#include "Module.h"
+#include "Mppc.h"
 
 int main (int argc, char** argv)
 {
@@ -203,9 +205,10 @@ int main (int argc, char** argv)
   std::string chainName = config.read<std::string>("chainName");
   InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, produces the ttree that will be used in the analysis
   
-  
-  
-  
+  //test on classes
+//   Module test();
+  Mppc atest(std::string("nome"),0,0,0);
+  Mppc atest2(std::string("nome2"),0,0,0);
   
   
   

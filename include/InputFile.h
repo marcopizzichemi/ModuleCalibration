@@ -41,7 +41,6 @@ public:
   InputFile     (int argc, char** argv, std::string chainName,int nCh);
   TChain*       GetChain() const { return fchain; };
   TTree*        GetTree() const { return ftree; };
-  void          SetChannelsPositions
   
   
   
