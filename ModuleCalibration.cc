@@ -47,47 +47,6 @@
 #include <cstddef>
 
 
-
-// struct split_t
-// {
-//   enum empties_t { empties_ok, no_empties };
-// };
-
-// template <typename Container>
-// Container& split(
-//   Container&     result,
-//   const typename Container::value_type& s,
-//   const typename Container::value_type& delimiters,
-//   split_t::empties_t empties = split_t::empties_ok )
-// {
-//   result.clear();
-//   size_t current;
-//   size_t next = -1;
-//   do
-//   {
-//     if (empties == split_t::no_empties)
-//     {
-//       next = s.find_first_not_of( delimiters, next + 1 );
-//       if (next == Container::value_type::npos) break;
-//       next -= 1;
-//     }
-//     current = next + 1;
-//     next = s.find_first_of( delimiters, current );
-//     result.push_back( s.substr( current, next - current ) );
-//   }
-//   while (next != Container::value_type::npos);
-//   return result;
-// }
-
-void print( std::vector <std::string> & v )
-{
-  for (size_t n = 0; n < v.size(); n++)
-    std::cout << "\"" << v[ n ] << "\"\n";
-  std::cout << std::endl;
-}
-
-
-
 int main (int argc, char** argv)
 {
   
@@ -147,7 +106,11 @@ int main (int argc, char** argv)
     }
   }
   
+  
   //open the config file
+  //TODO modify this in sucha  way that when calling 
+  //confif.read on a std::vector<std::string>, it automatically does
+  //the split and trim part
   ConfigFile config(ConfigFileName);
   //read the strings that describe the input channels
   std::string digitizer_s    = config.read<std::string>("digitizer");
@@ -200,10 +163,9 @@ int main (int argc, char** argv)
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
   std::cout <<yPositions.size();
-  
-  
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+  
   //feedback to the user
   std::cout << std::endl;
   std::cout << "------------------------" << std::endl;
@@ -217,6 +179,9 @@ int main (int argc, char** argv)
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
+  
+  
+  
   
   
   return 0;
