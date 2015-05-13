@@ -60,8 +60,10 @@
 
 #include "ConfigFile.h"
 #include "InputFile.h"
+#include "Element.h"
 #include "Module.h"
 #include "Mppc.h"
+#include "Crystal.h"
 
 int main (int argc, char** argv)
 {
@@ -205,10 +207,39 @@ int main (int argc, char** argv)
   std::string chainName = config.read<std::string>("chainName");
   InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, produces the ttree that will be used in the analysis
   
+  
+  int ncrystalsx = config.read<int>("ncrystalsx");
+  int ncrystalsy = config.read<int>("ncrystalsy");
+  int nmppcx     = config.read<int>("nmppcx");
+  int nmppcy     = config.read<int>("nmppcy");
+  int nmodulex   = config.read<int>("nmodulex");
+  int nmoduley   = config.read<int>("nmoduley");
+  
+  Crystal*** crystal = new Crystal** [ncrystalsx];
+  for(int j = 0; j < ncrystalsy ; j++)
+  {
+    crystal[j] = new Crystal* [ncrystalsy];
+  }
+  
+  int crystalCounter = 0;
+  for(int i = 0; i < ncrystalsx ; i++)
+  {
+    for(int j = 0; j < ncrystalsy ; j++)
+    {
+      std::stringstream sname;
+      sname << "Crystal " << crystalCounter;
+      crystal[i][j] = new Crystal();
+      crystal[i][j]->SetName(sname.str().c_str());
+      crystal[i][j]->SetID(crystalCounter);
+      crystalCounter++;
+    }
+  }
+  
+  
+  
   //test on classes
 //   Module test();
-  Mppc atest(std::string("nome"),0,0,0);
-  Mppc atest2(std::string("nome2"),0,0,0);
+ 
   
   
   
