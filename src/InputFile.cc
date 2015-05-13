@@ -59,11 +59,147 @@ InputFile::InputFile (int argc, char** argv, std::string chainName,int nCh): fna
     stype << "ch" << i << "/S";  
     ftree->Branch(sname.str().c_str(),&TreeAdcChannel,stype.str().c_str());
   }
-  ftree->Branch("TriggerChannel",&TreeFloodX,"TriggerChannel/I"); 
+  ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I"); 
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F"); 
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F"); 
   ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");   
   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O"); 
+  
+  
+  std::cout << "Filling the TTree for the analysis... " << std::endl;
+  Int_t nevent = fchain->GetEntries();
+  long long int GoodCounter = 0;
+  long long int BadEvent = 0;
+  long long int counter = 0;
+  
+  for (Int_t i=0;i<nevent;i++) 
+  { //loop on all the entries of tchain
+    fchain->GetEvent(i);              //read complete accepted event in memory
+    
+    double maxCharge = 0;
+    double secondCharge = 0;
+    float columnsum= 0;
+    float rowsum= 0;
+    float total=  0;
+    int badCharge = 0;
+    bool badevent = false;
+    
+    TreeExtendedTimeTag = ChainExtendedTimeTag;
+    TreeDeltaTimeTag = ChainDeltaTimeTag;
+    for (int i = 0 ; i < 32 ; i++) //loop on channels
+    {
+//       if(Input[i].Data) //if channel is on
+//       {
+// 	if(correctingForSaturation /*&& i != 6*/) //temporary 
+// 	{
+// 	  if(charge[i] > Input[i].param0)
+// 	  {
+// 	    badCharge++;
+	    //std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
+// 	  }
+// 	  t1_charge[i] = (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 )));	//this way, the param0 input has to be calculated in terms of number of bins in the binning of this very measurement. Usually we acquire at 156fC binning
+// 	  if(charge[i] > Input[i].param0)
+// 	  {
+	    //std::cout << "BadCharge " << t1_charge[i] << std::endl;
+// 	  }
+	  
+// 	}
+// 	else
+	  TreeAdcChannel[i] = ChainAdcChannel[i];
+//       }
+//       else 
+// 	t1_charge[i] = 0;
+//       for( int k = 0 ; k < 2 ; k++) //cycle on modules
+//       {
+// 	if(Input[i].Module[k]) //if channel is in this module
+// 	{
+// 	  if(Input[i].Data) //if channel is on
+// 	  {
+	    if (TreeAdcChannel[i] > maxCharge)
+	    {
+	      maxCharge = TreeAdcChannel[i];
+	      TreeTriggerChannel = i;
+	    }
+	    total += TreeAdcChannel[i];
+	    rowsum += TreeAdcChannel[i]*xmppc[i];
+	    columnsum += TreeAdcChannel[i]*ymppc[i];
+	  }
+// 	}
+//       }
+//     }
+    
+//     if(badCharge)
+//     {
+//       badevent = true;
+//       badEvents++;
+//     }
+    
+//     //find second highest charge
+//     for (int k = 0 ; k < 2 ; k++)
+//     {
+//       for (int i = 0 ; i < 32 ; i++)
+//       {
+// 	if(Input[i].Module[k]) //if channel is in this module
+// 	{
+// 	  if(Input[i].Data) //if channel is on
+// 	  {
+// 	    if (t1_charge[i] != maxCharge[k])//TODO here actually I'm not considering the case (unlikely) there are two channels with same value = maxcharge
+// 	    {
+// 	      if (t1_charge[i] > secondCharge[k])
+// 	      {
+// 		secondCharge[k] = t1_charge[i];
+// 	      }
+// 	    }
+// 	  }
+// 	}
+//       }
+//     }
+//     for (int k = 0 ; k < 2 ; k++)
+//     {
+//       if(ModuleOn[k])
+//       {
+	//compute flood x and y
+	float floodx=rowsum/total;
+	float floody=columnsum/total;
+	//compute first on second ratio
+// 	firstonsecond[k] = maxCharge[k] / secondCharge[k];
+//       }
+//     }
+    
+    //compute the ratio trigger/sum 
+    /*for (int k = 0 ; k < 2 ; k++)
+    {
+      if(ModuleOn[k])
+      {*/
+	ratiotriggeronall = maxCharge/total;
+//       }
+//     }
+    
+    
+    if(!badevent)
+    {
+      ftree->Fill();//fills the tree with the data only if it's a good event
+      GoodCounter++;
+    }
+    //counter to give a feedback to the user
+    counter++;
+    
+    int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
+    if( (perc % 10) == 0 )
+    {
+      std::cout << "\r";
+      std::cout << perc << "% done... ";
+      //std::cout << counter << std::endl;
+    }
+  }
+  std::cout << std::endl;
+  
+  std::cout << "Tot events = \t" << counter << std::endl;
+  std::cout << "Accepted events = \t" << GoodCounter << std::endl;
+  std::cout << "Bad events = \t" << badEvents << std::endl;
+  
+  
+  
   
   
 }
