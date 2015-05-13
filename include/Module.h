@@ -7,16 +7,19 @@
 
 class Module : public Element
 {
-// private:
-//   std::string name;  // module name or label
-//   float x,y,z;       // module position in "world" coordinate space
-//   
+// private: 
+//   Element*** childrenMppc; // matrix of children mppcs
+  
 public:
   Module(); // default constructor
   //Module(std::string aname, int pid, float px, float py, float pz); //constructor
   Module(const Module &obj); // copy constructor
   ~Module(); // destructor
     
+//   Element*               GetChildrenMppc(int i, int j){return childrenMppc[i][j]};
+//   void                   MakeMppcPointers(int i, int j);
+//   void                   SetChildrenMppc(int i, int j, Mppc* amppc){childrenMppc[i][j] = amppc;}
+  
   void PrintGlobal();
   void PrintSpecific();
 };

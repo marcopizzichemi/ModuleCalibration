@@ -6,21 +6,12 @@ Element::Element()
 {
   //default constructor
   name = "Default Element";
-  id = -1;
+  id = i = j = 0;
   x = y = z = 0;
-  GlobalTag = "x-x.x-x.x";
+  GlobalTag = "x.x-x.x-x.x";
+//   parentID = 0;
   
 }
-
-// Element::Element(std::string aname, int pid, float px, float py, float pz)
-// {
-//   //constructor
-//   name = aname;
-//   id = pid;
-//   x = px;
-//   y = py;
-//   z = pz;
-// }
 
 Element::Element(const Element &obj) 
 {
@@ -30,6 +21,16 @@ Element::Element(const Element &obj)
 Element::~Element()
 {
   //destructor
+}
+
+// 
+void Element::MakeChildrenPointers(int i, int j)
+{
+  pChild = new Element** [i];
+  for(int k = 0 ; k < i ; k++)
+  {
+    pChild[k] = new Element* [j];
+  }
 }
 
 void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy)
@@ -42,8 +43,9 @@ void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy
 
 void Element::PrintGlobal()
 {
-  std::cout << "Name \t\t = "   << name << std::endl;
-  std::cout << "ID \t\t = "     << id << std::endl;
+  std::cout << "Name \t\t = "    << name << std::endl;
+  std::cout << "ID \t\t = "      << id << std::endl;
+//   std::cout << "parentID \t = "  << parentID << std::endl;
   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
   std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
 }

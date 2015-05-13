@@ -5,24 +5,9 @@
 Mppc::Mppc()
 {
   //default contructor
-  name = "Default MPPC Name";
-  id = -1;
-  x = y = z = 0;
+  name = "Default MPPC";
+  
 }
-
-// Mppc::Mppc(std::string aname, float px, float py, float pz)
-// {
-//   //contructor
-//   name = aname;
-//   x = px;
-//   y = py;
-//   z = pz;
-//   
-//   //BEGIN of debug output
-//   std::cout << "Constructed MPPC " << name << " in " << x << "," << y << "," << z << std::endl;
-//   //END of debug output
-// }
-
 Mppc::Mppc(const Mppc &obj) 
 {
   //copy contructor
@@ -32,6 +17,15 @@ Mppc::~Mppc()
 {
   //destructor
 }
+
+// Mppc::MakeCrystalsPointers(int i, int j)
+// {
+//   childrenCrystal = new Crystal** [i];
+//   for(int k = 0 ; k < i ; k++)
+//   {
+//     childrenCrystal[k] = new Crystal* [j]
+//   }
+// }
 
 void Mppc::PrintSpecific()
 {

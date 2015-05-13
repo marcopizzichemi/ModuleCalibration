@@ -5,9 +5,7 @@
 Crystal::Crystal()
 {
   //default contructor
-  name = "Default Name";
-  id = -1;
-  x = y = z = 0;
+  name = "Default Crystal";
 }
 
 Crystal::Crystal(const Crystal &obj) 
@@ -20,20 +18,24 @@ Crystal::~Crystal()
   //destructor
 }
 
-
-// void Crystal::Print()
-// {
-//   std::cout << std::endl;
-//   std::cout << "--------------------------------------------------"  << std::endl;
-//   std::cout << "Element Type \t = crystal"  << std::endl;
-//   std::cout << "Name \t\t = "   << name << std::endl;
-//   std::cout << "ID \t\t = "     << id << std::endl;
-//   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
-//   std::cout << "--------------------------------------------------"  << std::endl;
-//   std::cout << std::endl;
-// }
-
 void Crystal::PrintSpecific()
 {
   std::cout << "Element Type \t = crystal"  << std::endl;
+  if(parentMppc != NULL)
+  {
+    std::cout << "Parent Mppc \t = "  << parentMppc->GetI() << "." << parentMppc->GetJ() <<  std::endl;
+    if(parentMppc->GetModule() != NULL)
+    {
+      std::cout << "Parent Module \t = " << parentMppc->GetModule()->GetI() << "." << parentMppc->GetModule()->GetJ() <<  std::endl;
+    }
+    else
+    {
+      std::cout << "Crystal not assigned to any Module."  <<  std::endl;
+    }
+  }
+  else
+  {
+    std::cout << "Crystal not assigned to any Mppc."  <<  std::endl;
+  }
+  
 }

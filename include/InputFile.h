@@ -43,11 +43,6 @@ public:
   TTree*        GetTree() const { return ftree; };
   
   
-  
-  
-  
-  
-  
 };
 
 

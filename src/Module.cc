@@ -5,23 +5,8 @@
 Module::Module()
 {
   //default contructor
-  name = "Default Module Name";
-  id = -1;
-  x = y = z = 0;
+  name = "Default Module";
 }
-
-// Module::Module(std::string aname, float px, float py, float pz)
-// {
-//   //contructor
-//   name = aname;
-//   x = px;
-//   y = py;
-//   z = pz;
-//   
-//   //BEGIN of debug output
-//   std::cout << "Constructed Module " << name << " in " << x << "," << y << "," << z << std::endl;
-//   //END of debug output
-// }
 
 Module::Module(const Module &obj) 
 {
@@ -32,6 +17,15 @@ Module::~Module()
 {
   //destructor
 }
+
+// Module::MakeMppcPointers(int i, int j)
+// {
+//   childrenMppc = new Mppc** [i];
+//   for(int k = 0 ; k < i ; k++)
+//   {
+//     childrenMppc[k] = new Mppc* [j]
+//   }
+// }
 
 void Module::PrintSpecific()
 {
