@@ -6,6 +6,7 @@ Module::Module()
 {
   //default contructor
   name = "Default Module Name";
+  id = -1;
   x = y = z = 0;
 }
 
@@ -32,3 +33,7 @@ Module::~Module()
   //destructor
 }
 
+void Module::PrintSpecific()
+{
+  std::cout << "Element Type \t = module"  << std::endl;
+}

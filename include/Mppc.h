@@ -15,6 +15,9 @@ public:
   //Mppc(std::string aname, int pid, float px, float py, float pz); //constructor
   Mppc(const Mppc &obj); // copy constructor
   ~Mppc(); // destructor
+  
+  void PrintGlobal();
+  void PrintSpecific();
 };
 
 

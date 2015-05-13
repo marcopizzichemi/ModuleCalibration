@@ -6,6 +6,7 @@ Mppc::Mppc()
 {
   //default contructor
   name = "Default MPPC Name";
+  id = -1;
   x = y = z = 0;
 }
 
@@ -30,4 +31,9 @@ Mppc::Mppc(const Mppc &obj)
 Mppc::~Mppc()
 {
   //destructor
+}
+
+void Mppc::PrintSpecific()
+{
+  std::cout << "Element Type \t = mppc"  << std::endl;
 }

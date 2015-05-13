@@ -16,6 +16,10 @@ public:
   //Crystal(std::string aname, int pid, float px, float py, float pz); // constructor
   Crystal(const Crystal &obj); // copy constructor
   ~Crystal(); // destructor
+    
+  
+  void PrintGlobal();
+  void PrintSpecific();
 };
 
 

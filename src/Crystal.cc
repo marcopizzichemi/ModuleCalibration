@@ -6,22 +6,9 @@ Crystal::Crystal()
 {
   //default contructor
   name = "Default Name";
+  id = -1;
   x = y = z = 0;
 }
-
-// Crystal::Crystal(std::string aname, int pid, float px, float py, float pz)
-// {
-//   //contructor
-//   name = aname;
-//   id = pid;
-//   x = px;
-//   y = py;
-//   z = pz;
-//   
-//   //BEGIN of debug output
-//   std::cout << "Constructed Crystal " << name << ", ID " << id << ", in " << x << "," << y << "," << z << std::endl;
-//   //END of debug output
-// }
 
 Crystal::Crystal(const Crystal &obj) 
 {
@@ -31,4 +18,22 @@ Crystal::Crystal(const Crystal &obj)
 Crystal::~Crystal()
 {
   //destructor
+}
+
+
+// void Crystal::Print()
+// {
+//   std::cout << std::endl;
+//   std::cout << "--------------------------------------------------"  << std::endl;
+//   std::cout << "Element Type \t = crystal"  << std::endl;
+//   std::cout << "Name \t\t = "   << name << std::endl;
+//   std::cout << "ID \t\t = "     << id << std::endl;
+//   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
+//   std::cout << "--------------------------------------------------"  << std::endl;
+//   std::cout << std::endl;
+// }
+
+void Crystal::PrintSpecific()
+{
+  std::cout << "Element Type \t = crystal"  << std::endl;
 }

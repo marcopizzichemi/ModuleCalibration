@@ -16,6 +16,9 @@ public:
   //Module(std::string aname, int pid, float px, float py, float pz); //constructor
   Module(const Module &obj); // copy constructor
   ~Module(); // destructor
+    
+  void PrintGlobal();
+  void PrintSpecific();
 };
 
 

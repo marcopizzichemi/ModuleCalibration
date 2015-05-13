@@ -144,7 +144,7 @@ int main (int argc, char** argv)
   std::vector <std::string> xPositions_f;
   std::vector <std::string> yPositions_f;
   std::vector <int> digitizer;
-  std::vector <std::string> mppc;
+  std::vector <std::string> mppc_label;
   std::vector <int> plotPositions;
   std::vector <float> xPositions;
   std::vector <float> yPositions;
@@ -164,7 +164,7 @@ int main (int argc, char** argv)
   for(int i = 0 ; i < mppc_f.size() ; i++)
   {
     config.trim(mppc_f[i]);
-    mppc.push_back(mppc_f[i]);
+    mppc_label.push_back(mppc_f[i]);
   }
   for(int i = 0 ; i < plotPositions_f.size() ; i++)
   {
@@ -182,7 +182,7 @@ int main (int argc, char** argv)
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
   //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
   
   if(digitizer.size() > 16) 
   {
@@ -198,7 +198,7 @@ int main (int argc, char** argv)
   std::cout << "------------------------" << std::endl;
   for(int i = 0 ; i < digitizer.size() ; i++)
   {
-    std::cout << "Channel[" << digitizer[i] << "] = \t" <<  mppc[i] << "\t" << plotPositions[i] << "\t" << xPositions[i] << "\t" << yPositions[i] << std::endl;
+    std::cout << "Channel[" << digitizer[i] << "] = \t" <<  mppc_label[i] << "\t" << plotPositions[i] << "\t" << xPositions[i] << "\t" << yPositions[i] << std::endl;
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
@@ -215,12 +215,13 @@ int main (int argc, char** argv)
   int nmodulex   = config.read<int>("nmodulex");
   int nmoduley   = config.read<int>("nmoduley");
   
+  
+  // create the crystals
   Crystal*** crystal = new Crystal** [ncrystalsx];
-  for(int j = 0; j < ncrystalsy ; j++)
+  for(int j = 0; j < ncrystalsx ; j++)
   {
     crystal[j] = new Crystal* [ncrystalsy];
   }
-  
   int crystalCounter = 0;
   for(int i = 0; i < ncrystalsx ; i++)
   {
@@ -228,18 +229,90 @@ int main (int argc, char** argv)
     {
       std::stringstream sname;
       sname << "Crystal " << crystalCounter;
-      crystal[i][j] = new Crystal();
-      crystal[i][j]->SetName(sname.str().c_str());
-      crystal[i][j]->SetID(crystalCounter);
+      crystal[i][j] = new Crystal();                 // creates a default crystal
+      crystal[i][j]->SetName(sname.str().c_str());   // assign a name
+      crystal[i][j]->SetID(crystalCounter);          // assign an ID
       crystalCounter++;
     }
   }
+  for(int i = 0; i < ncrystalsx ; i++)
+  {
+    for(int j = 0; j < ncrystalsy ; j++)
+    {
+      std::cout << "--------------------------------------------" << std::endl;
+      crystal[i][j]->Print();
+      std::cout << "--------------------------------------------" << std::endl;
+    }
+  }
+  std::cout << std::endl;
+  
+  
+  // create the MPPCs
+  Mppc*** mppc = new Mppc** [nmppcx];
+  int mppcCounter = 0;
+  for(int j = 0; j < nmppcx ; j++)
+  {
+    mppc[j] = new Mppc* [nmppcy];
+  }
+  
+  for(int i = 0; i < nmppcx ; i++)
+  {
+    for(int j = 0; j < nmppcy ; j++)
+    {
+      std::stringstream sname;
+      sname << "Mppc " << i << "." << j;
+      mppc[i][j] = new Mppc();                 // creates a default mppc
+      mppc[i][j]->SetName(sname.str().c_str());   // assign a name
+      mppc[i][j]->SetID(mppcCounter);          // assign an ID
+      mppcCounter++;
+    }
+  }
+  for(int i = 0; i < nmppcx ; i++)
+  {
+    for(int j = 0; j < nmppcy ; j++)
+    {
+      std::cout << "--------------------------------------------" << std::endl;
+      mppc[i][j]->Print();
+      std::cout << "--------------------------------------------" << std::endl;
+    }
+  }
+  
+  std::cout << std::endl;
+  
+  // create the Modules
+  Module*** module = new Module** [nmodulex];
+  int moduleCounter = 0;
+  for(int j = 0; j < nmodulex ; j++)
+  {
+    module[j] = new Module* [nmoduley];
+  }
+  
+  for(int i = 0; i < nmodulex ; i++)
+  {
+    for(int j = 0; j < nmoduley ; j++)
+    {
+      std::stringstream sname;
+      sname << "Module " << i << "." << j;
+      module[i][j] = new Module();                 // creates a default module
+      module[i][j]->SetName(sname.str().c_str());   // assign a name
+      module[i][j]->SetID(moduleCounter);          // assign an ID
+      moduleCounter++;
+    }
+  }
+  for(int i = 0; i < nmodulex ; i++)
+  {
+    for(int j = 0; j < nmoduley ; j++)
+    {
+      std::cout << "--------------------------------------------" << std::endl;
+      module[i][j]->Print();
+      std::cout << "--------------------------------------------" << std::endl;
+    }
+  }
+  
+  std::cout << std::endl;
   
   
   
-  //test on classes
-//   Module test();
- 
   
   
   
