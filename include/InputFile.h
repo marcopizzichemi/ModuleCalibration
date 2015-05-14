@@ -15,6 +15,8 @@ private:
   std::string   fname;
   TTree*        ftree;
   int           inputChannels;
+  int           adcChannels = 32;
+  bool          DigitizerChannelOn[32];
   
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;
@@ -41,7 +43,7 @@ public:
   InputFile     (int argc, char** argv, std::string chainName,int nCh);
   TChain*       GetChain() const { return fchain; };
   TTree*        GetTree() const { return ftree; };
-  
+  void          CreateTree(std::vector<int> digitizer , std::vector<float> mppcx , std::vector<float> mppcy);
   
 };
 

@@ -19,6 +19,8 @@ protected:
 //   int                  parentID;          // ID of parent element
   Element*             pParent = NULL;
   Element***           pChild;
+  int                  iChildren;         // number of children on "i"
+  int                  jChildren;         // number of children on "j"
   
 public:
   
@@ -41,11 +43,13 @@ public:
   void                 SetI(int pi)                              {i = pi;};
   void                 SetJ(int pj)                              {j = pj;};
   void                 SetPosition(float px, float py, float pz) {x = px; y = py; z = pz;};
-//   void                 SetParentID(int pid)                      {parentID = pid;};
   
   void                 MakeChildrenPointers(int i, int j);
   Element*             GetChild(int i, int j){return pChild[i][j];};
   void                 SetChild(int i, int j, Element* achild){pChild[i][j] = achild;}
+  
+  //virtual Element*     GetCrystal();
+  //virtual Element*     GetMppc();
   
   void                 SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy);
   void                 PrintGlobal();

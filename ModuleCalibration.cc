@@ -70,7 +70,6 @@
 
 int main (int argc, char** argv)
 {
-  
   //----------------------------------------------------------//
   //  Check input                                             //
   //----------------------------------------------------------//
@@ -210,8 +209,21 @@ int main (int argc, char** argv)
   
   
   std::string chainName = config.read<std::string>("chainName");
-  InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, produces the ttree that will be used in the analysis
+  InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, prepares the ttree that will be used in the analysis
 
+  
+  TChain* fchain = input.GetChain();
+  //input.CreateTree(digitizer,xPositions,yPositions);
+  //TTree* tree = input.GetTree();
+  
+  //temporary save ttree to check sanity
+  //-----------------------------
+  //TFile* fTree = new TFile("temp.root","recreate");
+  //fTree->cd();
+  //tree->Write();
+  //fTree->Close();
+  //std::cout << "DONE" << std::endl;
+  //----------------------------
   
   //--------------------------------------------------------------------------------------------------------------
   int ncrystalsx = config.read<int>("ncrystalsx");
@@ -332,11 +344,15 @@ int main (int argc, char** argv)
 	{
 	  std::stringstream sname;
 	  std::string       mppcName;
-	  sname << moduleName << " - Mppc " << iMppc << "." << jMppc;
+	  sname << moduleName << " - Mppc " << mppc_label[mppcCounter] << " " << iMppc << "." << jMppc;
 	  mppcName = sname.str();
 	  mppc[iMppc][jMppc] = new Mppc();                 // creates a default mppc
 	  mppc[iMppc][jMppc]->SetName(mppcName.c_str());   // assign a name
 	  mppc[iMppc][jMppc]->SetID(mppcCounter);          // assign an ID
+	  mppc[iMppc][jMppc]->SetDigitizerChannel(digitizer[mppcCounter]);
+	  mppc[iMppc][jMppc]->SetLabel(mppc_label[mppcCounter]);
+	  mppc[iMppc][jMppc]->SetCanvasPosition(plotPositions[mppcCounter]);
+	  mppc[iMppc][jMppc]->SetPosition(xPositions[mppcCounter],yPositions[mppcCounter],0);
 	  mppc[iMppc][jMppc]->SetI(iMppc); 
 	  mppc[iMppc][jMppc]->SetJ(jMppc); 
 	  mppc[iMppc][jMppc]->MakeChildrenPointers(ncrystalsx,ncrystalsy);
@@ -426,6 +442,52 @@ int main (int argc, char** argv)
   
   
   module[0][0]->GetChild(2,3)->GetChild(1,0)->Print();
+  std::cout << std::endl;
+//   module[0][0]->GetMppc(2,3)->GetCrystal(1,0)->Print();
+  std::cout << std::endl;
+  module[0][0]->GetMppc(2,3)->Print();
+  std::cout << std::endl;
+  module[0][0]->GetCrystal(2,3,1,0)->Print();
+  
+  
+  //loop on the events
+  
+  Int_t nevent = fchain->GetEntries();
+//   long long int GoodCounter = 0;
+//   long long int BadEvent = 0;
+//   long long int counter = 0;
+//   
+//   for(int i = 0; i < adcChannels; i++)
+//   {
+//     DigitizerChannelOn[i] = false;
+//   }
+//   for(int i = 0; i < inputChannels; i++)
+//   {
+//     DigitizerChannelOn[digitizer[i]] = true;
+//   }
+  
+  
+  for (Int_t i=0;i<nevent;i++) 
+  { 
+    fchain->GetEvent(i);   
+  }
+  
+  
+//   for(int iModule = 0; iModule < nmodulex ; iModule++)
+//   {
+//     for(int jModule = 0; jModule < nmoduley ; jModule++)
+//     {
+//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+//       {
+// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+// 	{
+// 	 
+// 	}
+//       }
+//     }
+//   }
+  
+  
   
   
   

@@ -26,6 +26,8 @@ Element::~Element()
 // 
 void Element::MakeChildrenPointers(int i, int j)
 {
+  iChildren = i;   // this sets the number of iChildren in this element
+  jChildren = j;   // this sets the number of jChildren in this element
   pChild = new Element** [i];
   for(int k = 0 ; k < i ; k++)
   {
