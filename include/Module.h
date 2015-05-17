@@ -2,33 +2,32 @@
 #define MODULE_H
 
 #include <string>
+#include <vector>
 #include "Element.h"
+#include "TH2F.h"
+
 
 class Module : public Element
 {
-// private: 
-//   Element*** childrenMppc; // matrix of children mppcs
+private: 
+  Mppc*** mppc; // matrix of pointers to children mppcs
+//   std::vector<Mppc*>  mppc; 
+  TH2F* FloodMap2D;
   
 public:
   Module(); // default constructor
-  //Module(std::string aname, int pid, float px, float py, float pz); //constructor
   Module(const Module &obj); // copy constructor
   ~Module(); // destructor
     
-//   Element*               GetChildrenMppc(int i, int j){return childrenMppc[i][j]};
-//   void                   MakeMppcPointers(int i, int j);
-//   void                   SetChildrenMppc(int i, int j, Mppc* amppc){childrenMppc[i][j] = amppc;}
+  void MakeMppcPointers(int i , int j);
+  Mppc* GetMppc();
+  void SetMppc(int i, int j, Mppc* pMppc){mppc[i][j] = pMppc;};
   
-  Element* GetMppc(int i , int j){return GetChild(i,j);};
-  Element* GetMppc(int digiCh);
-  Element* GetMppc(std::string alabel);
-  Element* GetCrystal(int iMppc , int jMppc , int iCrystal , int jCrystal){return GetChild(iMppc,jMppc)->GetChild(iCrystal,jCrystal);};
+  void SetFloodMap2D(TH2F* aHisto){FloodMap2D = aHisto;};
+  TH2F* GetFloodMap2D(){return FloodMap2D;};
   
   void PrintGlobal();
   void PrintSpecific();
 };
-
-
-
 
 #endif  // MODULE_H

@@ -6,6 +6,11 @@
 #include <sstream>
 // #include <string>
 
+
+class Module;
+class Mppc;
+class Crystal;
+
 class Element
 {
 protected:
@@ -17,15 +22,14 @@ protected:
                                           // structure is module-mppc-crystal
                                           // by default is set to x-x.x-x.x
 //   int                  parentID;          // ID of parent element
-  Element*             pParent = NULL;
-  Element***           pChild;
+//   Element*             pParent = NULL;
+//   Element***           pChild;
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
   
 public:
   
   Element(); // default constructor
-//   Element(std::string aname, int pid, float px, float py, float pz); //constructor
   Element(const Element &obj); // copy constructor
   ~Element(); // destructor
   
@@ -44,9 +48,9 @@ public:
   void                 SetJ(int pj)                              {j = pj;};
   void                 SetPosition(float px, float py, float pz) {x = px; y = py; z = pz;};
   
-  void                 MakeChildrenPointers(int i, int j);
-  Element*             GetChild(int i, int j){return pChild[i][j];};
-  void                 SetChild(int i, int j, Element* achild){pChild[i][j] = achild;}
+//   void                 MakeChildrenPointers(int i, int j);
+//   Element*             GetChild(int i, int j){return pChild[i][j];};
+//   void                 SetChild(int i, int j, Element* achild){pChild[i][j] = achild;};
   
   //virtual Element*     GetCrystal();
   //virtual Element*     GetMppc();
@@ -57,6 +61,10 @@ public:
   void                 Print(){PrintGlobal(); PrintSpecific();};
   
 };
+
+
+
+
 
 
 

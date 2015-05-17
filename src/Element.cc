@@ -24,16 +24,16 @@ Element::~Element()
 }
 
 // 
-void Element::MakeChildrenPointers(int i, int j)
-{
-  iChildren = i;   // this sets the number of iChildren in this element
-  jChildren = j;   // this sets the number of jChildren in this element
-  pChild = new Element** [i];
-  for(int k = 0 ; k < i ; k++)
-  {
-    pChild[k] = new Element* [j];
-  }
-}
+// void Element::MakeChildrenPointers(int i, int j)
+// {
+//   iChildren = i;   // this sets the number of iChildren in this element
+//   jChildren = j;   // this sets the number of jChildren in this element
+//   pChild = new Element** [i];
+//   for(int k = 0 ; k < i ; k++)
+//   {
+//     pChild[k] = new Element* [j];
+//   }
+// }
 
 void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy)
 {
@@ -47,7 +47,8 @@ void Element::PrintGlobal()
 {
   std::cout << "Name \t\t = "    << name << std::endl;
   std::cout << "ID \t\t = "      << id << std::endl;
-//   std::cout << "parentID \t = "  << parentID << std::endl;
+  std::cout << "i = \t\t = "      << i << std::endl;
+  std::cout << "j = \t\t = "      << j << std::endl;
   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
   std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
 }

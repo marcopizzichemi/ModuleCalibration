@@ -23,32 +23,18 @@ void Module::PrintSpecific()
   std::cout << "Element Type \t = module"  << std::endl;
 }
 
-Element* Module::GetMppc(int digiCh) //get mppc from the digitizer channel that has been set
+Mppc* Module::GetMppc()//TODO
 {
-  for(int i = 0 ; i < iChildren ; i ++)
-  {
-    for(int j = 0 ; j < jChildren ; j++)
-    {
-      if(digiCh == GetChild(iChildren,jChildren)->GetDigitizerChannel())
-      {
-	return GetChild(iChildren,jChildren);
-      }
-    }
-  }
   
 }
 
-Element* Module::GetMppc(std::string alabel) //get mppc from the digitizer channel that has been set
+void Module::MakeMppcPointers(int i , int j)
 {
-  for(int i = 0 ; i < iChildren ; i ++)
+  iChildren = i;   // this sets the number of iChildren in this element
+  jChildren = j;   // this sets the number of jChildren in this element
+  mppc = new Mppc** [i];
+  for(int k = 0 ; k < i ; k++)
   {
-    for(int j = 0 ; j < jChildren ; j++)
-    {
-      if(/*digiCh == GetChild(iChildren,jChildren)->GetDigitizerChannel()*/)
-      {
-	return GetChild(iChildren,jChildren);
-      }
-    }
+    mppc[k] = new Mppc* ;
   }
-  
 }

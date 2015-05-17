@@ -221,7 +221,6 @@ void InputFile::CreateTree(std::vector<int> digitizer , std::vector<float> xmppc
     DigitizerChannelOn[digitizer[i]] = true;
   }
   
-  
   for (Int_t i=0;i<nevent;i++) 
   { 
     //loop on all the entries of tchain
@@ -253,7 +252,7 @@ void InputFile::CreateTree(std::vector<int> digitizer , std::vector<float> xmppc
 	  
 	  // fill tree with data from the channels
 	  TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
-	  
+	  	  
 	  //find the max charge and therefore the TriggerChannel
 	  if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
 	  {
@@ -294,7 +293,7 @@ void InputFile::CreateTree(std::vector<int> digitizer , std::vector<float> xmppc
   std::cout << std::endl;
   
   std::cout << "Tot events = \t" << counter << std::endl;
-  std::cout << "Accepted events = \t" << GoodCounter << std::endl;
+//   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
   //std::cout << "Bad events = \t" << badEvents << std::endl;
   
 }

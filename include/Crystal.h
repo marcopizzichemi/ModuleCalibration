@@ -4,12 +4,13 @@
 #include <string>
 
 #include "Element.h"
-#include "Mppc.h"
 
 class Crystal : public Element
 {
 private:
   Mppc* parentMppc = NULL;
+//   std::string mppcLabel;
+//   int         mppcID;
   
 public:
   Crystal(); // default constructor
