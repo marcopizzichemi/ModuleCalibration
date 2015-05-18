@@ -8,7 +8,7 @@ Element::Element()
   name = "Default Element";
   id = i = j = 0;
   x = y = z = 0;
-  GlobalTag = "x.x-x.x-x.x";
+//   GlobalTag = "x.x-x.x-x.x";
 //   parentID = 0;
   
 }
@@ -18,10 +18,10 @@ Element::Element(const Element &obj)
   //copy constructor
 }
 
-Element::~Element()
-{
-  //destructor
-}
+// Element::~Element()
+// {
+//   //destructor
+// }
 
 // 
 // void Element::MakeChildrenPointers(int i, int j)
@@ -35,12 +35,12 @@ Element::~Element()
 //   }
 // }
 
-void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy)
-{
-  std::stringstream stream;
-  stream << module << "-" << mppcx << "." << mppcy << "-" << cryx << "." << cryy;
-  GlobalTag = stream.str();
-}
+// void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy)
+// {
+//   std::stringstream stream;
+//   stream << module << "-" << mppcx << "." << mppcy << "-" << cryx << "." << cryy;
+//   GlobalTag = stream.str();
+// }
 
 
 void Element::PrintGlobal()
@@ -50,10 +50,17 @@ void Element::PrintGlobal()
   std::cout << "i = \t\t = "      << i << std::endl;
   std::cout << "j = \t\t = "      << j << std::endl;
   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
-  std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
+//   std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
+  std::cout << "Parent \t\t = " << parentName << std::endl;
+  for(int k = 0; k < childrenName.size() ; k++)
+  {
+    std::cout << "Child \t\t = " << childrenName[k] << std::endl;
+  }
 }
 
 void Element::PrintSpecific()
 {
-  std::cout << "Abstract Element, nothing specific to print" << std::endl;
+//   std::cout << "Abstract Element, nothing specific to print" << std::endl;
 }
+
+

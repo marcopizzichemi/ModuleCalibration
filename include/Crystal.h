@@ -2,14 +2,14 @@
 #define CRYSTAL_H
 
 #include <string>
+#include <iostream>
 
 #include "Element.h"
 
 class Crystal : public Element
 {
 private:
-  Mppc* parentMppc = NULL;
-//   std::string mppcLabel;
+  Element* parentMppc = NULL;
 //   int         mppcID;
   
 public:
@@ -18,8 +18,11 @@ public:
   Crystal(const Crystal &obj); // copy constructor
   ~Crystal(); // destructor
   
-  Mppc*                  GetMppc(){return parentMppc;};
-  void                   SetMppc(Mppc* amppc){parentMppc = amppc;}; 
+  Mppc*                     GetMppc(){return (Mppc *)parentMppc;};
+  void                      SetMppc(Mppc *amppc);
+  
+  
+  
   
   void PrintGlobal();
   void PrintSpecific();

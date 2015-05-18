@@ -234,67 +234,50 @@ int main (int argc, char** argv)
   int nmodulex   = config.read<int>("nmodulex");
   int nmoduley   = config.read<int>("nmoduley");
   
-  //TEST
-  
-  
-  
-//   Module(s)
-//   Module*** module = new Module**[nmodulex]; // make an array of module pointers
-//   for(int j = 0; j < nmodulex ; j++)
-//   {
-//     module[j] = new Module* [nmoduley];
-//   }
-//   //then for each element of the array, make a module
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       module[iModule][jModule] = new Module(); //this make a default object of class Module
-//       std::stringstream sname;
-//       sname << "Module " << iModule << "." << jModule;
-//       module[iModule][jModule] = new Module();                 // creates a default module
-//       module[iModule][jModule]->SetName(sname.str().c_str());  // assign a name
-//       module[iModule][jModule]->SetID(moduleCounter);          // assign an ID
-//       module[iModule][jModule]->SetI(iModule); 
-//       module[iModule][jModule]->SetJ(jModule);
-//       module[iModule][jModule]->MakeMppcPointers(nmppcx,nmppcy);
-//       
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  std::stringstream sname;
-// 	  sname << "Mppc " << iMppc << "." << jMppc;
-// 	  mppc[iMppc][jMppc] = new Mppc();                 // creates a default mppc
-// 	  mppc[iMppc][jMppc]->SetName(sname.str().c_str());   // assign a name
-// 	  mppc[iMppc][jMppc]->SetID(mppcCounter);          // assign an ID
-// 	  mppc[iMppc][jMppc]->SetI(iMppc); 
-// 	  mppc[iMppc][jMppc]->SetJ(jMppc); 
-// 	  mppcCounter++;
-// 	}
-//       }
-//       
-//     } 
-//   }
-//   
+  //----------------------------------------------------------
+  //TEST of pointer  
+//   Crystal *crystal = new Crystal();
+//   crystal->SetName("The Crystal");
+//   Mppc *mppc = new Mppc();
+//   mppc->SetName("The Mppc");
+//   Module *module = new Module();
+//   module->SetName("The Module");
+//   crystal->SetMppc( (Element*) mppc );
+//   mppc->SetModule( (Element*) module );
+//   mppc->MakeCrystalPointers(1,1);
+//   mppc->SetCrystal(0,0, (Element*) crystal);
+//   module->MakeMppcPointers(1,1);
+//   module->SetMppc(0,0, (Element*) mppc);
+//   std::cout << std::endl;
+//   std::cout << crystal->GetMppc() << " " << mppc << " " << crystal->GetMppc()->GetName() << " " << mppc->GetName() << std::endl;
+//   std::cout << mppc->GetModule() << " " << module << " "  << mppc->GetModule()->GetName() << " " << module->GetName() << std::endl;
+// //   std::cout << test->GetModule()->GetName()  << " " << parent->GetName() << std::endl;
+//   delete crystal;
+//   delete module;
+//   delete mppc;
+  //----------------------------------------------------------
+
+
   int moduleCounter = 0;
   Module*** module = new Module**[nmodulex]; // make an array of module pointers
   for(int j = 0; j < nmodulex ; j++)
   {
     module[j] = new Module* [nmoduley];
   }
+  
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
       std::stringstream sname;
       sname << "Module " << iModule << "." << jModule;
-      module[iModule][jModule] = new Module();                 // creates a default module
+      module[iModule][jModule] = new Module(); // creates a default module   
       module[iModule][jModule]->SetName(sname.str().c_str());          // assign a name
       module[iModule][jModule]->SetID(moduleCounter);                  // assign an ID number
       module[iModule][jModule]->SetI(iModule); 
       module[iModule][jModule]->SetJ(jModule);
-      module[iModule][jModule]->MakeMppcPointers(nmppcx,nmppcy);
+      module[iModule][jModule]->SetChildrenI(nmppcx);
+      module[iModule][jModule]->SetChildrenJ(nmppcy);
       moduleCounter++;
     }
   }
@@ -310,15 +293,16 @@ int main (int argc, char** argv)
     for(int jMppc = 0; jMppc < nmppcy*nmoduley ; jMppc++)
     {
       std::stringstream sname;
-      sname << mppc_label[mppcCounter];
+      sname << "Mppc " << mppc_label[mppcCounter];
       mppc[iMppc][jMppc] = new Mppc();
       mppc[iMppc][jMppc]->SetName(sname.str().c_str());   // assign a name
       mppc[iMppc][jMppc]->SetID(mppcCounter);             // assign an ID
       mppc[iMppc][jMppc]->SetI(iMppc); 
       mppc[iMppc][jMppc]->SetJ(jMppc);
+      mppc[iMppc][jMppc]->SetChildrenI(ncrystalsx);
+      mppc[iMppc][jMppc]->SetChildrenJ(ncrystalsy);
       mppc[iMppc][jMppc]->SetPosition(xPositions[mppcCounter],yPositions[mppcCounter],0);
-      mppc[iMppc][jMppc]->SetModule(module[iMppc/nmppcx][jMppc/nmppcy]);
-      mppc[iMppc][jMppc]->MakeCrystalPointers(ncrystalsx,ncrystalsy);
+      mppc[iMppc][jMppc]->SetParentName(module[iMppc/nmppcx][jMppc/nmppcy]->GetName());
       mppcCounter++;
     }
   }
@@ -335,15 +319,19 @@ int main (int argc, char** argv)
     {
       std::stringstream stream;
       stream << "Crystal " << crystalCounter;
-      crystal[iCrystal][jCrystal] = new Crystal();                 // creates a default crystal
+      crystal[iCrystal][jCrystal] = new Crystal();
       crystal[iCrystal][jCrystal]->SetName(stream.str().c_str());   // assign a name
       crystal[iCrystal][jCrystal]->SetID(crystalCounter);          // assign an ID
       crystal[iCrystal][jCrystal]->SetI(iCrystal); 
       crystal[iCrystal][jCrystal]->SetJ(jCrystal);
-      crystal[iCrystal][jCrystal]->SetMppc(mppc[iCrystal/ncrystalsx][jCrystal/ncrystalsy]);
+      crystal[iCrystal][jCrystal]->SetParentName(mppc[iCrystal/ncrystalsx][jCrystal/ncrystalsy]->GetName());
       crystalCounter++;
     }
   }
+  
+    
+  
+  
   
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -353,12 +341,12 @@ int main (int argc, char** argv)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  module[iModule][jModule]->SetMppc(iMppc,jMppc,mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]);
+	  module[iModule][jModule]->AddChild( mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->GetName() );
 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
 	  {
 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
 	    {
-	      mppc[iMppc][jMppc]->SetCrystal(iCrystal,jCrystal,crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]);
+	      mppc[iMppc][jMppc]->AddChild( crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->GetName() );
 	    }
 	  }
 	}
@@ -368,87 +356,51 @@ int main (int argc, char** argv)
   
   
   
-  
- 
-  
-//   for(int i = 0; i < ncrystalsx*nmppcx*nmodulex ; i++)
-//   {
-//     for(int j = 0; j < ncrystalsy*nmppcy*nmoduley ; j++)
-//     {
-//       std::cout << "--------------------------------------------" << std::endl;
-//       crystal[i][j]->Print();
-//       std::cout << "Parent MPPC label \t= " << crystal[i][j]->GetMppc()->GetName() << std::endl;
-//       std::cout << "Parent MPPC i,j \t= " << crystal[i][j]->GetMppc()->GetI() << "." << crystal[i][j]->GetMppc()->GetJ()  << std::endl;
-//       
-//       std::cout << "Parent Module \t= " << crystal[i][j]->GetMppc()->GetModule()->GetName() << std::endl;
-//       std::cout << "--------------------------------------------" << std::endl;
-//     }
-//   }
+//   std::cout << "--------------------------------------------" << std::endl;
+//   module[0][0]->Print();
+//   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+  for(int iModule = 0; iModule < nmodulex ; iModule++)
+  {
+    for(int jModule = 0; jModule < nmoduley ; jModule++)
+    {
+      module[iModule][jModule]->Print();
+      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+      {
+	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+	{
+	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
+	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
+	  {
+	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
+	    {
+	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
+	    }
+	  }
+	}
+      }
+    }
+  }
+//   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+//   std::cout << "--------------------------------------------" << std::endl;
 //   std::cout << std::endl;
   
   
-  
-  //loop on the events
-  
-//   Int_t nevent = fchain->GetEntries();
-//   long long int GoodCounter = 0;
-//   long long int BadEvent = 0;
-//   long long int counter = 0;
-//   
-//   int adcChannels = 32;
-//   int inputChannels = 16;
-//   bool DigitizerChannelOn[32];
-//   for(int i = 0; i < adcChannels; i++)
-//   {
-//     DigitizerChannelOn[i] = false;
-//   }
-//   for(int i = 0; i < inputChannels; i++)
-//   {
-//     DigitizerChannelOn[digitizer[i]] = true;
-//   }
-  
-  Module* theModule = module[0][0];
-  
-  /*for (Int_t i=0;i<nevent;i++) 
-  { 
-    tree->GetEvent(i); */  
-  TCanvas *c1 = new TCanvas();
-  TH2F* histo2d = new TH2F("histo2d","histo2d",150,-7,7,150,-7,7);
-  histo2d->GetXaxis()->SetTitle("Flood X");
-  histo2d->GetYaxis()->SetTitle("Flood Y");
-  histo2d->GetZaxis()->SetTitle("N");
-  histo2d->SetTitle("Reconstruction of entire dataset");
-  tree->Draw("FloodY:FloodX >> histo2d","","COLZ");
-  
-  theModule->SetFloodMap2D(histo2d);
-    
-//   }
-  
-  
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	 
-// 	}
-//       }
-//     }
-//   }
+ 
   
   
   //temporary save 
   //-----------------------------
-  TFile* fPlots = new TFile("plots.root","recreate");
-  fPlots->cd();
-  c1->Write();
-  fPlots->Close();
+//   TFile* fPlots = new TFile("plots.root","recreate");
+//   fPlots->cd();
+//   c1->Write();
+//   std::cout << "QUIIIIII" << std::endl;
+//   fPlots->Close();
 //   std::cout << "DONE" << std::endl;
   //----------------------------
   
+  delete crystal;
+  delete mppc;
+  delete module;
   
   return 0;
 }
