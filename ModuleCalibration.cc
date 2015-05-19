@@ -103,33 +103,21 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   // Set a default config file name
   std::string ConfigFileName = "config.cfg"; 
-  // and prepare the TChain
-//   TChain *chain =  new TChain("adc");
   // and assume as default that there is no config file name from command line 
   //then check
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
     ConfigFileName = argv[2];
     std::cout << "Configuration file: '" << argv[2] << "'"<< std::endl;
-//     for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
-//     {
-//       std::cout << "Adding file " << argv[i] << std::endl;
-//       chain->Add(argv[i]);
-//     }
   }
   else // the config file was indeed the default one
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
-//     for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
-//     {
-//       std::cout << "Adding file " << argv[i] << std::endl;
-//       chain->Add(argv[i]);
-//     }
   }
   
   
   //open the config file
-  //TODO modify this in sucha  way that when calling 
+  //TODO modify this in such a way that when calling 
   //confif.read on a std::vector<std::string>, it automatically does
   //the split and trim part
   ConfigFile config(ConfigFileName);
@@ -205,15 +193,16 @@ int main (int argc, char** argv)
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
-  //--------------------------------------------------------------------------------------------------------------
+  //-------------------------------------------------------------------------------------------
   
-  
+  //temp
+  int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
   
   std::string chainName = config.read<std::string>("chainName");
   InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, prepares the ttree that will be used in the analysis
 
   
-  TChain* fchain = input.GetChain();
+//   TChain* fchain = input.GetChain();
   input.CreateTree(digitizer,xPositions,yPositions);
   TTree* tree = input.GetTree();
   
@@ -296,12 +285,15 @@ int main (int argc, char** argv)
       sname << "Mppc " << mppc_label[mppcCounter];
       mppc[iMppc][jMppc] = new Mppc();
       mppc[iMppc][jMppc]->SetName(sname.str().c_str());   // assign a name
+      mppc[iMppc][jMppc]->SetLabel(mppc_label[mppcCounter]);
       mppc[iMppc][jMppc]->SetID(mppcCounter);             // assign an ID
       mppc[iMppc][jMppc]->SetI(iMppc); 
       mppc[iMppc][jMppc]->SetJ(jMppc);
       mppc[iMppc][jMppc]->SetChildrenI(ncrystalsx);
       mppc[iMppc][jMppc]->SetChildrenJ(ncrystalsy);
       mppc[iMppc][jMppc]->SetPosition(xPositions[mppcCounter],yPositions[mppcCounter],0);
+      mppc[iMppc][jMppc]->SetDigitizerChannel(translateCh[mppcCounter]);
+      mppc[iMppc][jMppc]->SetCanvasPosition(plotPositions[mppcCounter]);
       mppc[iMppc][jMppc]->SetParentName(module[iMppc/nmppcx][jMppc/nmppcy]->GetName());
       mppcCounter++;
     }
@@ -359,43 +351,121 @@ int main (int argc, char** argv)
 //   std::cout << "--------------------------------------------" << std::endl;
 //   module[0][0]->Print();
 //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+//   for(int iModule = 0; iModule < nmodulex ; iModule++)
+//   {
+//     for(int jModule = 0; jModule < nmoduley ; jModule++)
+//     {
+//       module[iModule][jModule]->Print();
+//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+//       {
+// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+// 	{
+// 	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
+// 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
+// 	  {
+// 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
+// 	    {
+// 	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
+// 	    }
+// 	  }
+// 	}
+//       }
+//     }
+//   }
+// //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+// //   std::cout << "--------------------------------------------" << std::endl;
+// //   std::cout << std::endl;
+//   
+//   // draw a map
+//   
+//   // MPPC labels
+//   
+//   
+  for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+  {
+//     std::cout << "|---"
+    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+    {
+      
+      std::cout << mppc[iMppc][jMppc]->GetLabel() << "\t";
+    }  
+    std::cout << std::endl;
+  }
+  
+  for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+  {
+    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+    {
+      std::cout << mppc[iMppc][jMppc]->GetDigitizerChannel() << "\t";
+    }  
+    std::cout << std::endl;
+  }
+  
+  TCanvas* c2 = new TCanvas("c2","c2",1200,800);
+  c2->Divide(4,4);
+  
+//   TFile* fPlots = new TFile("plots.root","recreate");
+  
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
-      module[iModule][jModule]->Print();
+      TH2F* spectrum2d = new TH2F("spectrum2d","spectrum2d",150,-7,7,150,-7,7);
+      tree->Draw("FloodY:FloodX >> spectrum2d","","COLZ");
+      spectrum2d->SetName("Flood Histogram");
+      module[iModule][jModule]->SetFloodMap2D(*spectrum2d);
+      delete spectrum2d;
+      
+      TH2F *spherical = new TH2F("spherical","spherical",200,1.37,1.5,200,0.6,1.1); 
+      tree->Draw("Phi:Theta >> spherical","FloodX > -7 && FloodX < 7 && FloodY > -7 && FloodY < 7 && FloodZ > 0 && FloodZ < 1","COLZ");
+      
+      module[iModule][jModule]->SphericalMap = *spherical;
+      delete spherical;
+      
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
-	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-	  {
-	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-	    {
-	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
-	    }
-	  }
+	  TH1F* spectrum = new TH1F("spectrum","spectrum",2048,1,5000);
+	  int channel    = mppc[iMppc][jMppc]->GetDigitizerChannel();
+	  std::stringstream var,cut;
+	  var << "ch" << channel << " >> spectrum";
+	  cut << "TriggerChannel == " << channel  ;
+	  c2->cd(mppc[iMppc][jMppc]->GetCanvasPosition());
+	  tree->Draw(var.str().c_str(),cut.str().c_str());
+	  TString name = "Spectrum - " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum->SetName(name);
+	  spectrum->SetTitle(name);
+	  mppc[iMppc][jMppc]->SetRawSpectrum(*spectrum);
+// 	  delete spectrum;
 	}
       }
     }
   }
-//   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-//   std::cout << "--------------------------------------------" << std::endl;
-//   std::cout << std::endl;
-  
-  
- 
   
   
   //temporary save 
   //-----------------------------
-//   TFile* fPlots = new TFile("plots.root","recreate");
-//   fPlots->cd();
-//   c1->Write();
-//   std::cout << "QUIIIIII" << std::endl;
-//   fPlots->Close();
-//   std::cout << "DONE" << std::endl;
+  TFile* fPlots = new TFile("plots.root","recreate");
+  fPlots->cd();
+  for(int iModule = 0; iModule < nmodulex ; iModule++)
+  {
+    for(int jModule = 0; jModule < nmoduley ; jModule++)
+    {
+      module[iModule][jModule]->GetFloodMap2D()->Write();
+      (&(module[iModule][jModule]->SphericalMap))->Write();
+      c2->Write();
+      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+      {
+	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+	{
+	  mppc[iMppc][jMppc]->GetRawSpectrum()->Write();
+	}
+      }
+    }
+  }
+  
+  fPlots->Close();
   //----------------------------
   
   delete crystal;

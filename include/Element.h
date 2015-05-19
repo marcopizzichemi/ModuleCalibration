@@ -16,6 +16,7 @@ class Element
 {
 protected:
   std::string          name;              // name or label
+  std::string          label; 
   std::string          parentName;
   std::vector<std::string> childrenName;
   int                  id;                // id number
@@ -34,7 +35,7 @@ public:
   ~Element(){}; // destructor
   
   std::string          GetName()                                 {return name;};
-//   std::string          GetGlobalTag()                            {return GlobalTag;};
+  std::string          GetLabel()                                {return label;};
   int                  GetID()                                   {return id;};
   int                  GetI()                                    {return i;};
   int                  GetJ()                                    {return j;};
@@ -44,6 +45,7 @@ public:
   int                  GetChildrenI()                            {return iChildren;};
   int                  GetChildrenJ()                            {return jChildren;};
   void                 SetName(std::string aname)                {name = aname;};
+  void                 SetLabel(std::string aname)               {label = aname;};
   void                 SetID(int pid)                            {id = pid;};
   void                 SetI(int pi)                              {i = pi;};
   void                 SetJ(int pj)                              {j = pj;};

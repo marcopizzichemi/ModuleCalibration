@@ -18,7 +18,7 @@ private:
   int                    canvasPosition;        // position in the canvas of all channels
   
   //histograms
-  //TH1F                  RawSpectrum;           // raw spectrum of all events seen by this mppc
+  TH1F                   RawSpectrum;           // raw spectrum of all events seen by this mppc
   std::string            moduleName;
   
   
@@ -40,6 +40,8 @@ public:
   int                    GetCrystalsNumber(){return vCrystal.size();};
   Crystal*               GetCrystal(int pi, int pj);
   
+  TH1F*                  GetRawSpectrum(){return &RawSpectrum;};
+  void                   SetRawSpectrum(TH1F aHisto){RawSpectrum = aHisto;};
   
 //   void                   SetLabel(std::string string){label = string;};
   

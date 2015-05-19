@@ -10,7 +10,7 @@ Mppc::Mppc()
   digitizerChannel = -1;
 //   label = "VOID";
   canvasPosition = -1;
-  //RawSpectrum = NULL;
+//   RawSpectrum = new TH1F("Spectrum","Spectrum",);
 }
 
 // Mppc::Mppc(int nCrystalPerMppcX , int nCrystalPerMppcY)

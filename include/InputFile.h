@@ -35,6 +35,8 @@ private:
   Float_t       TreeFloodX;
   Float_t       TreeFloodY;
   Float_t       TreeFloodZ;
+  Float_t       TreeTheta;
+  Float_t       TreePhi;
   Bool_t        TreeBadevent;
   
   
