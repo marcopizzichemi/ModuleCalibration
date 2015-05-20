@@ -26,12 +26,14 @@
 #include "TCanvas.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TH3F.h"
 #include "TString.h"
 #include "TApplication.h"
 #include "TLegend.h"
 #include "TTree.h"
 #include "TFile.h"
 #include "TF2.h"
+#include "TGraph2D.h"
 #include "TSpectrum.h"
 #include "TSpectrum2.h"
 #include "TTreeFormula.h"
@@ -95,9 +97,6 @@ int main (int argc, char** argv)
   std::cout<<"\n\n"<<std::endl;
   std::cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<std::endl;
   
-  
-  
-  
   //----------------------------------------------------------//
   //  Import input and parse the config file                  //
   //----------------------------------------------------------//
@@ -115,107 +114,11 @@ int main (int argc, char** argv)
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
   
-  
-  //open the config file
-  //TODO modify this in such a way that when calling 
-  //confif.read on a std::vector<std::string>, it automatically does
-  //the split and trim part
   ConfigFile config(ConfigFileName);
-  //--------------------------------------------------------------------------------------------------------------
-  //read the strings that describe the input channels
-  std::string digitizer_s    = config.read<std::string>("digitizer");
-  std::string mppc_s         = config.read<std::string>("mppc");
-  std::string plotPositions_s = config.read<std::string>("plotPositions");
-  std::string xPositions_s   = config.read<std::string>("xPositions");
-  std::string yPositions_s   = config.read<std::string>("yPositions");
-  //prepare std::vectors to split the strings
-  std::vector <std::string> digitizer_f;
-  std::vector <std::string> mppc_f;
-  std::vector <std::string> plotPositions_f;
-  std::vector <std::string> xPositions_f;
-  std::vector <std::string> yPositions_f;
-  std::vector <int> digitizer;
-  std::vector <std::string> mppc_label;
-  std::vector <int> plotPositions;
-  std::vector <float> xPositions;
-  std::vector <float> yPositions;
-  //split them using the config file class
-  config.split( digitizer_f, digitizer_s, "," );
-  config.split( mppc_f, mppc_s, "," );
-  config.split( plotPositions_f, plotPositions_s, "," );
-  config.split( xPositions_f, xPositions_s, "," );
-  config.split( yPositions_f, yPositions_s, "," );
-  //trim them using the config file class (i.e. remove spaces)
-  //and at the same time put in vectors with numbers for the ones that are numbers
-  for(int i = 0 ; i < digitizer_f.size() ; i++)
-  {
-    config.trim(digitizer_f[i]);
-    digitizer.push_back(atoi(digitizer_f[i].c_str()));
-  }
-  for(int i = 0 ; i < mppc_f.size() ; i++)
-  {
-    config.trim(mppc_f[i]);
-    mppc_label.push_back(mppc_f[i]);
-  }
-  for(int i = 0 ; i < plotPositions_f.size() ; i++)
-  {
-    config.trim(plotPositions_f[i]);
-    plotPositions.push_back(atoi(plotPositions_f[i].c_str()));
-  }
-  for(int i = 0 ; i < xPositions_f.size() ; i++)
-  {
-    config.trim(xPositions_f[i]);
-    xPositions.push_back(atof(xPositions_f[i].c_str()));
-  }
-  for(int i = 0 ; i < yPositions_f.size() ; i++)
-  {
-    config.trim(yPositions_f[i]);
-    yPositions.push_back(atof(yPositions_f[i].c_str()));
-  }
-  //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
   
-  if(digitizer.size() > 16) 
-  {
-    std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
-    return 1;
-  }
-  //feedback to the user
-  std::cout << std::endl;
-  std::cout << "------------------------" << std::endl;
-  std::cout << " Channels configuration " << std::endl;
-  std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]" << std::endl;
-  std::cout << "------------------------" << std::endl;
-  for(int i = 0 ; i < digitizer.size() ; i++)
-  {
-    std::cout << "Channel[" << digitizer[i] << "] = \t" <<  mppc_label[i] << "\t" << plotPositions[i] << "\t" << xPositions[i] << "\t" << yPositions[i] << std::endl;
-  }
-  std::cout << "------------------------" << std::endl;
-  std::cout << std::endl;
-  //-------------------------------------------------------------------------------------------
+  InputFile input(argc,argv,config); // read the input chain of root files,
+  input.CreateTree();                // create the TTree that will be used in analysis
   
-  //temp
-  int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-  
-  std::string chainName = config.read<std::string>("chainName");
-  InputFile input(argc,argv,chainName,digitizer.size()); // read the input chain of root files, prepares the ttree that will be used in the analysis
-
-  
-//   TChain* fchain = input.GetChain();
-  input.CreateTree(digitizer,xPositions,yPositions);
-  TTree* tree = input.GetTree();
-  
-  //temporary save ttree to check sanity
-  //-----------------------------
-//   TFile* fTree = new TFile("temp.root","recreate");
-//   fTree->cd();
-//   tree->Write();
-//   fTree->Close();
-//   std::cout << "DONE" << std::endl;
-  //----------------------------
-  
-  //--------------------------------------------------------------------------------------------------------------
   int ncrystalsx = config.read<int>("ncrystalsx");
   int ncrystalsy = config.read<int>("ncrystalsy");
   int nmppcx     = config.read<int>("nmppcx");
@@ -223,247 +126,295 @@ int main (int argc, char** argv)
   int nmodulex   = config.read<int>("nmodulex");
   int nmoduley   = config.read<int>("nmoduley");
   
-  //----------------------------------------------------------
-  //TEST of pointer  
-//   Crystal *crystal = new Crystal();
-//   crystal->SetName("The Crystal");
-//   Mppc *mppc = new Mppc();
-//   mppc->SetName("The Mppc");
-//   Module *module = new Module();
-//   module->SetName("The Module");
-//   crystal->SetMppc( (Element*) mppc );
-//   mppc->SetModule( (Element*) module );
-//   mppc->MakeCrystalPointers(1,1);
-//   mppc->SetCrystal(0,0, (Element*) crystal);
-//   module->MakeMppcPointers(1,1);
-//   module->SetMppc(0,0, (Element*) mppc);
-//   std::cout << std::endl;
-//   std::cout << crystal->GetMppc() << " " << mppc << " " << crystal->GetMppc()->GetName() << " " << mppc->GetName() << std::endl;
-//   std::cout << mppc->GetModule() << " " << module << " "  << mppc->GetModule()->GetName() << " " << module->GetName() << std::endl;
-// //   std::cout << test->GetModule()->GetName()  << " " << parent->GetName() << std::endl;
-//   delete crystal;
-//   delete module;
-//   delete mppc;
-  //----------------------------------------------------------
-
-
-  int moduleCounter = 0;
-  Module*** module = new Module**[nmodulex]; // make an array of module pointers
+  std::string outputFileName = config.read<std::string>("output");
+  outputFileName += ".root";
+  
+  Module*** module;                           // create the elements
+  Mppc*** mppc;
+  Crystal*** crystal;
+  module = new Module**[nmodulex]; // make an array of module pointers
   for(int j = 0; j < nmodulex ; j++)
   {
     module[j] = new Module* [nmoduley];
   }
-  
-  for(int iModule = 0; iModule < nmodulex ; iModule++)
-  {
-    for(int jModule = 0; jModule < nmoduley ; jModule++)
-    {
-      std::stringstream sname;
-      sname << "Module " << iModule << "." << jModule;
-      module[iModule][jModule] = new Module(); // creates a default module   
-      module[iModule][jModule]->SetName(sname.str().c_str());          // assign a name
-      module[iModule][jModule]->SetID(moduleCounter);                  // assign an ID number
-      module[iModule][jModule]->SetI(iModule); 
-      module[iModule][jModule]->SetJ(jModule);
-      module[iModule][jModule]->SetChildrenI(nmppcx);
-      module[iModule][jModule]->SetChildrenJ(nmppcy);
-      moduleCounter++;
-    }
-  }
-  
-  int mppcCounter = 0;
-  Mppc*** mppc = new Mppc**[nmodulex*nmppcx]; // make an array of module pointers
+  mppc = new Mppc**[nmodulex*nmppcx]; // make an array of mppc pointers
   for(int j = 0; j < nmodulex*nmppcx ; j++)
   {
     mppc[j] = new Mppc* [nmoduley*nmppcy];
   }
-  for(int iMppc = 0; iMppc < nmppcx*nmodulex ; iMppc++)
-  {
-    for(int jMppc = 0; jMppc < nmppcy*nmoduley ; jMppc++)
-    {
-      std::stringstream sname;
-      sname << "Mppc " << mppc_label[mppcCounter];
-      mppc[iMppc][jMppc] = new Mppc();
-      mppc[iMppc][jMppc]->SetName(sname.str().c_str());   // assign a name
-      mppc[iMppc][jMppc]->SetLabel(mppc_label[mppcCounter]);
-      mppc[iMppc][jMppc]->SetID(mppcCounter);             // assign an ID
-      mppc[iMppc][jMppc]->SetI(iMppc); 
-      mppc[iMppc][jMppc]->SetJ(jMppc);
-      mppc[iMppc][jMppc]->SetChildrenI(ncrystalsx);
-      mppc[iMppc][jMppc]->SetChildrenJ(ncrystalsy);
-      mppc[iMppc][jMppc]->SetPosition(xPositions[mppcCounter],yPositions[mppcCounter],0);
-      mppc[iMppc][jMppc]->SetDigitizerChannel(translateCh[mppcCounter]);
-      mppc[iMppc][jMppc]->SetCanvasPosition(plotPositions[mppcCounter]);
-      mppc[iMppc][jMppc]->SetParentName(module[iMppc/nmppcx][jMppc/nmppcy]->GetName());
-      mppcCounter++;
-    }
-  }
-  
-  int crystalCounter = 0;
-  Crystal*** crystal = new Crystal**[nmodulex*nmppcx*ncrystalsx]; // make an array of module pointers
+  crystal = new Crystal**[nmodulex*nmppcx*ncrystalsx]; // make an array of crystal pointers
   for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++)
   {
     crystal[j] = new Crystal* [nmoduley*nmppcy*ncrystalsy];
   }
-  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
-  {
-    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
-    {
-      std::stringstream stream;
-      stream << "Crystal " << crystalCounter;
-      crystal[iCrystal][jCrystal] = new Crystal();
-      crystal[iCrystal][jCrystal]->SetName(stream.str().c_str());   // assign a name
-      crystal[iCrystal][jCrystal]->SetID(crystalCounter);          // assign an ID
-      crystal[iCrystal][jCrystal]->SetI(iCrystal); 
-      crystal[iCrystal][jCrystal]->SetJ(jCrystal);
-      crystal[iCrystal][jCrystal]->SetParentName(mppc[iCrystal/ncrystalsx][jCrystal/ncrystalsy]->GetName());
-      crystalCounter++;
-    }
-  }
-  
-    
   
   
+  input.FillElements(module,mppc,crystal);    // fill the elements
+  
+  
+  TTree* tree = input.GetTree();     // get the TTree, to plot the spectra
+ 
+  TH1F* spectrum;
+  TH2F* spectrum2d;
+  TH3F* spectrum3d;
+  std::stringstream var,cut;
+  TString name;
   
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
-      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-      {
-	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-	{
-	  module[iModule][jModule]->AddChild( mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->GetName() );
-	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-	  {
-	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-	    {
-	      mppc[iMppc][jMppc]->AddChild( crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->GetName() );
-	    }
-	  }
-	}
-      }
-    } 
-  }
-  
-  
-  
-//   std::cout << "--------------------------------------------" << std::endl;
-//   module[0][0]->Print();
-//   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       module[iModule][jModule]->Print();
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
-// 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-// 	  {
-// 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-// 	    {
-// 	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
-// 	    }
-// 	  }
-// 	}
-//       }
-//     }
-//   }
-// //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-// //   std::cout << "--------------------------------------------" << std::endl;
-// //   std::cout << std::endl;
-//   
-//   // draw a map
-//   
-//   // MPPC labels
-//   
-//   
-  for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-  {
-//     std::cout << "|---"
-    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-    {
+      TCut CutXYZ = "FloodX > -7 && FloodX < 7 && FloodY > -7 && FloodY < 7 && FloodZ > 0 && FloodZ < 1";
       
-      std::cout << mppc[iMppc][jMppc]->GetLabel() << "\t";
-    }  
-    std::cout << std::endl;
-  }
-  
-  for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-  {
-    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-    {
-      std::cout << mppc[iMppc][jMppc]->GetDigitizerChannel() << "\t";
-    }  
-    std::cout << std::endl;
-  }
-  
-  TCanvas* c2 = new TCanvas("c2","c2",1200,800);
-  c2->Divide(4,4);
-  
-//   TFile* fPlots = new TFile("plots.root","recreate");
-  
-  for(int iModule = 0; iModule < nmodulex ; iModule++)
-  {
-    for(int jModule = 0; jModule < nmoduley ; jModule++)
-    {
-      TH2F* spectrum2d = new TH2F("spectrum2d","spectrum2d",150,-7,7,150,-7,7);
+      std::cout << "Generating global spectra..." << std::endl;
+      // GLOBAL SPECTRA
+      
+      // Flood histogram
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,-7,7);
       tree->Draw("FloodY:FloodX >> spectrum2d","","COLZ");
-      spectrum2d->SetName("Flood Histogram");
+      name = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
+      spectrum2d->SetName(name); 
+      spectrum2d->SetTitle(name);
+      spectrum2d->GetXaxis()->SetTitle("U");
+      spectrum2d->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2D(*spectrum2d);
       delete spectrum2d;
+      //sherical coordinates plot
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,1.1,3.1415/2.0,1000,-3.14/2.0,3.14/2.0); 
+      tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
+      name = "Spherical Plot - " + module[iModule][jModule]->GetName();
+      spectrum2d->SetName(name);
+      spectrum2d->SetTitle(name);
+      spectrum2d->GetXaxis()->SetTitle("Theta");
+      spectrum2d->GetYaxis()->SetTitle("Phi");
+      module[iModule][jModule]->SetSphericalMap(*spectrum2d);
+      delete spectrum2d;
+      //cylindrical coordinates plot, x and theta
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+      tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
+      name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
+      spectrum2d->SetName(name);
+      spectrum2d->SetTitle(name);
+      spectrum2d->GetXaxis()->SetTitle("U");
+      spectrum2d->GetYaxis()->SetTitle("Theta");
+      module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
+      delete spectrum2d;
+      //cylindrical coordinates plot, y and theta
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+      tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
+      name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
+      spectrum2d->SetName(name);
+      spectrum2d->SetTitle(name);
+      spectrum2d->GetXaxis()->SetTitle("V");
+      spectrum2d->GetYaxis()->SetTitle("Theta");
+      module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
+      delete spectrum2d;
       
-      TH2F *spherical = new TH2F("spherical","spherical",200,1.37,1.5,200,0.6,1.1); 
-      tree->Draw("Phi:Theta >> spherical","FloodX > -7 && FloodX < 7 && FloodY > -7 && FloodY < 7 && FloodZ > 0 && FloodZ < 1","COLZ");
       
-      module[iModule][jModule]->SphericalMap = *spherical;
-      delete spherical;
+      //3D plot
+      spectrum3d = new TH3F("spectrum3d","spectrum3d",100,-7,7,100,-7,7,100,0,1);
+      tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
+      name = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
+      spectrum3d->SetName(name);
+      spectrum3d->SetTitle(name);
+      spectrum3d->GetXaxis()->SetTitle("U");
+      spectrum3d->GetYaxis()->SetTitle("V");
+      spectrum3d->GetYaxis()->SetTitle("W");
+      module[iModule][jModule]->SetFloodMap3D(*spectrum3d);
+      delete spectrum3d;
       
+      //spectra for each mppc
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  TH1F* spectrum = new TH1F("spectrum","spectrum",2048,1,5000);
-	  int channel    = mppc[iMppc][jMppc]->GetDigitizerChannel();
-	  std::stringstream var,cut;
-	  var << "ch" << channel << " >> spectrum";
+	  
+	  int channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
+	  std::cout << "Generating spectra for MPPC " << mppc[iMppc][jMppc]->GetLabel() << " ..." << std::endl;
+	  
 	  cut << "TriggerChannel == " << channel  ;
-	  c2->cd(mppc[iMppc][jMppc]->GetCanvasPosition());
-	  tree->Draw(var.str().c_str(),cut.str().c_str());
-	  TString name = "Spectrum - " + mppc[iMppc][jMppc]->GetLabel();
+	  TCut CutTrigger = cut.str().c_str();
+	  cut.str("");
+	  //same as the global ones, but selecting on TriggerChannel
+	  
+	  
+	  // raw spectrum
+	  spectrum = new TH1F("spectrum","spectrum",2048,1,5000);
+	  channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
+	  var << "ch" << channel << " >> spectrum";
+	  tree->Draw(var.str().c_str(),"");
+	  name = "Raw Spectrum - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum->SetName(name);
 	  spectrum->SetTitle(name);
 	  mppc[iMppc][jMppc]->SetRawSpectrum(*spectrum);
-// 	  delete spectrum;
+	  var.str("");
+	  delete spectrum;
+	  //trigger selected spectrum
+	  spectrum = new TH1F("spectrum","spectrum",2048,1,5000);	  
+	  var << "ch" << channel << " >> spectrum";
+	  tree->Draw(var.str().c_str(),CutTrigger);
+	  name = "Trigger Spectrum - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum->SetName(name);
+	  spectrum->SetTitle(name);
+	  mppc[iMppc][jMppc]->SetTriggerSpectrum(*spectrum);
+	  var.str("");
+	  delete spectrum;
+	  
+	  // Flood histogram
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,-7,7);
+	  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger,"COLZ");
+	  name = "Flood Histogram 2D - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum2d->SetName(name); 
+	  spectrum2d->SetTitle(name);
+	  spectrum2d->GetXaxis()->SetTitle("U");
+	  spectrum2d->GetYaxis()->SetTitle("V");
+	  mppc[iMppc][jMppc]->SetFloodMap2D(*spectrum2d);
+	  delete spectrum2d;
+	  //sherical coordinates plot
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,1.1,3.1415/2.0,1000,-3.14/2.0,3.14/2.0); 
+	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  name = "Spherical Plot - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum2d->SetName(name);
+	  spectrum2d->SetTitle(name);
+	  spectrum2d->GetXaxis()->SetTitle("Theta");
+	  spectrum2d->GetYaxis()->SetTitle("Phi");
+	  mppc[iMppc][jMppc]->SetSphericalMap(*spectrum2d);
+	  delete spectrum2d;
+	  //cylindrical coordinates plot, x and theta
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum2d->SetName(name);
+	  spectrum2d->SetTitle(name);
+	  spectrum2d->GetXaxis()->SetTitle("U");
+	  spectrum2d->GetYaxis()->SetTitle("Theta");
+	  mppc[iMppc][jMppc]->SetCylindricalXMap(*spectrum2d);
+	  delete spectrum2d;
+	  //cylindrical coordinates plot, y and theta
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum2d->SetName(name);
+	  spectrum2d->SetTitle(name);
+	  spectrum2d->GetXaxis()->SetTitle("V");
+	  spectrum2d->GetYaxis()->SetTitle("Theta");
+	  mppc[iMppc][jMppc]->SetCylindricalYMap(*spectrum2d);
+	  delete spectrum2d;
+	  
+	  
+	  
+	  spectrum3d = new TH3F("spectrum3d","spectrum3d",100,-7,7,100,-7,7,100,0,1);
+	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
+	  name = "Flood Histogram 3D - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+	  spectrum3d->SetName(name);
+	  spectrum3d->SetTitle(name);
+	  spectrum3d->GetXaxis()->SetTitle("U");
+	  spectrum3d->GetYaxis()->SetTitle("V");
+	  spectrum3d->GetYaxis()->SetTitle("W");
+	  mppc[iMppc][jMppc]->SetFloodMap3D(*spectrum3d);
+	  delete spectrum3d;
+	  
+	  
 	}
       }
     }
   }
   
   
-  //temporary save 
-  //-----------------------------
-  TFile* fPlots = new TFile("plots.root","recreate");
+  //multicanvases
+  TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
+  TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
+  TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",1200,800);
+  TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",1200,800);
+  TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
+  TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
+  TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
+  RawCanvas->Divide(4,4);
+  TriggerCanvas->Divide(4,4);
+  FloodHistoCanvas->Divide(4,4);
+  FloodHisto3DCanvas->Divide(4,4);
+  SphericalCanvas->Divide(4,4);
+  CylindricalXCanvas->Divide(4,4);
+  CylindricalYCanvas->Divide(4,4);
+//   FloodHistoCanvas->cd();
+//   module[0][0]->GetFloodMap2D()->Draw();
+//   SphericalCanvas->cd();
+//   module[0][0]->GetSphericalMap()->Draw();
+  
+  TCanvas* Canvas3D = new TCanvas("Canvas3d","Canvas3d",1200,800);
+  Canvas3D->cd();
+  module[0][0]->GetFloodMap3D()->Draw();
+  
+  std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
+  for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
+  {
+    for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+    {
+      RawCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetRawSpectrum()->Draw();
+      
+      TriggerCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetTriggerSpectrum()->Draw();
+      
+      FloodHistoCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetFloodMap2D()->Draw("COLZ");
+      
+      FloodHisto3DCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetFloodMap3D()->Draw("COLZ");
+      
+      SphericalCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetSphericalMap()->Draw("COLZ");
+      
+      CylindricalXCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetCylindricalXMap()->Draw("COLZ");
+      
+      CylindricalYCanvas->cd(mppc[iMppc][jMppc]->GetCanvasPosition()); 
+      mppc[iMppc][jMppc]->GetCylindricalYMap()->Draw("COLZ");
+      
+    }
+  }
+  
+  
+
+  TFile* fPlots = new TFile(outputFileName.c_str(),"recreate");
   fPlots->cd();
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
       module[iModule][jModule]->GetFloodMap2D()->Write();
-      (&(module[iModule][jModule]->SphericalMap))->Write();
-      c2->Write();
-      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-      {
-	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-	{
-	  mppc[iMppc][jMppc]->GetRawSpectrum()->Write();
-	}
-      }
+      
+      Canvas3D->Write();
+      
+      
+      module[iModule][jModule]->GetSphericalMap()->Write();
+      module[iModule][jModule]->GetCylindricalXMap()->Write();
+      module[iModule][jModule]->GetCylindricalYMap()->Write();
+//       FloodHistoCanvas->Write();
+//       SphericalCanvas->Write();
+      RawCanvas->Write();
+      TriggerCanvas->Write();
+      FloodHistoCanvas->Write();
+      FloodHisto3DCanvas->Write();
+      SphericalCanvas->Write();
+      CylindricalXCanvas->Write();
+      CylindricalYCanvas->Write();
+//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+//       {
+// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+// 	{
+// 	  mppc[iMppc][jMppc]->GetRawSpectrum()->Write();
+// 	}
+//       }
     }
   }
+  
+  
+  
+  TFile* fFile = new TFile("temp.root","recreate");
+  fFile->cd();
+  tree->Write();
+  fFile->Close();
   
   fPlots->Close();
   //----------------------------

@@ -6,7 +6,8 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-
+#include "TH2F.h"
+#include "TH3F.h"
 
 class Module;
 class Mppc;
@@ -27,6 +28,16 @@ protected:
                                           // by default is set to x-x.x-x.x
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
+  
+  //2d histos
+  TH2F                 FloodMap2D;
+  TH2F                 SphericalMap;
+  TH2F                 CylindricalXMap;
+  TH2F                 CylindricalYMap;
+  //3d histos
+  TH3F                 FloodMap3D;
+  
+  
   
 public:
   
@@ -62,6 +73,25 @@ public:
   std::string          GetParentName(){return parentName;};
   void                 AddChild(std::string aName){childrenName.push_back(aName);};
   std::vector<std::string> GetChildren(){return childrenName;};
+  
+  
+  TH2F*                GetFloodMap2D(){return &FloodMap2D;};
+  TH2F*                GetSphericalMap(){return &SphericalMap;};
+  TH2F*                GetCylindricalXMap(){return &CylindricalXMap;};
+  TH2F*                GetCylindricalYMap(){return &CylindricalYMap;};
+  
+  TH3F*                GetFloodMap3D(){return &FloodMap3D;};
+  
+  
+  void                 SetFloodMap2D(TH2F aHisto){FloodMap2D = aHisto;};
+  void                 SetSphericalMap(TH2F aHisto){SphericalMap = aHisto;};
+  void                 SetCylindricalXMap(TH2F aHisto){CylindricalXMap = aHisto;};
+  void                 SetCylindricalYMap(TH2F aHisto){CylindricalYMap = aHisto;};
+  
+  void                 SetFloodMap3D(TH3F aHisto){FloodMap3D = aHisto;};
+  
+  
+  
   
   
 };

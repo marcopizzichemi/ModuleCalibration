@@ -19,6 +19,7 @@ private:
   
   //histograms
   TH1F                   RawSpectrum;           // raw spectrum of all events seen by this mppc
+  TH1F                   TriggerSpectrum;           // raw spectrum of all events seen by this mppc
   std::string            moduleName;
   
   
@@ -42,6 +43,9 @@ public:
   
   TH1F*                  GetRawSpectrum(){return &RawSpectrum;};
   void                   SetRawSpectrum(TH1F aHisto){RawSpectrum = aHisto;};
+  TH1F*                  GetTriggerSpectrum(){return &TriggerSpectrum;};
+  void                   SetTriggerSpectrum(TH1F aHisto){TriggerSpectrum = aHisto;};
+  
   
 //   void                   SetLabel(std::string string){label = string;};
   
