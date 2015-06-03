@@ -126,6 +126,13 @@ int main (int argc, char** argv)
   int nmodulex   = config.read<int>("nmodulex");
   int nmoduley   = config.read<int>("nmoduley");
   
+  int histo1Dmax        = config.read<int>("histo1Dmax");       
+  int histo1Dbins       = config.read<int>("histo1Dbins");      
+  int histo2DchannelBin = config.read<int>("histo2DchannelBin");
+  int histo2DglobalBins = config.read<int>("histo2DglobalBins");
+  int histo3DchannelBin = config.read<int>("histo3DchannelBin");
+  int histo3DglobalBins = config.read<int>("histo3DglobalBins");
+  
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
   
@@ -170,7 +177,7 @@ int main (int argc, char** argv)
       // GLOBAL SPECTRA
       
       // Flood histogram
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,-7,7);
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
       tree->Draw("FloodY:FloodX >> spectrum2d","","COLZ");
       name = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
       spectrum2d->SetName(name); 
@@ -180,7 +187,7 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetFloodMap2D(*spectrum2d);
       delete spectrum2d;
       //sherical coordinates plot
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,1.1,3.1415/2.0,1000,-3.14/2.0,3.14/2.0); 
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
       tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
       name = "Spherical Plot - " + module[iModule][jModule]->GetName();
       spectrum2d->SetName(name);
@@ -190,7 +197,7 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetSphericalMap(*spectrum2d);
       delete spectrum2d;
       //cylindrical coordinates plot, x and theta
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
       tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
       name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
       spectrum2d->SetName(name);
@@ -200,7 +207,7 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
       delete spectrum2d;
       //cylindrical coordinates plot, y and theta
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
       tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
       name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
       spectrum2d->SetName(name);
@@ -212,7 +219,7 @@ int main (int argc, char** argv)
       
       
       //3D plot
-      spectrum3d = new TH3F("spectrum3d","spectrum3d",100,-7,7,100,-7,7,100,0,1);
+      spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
       name = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
       spectrum3d->SetName(name);
@@ -239,29 +246,33 @@ int main (int argc, char** argv)
 	  
 	  
 	  // raw spectrum
-	  spectrum = new TH1F("spectrum","spectrum",2048,1,5000);
+	  spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);
 	  channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
 	  var << "ch" << channel << " >> spectrum";
 	  tree->Draw(var.str().c_str(),"");
 	  name = "Raw Spectrum - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum->SetName(name);
 	  spectrum->SetTitle(name);
+	  spectrum->GetXaxis()->SetTitle("ADC Channels");
+          spectrum->GetYaxis()->SetTitle("N");
 	  mppc[iMppc][jMppc]->SetRawSpectrum(*spectrum);
 	  var.str("");
 	  delete spectrum;
 	  //trigger selected spectrum
-	  spectrum = new TH1F("spectrum","spectrum",2048,1,5000);	  
+	  spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
 	  var << "ch" << channel << " >> spectrum";
 	  tree->Draw(var.str().c_str(),CutTrigger);
 	  name = "Trigger Spectrum - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum->SetName(name);
 	  spectrum->SetTitle(name);
+	  spectrum->GetXaxis()->SetTitle("ADC Channels");
+          spectrum->GetYaxis()->SetTitle("N");
 	  mppc[iMppc][jMppc]->SetTriggerSpectrum(*spectrum);
 	  var.str("");
 	  delete spectrum;
 	  
 	  // Flood histogram
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,-7,7);
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 	  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger,"COLZ");
 	  name = "Flood Histogram 2D - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum2d->SetName(name); 
@@ -271,7 +282,7 @@ int main (int argc, char** argv)
 	  mppc[iMppc][jMppc]->SetFloodMap2D(*spectrum2d);
 	  delete spectrum2d;
 	  //sherical coordinates plot
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,1.1,3.1415/2.0,1000,-3.14/2.0,3.14/2.0); 
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
 	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
 	  name = "Spherical Plot - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum2d->SetName(name);
@@ -281,7 +292,7 @@ int main (int argc, char** argv)
 	  mppc[iMppc][jMppc]->SetSphericalMap(*spectrum2d);
 	  delete spectrum2d;
 	  //cylindrical coordinates plot, x and theta
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
 	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
 	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum2d->SetName(name);
@@ -291,7 +302,7 @@ int main (int argc, char** argv)
 	  mppc[iMppc][jMppc]->SetCylindricalXMap(*spectrum2d);
 	  delete spectrum2d;
 	  //cylindrical coordinates plot, y and theta
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",1000,-7,7,1000,1.1,3.1415/2.0); 
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
 	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
 	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum2d->SetName(name);
@@ -303,7 +314,7 @@ int main (int argc, char** argv)
 	  
 	  
 	  
-	  spectrum3d = new TH3F("spectrum3d","spectrum3d",100,-7,7,100,-7,7,100,0,1);
+	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[iMppc][jMppc]->GetLabel();
 	  spectrum3d->SetName(name);
@@ -320,7 +331,6 @@ int main (int argc, char** argv)
     }
   }
   
-  
   //multicanvases
   TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
   TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
@@ -336,14 +346,26 @@ int main (int argc, char** argv)
   SphericalCanvas->Divide(4,4);
   CylindricalXCanvas->Divide(4,4);
   CylindricalYCanvas->Divide(4,4);
-//   FloodHistoCanvas->cd();
-//   module[0][0]->GetFloodMap2D()->Draw();
-//   SphericalCanvas->cd();
-//   module[0][0]->GetSphericalMap()->Draw();
   
-  TCanvas* Canvas3D = new TCanvas("Canvas3d","Canvas3d",1200,800);
-  Canvas3D->cd();
+  //canvases for the global plots
+  TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",1200,800);
+  GlobalFlood2D->cd();
+  module[0][0]->GetFloodMap2D()->Draw("COLZ");
+  TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",1200,800);
+  GlobalFlood3D->cd();
   module[0][0]->GetFloodMap3D()->Draw();
+  TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
+  GlobalSpherical->cd();
+  module[0][0]->GetSphericalMap()->Draw("COLZ");
+  TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
+  GlobalCylindricalX->cd();
+  module[0][0]->GetCylindricalXMap()->Draw("COLZ");
+  TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
+  GlobalCylindricalY->cd();
+  module[0][0]->GetCylindricalYMap()->Draw("COLZ");
+  
+  
+  
   
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
   for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
@@ -382,16 +404,13 @@ int main (int argc, char** argv)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
-      module[iModule][jModule]->GetFloodMap2D()->Write();
       
-      Canvas3D->Write();
-      
-      
-      module[iModule][jModule]->GetSphericalMap()->Write();
-      module[iModule][jModule]->GetCylindricalXMap()->Write();
-      module[iModule][jModule]->GetCylindricalYMap()->Write();
-//       FloodHistoCanvas->Write();
-//       SphericalCanvas->Write();
+      GlobalFlood2D->Write();
+      GlobalFlood3D->Write();
+      GlobalSpherical->Write();
+      GlobalCylindricalX->Write();
+      GlobalCylindricalY->Write();
+
       RawCanvas->Write();
       TriggerCanvas->Write();
       FloodHistoCanvas->Write();
@@ -399,13 +418,14 @@ int main (int argc, char** argv)
       SphericalCanvas->Write();
       CylindricalXCanvas->Write();
       CylindricalYCanvas->Write();
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  mppc[iMppc][jMppc]->GetRawSpectrum()->Write();
-// 	}
-//       }
+      //save the 3d flood maps separately for each channel
+      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+      {
+	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+	{
+	  mppc[iMppc][jMppc]->GetFloodMap3D()->Write();
+	}
+      }
     }
   }
   

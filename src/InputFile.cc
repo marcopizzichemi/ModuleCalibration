@@ -5,6 +5,7 @@
 
 #include "InputFile.h"
 #include <cmath> 
+#include "TMath.h"
 #include <stdlib.h> 
 #include <assert.h>
 #include <fstream>
@@ -32,6 +33,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   nmoduley   = config.read<int>("nmoduley");
   
   binary     = config.read<bool>("binary");
+  correctingSaturation = config.read<bool>("correctingSaturation");
   BinaryOutputFileName = config.read<std::string>("output");
   BinaryOutputFileName += ".bin";
   
@@ -41,12 +43,14 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   plotPositions_s = config.read<std::string>("plotPositions");
   xPositions_s   = config.read<std::string>("xPositions");
   yPositions_s   = config.read<std::string>("yPositions");
+  saturation_s   = config.read<std::string>("saturation");
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
   config.split( mppc_f, mppc_s, "," );
   config.split( plotPositions_f, plotPositions_s, "," );
   config.split( xPositions_f, xPositions_s, "," );
   config.split( yPositions_f, yPositions_s, "," );
+  config.split( saturation_f, saturation_s, "," );
   //trim them using the config file class (i.e. remove spaces)
   //and at the same time put in vectors with numbers for the ones that are numbers
   for(int i = 0 ; i < digitizer_f.size() ; i++)
@@ -74,8 +78,13 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     config.trim(yPositions_f[i]);
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
+  for(int i = 0 ; i < saturation_f.size() ; i++)
+  {
+    config.trim(saturation_f[i]);
+    saturation.push_back(atof(saturation_f[i].c_str()));
+  }
   //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
   
   if(digitizer.size() > 16) 
   {
@@ -208,11 +217,15 @@ void InputFile::CreateTree()
 //       {
 // 	if(k == j) //so if this channel was enabled for input of this module, save the data in the analysis ttree
 // 	{
-	  //TODO implement the saturation correction here
 	  
 	  // fill tree with data from the channels
+	  // also correcting for saturation if it's set in the config file
+	 
+	if(correctingSaturation)
+	  TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
+	else
 	  TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
-	  	  
+	 
 	  //find the max charge and therefore the TriggerChannel
 	  if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
 	  {

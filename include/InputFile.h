@@ -31,16 +31,19 @@ private:
   std::string                    plotPositions_s;
   std::string                    xPositions_s;   
   std::string                    yPositions_s;  
+  std::string                    saturation_s;
   std::vector <std::string>      digitizer_f;
   std::vector <std::string>      mppc_f;
   std::vector <std::string>      plotPositions_f;
   std::vector <std::string>      xPositions_f;
   std::vector <std::string>      yPositions_f;
+  std::vector <std::string>      saturation_f;
   std::vector <int>              digitizer;
   std::vector <std::string>      mppc_label;
   std::vector <int>              plotPositions;
   std::vector <float>            xPositions;
   std::vector <float>            yPositions;
+  std::vector <float>            saturation;
   
   int                            ncrystalsx;
   int                            ncrystalsy;
@@ -50,6 +53,7 @@ private:
   int                            nmoduley;
   std::string                    BinaryOutputFileName;
   bool                           binary;
+  bool                           correctingSaturation;
   
   
   
