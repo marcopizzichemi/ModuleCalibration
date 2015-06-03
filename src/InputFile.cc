@@ -32,6 +32,9 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   nmodulex   = config.read<int>("nmodulex");
   nmoduley   = config.read<int>("nmoduley");
   
+  taggingPosition = config.read<float>("taggingPosition");
+  usingTaggingBench = config.read<bool>("usingTaggingBench");
+  
   binary     = config.read<bool>("binary");
   correctingSaturation = config.read<bool>("correctingSaturation");
   BinaryOutputFileName = config.read<std::string>("output");
@@ -159,6 +162,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F"); 
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F"); 
   ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
+  if(usingTaggingBench) ftree->Branch("ZPosition",&TreeZPosition,"TreeZPosition/F");
   ftree->Branch("Theta",&TreeTheta,"Theta/F"); 
   ftree->Branch("Phi",&TreePhi,"Phi/F");
   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O"); 
@@ -170,7 +174,7 @@ void InputFile::CreateTree()
   std::cout << "Filling the TTree for the analysis... " << std::endl;
   Int_t nevent = fchain->GetEntries();
   long long int GoodCounter = 0;
-  long long int BadEvent = 0;
+  long long int badEvents = 0;
   long long int counter = 0;
   
   Point point;
@@ -200,8 +204,8 @@ void InputFile::CreateTree()
     float columnsum= 0;
     float rowsum= 0;
     float total=  0;
-    int badCharge = 0;
-    bool badevent = false;
+    TreeBadevent = false;
+//     bool badevent = false;
     
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
@@ -213,41 +217,42 @@ void InputFile::CreateTree()
     {
       if(DigitizerChannelOn[j])
       {
-//       for(int k= 0 ; k < digitizer.size() ; k++) // loop on the channels of the digitizer for this module
-//       {
-// 	if(k == j) //so if this channel was enabled for input of this module, save the data in the analysis ttree
-// 	{
-	  
-	  // fill tree with data from the channels
-	  // also correcting for saturation if it's set in the config file
-	 
+	// fill tree with data from the channels
+	// also correcting for saturation if it's set in the config file
 	if(correctingSaturation)
+	{
+	  if(TreeAdcChannel[TreeEntryCounter] > saturation[TreeEntryCounter])
+	  {
+	    TreeBadevent = true;
+	    
+	    //std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
+	  }
 	  TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
+	}
 	else
 	  TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
-	 
-	  //find the max charge and therefore the TriggerChannel
-	  if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
-	  {
-	    maxCharge = TreeAdcChannel[TreeEntryCounter];
-	    TreeTriggerChannel = TreeEntryCounter;
-	  }
-	  
-	  //update total, row and columnsum
-	  total += TreeAdcChannel[TreeEntryCounter];
-	  rowsum += TreeAdcChannel[TreeEntryCounter]*xPositions[TreeEntryCounter];
-	  columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
-	  
-	  
-	  TreeEntryCounter++;
-// 	}
-//       }
+	
+	//find the max charge and therefore the TriggerChannel
+	if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
+	{
+	  maxCharge = TreeAdcChannel[TreeEntryCounter];
+	  TreeTriggerChannel = TreeEntryCounter;
+	}
+	
+	//update total, row and columnsum
+	total += TreeAdcChannel[TreeEntryCounter];
+	rowsum += TreeAdcChannel[TreeEntryCounter]*xPositions[TreeEntryCounter];
+	columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
+	
+	TreeEntryCounter++;
       }
     }
     
     TreeFloodX = rowsum/total;
     TreeFloodY = columnsum/total;
     TreeFloodZ =  maxCharge/total;
+    
+    if(usingTaggingBench) TreeZPosition = taggingPosition;
     
     TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX-0,2) + std::pow(TreeFloodY-0,2) + std::pow(TreeFloodZ+0,2)) ));
     TreePhi =  std::atan (TreeFloodY / TreeFloodX);
@@ -256,8 +261,15 @@ void InputFile::CreateTree()
     point.y = TreeFloodY;
     point.z = TreeFloodZ;
     
-    TreeBadevent = false;
-    ftree->Fill();
+    if(!TreeBadevent)
+    {
+      ftree->Fill();
+      GoodCounter++;
+    }
+    else
+    {
+      badEvents++;
+    }
     
     if(binary)
       output_file.write((char*)&point,sizeof(point));
@@ -273,10 +285,14 @@ void InputFile::CreateTree()
       //std::cout << counter << std::endl;
     }
   }
+  
+  //some feedback...
   std::cout << std::endl;
-  
   std::cout << "Tot events = \t" << counter << std::endl;
+  std::cout << "Accepted events = \t" << GoodCounter << std::endl;
+  std::cout << "Bad events = \t" << badEvents << std::endl;
   
+  //close the binary file if it was opened
   if(binary) 
     output_file.close();
 //   std::cout << "Accepted events = \t" << GoodCounter << std::endl;

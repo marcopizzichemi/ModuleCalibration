@@ -55,7 +55,8 @@ private:
   bool                           binary;
   bool                           correctingSaturation;
   
-  
+  float                          taggingPosition;
+  bool                           usingTaggingBench;
   
   
   
@@ -78,6 +79,7 @@ private:
   Float_t       TreeTheta;
   Float_t       TreePhi;
   Bool_t        TreeBadevent;
+  Float_t       TreeZPosition;
   
   
 public:

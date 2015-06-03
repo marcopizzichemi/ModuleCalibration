@@ -133,6 +133,8 @@ int main (int argc, char** argv)
   int histo3DchannelBin = config.read<int>("histo3DchannelBin");
   int histo3DglobalBins = config.read<int>("histo3DglobalBins");
   
+  bool saveAnalysisTree = config.read<bool>("saveAnalysisTree");
+  
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
   
@@ -430,11 +432,14 @@ int main (int argc, char** argv)
   }
   
   
-  
-  TFile* fFile = new TFile("temp.root","recreate");
-  fFile->cd();
-  tree->Write();
-  fFile->Close();
+  if(saveAnalysisTree)
+  {
+    std::cout << "Saving analysis TTree to a file temp.root" << std::endl;
+    TFile* fFile = new TFile("temp.root","recreate");
+    fFile->cd();
+    tree->Write();
+    fFile->Close();
+  }
   
   fPlots->Close();
   //----------------------------
