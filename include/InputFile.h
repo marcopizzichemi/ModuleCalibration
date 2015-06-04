@@ -57,13 +57,14 @@ private:
   
   float                          taggingPosition;
   bool                           usingTaggingBench;
-  
+  int                            taggingCrystalChannel;
   
   
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;
   ULong64_t     ChainDeltaTimeTag;
   Short_t      *ChainAdcChannel;
+  
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;
   TBranch      *bChainDeltaTimeTag;
@@ -73,6 +74,7 @@ private:
   ULong64_t     TreeDeltaTimeTag;
   Short_t      *TreeAdcChannel;
   int           TreeTriggerChannel;
+  Short_t       TreeTagging;
   Float_t       TreeFloodX;
   Float_t       TreeFloodY;
   Float_t       TreeFloodZ;

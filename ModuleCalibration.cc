@@ -135,6 +135,11 @@ int main (int argc, char** argv)
   
   bool saveAnalysisTree = config.read<bool>("saveAnalysisTree");
   
+  float taggingPosition = config.read<float>("taggingPosition");
+  bool usingTaggingBench = config.read<bool>("usingTaggingBench");
+  int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");
+  
+  
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
   
@@ -333,6 +338,31 @@ int main (int argc, char** argv)
     }
   }
   
+  //create the crystal 
+//   Crystal* 
+//   
+//   if(usingTaggingBench) 
+//   {
+//     
+//     // raw spectrum
+//     spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);
+//     channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
+//     var << "ch" << channel << " >> spectrum";
+//     tree->Draw(var.str().c_str(),"");
+//     name = "Raw Spectrum - MPPC " + mppc[iMppc][jMppc]->GetLabel();
+//     spectrum->SetName(name);
+//     spectrum->SetTitle(name);
+//     spectrum->GetXaxis()->SetTitle("ADC Channels");
+//     spectrum->GetYaxis()->SetTitle("N");
+//     mppc[iMppc][jMppc]->SetRawSpectrum(*spectrum);
+//     var.str("");
+//     delete spectrum;
+//     //plot the tagging bench spectrum
+//     TaggingCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
+//     
+//   }
+  
+  
   //multicanvases
   TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
   TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
@@ -366,7 +396,8 @@ int main (int argc, char** argv)
   GlobalCylindricalY->cd();
   module[0][0]->GetCylindricalYMap()->Draw("COLZ");
   
-  
+  //canvas for the tagging crystal
+  TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
   
   
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;

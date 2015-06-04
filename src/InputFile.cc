@@ -34,6 +34,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   
   taggingPosition = config.read<float>("taggingPosition");
   usingTaggingBench = config.read<bool>("usingTaggingBench");
+  taggingCrystalChannel = config.read<int>("taggingCrystalChannel");
   
   binary     = config.read<bool>("binary");
   correctingSaturation = config.read<bool>("correctingSaturation");
@@ -158,6 +159,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     stype << "ch" << i << "/S";  
     ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
   }
+  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/S");
   ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I"); 
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F"); 
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F"); 
@@ -245,6 +247,15 @@ void InputFile::CreateTree()
 	columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
 	
 	TreeEntryCounter++;
+      }
+      
+      if(usingTaggingBench)
+      {
+        if( j == taggingCrystalChannel)
+        {
+	  TreeTagging = ChainAdcChannel[j];
+	//this is the tagging crystal data
+        }
       }
     }
     
