@@ -29,6 +29,8 @@ protected:
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
   
+  
+  
   //2d histos
   TH2F                 FloodMap2D;
   TH2F                 SphericalMap;
@@ -79,7 +81,6 @@ public:
   TH2F*                GetSphericalMap(){return &SphericalMap;};
   TH2F*                GetCylindricalXMap(){return &CylindricalXMap;};
   TH2F*                GetCylindricalYMap(){return &CylindricalYMap;};
-  
   TH3F*                GetFloodMap3D(){return &FloodMap3D;};
   
   
@@ -87,9 +88,7 @@ public:
   void                 SetSphericalMap(TH2F aHisto){SphericalMap = aHisto;};
   void                 SetCylindricalXMap(TH2F aHisto){CylindricalXMap = aHisto;};
   void                 SetCylindricalYMap(TH2F aHisto){CylindricalYMap = aHisto;};
-  
   void                 SetFloodMap3D(TH3F aHisto){FloodMap3D = aHisto;};
-  
   
   
   

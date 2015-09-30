@@ -9,7 +9,7 @@
 #include <stdlib.h> 
 #include <assert.h>
 #include <fstream>
-
+#include "TError.h"
 struct Point 
 {
   float x;
@@ -21,33 +21,31 @@ struct Point
 InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 {
   
-  //temp
-  
-  fname = config.read<std::string>("chainName");
-  
-  ncrystalsx = config.read<int>("ncrystalsx");
-  ncrystalsy = config.read<int>("ncrystalsy");
-  nmppcx     = config.read<int>("nmppcx");
-  nmppcy     = config.read<int>("nmppcy");
-  nmodulex   = config.read<int>("nmodulex");
-  nmoduley   = config.read<int>("nmoduley");
-  
-  taggingPosition = config.read<float>("taggingPosition");
-  usingTaggingBench = config.read<bool>("usingTaggingBench");
-  taggingCrystalChannel = config.read<int>("taggingCrystalChannel");
-  
-  binary     = config.read<bool>("binary");
-  correctingSaturation = config.read<bool>("correctingSaturation");
-  BinaryOutputFileName = config.read<std::string>("output");
-  BinaryOutputFileName += ".bin";
-  
+  gErrorIgnoreLevel = kError;
+  //read configuration file
+  fname                       = config.read<std::string>("chainName");
+  ncrystalsx                  = config.read<int>("ncrystalsx");
+  ncrystalsy                  = config.read<int>("ncrystalsy");
+  nmppcx                      = config.read<int>("nmppcx");
+  nmppcy                      = config.read<int>("nmppcy");
+  nmodulex                    = config.read<int>("nmodulex");
+  nmoduley                    = config.read<int>("nmoduley");
+  taggingPosition             = config.read<float>("taggingPosition");
+  usingTaggingBench           = config.read<bool>("usingTaggingBench");
+  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel");
+  usingRealSimData            = config.read<bool>("usingRealSimData");
+  binary                      = config.read<bool>("binary");
+  correctingSaturation        = config.read<bool>("correctingSaturation");
+  BinaryOutputFileName        = config.read<std::string>("output");
+  BinaryOutputFileName       += ".bin";
   //read the strings that describe the input channels
-  digitizer_s    = config.read<std::string>("digitizer");
-  mppc_s         = config.read<std::string>("mppc");
-  plotPositions_s = config.read<std::string>("plotPositions");
-  xPositions_s   = config.read<std::string>("xPositions");
-  yPositions_s   = config.read<std::string>("yPositions");
-  saturation_s   = config.read<std::string>("saturation");
+  digitizer_s                 = config.read<std::string>("digitizer");
+  mppc_s                      = config.read<std::string>("mppc");
+  plotPositions_s             = config.read<std::string>("plotPositions");
+  xPositions_s                = config.read<std::string>("xPositions");
+  yPositions_s                = config.read<std::string>("yPositions");
+  saturation_s                = config.read<std::string>("saturation");
+  adcChannels                 = config.read<int>("digitizerTotalCh");
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
   config.split( mppc_f, mppc_s, "," );
@@ -93,7 +91,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   if(digitizer.size() > 16) 
   {
     std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
-//     return 1;
   }
   //feedback to the user
   std::cout << std::endl;
@@ -109,12 +106,11 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
   
-  adcChannels = config.read<int>("digitizerTotalCh");
-  inputChannels = digitizer.size();
   
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
   //------------------------------------------------------------------------------------------//  
+  inputChannels = digitizer.size();
   fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   ftree               = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
@@ -141,6 +137,12 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   // set branches for reading the input files
   fchain->SetBranchAddress("ExtendedTimeTag", &ChainExtendedTimeTag, &bChainExtendedTimeTag);
   fchain->SetBranchAddress("DeltaTimeTag", &ChainDeltaTimeTag, &bChainDeltaTimeTag);
+  if(usingRealSimData)
+  {
+    fchain->SetBranchAddress("RealX", &RealX, &bRealX);
+    fchain->SetBranchAddress("RealY", &RealY, &bRealY);
+    fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
+  }
   for(int i=0; i<adcChannels; i++)
   {
     std::stringstream sname;
@@ -168,6 +170,12 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   ftree->Branch("Theta",&TreeTheta,"Theta/F"); 
   ftree->Branch("Phi",&TreePhi,"Phi/F");
   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O"); 
+  if(usingRealSimData)
+  {
+    ftree->Branch("RealX",&TreeRealX,"RealX/F"); 
+    ftree->Branch("RealY",&TreeRealY,"RealY/F"); 
+    ftree->Branch("RealZ",&TreeRealZ,"RealZ/F"); 
+  }
 }
 
 void InputFile::CreateTree()
@@ -180,12 +188,9 @@ void InputFile::CreateTree()
   long long int counter = 0;
   
   Point point;
-  
   ofstream output_file;
-  
   if(binary)
     output_file.open(BinaryOutputFileName.c_str(), std::ios::binary);
-  
   
   for(int i = 0; i < adcChannels; i++)
   {
@@ -200,20 +205,16 @@ void InputFile::CreateTree()
   { 
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
-    
     double maxCharge = 0;
     double secondCharge = 0;
     float columnsum= 0;
     float rowsum= 0;
     float total=  0;
     TreeBadevent = false;
-//     bool badevent = false;
-    
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
     
     int TreeEntryCounter = 0;
-    
     
     for (int j = 0 ; j < 32 ; j++) //loop on input chain channels
     {
@@ -226,7 +227,6 @@ void InputFile::CreateTree()
 	  if(TreeAdcChannel[TreeEntryCounter] > saturation[TreeEntryCounter])
 	  {
 	    TreeBadevent = true;
-	    
 	    //std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
 	  }
 	  TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
@@ -240,12 +240,10 @@ void InputFile::CreateTree()
 	  maxCharge = TreeAdcChannel[TreeEntryCounter];
 	  TreeTriggerChannel = TreeEntryCounter;
 	}
-	
 	//update total, row and columnsum
 	total += TreeAdcChannel[TreeEntryCounter];
 	rowsum += TreeAdcChannel[TreeEntryCounter]*xPositions[TreeEntryCounter];
 	columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
-	
 	TreeEntryCounter++;
       }
       
@@ -265,12 +263,19 @@ void InputFile::CreateTree()
     
     if(usingTaggingBench) TreeZPosition = taggingPosition;
     
-    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX-0,2) + std::pow(TreeFloodY-0,2) + std::pow(TreeFloodZ+0,2)) ));
+    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX,2) + std::pow(TreeFloodY,2) + std::pow(TreeFloodZ,2)) ));
     TreePhi =  std::atan (TreeFloodY / TreeFloodX);
     
     point.x = TreeFloodX;
     point.y = TreeFloodY;
     point.z = TreeFloodZ;
+    
+    if(usingRealSimData)
+    {
+      TreeRealX = RealX;
+      TreeRealY = RealY;
+      TreeRealZ = RealZ;
+    }
     
     if(!TreeBadevent)
     {
@@ -315,9 +320,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 {
   //temp
   int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-  
   int moduleCounter = 0;
-  
   
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {

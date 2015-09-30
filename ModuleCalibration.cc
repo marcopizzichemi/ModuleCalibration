@@ -73,15 +73,17 @@
 
 int main (int argc, char** argv)
 {
+  
+  gStyle->SetOptStat(0);
   //----------------------------------------------------------//
   //  Check input                                             //
   //----------------------------------------------------------//
   if(argc<2) 
   {
-    std::cout << " Usage: " 							<< std::endl;
-    std::cout << " ModuleCalibration [-c config file ] <input-files> " 		<< std::endl;
+    std::cout << " Usage: " 										<< std::endl;
+    std::cout << " ModuleCalibration [-c config file ] <input-files> " 					<< std::endl;
     std::cout << "   note: -c option is optional, but if you use it, it has to be the first argument"	<< std::endl;
-    std::cout << "         without it, a configFile.cfg will be assumed" 	<< std::endl;
+    std::cout << "         without it, a configFile.cfg will be assumed" 				<< std::endl;
     return 0;
   }
   
@@ -115,74 +117,70 @@ int main (int argc, char** argv)
   }
   
   ConfigFile config(ConfigFileName);
-  
   InputFile input(argc,argv,config); // read the input chain of root files,
   input.CreateTree();                // create the TTree that will be used in analysis
   
-  int ncrystalsx = config.read<int>("ncrystalsx");
-  int ncrystalsy = config.read<int>("ncrystalsy");
-  int nmppcx     = config.read<int>("nmppcx");
-  int nmppcy     = config.read<int>("nmppcy");
-  int nmodulex   = config.read<int>("nmodulex");
-  int nmoduley   = config.read<int>("nmoduley");
-  
-  int histo1Dmax        = config.read<int>("histo1Dmax");       
-  int histo1Dbins       = config.read<int>("histo1Dbins");      
-  int histo2DchannelBin = config.read<int>("histo2DchannelBin");
-  int histo2DglobalBins = config.read<int>("histo2DglobalBins");
-  int histo3DchannelBin = config.read<int>("histo3DchannelBin");
-  int histo3DglobalBins = config.read<int>("histo3DglobalBins");
-  
-  bool saveAnalysisTree = config.read<bool>("saveAnalysisTree");
-  
-  float taggingPosition = config.read<float>("taggingPosition");
-  bool usingTaggingBench = config.read<bool>("usingTaggingBench");
+  int ncrystalsx            = config.read<int>("ncrystalsx");
+  int ncrystalsy            = config.read<int>("ncrystalsy");
+  int nmppcx                = config.read<int>("nmppcx");
+  int nmppcy                = config.read<int>("nmppcy");
+  int nmodulex              = config.read<int>("nmodulex");
+  int nmoduley              = config.read<int>("nmoduley");
+  int histo1Dmax            = config.read<int>("histo1Dmax");       
+  int histo1Dbins           = config.read<int>("histo1Dbins");      
+  int histo2DchannelBin     = config.read<int>("histo2DchannelBin");
+  int histo2DglobalBins     = config.read<int>("histo2DglobalBins");
+  int histo3DchannelBin     = config.read<int>("histo3DchannelBin");
+  int histo3DglobalBins     = config.read<int>("histo3DglobalBins");
+  bool saveAnalysisTree     = config.read<bool>("saveAnalysisTree");
+  float taggingPosition     = config.read<float>("taggingPosition");
+  bool usingTaggingBench    = config.read<bool>("usingTaggingBench");
   int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");
-  
-  
+  // set output file name
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
   
-  Module*** module;                           // create the elements
-  Mppc*** mppc;
-  Crystal*** crystal;
-  module = new Module**[nmodulex]; // make an array of module pointers
-  for(int j = 0; j < nmodulex ; j++)
-  {
-    module[j] = new Module* [nmoduley];
-  }
-  mppc = new Mppc**[nmodulex*nmppcx]; // make an array of mppc pointers
-  for(int j = 0; j < nmodulex*nmppcx ; j++)
-  {
-    mppc[j] = new Mppc* [nmoduley*nmppcy];
-  }
-  crystal = new Crystal**[nmodulex*nmppcx*ncrystalsx]; // make an array of crystal pointers
-  for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++)
-  {
-    crystal[j] = new Crystal* [nmoduley*nmppcy*ncrystalsy];
-  }
+  
+  //----------------------------------------------------------//
+  //  Creating the module and elements                        //
+  //----------------------------------------------------------//
+  // create the elements of the module
+  Module***   module;                           
+  Mppc***     mppc;
+  Crystal***  crystal;
+  // make an array of module pointers
+  module = new Module**[nmodulex]; 
+  for(int j = 0; j < nmodulex ; j++) module[j] = new Module* [nmoduley];
+  // make an array of mppc pointers
+  mppc = new Mppc**[nmodulex*nmppcx]; 
+  for(int j = 0; j < nmodulex*nmppcx ; j++) mppc[j] = new Mppc* [nmoduley*nmppcy];
+  // make an array of crystal pointers
+  crystal = new Crystal**[nmodulex*nmppcx*ncrystalsx]; 
+  for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++) crystal[j] = new Crystal* [nmoduley*nmppcy*ncrystalsy];
+  // fill the elements
+  input.FillElements(module,mppc,crystal);    
+  //----------------------------------------------------------//
   
   
-  input.FillElements(module,mppc,crystal);    // fill the elements
-  
-  
-  TTree* tree = input.GetTree();     // get the TTree, to plot the spectra
- 
+  //----------------------------------------------------------//
+  //  Plots and spectra                                       //
+  //----------------------------------------------------------//
+  // get the TTree, to plot the spectra
+  TTree* tree = input.GetTree();     
+  // prepare spectra
   TH1F* spectrum;
   TH2F* spectrum2d;
   TH3F* spectrum3d;
   std::stringstream var,cut;
   TString name;
-  
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
       TCut CutXYZ = "FloodX > -7 && FloodX < 7 && FloodY > -7 && FloodY < 7 && FloodZ > 0 && FloodZ < 1";
-      
       std::cout << "Generating global spectra..." << std::endl;
-      // GLOBAL SPECTRA
       
+      // GLOBAL SPECTRA
       // Flood histogram
       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
       tree->Draw("FloodY:FloodX >> spectrum2d","","COLZ");
@@ -223,8 +221,6 @@ int main (int argc, char** argv)
       spectrum2d->GetYaxis()->SetTitle("Theta");
       module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
       delete spectrum2d;
-      
-      
       //3D plot
       spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
@@ -233,25 +229,20 @@ int main (int argc, char** argv)
       spectrum3d->SetTitle(name);
       spectrum3d->GetXaxis()->SetTitle("U");
       spectrum3d->GetYaxis()->SetTitle("V");
-      spectrum3d->GetYaxis()->SetTitle("W");
+      spectrum3d->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(*spectrum3d);
       delete spectrum3d;
-      
       //spectra for each mppc
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  
 	  int channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
 	  std::cout << "Generating spectra for MPPC " << mppc[iMppc][jMppc]->GetLabel() << " ..." << std::endl;
-	  
 	  cut << "TriggerChannel == " << channel  ;
 	  TCut CutTrigger = cut.str().c_str();
 	  cut.str("");
 	  //same as the global ones, but selecting on TriggerChannel
-	  
-	  
 	  // raw spectrum
 	  spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);
 	  channel = mppc[iMppc][jMppc]->GetDigitizerChannel();
@@ -277,7 +268,6 @@ int main (int argc, char** argv)
 	  mppc[iMppc][jMppc]->SetTriggerSpectrum(*spectrum);
 	  var.str("");
 	  delete spectrum;
-	  
 	  // Flood histogram
 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 	  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger,"COLZ");
@@ -318,9 +308,6 @@ int main (int argc, char** argv)
 	  spectrum2d->GetYaxis()->SetTitle("Theta");
 	  mppc[iMppc][jMppc]->SetCylindricalYMap(*spectrum2d);
 	  delete spectrum2d;
-	  
-	  
-	  
 	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[iMppc][jMppc]->GetLabel();
@@ -328,15 +315,16 @@ int main (int argc, char** argv)
 	  spectrum3d->SetTitle(name);
 	  spectrum3d->GetXaxis()->SetTitle("U");
 	  spectrum3d->GetYaxis()->SetTitle("V");
-	  spectrum3d->GetYaxis()->SetTitle("W");
+	  spectrum3d->GetZaxis()->SetTitle("W");
 	  mppc[iMppc][jMppc]->SetFloodMap3D(*spectrum3d);
 	  delete spectrum3d;
-	  
-	  
 	}
       }
     }
   }
+  //----------------------------------------------------------//
+  
+  
   
   //create the crystal 
 //   Crystal* 
@@ -363,11 +351,14 @@ int main (int argc, char** argv)
 //   }
   
   
+  //----------------------------------------------------------//
+  // Canvases                                                 //
+  //----------------------------------------------------------//
   //multicanvases
   TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
   TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
-  TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",1200,800);
-  TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",1200,800);
+  TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
+  TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
   TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
   TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
   TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
@@ -378,12 +369,11 @@ int main (int argc, char** argv)
   SphericalCanvas->Divide(4,4);
   CylindricalXCanvas->Divide(4,4);
   CylindricalYCanvas->Divide(4,4);
-  
   //canvases for the global plots
-  TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",1200,800);
+  TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   GlobalFlood2D->cd();
   module[0][0]->GetFloodMap2D()->Draw("COLZ");
-  TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",1200,800);
+  TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
   GlobalFlood3D->cd();
   module[0][0]->GetFloodMap3D()->Draw();
   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
@@ -395,11 +385,9 @@ int main (int argc, char** argv)
   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
   GlobalCylindricalY->cd();
   module[0][0]->GetCylindricalYMap()->Draw("COLZ");
-  
   //canvas for the tagging crystal
   TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
-  
-  
+  //draw canvases
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
   for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
   {
@@ -430,20 +418,21 @@ int main (int argc, char** argv)
   }
   
   
-
+  //----------------------------------------------------------//
+  // Write output to root file(s)                             //
+  //----------------------------------------------------------//
+  //write output plots
   TFile* fPlots = new TFile(outputFileName.c_str(),"recreate");
   fPlots->cd();
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
-      
       GlobalFlood2D->Write();
       GlobalFlood3D->Write();
       GlobalSpherical->Write();
       GlobalCylindricalX->Write();
       GlobalCylindricalY->Write();
-
       RawCanvas->Write();
       TriggerCanvas->Write();
       FloodHistoCanvas->Write();
@@ -461,8 +450,6 @@ int main (int argc, char** argv)
       }
     }
   }
-  
-  
   if(saveAnalysisTree)
   {
     std::cout << "Saving analysis TTree to a file temp.root" << std::endl;
@@ -471,9 +458,8 @@ int main (int argc, char** argv)
     tree->Write();
     fFile->Close();
   }
-  
   fPlots->Close();
-  //----------------------------
+  //----------------------------------------------------------//
   
   delete crystal;
   delete mppc;

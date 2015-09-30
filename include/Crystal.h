@@ -10,6 +10,9 @@ class Crystal : public Element
 {
 private:
   Element* parentMppc = NULL;
+  //spectra and co.
+  TH1F                 Spectrum;
+  TH1F                 HistoW;
 //   int         mppcID;
   
 public:
@@ -22,7 +25,11 @@ public:
   void                      SetMppc(Mppc *amppc);
   
   
+  TH1F*                GetSpectrum(){return &Spectrum;};
+  TH1F*                GetHistoW(){return &HistoW;};
   
+  void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
+  void                 SetHistoW(TH1F aHisto){HistoW = aHisto;};
   
   void PrintGlobal();
   void PrintSpecific();

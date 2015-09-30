@@ -57,6 +57,7 @@ private:
   
   float                          taggingPosition;
   bool                           usingTaggingBench;
+  bool                           usingRealSimData;
   int                            taggingCrystalChannel;
   
   
@@ -64,11 +65,17 @@ private:
   ULong64_t     ChainExtendedTimeTag;
   ULong64_t     ChainDeltaTimeTag;
   Short_t      *ChainAdcChannel;
+  Float_t       RealX;
+  Float_t       RealY;
+  Float_t       RealZ;
   
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;
   TBranch      *bChainDeltaTimeTag;
   TBranch     **bChainAdcChannel;
+  TBranch      *bRealX;
+  TBranch      *bRealY;
+  TBranch      *bRealZ;
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;
   ULong64_t     TreeDeltaTimeTag;
@@ -82,8 +89,9 @@ private:
   Float_t       TreePhi;
   Bool_t        TreeBadevent;
   Float_t       TreeZPosition;
-  
-  
+  Float_t       TreeRealX;
+  Float_t       TreeRealY;
+  Float_t       TreeRealZ;
 public:
   
   InputFile     (int argc, char** argv, ConfigFile& config);
