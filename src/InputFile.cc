@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <fstream>
 #include "TError.h"
+#include "TEllipse.h"
+
 struct Point 
 {
   float x;
@@ -24,7 +26,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   gErrorIgnoreLevel = kError;
   //read configuration file
   fname                       = config.read<std::string>("chainName");
-  ncrystalsx                  = config.read<int>("ncrystalsx");
+  ncrystalsx                  = config.read<int>("ncrystalsx",2);
   ncrystalsy                  = config.read<int>("ncrystalsy");
   nmppcx                      = config.read<int>("nmppcx");
   nmppcy                      = config.read<int>("nmppcy");
@@ -88,6 +90,110 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
   
+  //read strings that describes crystals
+  
+  
+  //a string for input for each crystal
+  crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
+  for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
+  //crystal on
+  crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
+  for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
+  {
+    crystalIsOn[i] = new bool[ncrystalsy*nmppcy*nmoduley];
+    for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++) 
+    {
+      crystalIsOn[i][j] = false;
+    }
+  }
+  //a float vector for each crystal
+  crystaldata = new float**[ncrystalsx*nmppcx*nmodulex];
+  for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
+  {
+    crystaldata[i] = new float*[ncrystalsy*nmppcy*nmoduley];
+    for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++) 
+    { 
+      crystaldata[i][j] = new float[5];
+      for (int k = 0 ; k < 5 ; k++)
+      {
+	crystaldata[i][j][k] = 0;
+      }
+    }
+  }
+  
+  int crystalCounter = 0;
+  for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
+  {
+    std::stringstream crystalstring;
+    crystalstring << "crystal" << crystalCounter;
+    std::string tempString;
+    std::vector<std::string> tempStringVector;
+    tempString = config.read<std::string>(crystalstring.str().c_str(),"0,0,0,0,0,0,0"); //FIXME i and j here are not the i and j set on the crystals!!! actually, in the loop for the crystals, below, it's wrong as well, as we don't consider the multiple modules case!! it will work for one module, it has to be fixed for multiple ones.
+    
+//     std::cout << crystalCounter << " " << crystalstring.str() << " " << tempString /*<< std::endl*/;
+    
+    config.split( tempStringVector, tempString, "," );
+    for(int i = 0 ; i < tempStringVector.size() ; i++)
+    {
+      config.trim(tempStringVector[i]);
+      // 	crystaldata.push_back(atof(crystal_f[i].c_str()));
+    }
+    int CryIDi = atoi(tempStringVector[0].c_str());
+    int CryIDj = atoi(tempStringVector[1].c_str());
+    
+    for(int i = 0 ; i < 5 ; i++)
+    {
+      crystaldata[CryIDi][CryIDj][i] = atof(tempStringVector[i+2].c_str());
+//       std::cout << " " <<  crystaldata[CryIDi][CryIDj][i] ;
+    }
+    
+    if(tempString != "0,0,0,0,0,0,0")
+      crystalIsOn[CryIDi][CryIDj] = true;
+    
+//     std::cout << " " << crystalIsOn[CryIDi][CryIDj] << std::endl;
+    
+    crystalCounter++;
+  }
+  
+  //   crystalu_s              = config.read<std::string>("crystalu");
+  //   crystalv_s              = config.read<std::string>("crystalv");
+  //   crystalwu_s             = config.read<std::string>("crystalwu");
+  //   crystalwv_s             = config.read<std::string>("crystalwv");
+  //   crystalt_s              = config.read<std::string>("crystalt");
+  //   config.split( crystalu_f, crystalu_s, "," );
+  //   config.split( crystalv_f, crystalv_s, "," );
+  //   config.split( crystalwu_f, crystalwu_s, "," );
+  //   config.split( crystalwv_f, crystalwv_s, "," );
+  //   config.split( crystalt_f, crystalt_s, "," );
+  //   for(int i = 0 ; i < crystalu_f.size() ; i++)
+  //   {
+  //     config.trim(crystalu_f[i]);
+  //     crystalu.push_back(atof(crystalu_f[i].c_str()));
+  //   }
+  //   for(int i = 0 ; i < crystalv_f.size() ; i++)
+  //   {
+  //     config.trim(crystalv_f[i]);
+  //     crystalv.push_back(atof(crystalv_f[i].c_str()));
+  //   }
+  //   for(int i = 0 ; i < crystalwu_f.size() ; i++)
+  //   {
+  //     config.trim(crystalwu_f[i]);
+  //     crystalwu.push_back(atof(crystalwu_f[i].c_str()));
+  //   }
+  //   for(int i = 0 ; i < crystalwv_f.size() ; i++)
+  //   {
+  //     config.trim(crystalwv_f[i]);
+  //     crystalwv.push_back(atof(crystalwv_f[i].c_str()));
+  //   }
+  //   for(int i = 0 ; i < crystalt_f.size() ; i++)
+  //   {
+  //     config.trim(crystalt_f[i]);
+  //     crystalt.push_back(atof(crystalt_f[i].c_str()));
+  //   }
+  
+  
+  
+  
   if(digitizer.size() > 16) 
   {
     std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
@@ -105,6 +211,16 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
+  
+  //crystal ON for analysis
+  //   crystalIsOn = new bool* [nmodulex*nmppcx*ncrystalsx]; 
+  //   for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++) crystalIsOn[j] = new bool [nmoduley*nmppcy*ncrystalsy];
+  //   for(int i = 0; i < nmodulex*nmppcx*ncrystalsx; i++)
+  //     for(int j = 0; j < nmoduley*nmppcy*ncrystalsy; j++)
+  //       crystalIsOn = false;
+  
+  
+  
   
   
   //------------------------------------------------------------------------------------------//
@@ -249,11 +365,11 @@ void InputFile::CreateTree()
       
       if(usingTaggingBench)
       {
-        if( j == taggingCrystalChannel)
-        {
+	if( j == taggingCrystalChannel)
+	{
 	  TreeTagging = ChainAdcChannel[j];
-	//this is the tagging crystal data
-        }
+	  //this is the tagging crystal data
+	}
       }
     }
     
@@ -311,7 +427,7 @@ void InputFile::CreateTree()
   //close the binary file if it was opened
   if(binary) 
     output_file.close();
-//   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
+  //   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
   //std::cout << "Bad events = \t" << badEvents << std::endl;
   
 }
@@ -365,6 +481,21 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   
   int crystalCounter = 0;
   
+  
+//   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+//   {
+//     for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+//     {
+//       for (int zz = 0 ; zz < 5 ; zz++)
+//       {
+// 	std::cout << crystaldata[iCrystal][jCrystal][zz] << " ";
+//       }
+//       std::cout << std::endl;
+//     }
+//     
+//   }
+  
+  
   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
   {
     for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
@@ -377,13 +508,20 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       crystal[iCrystal][jCrystal]->SetI(iCrystal); 
       crystal[iCrystal][jCrystal]->SetJ(jCrystal);
       crystal[iCrystal][jCrystal]->SetParentName(mppc[iCrystal/ncrystalsx][jCrystal/ncrystalsy]->GetName());
+      crystal[iCrystal][jCrystal]->SetCrystalOn(crystalIsOn[iCrystal][jCrystal]);
+      double u  = crystaldata[iCrystal][jCrystal][0];
+      double v  = crystaldata[iCrystal][jCrystal][1];
+      double wu = crystaldata[iCrystal][jCrystal][2];
+      double wv = crystaldata[iCrystal][jCrystal][3];
+      double t  = crystaldata[iCrystal][jCrystal][4];
+//       std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
+      crystal[iCrystal][jCrystal]->SetEllipses(u,v,wu,wv,t);
+      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
+      crystal[iCrystal][jCrystal]->SetGraphicalCut(*ellipse);
+//       crystal[iCrystal][jCrystal]->Print();
       crystalCounter++;
     }
   }
-  
-    
-  
-  
   
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -408,42 +546,42 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   
   
   
-//   std::cout << "--------------------------------------------" << std::endl;
-//   module[0][0]->Print();
-//   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       module[iModule][jModule]->Print();
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
-// 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-// 	  {
-// 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-// 	    {
-// 	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
-// 	    }
-// 	  }
-// 	}
-//       }
-//     }
-//   }
-// //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-// //   std::cout << "--------------------------------------------" << std::endl;
-// //   std::cout << std::endl;
-//   
-//   // draw a map
-//   
-//   // MPPC labels
-//   
-//   
+  //   std::cout << "--------------------------------------------" << std::endl;
+  //   module[0][0]->Print();
+  //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+  //   for(int iModule = 0; iModule < nmodulex ; iModule++)
+  //   {
+  //     for(int jModule = 0; jModule < nmoduley ; jModule++)
+  //     {
+  //       module[iModule][jModule]->Print();
+  //       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+  //       {
+  // 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+  // 	{
+  // 	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
+  // 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
+  // 	  {
+  // 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
+  // 	    {
+  // 	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
+  // 	    }
+  // 	  }
+  // 	}
+  //       }
+  //     }
+  //   }
+  // //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
+  // //   std::cout << "--------------------------------------------" << std::endl;
+  // //   std::cout << std::endl;
+  //   
+  //   // draw a map
+  //   
+  //   // MPPC labels
+  //   
+  //   
   for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
   {
-//     std::cout << "|---"
+    //     std::cout << "|---"
     for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
       
@@ -461,9 +599,18 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     std::cout << std::endl;
   }
   
+  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+  {
+    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+    {
+      std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
+    } 
+    std::cout << std::endl;
+  }
+  
+  
   
 }
- 
 
 
 
@@ -471,6 +618,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 
 
 
-  
-  
-  
+
+
+

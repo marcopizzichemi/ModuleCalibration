@@ -15,7 +15,7 @@ class InputFile
   
   
 private:
-
+  
   TChain*                        fchain;
   std::string                    fname;
   TTree*                         ftree;
@@ -44,6 +44,10 @@ private:
   std::vector <float>            xPositions;
   std::vector <float>            yPositions;
   std::vector <float>            saturation;
+  std::string                    **crystal_s;
+  std::vector <std::string>      crystal_f;
+  float                          ***crystaldata;
+  bool                           **crystalIsOn;
   
   int                            ncrystalsx;
   int                            ncrystalsy;
@@ -92,9 +96,15 @@ private:
   Float_t       TreeRealX;
   Float_t       TreeRealY;
   Float_t       TreeRealZ;
+
 public:
   
-  InputFile     (int argc, char** argv, ConfigFile& config);
+  InputFile(int argc, char** argv, ConfigFile& config);
+//   ~InputFile();
+  
+  static InputFile*  Instance() { return fInstance; };
+  static InputFile*  fInstance;
+  
   TChain*       GetChain() const { return fchain; };
   TTree*        GetTree() const { return ftree; };
   void          CreateTree();
