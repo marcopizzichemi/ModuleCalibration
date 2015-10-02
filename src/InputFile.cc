@@ -578,7 +578,11 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   //   
   //   // MPPC labels
   //   
-  //   
+  // 
+  
+  std::cout << std::endl;
+  std::cout << "MPPC ID mapping ";
+  std::cout << std::endl;
   for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
   {
     //     std::cout << "|---"
@@ -590,6 +594,10 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     std::cout << std::endl;
   }
   
+  
+  std::cout << std::endl;
+  std::cout << "Digitizer Channels mapping ";
+  std::cout << std::endl;
   for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
   {
     for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
@@ -599,9 +607,12 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     std::cout << std::endl;
   }
   
-  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+  std::cout << std::endl;
+  std::cout << "Crystal ID mapping ";
+  std::cout << std::endl;
+  for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
   {
-    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+    for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
     {
       std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
     } 
