@@ -607,7 +607,7 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   // Global distributions                                     //
   //----------------------------------------------------------//
-  TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",50,0,10000);
+  TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",50,0,12000);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",50,0,1);
@@ -616,9 +616,14 @@ int main (int argc, char** argv)
   TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",50,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
-  TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,4);
+  TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
   WDoiDistro->GetXaxis()->SetTitle("doi");
   WDoiDistro->GetYaxis()->SetTitle("N");
+  TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  WfwhmVsIJ->GetXaxis()->SetTitle("i");
+  WfwhmVsIJ->GetYaxis()->SetTitle("j");
+  WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
+  
   
   //----------------------------------------------------------//
   // Write output to root file(s)                             //
@@ -690,7 +695,8 @@ int main (int argc, char** argv)
 		PeakPositionDistro->Fill(CurrentCrystal->GetPhotopeakPosition());
 		PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
-		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.015);
+		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158);
+		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetSpectrum()->GetName());
@@ -716,6 +722,8 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		
+		
 	      }
 	    }
 	  }
@@ -729,6 +737,11 @@ int main (int argc, char** argv)
       PeakEnergyResolutionDistro->Write();
       WfwhmDistro->Write();
       WDoiDistro->Write();
+      TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
+      C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
+      C_WfwhmVsIJ->cd();
+      WfwhmVsIJ->Draw("LEGO2");
+      C_WfwhmVsIJ->Write();
     }
   }
   if(saveAnalysisTree)
