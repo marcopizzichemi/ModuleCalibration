@@ -636,7 +636,7 @@ int main (int argc, char** argv)
   //plots to summarize the values of relevant variable found on each crystal
   //--Distribution of photopeak positions, in ADC channels
   //histogram
-  TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",50,0,12000);
+  TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",100,0,12000);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   //2d histogram
@@ -646,7 +646,7 @@ int main (int argc, char** argv)
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
   //--Distribution of energy resolutions FHWM
   //histogram
-  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",50,0,1);
+  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
   PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   //2d histogram
@@ -656,7 +656,7 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
   //Distribution of FWHM of W plots
   //histogram of fwhm
-  TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",50,0,0.5);
+  TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",100,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
   //2d histogram of fwhm
@@ -665,7 +665,7 @@ int main (int argc, char** argv)
   WfwhmVsIJ->GetYaxis()->SetTitle("i");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
   //histogram of rms
-  TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",50,0,0.5);
+  TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",100,0,0.5);
   WrmsDistro->GetXaxis()->SetTitle("W");
   WrmsDistro->GetYaxis()->SetTitle("N");
   //2d histogram of rms
