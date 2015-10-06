@@ -474,7 +474,7 @@ int main (int argc, char** argv)
 		double rms = spectrum->GetRMS();
 		CurrentCrystal->SetHistoW(*spectrum);
 		CurrentCrystal->SetHistoWfwhm(fwhm);
-		CurrentCrystal->SetHistoWfwhm(rms);
+		CurrentCrystal->SetHistoWrms(rms);
 		var.str("");
 		sname.str("");
 		delete spectrum;
