@@ -459,7 +459,6 @@ int main (int argc, char** argv)
 		delete spectrum;
 		//-----------------------------------------------------------------------
 		
-		
 		//w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
 		spectrum = new TH1F("spectrum","spectrum",250,0,1);	  
 		var << "(ch" << channel << "/(" << SumChannels << ")) >> spectrum";
@@ -490,6 +489,18 @@ int main (int argc, char** argv)
 		sname.str("");
 		delete spectrum2d;
 		
+		// Histogram 2d of the photopeak time evolution
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",histo1Dbins,0,histo1Dmax,250,0,tree->GetMaximum("ExtendedTimeTag"));
+		var << SumChannels << ":ExtendedTimeTag >> spectrum2d";
+		tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
+		spectrum2d->SetName(sname.str().c_str()); 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("ExtendedTimeTag");
+		spectrum2d->GetYaxis()->SetTitle("ADC channels");
+		var.str("");
+		sname.str("");
+		delete spectrum2d;
 	      }
 	      
 	    }
@@ -748,7 +759,14 @@ int main (int argc, char** argv)
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2D()->GetName());
 		C_spectrum->cd();
-		CurrentCrystal->GetFloodMap2D()->Draw();
+		CurrentCrystal->GetFloodMap2D()->Draw("COLZ");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		C_spectrum->SetName(CurrentCrystal->GetVersusTime()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetVersusTime()->Draw("COLZ");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
