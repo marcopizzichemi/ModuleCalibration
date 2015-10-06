@@ -641,8 +641,8 @@ int main (int argc, char** argv)
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   //2d histogram
   TH2F *PeakPositionVsIJ = new TH2F("Distribution photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  PeakPositionVsIJ->GetXaxis()->SetTitle("i");
-  PeakPositionVsIJ->GetYaxis()->SetTitle("j");
+  PeakPositionVsIJ->GetXaxis()->SetTitle("j");
+  PeakPositionVsIJ->GetYaxis()->SetTitle("i");
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
   //--Distribution of energy resolutions FHWM
   //histogram
@@ -651,8 +651,8 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Distribution photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  EnergyResolutionVsIJ->GetXaxis()->SetTitle("i");
-  EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
+  EnergyResolutionVsIJ->GetXaxis()->SetTitle("j");
+  EnergyResolutionVsIJ->GetYaxis()->SetTitle("i");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
   //Distribution of FWHM of W plots
   //histogram of fwhm
@@ -661,8 +661,8 @@ int main (int argc, char** argv)
   WfwhmDistro->GetYaxis()->SetTitle("N");
   //2d histogram of fwhm
   TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  WfwhmVsIJ->GetXaxis()->SetTitle("i");
-  WfwhmVsIJ->GetYaxis()->SetTitle("j");
+  WfwhmVsIJ->GetXaxis()->SetTitle("j");
+  WfwhmVsIJ->GetYaxis()->SetTitle("i");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
   //histogram of rms
   TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",50,0,0.5);
@@ -670,8 +670,8 @@ int main (int argc, char** argv)
   WrmsDistro->GetYaxis()->SetTitle("N");
   //2d histogram of rms
   TH2F *WrmsVsIJ = new TH2F("Distribution of RMS in W plots VS. crystal position i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  WrmsVsIJ->GetXaxis()->SetTitle("i");
-  WrmsVsIJ->GetYaxis()->SetTitle("j");
+  WrmsVsIJ->GetXaxis()->SetTitle("j");
+  WrmsVsIJ->GetYaxis()->SetTitle("i");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
   
   
