@@ -27,6 +27,7 @@ private:
   float                peakSigma;            // sigma (after fitting) for the photopeak
   TF1                  Fit;                  // fit function (it's a gaussian)
   double               w_fwhm;               // width at half maximum for the w histogram
+  double               w_rms;                // rms of w histogram
   
   
 public:
@@ -41,6 +42,7 @@ public:
   TH1F*                GetHistoW(){return &HistoW;};
   TF1*                 GetFit(){return &Fit;};
   double               GetWfwhm(){return w_fwhm;};
+  double               GetWrms(){return w_rms;};
   TCut                 GetCrystalCut(){return Ellipses;};
   TEllipse*            GetGraphicalCut(){return &GraphicalCut;};
   float                GetPhotopeakPosition(){return peakPosition;};
@@ -49,12 +51,14 @@ public:
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return &VersusTime;};
   
+  
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
   void                 SetHighlightedSpectrum(TH1F aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHistoW(TH1F aHisto){HistoW = aHisto;};
   void                 SetFit(TF1 aFit){Fit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
+  void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetEllipses(double u,double v,double a,double b,double t);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};

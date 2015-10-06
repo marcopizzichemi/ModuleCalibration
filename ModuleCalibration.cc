@@ -471,8 +471,10 @@ int main (int argc, char** argv)
 		int bin1 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/2);
 		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/2);
 		double fwhm = spectrum->GetBinCenter(bin2) - spectrum->GetBinCenter(bin1);
+		double rms = spectrum->GetRMS();
 		CurrentCrystal->SetHistoW(*spectrum);
 		CurrentCrystal->SetHistoWfwhm(fwhm);
+		CurrentCrystal->SetHistoWfwhm(rms);
 		var.str("");
 		sname.str("");
 		delete spectrum;
@@ -490,7 +492,7 @@ int main (int argc, char** argv)
 		delete spectrum2d;
 		
 		// Histogram 2d of the photopeak time evolution
-		spectrum2d = new TH2F("spectrum2d","spectrum2d",histo1Dbins,0,histo1Dmax,250,0,tree->GetMaximum("ExtendedTimeTag"));
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",250,0,tree->GetMaximum("ExtendedTimeTag"),histo1Dbins,0,histo1Dmax);
 		var << SumChannels << ":ExtendedTimeTag >> spectrum2d";
 		tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
 		sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
@@ -498,6 +500,7 @@ int main (int argc, char** argv)
 		spectrum2d->SetTitle(sname.str().c_str());
 		spectrum2d->GetXaxis()->SetTitle("ExtendedTimeTag");
 		spectrum2d->GetYaxis()->SetTitle("ADC channels");
+		CurrentCrystal->SetVersusTime(*spectrum2d);
 		var.str("");
 		sname.str("");
 		delete spectrum2d;
@@ -652,15 +655,26 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
   //Distribution of FWHM of W plots
-  //histogram
+  //histogram of fwhm
   TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",50,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
-  //2d histogram
+  //2d histogram of fwhm
   TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WfwhmVsIJ->GetXaxis()->SetTitle("i");
   WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
+  //histogram of rms
+  TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",50,0,0.5);
+  WrmsDistro->GetXaxis()->SetTitle("W");
+  WrmsDistro->GetYaxis()->SetTitle("N");
+  //2d histogram of rms
+  TH2F *WrmsVsIJ = new TH2F("Distribution of RMS in W plots VS. crystal position i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  WrmsVsIJ->GetXaxis()->SetTitle("i");
+  WrmsVsIJ->GetYaxis()->SetTitle("j");
+  WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
+  
+  
   //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
   TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
   WDoiDistro->GetXaxis()->SetTitle("doi");
@@ -738,6 +752,9 @@ int main (int argc, char** argv)
 		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
 		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
+		WrmsDistro->Fill(CurrentCrystal->GetWrms());
+		WrmsVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWrms());
+		
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetSpectrum()->GetName());
@@ -763,7 +780,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetVersusTime()->GetName());
 		C_spectrum->cd();
 		CurrentCrystal->GetVersusTime()->Draw("COLZ");
@@ -781,12 +798,19 @@ int main (int argc, char** argv)
       PeakEnergyResolutionDistro->Write();
       WfwhmDistro->Write();
       WDoiDistro->Write();
+      WrmsDistro->Write();
       
       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
       C_WfwhmVsIJ->cd();
       WfwhmVsIJ->Draw("LEGO2");
       C_WfwhmVsIJ->Write();
+      
+      TCanvas *C_WrmsVsIJ = new TCanvas("C_WrmsVsIJ","C_WrmsVsIJ",800,800);
+      C_WrmsVsIJ->SetName(WrmsVsIJ->GetName());
+      C_WrmsVsIJ->cd();
+      WrmsVsIJ->Draw("LEGO2");
+      C_WrmsVsIJ->Write();
       
       TCanvas *C_PeakPositionVsIJ = new TCanvas("C_PeakPositionVsIJ","C_PeakPositionVsIJ",800,800);
       C_PeakPositionVsIJ->SetName(PeakPositionVsIJ->GetName());
