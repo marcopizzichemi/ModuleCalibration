@@ -1,7 +1,6 @@
 #include <iostream>
 #include "Element.h"
 
-
 Element::Element()
 {
   //default constructor
@@ -17,31 +16,6 @@ Element::Element(const Element &obj)
 {
   //copy constructor
 }
-
-// Element::~Element()
-// {
-//   //destructor
-// }
-
-// 
-// void Element::MakeChildrenPointers(int i, int j)
-// {
-//   iChildren = i;   // this sets the number of iChildren in this element
-//   jChildren = j;   // this sets the number of jChildren in this element
-//   pChild = new Element** [i];
-//   for(int k = 0 ; k < i ; k++)
-//   {
-//     pChild[k] = new Element* [j];
-//   }
-// }
-
-// void Element::SetGlobalTag(int module, int mppcx, int mppcy, int cryx , int cryy)
-// {
-//   std::stringstream stream;
-//   stream << module << "-" << mppcx << "." << mppcy << "-" << cryx << "." << cryy;
-//   GlobalTag = stream.str();
-// }
-
 
 void Element::PrintGlobal()
 {
@@ -62,5 +36,3 @@ void Element::PrintSpecific()
 {
 //   std::cout << "Abstract Element, nothing specific to print" << std::endl;
 }
-
-

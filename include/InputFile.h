@@ -1,3 +1,9 @@
+// InputFile.h
+// this class reads the input tchain and generates the TTree that will be used for the analysis /plot production
+// Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
+// makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
+// the config file. Mainly it's the parent sons structure.
+
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
 
@@ -13,103 +19,98 @@
 class InputFile
 {
   
-  
 private:
   
-  TChain*                        fchain;
-  std::string                    fname;
-  TTree*                         ftree;
-  int                            inputChannels;
-  int                            adcChannels;
-  bool                           DigitizerChannelOn[32];
-  
+  TChain*                        fchain;                             // pointer to input TChain
+  std::string                    fname;                              // name of the input TChain
+  TTree*                         ftree;                              // pointer to analysis TTree
+  int                            inputChannels;                      // number of input channels
+  int                            adcChannels;                        // number of output channels in the adc in use (32 for the CAEN DT5740)
+  bool                           *DigitizerChannelOn;                // for each channel, if it's on or not. Meaning if it is specified in the config file "digitizer" key
   //variables read from the config file 
-  std::string                    ConfigFileName;
-  std::string                    chainName; 
-  std::string                    digitizer_s;    
-  std::string                    mppc_s;         
-  std::string                    plotPositions_s;
-  std::string                    xPositions_s;   
-  std::string                    yPositions_s;  
-  std::string                    saturation_s;
-  std::vector <std::string>      digitizer_f;
-  std::vector <std::string>      mppc_f;
-  std::vector <std::string>      plotPositions_f;
-  std::vector <std::string>      xPositions_f;
-  std::vector <std::string>      yPositions_f;
-  std::vector <std::string>      saturation_f;
-  std::vector <int>              digitizer;
-  std::vector <std::string>      mppc_label;
-  std::vector <int>              plotPositions;
-  std::vector <float>            xPositions;
-  std::vector <float>            yPositions;
-  std::vector <float>            saturation;
-  std::string                    **crystal_s;
-  std::vector <std::string>      crystal_f;
-  float                          ***crystaldata;
-  bool                           **crystalIsOn;
-  
-  int                            ncrystalsx;
-  int                            ncrystalsy;
-  int                            nmppcx;
-  int                            nmppcy;
-  int                            nmodulex;
-  int                            nmoduley;
-  std::string                    BinaryOutputFileName;
-  bool                           binary;
-  bool                           correctingSaturation;
-  
-  float                          taggingPosition;
-  bool                           usingTaggingBench;
-  bool                           usingRealSimData;
-  int                            taggingCrystalChannel;
-  
+  std::string                    ConfigFileName;                     // name of the config file
+//   std::string                    chainName; 
+  std::string                    digitizer_s;                        // input string of the digitizer key from config file 
+  std::string                    mppc_s;                             // input string of the mppc key from config file 
+  std::string                    plotPositions_s;                    // input string of the plotPositions key from config file 
+  std::string                    xPositions_s;                       // input string of the xPositions key from config file 
+  std::string                    yPositions_s;                       // input string of the yPositions key from config file 
+  std::string                    saturation_s;                       // input string of the saturation key from config file 
+  std::vector <std::string>      digitizer_f;                        // tokenization of above strings 
+  std::vector <std::string>      mppc_f;                             // tokenization of above strings 
+  std::vector <std::string>      plotPositions_f;                    // tokenization of above strings 
+  std::vector <std::string>      xPositions_f;                       // tokenization of above strings 
+  std::vector <std::string>      yPositions_f;                       // tokenization of above strings 
+  std::vector <std::string>      saturation_f;                       // tokenization of above strings 
+  std::vector <int>              digitizer;                          // above tokenized string transformed in the proper variable types
+  std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
+  std::vector <int>              plotPositions;                      // above tokenized string transformed in the proper variable types
+  std::vector <float>            xPositions;                         // above tokenized string transformed in the proper variable types
+  std::vector <float>            yPositions;                         // above tokenized string transformed in the proper variable types
+  std::vector <float>            saturation;                         // above tokenized string transformed in the proper variable types
+  std::string                    **crystal_s;                        // array of string, one for each crystal input by the user in the config file
+  std::vector <std::string>      crystal_f;                          // tokenized version
+  float                          ***crystaldata;                     // i,j matrix with data of the above string transformed in float
+  bool                           **crystalIsOn;                      // i,j matrix with crystal ON/OFF
+  // variable for the module(s) structure
+  int                            ncrystalsx;                         // number of crystals in x direction per mppc 
+  int                            ncrystalsy;                         // number of crystals in y direction per mppc 
+  int                            nmppcx;                             // number of mppc in x direction per mppc 
+  int                            nmppcy;                             // number of mppc in y direction per mppc 
+  int                            nmodulex;                           // number of modules in x direction per mppc 
+  int                            nmoduley;                           // number of modules in y direction per mppc 
+  // 
+  std::string                    BinaryOutputFileName;               // name of the output binary file (if selected)
+  bool                           binary;                             // true if the user wants a binary output, false otherwise
+  bool                           correctingSaturation;               // true if the input dataset will be corrected for saturation
+  float                          taggingPosition;                    // tagging DOI bench position
+  bool                           usingTaggingBench;                  // true if the input datasets uses the DOI tagging
+  bool                           usingRealSimData;                   // true if the "real" gamma interaction point is used (of course valid only for simulation datasets)
+  int                            taggingCrystalChannel;              // channel of the tagging crystal, only for DOI bench data
   
   //variables for the input TChain
-  ULong64_t     ChainExtendedTimeTag;
-  ULong64_t     ChainDeltaTimeTag;
-  Short_t      *ChainAdcChannel;
-  Float_t       RealX;
-  Float_t       RealY;
-  Float_t       RealZ;
+  ULong64_t     ChainExtendedTimeTag;                                // extended time tag
+  ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous event
+  Short_t      *ChainAdcChannel;                                     // input TChain data
+  Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
+  Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
+  Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
   
   //branches for the input TChain
-  TBranch      *bChainExtendedTimeTag;
-  TBranch      *bChainDeltaTimeTag;
-  TBranch     **bChainAdcChannel;
-  TBranch      *bRealX;
-  TBranch      *bRealY;
-  TBranch      *bRealZ;
+  TBranch      *bChainExtendedTimeTag;                               // branches for above data
+  TBranch      *bChainDeltaTimeTag;                                  // branches for above data
+  TBranch     **bChainAdcChannel;                                    // branches for above data
+  TBranch      *bRealX;                                              // branches for above data
+  TBranch      *bRealY;                                              // branches for above data
+  TBranch      *bRealZ;                                              // branches for above data
   //variables for the analysis TTree
-  ULong64_t     TreeExtendedTimeTag;
-  ULong64_t     TreeDeltaTimeTag;
-  Short_t      *TreeAdcChannel;
-  int           TreeTriggerChannel;
-  Short_t       TreeTagging;
-  Float_t       TreeFloodX;
-  Float_t       TreeFloodY;
-  Float_t       TreeFloodZ;
-  Float_t       TreeTheta;
-  Float_t       TreePhi;
-  Bool_t        TreeBadevent;
-  Float_t       TreeZPosition;
-  Float_t       TreeRealX;
-  Float_t       TreeRealY;
-  Float_t       TreeRealZ;
+  ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
+  ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
+  Short_t      *TreeAdcChannel;                                      // channels data for this event
+  int           TreeTriggerChannel;                                  // trigger channel for this event
+  Short_t       TreeTagging;                                         // tagging crystal data for this event
+  Float_t       TreeFloodX;                                          // u position for this event
+  Float_t       TreeFloodY;                                          // v position for this event
+  Float_t       TreeFloodZ;                                          // w position for this event
+  Float_t       TreeTheta;                                           // u position for this event
+  Float_t       TreePhi;                                             // u position for this event
+  Bool_t        TreeBadevent;                                        // whether the event is "bad" --> too high to allow saturation correction with a logarithm
+  Float_t       TreeZPosition;                                       // z position of the tagging bench
+  Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
+  Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
+  Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
 
 public:
   
-  InputFile(int argc, char** argv, ConfigFile& config);
-//   ~InputFile();
+  InputFile(int argc, char** argv, ConfigFile& config);              //ctor
   
-  static InputFile*  Instance() { return fInstance; };
-  static InputFile*  fInstance;
-  
-  TChain*       GetChain() const { return fchain; };
-  TTree*        GetTree() const { return ftree; };
-  void          CreateTree();
-  void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);
-  
+  static InputFile*  Instance() { return fInstance; };               // not useful right now
+  static InputFile*  fInstance;                                      // not useful right now
+                                                                     
+  TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
+  TTree*        GetTree() const { return ftree; };                   // method to provide a pointer to the analysis TTree
+  void          CreateTree();                                        // method to run on the input and fill the analysis TTree
+  void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
 };
 
 

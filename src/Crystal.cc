@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "Crystal.h"
 #include "TCut.h"
 
@@ -12,17 +11,6 @@ Crystal::Crystal()
 Crystal::Crystal(const Crystal &obj) 
 {
   std::cout << "Copy ctor"  << std::endl;
-//   if(parentMppc)
-//   {
-//     parentMppc = new Element;
-//     *parentMppc = *obj.parentMppc;
-//   }
-//   else
-//   {
-//     parentMppc = NULL;
-//   }
-//   parentMppc = new Mppc();
-//   *parentMppc = *obj.parentMppc;
 }
 
 Crystal::~Crystal()
@@ -72,8 +60,6 @@ void Crystal::SetEllipses(double u,double v,double a,double b,double t)
 		  << ",2) < 1";
    Ellipses = crystalFloodCut.str().c_str();
 };
-
-
 
 void Crystal::PrintSpecific()
 {

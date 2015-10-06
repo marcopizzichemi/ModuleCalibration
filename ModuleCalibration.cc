@@ -19,6 +19,25 @@
 // supposed to be run twice, with different configuration files that will select the proper input channels, and with, as an output,
 // different text files 
 
+// CAREFUL: at the moment this program is used to characterize different modules. So instead of really looking for the limits, it takes 
+// limits (for the crystal positions in u,v) and computes some relevat paramenters, especially the peak position, energy resolutions and 
+// width (FWHM) of the w histograms for each crystal.
+// The user can input the crystal limits in the config file, only crystals that are specified in the config file will be analized (see newBoardConfig.cfg)
+
+// PROGRAM STRUCTURE
+// This file performes the relevant analysis, while the module structure is defined by the Element, Module, Mppc and Crystal classes. Module, Mppc and Crystal
+// inherit from Element, but also have some specific method
+// Config files are read in various parts of the program, via the ConfigFile class, to input the user parameters
+// So ModuleCalibration does:
+// - some initial check
+// - read the input, via the InputFile class (see those files). This will read the Tchain of input root files and creat a specific TTree that will be used for the analysis
+// - read config parameters
+// - Create the modules, mppcs, crystals, according to the user requests
+// - Run on all the elements and produce the desided plots. Mainly 2D and 3D histograms, crystal and mppc spectra, w histograms and so on (see in the code below)
+// - Creates some Canvases for nice plot storing
+// - Creates an output file with a directory structure and saves the plots
+// - Optionally, saves the analysis TTree in a root file
+
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TSystem.h"
@@ -101,6 +120,7 @@ int main (int argc, char** argv)
   std::cout<<"\n\n"<<std::endl;
   std::cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<std::endl;
   
+  
   //----------------------------------------------------------//
   //  Import input and parse the config file                  //
   //----------------------------------------------------------//
@@ -117,32 +137,35 @@ int main (int argc, char** argv)
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
+  ConfigFile config(ConfigFileName); // create a ConfigFile object
   
-  ConfigFile config(ConfigFileName);
-  InputFile input(argc,argv,config); // read the input chain of root files,
+  InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
   input.CreateTree();                // create the TTree that will be used in analysis
   
-  int ncrystalsx            = config.read<int>("ncrystalsx",2);
-  int ncrystalsy            = config.read<int>("ncrystalsy");
-  int nmppcx                = config.read<int>("nmppcx");
-  int nmppcy                = config.read<int>("nmppcy");
-  int nmodulex              = config.read<int>("nmodulex");
-  int nmoduley              = config.read<int>("nmoduley");
-  int histo1Dmax            = config.read<int>("histo1Dmax");       
-  int histo1Dbins           = config.read<int>("histo1Dbins");      
-  int histo2DchannelBin     = config.read<int>("histo2DchannelBin");
-  int histo2DglobalBins     = config.read<int>("histo2DglobalBins");
-  int histo3DchannelBin     = config.read<int>("histo3DchannelBin");
-  int histo3DglobalBins     = config.read<int>("histo3DglobalBins");
-  bool saveAnalysisTree     = config.read<bool>("saveAnalysisTree");
-  float taggingPosition     = config.read<float>("taggingPosition");
-  bool usingTaggingBench    = config.read<bool>("usingTaggingBench");
-  int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");
-  bool correctingSaturation = config.read<bool>("correctingSaturation");;
-  // set output file name
+  int ncrystalsx            = config.read<int>("ncrystalsx",2);             // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
+  int ncrystalsy            = config.read<int>("ncrystalsy",2);             // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
+  int nmppcx                = config.read<int>("nmppcx",2);                 // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
+  int nmppcy                = config.read<int>("nmppcy",2);                 // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
+  int nmodulex              = config.read<int>("nmodulex",1);               // number of modules in x direction per mppc - default to 1 if the key is not found in the config file
+  int nmoduley              = config.read<int>("nmoduley",1);               // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
+  int histo1Dmax            = config.read<int>("histo1Dmax");               // max of the 1D charge histograms (in ADC channels)
+  int histo1Dbins           = config.read<int>("histo1Dbins");              // number of bins of the 1D charge histograms
+  int histo2DchannelBin     = config.read<int>("histo2DchannelBin");        // number of bins of the 2D flood histograms, for single channels
+  int histo2DglobalBins     = config.read<int>("histo2DglobalBins");        // number of bins of the 2D flood histograms, for entire module
+  int histo3DchannelBin     = config.read<int>("histo3DchannelBin");        // number of bins of the 3D flood histograms, for single channels
+  int histo3DglobalBins     = config.read<int>("histo3DglobalBins");        // number of bins of the 3D flood histograms, for entire module
+  bool saveAnalysisTree     = config.read<bool>("saveAnalysisTree");        // choice to save or not the analysis TTree, in a file temp.root
+  float taggingPosition     = config.read<float>("taggingPosition");        // position of the tagging bench in mm 
+  bool usingTaggingBench    = config.read<bool>("usingTaggingBench");       // true if the input is using tagging bench, false if not
+  int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");    // input channel where the tagging crystal information is stored
+  bool correctingSaturation = config.read<bool>("correctingSaturation");;   // true if saturation correction is applied, false if it's not
+  
+  // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
-  // digitizer channels
+  
+  // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
+  // first get the input digitizer channels
   std::string digitizer_s   = config.read<std::string>("digitizer");
   std::vector<std::string> digitizer_f;
   config.split( digitizer_f, digitizer_s, "," );
@@ -152,13 +175,15 @@ int main (int argc, char** argv)
     config.trim(digitizer_f[i]);
     digitizer.push_back(atoi(digitizer_f[i].c_str()));
   }
-  //create "sum channels" string
+  // create the string
   std::stringstream sSumChannels;
   std::string SumChannels;
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
     sSumChannels << "+ch" <<digitizer[i];
   SumChannels = sSumChannels.str();
+  //----------------------------------------------------------//
+  
   
   //----------------------------------------------------------//
   //  Creating the module and elements                        //
@@ -504,7 +529,7 @@ int main (int argc, char** argv)
   
   
   //----------------------------------------------------------//
-  // Canvases                                                 //
+  // Produce some Canvases                                    //
   //----------------------------------------------------------//
   //multicanvases per module 0,0
   //FIXME extend to multiple modules please...
@@ -536,7 +561,6 @@ int main (int argc, char** argv)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
-      
       GlobalFlood2D->cd();
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
@@ -558,8 +582,7 @@ int main (int argc, char** argv)
 	    }
 	  }
 	}
-      }
-      
+      } 
       GlobalFlood3D->cd();
       module[iModule][jModule]->GetFloodMap3D()->Draw();
       GlobalSpherical->cd();
@@ -568,69 +591,70 @@ int main (int argc, char** argv)
       module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
       GlobalCylindricalY->cd();
       module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
-      
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  
 	  RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw();
-	  
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw(); 
 	  TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
-	  
 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
-	  
 	  FloodHisto3DCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw("COLZ");
-	  
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw("COLZ");	  
 	  SphericalCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSphericalMap()->Draw("COLZ");
-	  
 	  CylindricalXCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");
-	  
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");	  
 	  CylindricalYCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalYMap()->Draw("COLZ");
-	  
 	}
       }
     }
   }
+  //----------------------------------------------------------//
   
   
   //----------------------------------------------------------//
   // Global distributions                                     //
   //----------------------------------------------------------//
+  //plots to summarize the values of relevant variable found on each crystal
+  //--Distribution of photopeak positions, in ADC channels
+  //histogram
   TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",50,0,12000);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
-  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",50,0,1);
-  PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
-  PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
-  TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",50,0,0.5);
-  WfwhmDistro->GetXaxis()->SetTitle("W");
-  WfwhmDistro->GetYaxis()->SetTitle("N");
-  TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
-  WDoiDistro->GetXaxis()->SetTitle("doi");
-  WDoiDistro->GetYaxis()->SetTitle("N");
-  
+  //2d histogram
   TH2F *PeakPositionVsIJ = new TH2F("Distribution photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   PeakPositionVsIJ->GetXaxis()->SetTitle("i");
   PeakPositionVsIJ->GetYaxis()->SetTitle("j");
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
-  
+  //--Distribution of energy resolutions FHWM
+  //histogram
+  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",50,0,1);
+  PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
+  PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
+  //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Distribution photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("i");
   EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
-  
+  //Distribution of FWHM of W plots
+  //histogram
+  TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",50,0,0.5);
+  WfwhmDistro->GetXaxis()->SetTitle("W");
+  WfwhmDistro->GetYaxis()->SetTitle("N");
+  //2d histogram
   TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WfwhmVsIJ->GetXaxis()->SetTitle("i");
   WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
+  //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
+  TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
+  WDoiDistro->GetXaxis()->SetTitle("doi");
+  WDoiDistro->GetYaxis()->SetTitle("N");
+  //----------------------------------------------------------//
   
   
   //----------------------------------------------------------//
@@ -639,7 +663,8 @@ int main (int argc, char** argv)
   //write output plots
   TFile* fPlots = new TFile(outputFileName.c_str(),"recreate");
   fPlots->cd();
-  TDirectory ****directory; //TDirectory 
+  //TDirectory 
+  TDirectory ****directory; 
   directory = new TDirectory***[nmodulex*nmoduley]; 
   for(int i = 0; i < nmodulex*nmoduley+1 ; i++) 
   {
@@ -649,7 +674,7 @@ int main (int argc, char** argv)
       directory[i][j] = new TDirectory* [(nmppcx*ncrystalsx)*(nmppcy*ncrystalsy)+1];
     }
   }
-  
+  //run on all the elements, make directories in the output file, save the plots
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -658,8 +683,7 @@ int main (int argc, char** argv)
       ModuleDirStream << "Module " << iModule << "." << jModule;
       ModuleDirStream.str();
       directory[iModule+jModule][0][0] = fPlots->mkdir(ModuleDirStream.str().c_str());
-      directory[iModule+jModule][0][0]->cd();
-      
+      directory[iModule+jModule][0][0]->cd();      
       GlobalFlood2D->Write();
       GlobalFlood3D->Write();
       GlobalSpherical->Write();
@@ -681,10 +705,7 @@ int main (int argc, char** argv)
 	  MppcDirStream << "MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0] = directory[iModule+jModule][0][0]->mkdir(MppcDirStream.str().c_str());
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
-	  
-	  
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
-	  
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
@@ -694,16 +715,15 @@ int main (int argc, char** argv)
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
-	      
-	      if(CurrentCrystal->CrystalIsOn())
+	      if(CurrentCrystal->CrystalIsOn()) // save data only if the crystal was specified in the config file
 	      {
-		
+		//create a pointer for the current crystal (mainly to make the code more readable)
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 		//fill the global distributions histograms
 		PeakPositionDistro->Fill(CurrentCrystal->GetPhotopeakPosition());
 		PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
-		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158);
+		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
 		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
 		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
@@ -732,17 +752,13 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		
-		
 	      }
 	    }
 	  }
-	  
-	  
-	  
 	}
       }
-      directory[iModule+jModule][0][0]->cd();
+      directory[iModule+jModule][0][0]->cd(); // go back to main directory
+      //write the summary histos and canvases, that were filled during file saving
       PeakPositionDistro->Write();
       PeakEnergyResolutionDistro->Write();
       WfwhmDistro->Write();
@@ -765,10 +781,9 @@ int main (int argc, char** argv)
       C_EnergyResolutionVsIJ->cd();
       EnergyResolutionVsIJ->Draw("LEGO2");
       C_EnergyResolutionVsIJ->Write();
-      
     }
   }
-  if(saveAnalysisTree)
+  if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
   {
     std::cout << "Saving analysis TTree to a file temp.root" << std::endl;
     TFile* fFile = new TFile("temp.root","recreate");
@@ -778,6 +793,7 @@ int main (int argc, char** argv)
   }
   fPlots->Close();
   //----------------------------------------------------------//
+  
   
   delete crystal;
   delete mppc;

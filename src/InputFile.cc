@@ -1,3 +1,9 @@
+// InputFile.cc
+// this class reads the input tchain and generates the TTree that will be used for the analysis /plot production
+// Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
+// makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
+// the config file. Mainly it's the parent sons structure.
+
 #include <iostream>
 #include <sstream>
 
@@ -12,7 +18,7 @@
 #include "TError.h"
 #include "TEllipse.h"
 
-struct Point 
+struct Point // definition fo a point (it is used in the binary output)
 {
   float x;
   float y;
@@ -20,6 +26,10 @@ struct Point
 } __attribute__((__packed__));     
 
 
+// default constructor. 
+// - Reads the necessary info from the config file
+// - Opens the input TChain
+// - Prepares the analysis TTree
 InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 {
   
@@ -91,8 +101,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
   
   //read strings that describes crystals
-  
-  
   //a string for input for each crystal
   crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
@@ -230,7 +238,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   ftree               = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
-  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC is always 32 ch for CAEN - FIXME at some point if necessary...
+  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC is always 32 ch for CAEN 
+  DigitizerChannelOn  = new bool[adcChannels];
   bChainAdcChannel    = new TBranch* [adcChannels];
   TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed instead can be up to 16
   // fill the tchain with input files
@@ -294,6 +303,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
 }
 
+// More than creating the TTree (which was created in fact in the constructor, it runs on the input TChain elements 
+// and fills the analysis TTree. Bad choice of method name! :P
 void InputFile::CreateTree()
 {
   //creates the TTree from the input Tchain
@@ -332,7 +343,7 @@ void InputFile::CreateTree()
     
     int TreeEntryCounter = 0;
     
-    for (int j = 0 ; j < 32 ; j++) //loop on input chain channels
+    for (int j = 0 ; j < adcChannels ; j++) //loop on input chain channels
     {
       if(DigitizerChannelOn[j])
       {
@@ -429,15 +440,17 @@ void InputFile::CreateTree()
     output_file.close();
   //   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
   //std::cout << "Bad events = \t" << badEvents << std::endl;
-  
 }
 
+
+// takes the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..)
 void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 {
   //temp
   int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
   int moduleCounter = 0;
   
+  // info for the modules
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -455,8 +468,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     }
   }
   
+  //info for the mppcs
   int mppcCounter = 0;
-  
   for(int iMppc = 0; iMppc < nmppcx*nmodulex ; iMppc++)
   {
     for(int jMppc = 0; jMppc < nmppcy*nmoduley ; jMppc++)
@@ -479,8 +492,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     }
   }
   
-  int crystalCounter = 0;
-  
   
 //   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
 //   {
@@ -495,7 +506,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 //     
 //   }
   
-  
+  //info for the crystals
+  int crystalCounter = 0;
   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
   {
     for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
@@ -523,6 +535,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     }
   }
   
+  // set children names for modules and mppcs
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -543,8 +556,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       }
     } 
   }
-  
-  
   
   //   std::cout << "--------------------------------------------" << std::endl;
   //   module[0][0]->Print();
@@ -580,21 +591,18 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   //   
   // 
   
+  // summarize the situation to the user
   std::cout << std::endl;
   std::cout << "MPPC ID mapping ";
   std::cout << std::endl;
   for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
   {
-    //     std::cout << "|---"
     for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
-      
       std::cout << mppc[iMppc][jMppc]->GetLabel() << "\t";
     }  
     std::cout << std::endl;
-  }
-  
-  
+  }  
   std::cout << std::endl;
   std::cout << "Digitizer Channels mapping ";
   std::cout << std::endl;
@@ -606,7 +614,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     }  
     std::cout << std::endl;
   }
-  
   std::cout << std::endl;
   std::cout << "Crystal ID mapping ";
   std::cout << std::endl;
@@ -617,18 +624,5 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
     } 
     std::cout << std::endl;
-  }
-  
-  
-  
+  }  
 }
-
-
-
-
-
-
-
-
-
-
