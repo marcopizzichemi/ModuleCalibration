@@ -749,11 +749,11 @@ int main (int argc, char** argv)
 		PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
 		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
-		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
-		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
-		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
+		PeakPositionVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetPhotopeakPosition());
+		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetPhotopeakEnergyResolution());
+		WfwhmVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
-		WrmsVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWrms());
+		WrmsVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
 		
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);

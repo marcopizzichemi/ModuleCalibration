@@ -488,6 +488,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       mppc[iMppc][jMppc]->SetDigitizerChannel(translateCh[mppcCounter]);
       mppc[iMppc][jMppc]->SetCanvasPosition(plotPositions[mppcCounter]);
       mppc[iMppc][jMppc]->SetParentName(module[iMppc/nmppcx][jMppc/nmppcy]->GetName());
+      mppc[iMppc][jMppc]->Print();
       mppcCounter++;
     }
   }
@@ -530,7 +531,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       crystal[iCrystal][jCrystal]->SetEllipses(u,v,wu,wv,t);
       TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
       crystal[iCrystal][jCrystal]->SetGraphicalCut(*ellipse);
-//       crystal[iCrystal][jCrystal]->Print();
+      crystal[iCrystal][jCrystal]->Print();
       crystalCounter++;
     }
   }
