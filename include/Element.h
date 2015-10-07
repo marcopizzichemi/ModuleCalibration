@@ -20,7 +20,8 @@ protected:
   std::string          name;              // name 
   std::string          label;             // label
   std::string          parentName;        // name of parent element
-  std::vector<std::string> childrenName;  // // name of childern elements
+  std::vector<std::string> childrenName;  // name of children elements
+  std::string          extendedID;        // sort of unique identifier --> moduleI.moduleJ.mppcI.mppcJ.crystalI.crystalJ
   int                  id;                // id number
   int                  i,j;               // i and j IDs
   float                x,y,z;             // position coordinate space
@@ -46,6 +47,7 @@ public:
   std::string          GetName()                                 {return name;};
   std::string          GetLabel()                                {return label;};
   int                  GetID()                                   {return id;};
+  std::string          GetExtendedID()                           {return extendedID;}; 
   int                  GetI()                                    {return i;};
   int                  GetJ()                                    {return j;};
   float                GetX()                                    {return x;};
@@ -62,6 +64,7 @@ public:
   void                 SetName(std::string aname)                {name = aname;};
   void                 SetLabel(std::string aname)               {label = aname;};
   void                 SetID(int pid)                            {id = pid;};
+  void                 SetExtendedID(std::string pid)            {extendedID = pid;};
   void                 SetI(int pi)                              {i = pi;};
   void                 SetJ(int pj)                              {j = pj;};
   void                 SetPosition(float px, float py, float pz) {x = px; y = py; z = pz;};

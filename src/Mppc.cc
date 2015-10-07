@@ -40,5 +40,6 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 
 void Mppc::PrintSpecific()
 {
-  
+  std::cout << "Label \t\t = " << label << std::endl;
+  std::cout << "Digitizer Ch. \t = " << digitizerChannel << std::endl;
 }

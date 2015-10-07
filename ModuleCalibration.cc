@@ -65,6 +65,8 @@
 #include "TFormula.h"
 #include "TGraphErrors.h"
 #include "TCutG.h"
+#include "TGaxis.h"
+#include "TPaveStats.h"
 
 #include <iostream>
 #include <fstream>
@@ -90,6 +92,45 @@
 
 #define ENERGY_RESOLUTION 0.12
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.35
+
+// void ReverseXAxis (TH1 *h)
+// {
+//    // Remove the current axis
+//    h->GetXaxis()->SetLabelOffset(999);
+//    h->GetXaxis()->SetTickLength(0);
+//                                                                                 
+//    // Redraw the new axis
+//    gPad->Update();
+//    TGaxis *newaxis = new TGaxis(gPad->GetUxmax(),
+//                                 gPad->GetUymin(),
+//                                 gPad->GetUxmin(),
+//                                 gPad->GetUymin(),
+//                                 h->GetXaxis()->GetXmin(),
+//                                 h->GetXaxis()->GetXmax(),
+//                                 510,"-");
+//    newaxis->SetLabelOffset(-0.03);
+//    newaxis->Draw();
+// }
+//                                                                                 
+// void ReverseYAxis (TH1 *h)
+// {
+//    // Remove the current axis
+//    h->GetYaxis()->SetLabelOffset(999);
+//    h->GetYaxis()->SetTickLength(0);
+//                                                                                 
+//    // Redraw the new axis
+//    gPad->Update();
+//    TGaxis *newaxis = new TGaxis(gPad->GetUxmin(),
+//                                 gPad->GetUymax(),
+//                                 gPad->GetUxmin()-0.001,
+//                                 gPad->GetUymin(),
+//                                 h->GetYaxis()->GetXmin(),
+//                                 h->GetYaxis()->GetXmax(),
+//                                 510,"+");
+//    newaxis->SetLabelOffset(-0.03);
+//    newaxis->Draw();
+// }
+
 
 
 int main (int argc, char** argv)
@@ -296,7 +337,7 @@ int main (int argc, char** argv)
 	  channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
 	  var << "ch" << channel << " >> spectrum";
 	  tree->Draw(var.str().c_str(),"");
-	  name = "Raw Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  name = "Raw Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() + " - Module " + module[iModule][jModule]->GetName();
 	  spectrum->SetName(name);
 	  spectrum->SetTitle(name);
 	  spectrum->GetXaxis()->SetTitle("ADC Channels");
@@ -388,7 +429,7 @@ int main (int argc, char** argv)
 		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
 		var << SumChannels << " >> spectrum";
 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal);
-		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID();
+		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - " << CurrentCrystal->GetExtendedID();
 		spectrum->SetName(sname.str().c_str());
 		spectrum->SetTitle(sname.str().c_str());
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
@@ -427,10 +468,11 @@ int main (int argc, char** argv)
 		TF1 *gauss = new TF1("gauss",  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
 		gauss->SetParameter(0,par0);
 		gauss->SetParameter(1,par1);
-		gauss->SetParameter(2,par2); //expected FWHM en res = 12%
+		gauss->SetParameter(2,par2); 
 		spectrum->Fit("gauss","Q","",fitmin,fitmax);
 		//store the mean and sigma in the crystal
-		CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
+		if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
+		  CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
 		CurrentCrystal->SetFit(*gauss);
 // 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
 // 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
@@ -636,49 +678,58 @@ int main (int argc, char** argv)
   //plots to summarize the values of relevant variable found on each crystal
   //--Distribution of photopeak positions, in ADC channels
   //histogram
-  TH1F *PeakPositionDistro = new TH1F("Distribution photopeak positions","Distribution photopeak positions",100,0,12000);
+  TH1F *PeakPositionDistro = new TH1F("Distribution of photopeak positions","Distribution photopeak positions",100,0,12000);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
+  PeakPositionDistro->SetStats(1);
   //2d histogram
-  TH2F *PeakPositionVsIJ = new TH2F("Distribution photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *PeakPositionVsIJ = new TH2F("Distribution of photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   PeakPositionVsIJ->GetXaxis()->SetTitle("j");
   PeakPositionVsIJ->GetYaxis()->SetTitle("i");
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
+//   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
-  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
+  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution of photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
   PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
+  PeakEnergyResolutionDistro->SetStats(1);
   //2d histogram
-  TH2F *EnergyResolutionVsIJ = new TH2F("Distribution photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *EnergyResolutionVsIJ = new TH2F("Distribution of photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("j");
   EnergyResolutionVsIJ->GetYaxis()->SetTitle("i");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
+//   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
   //histogram of fwhm
   TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",100,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
+  WfwhmDistro->SetStats(1);
   //2d histogram of fwhm
   TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WfwhmVsIJ->GetXaxis()->SetTitle("j");
   WfwhmVsIJ->GetYaxis()->SetTitle("i");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
+//   WfwhmVsIJ->SetStats(1);
   //histogram of rms
   TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",100,0,0.5);
   WrmsDistro->GetXaxis()->SetTitle("W");
   WrmsDistro->GetYaxis()->SetTitle("N");
+  WrmsDistro->SetStats(1);
   //2d histogram of rms
   TH2F *WrmsVsIJ = new TH2F("Distribution of RMS in W plots VS. crystal position i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WrmsVsIJ->GetXaxis()->SetTitle("j");
   WrmsVsIJ->GetYaxis()->SetTitle("i");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
+//   WrmsVsIJ->SetStats(1);
   
   
   //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
   TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
   WDoiDistro->GetXaxis()->SetTitle("doi");
   WDoiDistro->GetYaxis()->SetTitle("N");
+  WDoiDistro->SetStats(1);
   //----------------------------------------------------------//
   
   
@@ -727,7 +778,7 @@ int main (int argc, char** argv)
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
 	  std::stringstream MppcDirStream;
-	  MppcDirStream << "MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  MppcDirStream << "MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " - " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetExtendedID();
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0] = directory[iModule+jModule][0][0]->mkdir(MppcDirStream.str().c_str());
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
@@ -823,6 +874,7 @@ int main (int argc, char** argv)
       C_EnergyResolutionVsIJ->cd();
       EnergyResolutionVsIJ->Draw("LEGO2");
       C_EnergyResolutionVsIJ->Write();
+//       gStyle->SetOptStat(1);
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file

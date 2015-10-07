@@ -21,6 +21,7 @@ void Element::PrintGlobal()
 {
   std::cout << "Name \t\t = "    << name << std::endl;
   std::cout << "ID \t\t = "      << id << std::endl;
+  std::cout << "Extended ID \t = "      << extendedID << std::endl;
   std::cout << "i = \t\t = "      << i << std::endl;
   std::cout << "j = \t\t = "      << j << std::endl;
   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;

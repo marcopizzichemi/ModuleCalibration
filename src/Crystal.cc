@@ -63,8 +63,6 @@ void Crystal::SetEllipses(double u,double v,double a,double b,double t)
 
 void Crystal::PrintSpecific()
 {
-  
-  std::cout << "TCut \t \t= " << Ellipses  << std::endl;
-  std::cout << "On \t \t= " << isOn  << std::endl;
-  
+//   std::cout << "TCut \t \t= " << Ellipses  << std::endl;
+  std::cout << "On \t\t= " << isOn  << std::endl; 
 }
