@@ -819,7 +819,7 @@ int main (int argc, char** argv)
 		WfwhmVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
 		WrmsVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
-		Wwidht20percVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
+		Wwidht20percVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWwidth20perc());
 		Wwidth20perc->Fill(CurrentCrystal->GetWwidth20perc());
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
