@@ -510,8 +510,8 @@ int main (int argc, char** argv)
 		spectrum->SetTitle(sname.str().c_str());
 		spectrum->GetXaxis()->SetTitle("W");
 		spectrum->GetYaxis()->SetTitle("N");
-		int bin1 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/2);
-		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/2);
+		int bin1 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/5.0);
+		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/5.0);
 		double fwhm = spectrum->GetBinCenter(bin2) - spectrum->GetBinCenter(bin1);
 		double rms = spectrum->GetRMS();
 		CurrentCrystal->SetHistoW(*spectrum);
