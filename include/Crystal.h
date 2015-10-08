@@ -28,6 +28,7 @@ private:
   TF1                  Fit;                  // fit function (it's a gaussian)
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
+  double               w_width20perc;        // width at 20% maximum for the w histogram
   
   
 public:
@@ -43,6 +44,7 @@ public:
   TF1*                 GetFit(){return &Fit;};
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
+  double               GetWwidth20perc(){return w_width20perc;};
   TCut                 GetCrystalCut(){return Ellipses;};
   TEllipse*            GetGraphicalCut(){return &GraphicalCut;};
   float                GetPhotopeakPosition(){return peakPosition;};
@@ -59,6 +61,7 @@ public:
   void                 SetFit(TF1 aFit){Fit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
+  void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
   void                 SetEllipses(double u,double v,double a,double b,double t);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};

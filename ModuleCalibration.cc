@@ -510,13 +510,17 @@ int main (int argc, char** argv)
 		spectrum->SetTitle(sname.str().c_str());
 		spectrum->GetXaxis()->SetTitle("W");
 		spectrum->GetYaxis()->SetTitle("N");
-		int bin1 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/5.0);
-		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/5.0);
+		int bin1 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/2.0);
+		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/2.0);
+		int bin3 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/5.0);
+		int bin4 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/5.0);
+		double width20perc =spectrum->GetBinCenter(bin4) - spectrum->GetBinCenter(bin3);
 		double fwhm = spectrum->GetBinCenter(bin2) - spectrum->GetBinCenter(bin1);
 		double rms = spectrum->GetRMS();
 		CurrentCrystal->SetHistoW(*spectrum);
 		CurrentCrystal->SetHistoWfwhm(fwhm);
 		CurrentCrystal->SetHistoWrms(rms);
+		CurrentCrystal->SetHistoWwidth20perc(width20perc);
 		var.str("");
 		sname.str("");
 		delete spectrum;
@@ -722,7 +726,17 @@ int main (int argc, char** argv)
   WrmsVsIJ->GetXaxis()->SetTitle("j");
   WrmsVsIJ->GetYaxis()->SetTitle("i");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
-//   WrmsVsIJ->SetStats(1);
+  //Distribution of FWHM of W plots
+  TH1F *Wwidth20perc = new TH1F("Distribution of width at 20% in W plots","Distribution of width at 20% in W plots",100,0,0.5);
+  Wwidth20perc->GetXaxis()->SetTitle("W");
+  Wwidth20perc->GetYaxis()->SetTitle("N");
+  Wwidth20perc->SetStats(1);
+  
+  
+  TH2F *Wwidht20percVsIJ = new TH2F("Distribution of width at 20% in W plots VS. crystal position i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  Wwidht20percVsIJ->GetXaxis()->SetTitle("j");
+  Wwidht20percVsIJ->GetYaxis()->SetTitle("i");
+  Wwidht20percVsIJ->GetZaxis()->SetTitle("w width at 20%");
   
   
   //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
@@ -805,7 +819,8 @@ int main (int argc, char** argv)
 		WfwhmVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
 		WrmsVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
-		
+		Wwidht20percVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
+		Wwidth20perc->Fill(CurrentCrystal->GetWwidth20perc());
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetSpectrum()->GetName());
@@ -850,6 +865,13 @@ int main (int argc, char** argv)
       WfwhmDistro->Write();
       WDoiDistro->Write();
       WrmsDistro->Write();
+      Wwidth20perc->Write();
+      
+      TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
+      C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
+      C_Wwidht20percVsIJ->cd();
+      Wwidht20percVsIJ->Draw("LEGO2");
+      C_Wwidht20percVsIJ->Write();
       
       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
