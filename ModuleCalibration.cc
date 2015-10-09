@@ -456,7 +456,7 @@ int main (int argc, char** argv)
 		//std::cout << CrystalPeaksY[0] << std::endl;
 		//fit the spectra - TODO use the gaussian plus fermi?
 		//float energyResolution;
-		if (energyResolution != 0)
+		if (energyResolution == 0)
 		{
 		  if (correctingSaturation)
 		    energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION; 
