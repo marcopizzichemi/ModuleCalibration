@@ -58,6 +58,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   yPositions_s                = config.read<std::string>("yPositions");
   saturation_s                = config.read<std::string>("saturation");
   adcChannels                 = config.read<int>("digitizerTotalCh");
+  nclock                      = config.read<double>("nclock");
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
   config.split( mppc_f, mppc_s, "," );
@@ -401,16 +402,18 @@ void InputFile::CreateTree()
       TreeRealZ = RealZ;
     }
     
-    if(!TreeBadevent)
+    if(TreeExtendedTimeTag >= nclock)
     {
-      ftree->Fill();
-      GoodCounter++;
+      if(!TreeBadevent)
+      {
+	ftree->Fill();
+	GoodCounter++;
+      }
+      else
+      {
+	badEvents++;
+      }
     }
-    else
-    {
-      badEvents++;
-    }
-    
     if(binary)
       output_file.write((char*)&point,sizeof(point));
     
