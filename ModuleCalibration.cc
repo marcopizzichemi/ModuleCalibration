@@ -439,7 +439,7 @@ int main (int argc, char** argv)
 		TSpectrum *s;
 		s = new TSpectrum(50);
 // 		Input[i].SumSpectraCanvas->cd(j+1);
-		Int_t CrystalPeaksN = s->Search(spectrum,1,"goff",0.75); 
+		Int_t CrystalPeaksN = s->Search(spectrum,1,"",0.75); 
 		Float_t *CrystalPeaks = s->GetPositionX();
 		Float_t *CrystalPeaksY = s->GetPositionY();
 		float maxPeak = 0.0;
