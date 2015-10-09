@@ -58,7 +58,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   yPositions_s                = config.read<std::string>("yPositions");
   saturation_s                = config.read<std::string>("saturation");
   adcChannels                 = config.read<int>("digitizerTotalCh");
-  nclock                      = config.read<double>("nclock");
+  nclock                      = config.read<double>("nclock",0);
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
   config.split( mppc_f, mppc_s, "," );
