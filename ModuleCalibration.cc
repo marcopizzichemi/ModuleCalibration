@@ -91,7 +91,7 @@
 // #include "Classes.h"
 
 #define ENERGY_RESOLUTION 0.12
-#define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.35
+#define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
 
 // void ReverseXAxis (TH1 *h)
 // {
@@ -200,7 +200,7 @@ int main (int argc, char** argv)
   bool usingTaggingBench    = config.read<bool>("usingTaggingBench");       // true if the input is using tagging bench, false if not
   int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");    // input channel where the tagging crystal information is stored
   bool correctingSaturation = config.read<bool>("correctingSaturation");;   // true if saturation correction is applied, false if it's not
-  
+  float energyResolution    = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
@@ -437,9 +437,9 @@ int main (int argc, char** argv)
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		TSpectrum *s;
-		s = new TSpectrum(50);
+		s = new TSpectrum(20);
 // 		Input[i].SumSpectraCanvas->cd(j+1);
-		Int_t CrystalPeaksN = s->Search(spectrum,1,"",0.75); 
+		Int_t CrystalPeaksN = s->Search(spectrum,2,"goff",0.5); 
 		Float_t *CrystalPeaks = s->GetPositionX();
 		Float_t *CrystalPeaksY = s->GetPositionY();
 		float maxPeak = 0.0;
@@ -455,11 +455,14 @@ int main (int argc, char** argv)
 		//std::cout << CrystalPeaks[0] << std::endl;
 		//std::cout << CrystalPeaksY[0] << std::endl;
 		//fit the spectra - TODO use the gaussian plus fermi?
-		float energyResolution;
-		if (correctingSaturation)
-		  energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION; 
-		else
-		  energyResolution = ENERGY_RESOLUTION;
+		//float energyResolution;
+		if (energyResolution != 0)
+		{
+		  if (correctingSaturation)
+		    energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION; 
+		  else
+		    energyResolution = ENERGY_RESOLUTION;
+		}
 		float par0 = CrystalPeaksY[peakID];
 		float par1 = CrystalPeaks[peakID];
 		float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
