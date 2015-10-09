@@ -437,9 +437,9 @@ int main (int argc, char** argv)
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		TSpectrum *s;
-		s = new TSpectrum(5);
+		s = new TSpectrum(20);
 // 		Input[i].SumSpectraCanvas->cd(j+1);
-		Int_t CrystalPeaksN = s->Search(spectrum,1,"goff",0.5); 
+		Int_t CrystalPeaksN = s->Search(spectrum,2,"goff",0.7); 
 		Float_t *CrystalPeaks = s->GetPositionX();
 		Float_t *CrystalPeaksY = s->GetPositionY();
 		float maxPeak = 0.0;
