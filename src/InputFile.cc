@@ -326,6 +326,14 @@ void InputFile::CreateTree()
     DigitizerChannelOn[digitizer[i]] = true;
   }
   
+  translateCh = new int[inputChannels]; // the number of input channels is set by the user, then they are created in the analysis ttree as ch0, ch1... 
+  for(int i = 0; i < inputChannels; i++)
+  {
+    translateCh[i] = i;  // then they will always be in order, so first channel in digitizer array goes to ch0, second to ch1 etc..
+  }
+  
+  
+  
   for (Int_t i=0;i<nevent;i++) 
   { 
     //loop on all the entries of tchain
@@ -497,7 +505,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetChildrenI(ncrystalsx);
 	  mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
 	  mppc[mppcI][mppcJ]->SetPosition(xPositions[posID],yPositions[posID],0);
-	  mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
+	  mppc[mppcI][mppcJ]->SetDigitizerChannel(translateCh[posID]);
 	  mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
 	  mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
 	  //mppc[mppcI][mppcJ]->Print();
