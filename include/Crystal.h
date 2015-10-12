@@ -8,6 +8,7 @@
 #include "TCut.h"
 #include "TEllipse.h"
 #include "TF1.h"
+#include "TGraph.h"
 
 class Crystal : public Element
 {
@@ -20,13 +21,14 @@ private:
   TH1F                 HistoW;               // histogram of w values for this crystal
   TH2F                 VersusTime;           // 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F                 SimDOIplot;           // 2d histogram for simulation, showing z versus w
-  
+  TGraph               SimGraph;             
   TCut                 Ellipses;             // the elliptical TCut
   bool                 isOn;                 // if the crystal is on/off
   TEllipse             GraphicalCut;         // TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         // position of mean (after fitting) for the photopeak 
   float                peakSigma;            // sigma (after fitting) for the photopeak
   TF1                  Fit;                  // fit function (it's a gaussian)
+  TF1                  SimFit;
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
   double               w_width20perc;        // width at 20% maximum for the w histogram
@@ -42,6 +44,7 @@ public:
   TH1F*                GetHighlightedSpectrum(){return &HighlightedSpectrum;};
   TH1F*                GetHistoW(){return &HistoW;};
   TF1*                 GetFit(){return &Fit;};
+  TF1*                 GetSimFit(){return &SimFit;};
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
   double               GetWwidth20perc(){return w_width20perc;};
@@ -53,6 +56,7 @@ public:
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return &VersusTime;};
   TH2F*                GetSimDOIplot(){return &SimDOIplot;};
+  TGraph*              GetSimGraph(){return &SimGraph;};
   
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
@@ -68,6 +72,8 @@ public:
   void                 SetPhotopeak(float a, float b){peakPosition = a;peakSigma = b;};
   void                 SetVersusTime(TH2F aHisto){VersusTime = aHisto;};
   void                 SetSimDOIplot(TH2F aHisto){SimDOIplot = aHisto;};
+  void                 SetSimGraph(TGraph aGraph){SimGraph = aGraph;};
+  void                 SetSimFit(TF1 aFit){SimFit = aFit;};
   
   void PrintGlobal();
   void PrintSpecific();

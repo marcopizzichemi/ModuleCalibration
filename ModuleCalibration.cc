@@ -53,6 +53,7 @@
 #include "TFile.h"
 #include "TF2.h"
 #include "TGraph2D.h"
+#include "TGraph.h"
 #include "TSpectrum.h"
 #include "TSpectrum2.h"
 #include "TTreeFormula.h"
@@ -258,6 +259,7 @@ int main (int argc, char** argv)
   TH1F* spectrum;
   TH2F* spectrum2d;
   TH3F* spectrum3d;
+  TGraph* simGraph; 
   TCanvas* C_spectrum;
   std::stringstream var,cut,sname; 
   
@@ -418,24 +420,23 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/)
+	      if(CurrentCrystal->CrystalIsOn() | usingRealSimData)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
 		
 		
 		TCut CutCrystal;
-// 		if(usingRealSimData)
-// 		{
-// 		  std::stringstream simCutCrystal;
-// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-// 		  CutCrystal = simCutCrystal.str().c_str();
+		if(usingRealSimData)
+		{
+		  std::stringstream simCutCrystal;
+		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+		  CutCrystal = simCutCrystal.str().c_str();
 // 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
-// 		}
-// 		else
-// 		{
+		}
+		else
+		{
 		  CutCrystal = CurrentCrystal->GetCrystalCut();
-// 		}
-		// 	      std::cout << CutCrystal << std::endl;
+		}
 		
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
@@ -449,6 +450,10 @@ int main (int argc, char** argv)
 		spectrum->SetTitle(sname.str().c_str());
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
 		spectrum->GetYaxis()->SetTitle("N");
+// 		std::cout << var.str().c_str() << std::endl;
+// 		std::cout << CutXYZ << std::endl;
+// 		std::cout << CutTrigger << std::endl;
+// 		std::cout << CutCrystal << std::endl;
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		TSpectrum *s;
@@ -571,28 +576,45 @@ int main (int argc, char** argv)
 	      }
 	      
 	      // perform it always if this is a sim dataset
-// 	      if(usingRealSimData)
-// 	      {
-// // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-// 		std::stringstream simCutCrystal;
-// 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-// 		
-// 		TCut CutCrystal = simCutCrystal.str().c_str();
-// // 		std::cout << CutCrystal << std::endl;
-// 		
-// 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
-// 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
-// 		tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
-// 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
-// 		spectrum2d->SetName(sname.str().c_str()); 
-// 		spectrum2d->SetTitle(sname.str().c_str());
-// 		spectrum2d->GetXaxis()->SetTitle("W");
-// 		spectrum2d->GetYaxis()->SetTitle("Z");
-// 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
+	      if(usingRealSimData)
+	      {
+// 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
+		std::stringstream simCutCrystal;
+		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+		
+		TCut CutCrystal = simCutCrystal.str().c_str();
+// 		std::cout << CutCrystal << std::endl;
+		long long int nPoints;
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
+		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
+		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
+		spectrum2d->SetName(sname.str().c_str()); 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("W");
+		spectrum2d->GetYaxis()->SetTitle("Z");
+		CurrentCrystal->SetSimDOIplot(*spectrum2d);
 // 		sname.str("");
-// 		var.str("");
-// 		delete spectrum2d;
-// 	      }
+// 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
+// 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+// 		simGraph->SetName(sname.str().c_str()); 
+// 		simGraph->SetTitle(sname.str().c_str());
+// 		simGraph->GetXaxis()->SetTitle("W");
+// 		simGraph->GetYaxis()->SetTitle("Z");
+// 		simGraph->Draw("ap");
+// 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
+// 		linear->SetParameter(0,-100);
+// 		linear->SetParameter(1,50);
+// 		simGraph->Fit("linear","","",0,1);
+// 		
+// 		CurrentCrystal->SetSimFit(*linear);
+// 		CurrentCrystal->SetSimGraph(*simGraph);
+		sname.str("");
+		var.str("");
+// 		delete linear;
+		delete spectrum2d;
+		delete simGraph;
+	      }
 	      
 	    }
 	  }
@@ -730,8 +752,8 @@ int main (int argc, char** argv)
   PeakPositionDistro->SetStats(1);
   //2d histogram
   TH2F *PeakPositionVsIJ = new TH2F("Distribution of photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  PeakPositionVsIJ->GetXaxis()->SetTitle("j");
-  PeakPositionVsIJ->GetYaxis()->SetTitle("i");
+  PeakPositionVsIJ->GetXaxis()->SetTitle("i");
+  PeakPositionVsIJ->GetYaxis()->SetTitle("j");
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
 //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
@@ -742,8 +764,8 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistro->SetStats(1);
   //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Distribution of photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  EnergyResolutionVsIJ->GetXaxis()->SetTitle("j");
-  EnergyResolutionVsIJ->GetYaxis()->SetTitle("i");
+  EnergyResolutionVsIJ->GetXaxis()->SetTitle("i");
+  EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
 //   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
@@ -754,8 +776,8 @@ int main (int argc, char** argv)
   WfwhmDistro->SetStats(1);
   //2d histogram of fwhm
   TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  WfwhmVsIJ->GetXaxis()->SetTitle("j");
-  WfwhmVsIJ->GetYaxis()->SetTitle("i");
+  WfwhmVsIJ->GetXaxis()->SetTitle("i");
+  WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
 //   WfwhmVsIJ->SetStats(1);
   //histogram of rms
@@ -765,8 +787,8 @@ int main (int argc, char** argv)
   WrmsDistro->SetStats(1);
   //2d histogram of rms
   TH2F *WrmsVsIJ = new TH2F("Distribution of RMS in W plots VS. crystal position i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  WrmsVsIJ->GetXaxis()->SetTitle("j");
-  WrmsVsIJ->GetYaxis()->SetTitle("i");
+  WrmsVsIJ->GetXaxis()->SetTitle("i");
+  WrmsVsIJ->GetYaxis()->SetTitle("j");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
   //Distribution of FWHM of W plots
   TH1F *Wwidth20perc = new TH1F("Distribution of width at 20% in W plots","Distribution of width at 20% in W plots",100,0,0.5);
@@ -776,7 +798,7 @@ int main (int argc, char** argv)
   
   
   TH2F *Wwidht20percVsIJ = new TH2F("Distribution of width at 20% in W plots VS. crystal position i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  Wwidht20percVsIJ->GetXaxis()->SetTitle("j");
+  Wwidht20percVsIJ->GetXaxis()->SetTitle("i");
   Wwidht20percVsIJ->GetYaxis()->SetTitle("i");
   Wwidht20percVsIJ->GetZaxis()->SetTitle("w width at 20%");
   
@@ -786,6 +808,9 @@ int main (int argc, char** argv)
   WDoiDistro->GetXaxis()->SetTitle("doi");
   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
+  
+  
+  
   //----------------------------------------------------------//
   
   
@@ -847,7 +872,7 @@ int main (int argc, char** argv)
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
-	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was specified in the config file
+	      if(CurrentCrystal->CrystalIsOn() | usingRealSimData) // save data only if the crystal was specified in the config file
 	      {
 		//create a pointer for the current crystal (mainly to make the code more readable)
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
@@ -856,12 +881,12 @@ int main (int argc, char** argv)
 		PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
 		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
-		PeakPositionVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetPhotopeakPosition());
-		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetPhotopeakEnergyResolution());
-		WfwhmVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWfwhm());
+		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
+		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
+		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
-		WrmsVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWrms());
-		Wwidht20percVsIJ->Fill(CurrentCrystal->GetJ(),CurrentCrystal->GetI(),CurrentCrystal->GetWwidth20perc());
+		WrmsVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWrms());
+		Wwidht20percVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWwidth20perc());
 		Wwidth20perc->Fill(CurrentCrystal->GetWwidth20perc());
 		
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -896,15 +921,23 @@ int main (int argc, char** argv)
 		delete C_spectrum;
 		
 	      }
-// 	      if(usingRealSimData)
-// 	      {
-// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-// 		C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
+	      if(usingRealSimData)
+	      {
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetSimDOIplot()->Draw("COLZ");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
 // 		C_spectrum->cd();
-// 		CurrentCrystal->GetSimDOIplot()->Draw("COLZ");
-// 		C_spectrum->Write();
+// 		CurrentCrystal->GetSimGraph()->Draw("ap");
+// 		CurrentCrystal->GetSimFit()->Draw("same");
+// 		C_spectrum->Write();		
 // 		delete C_spectrum;
-// 	      }
+	      }
 	    }
 	  }
 	}

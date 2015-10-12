@@ -365,7 +365,7 @@ void InputFile::CreateTree()
 	  if(TreeAdcChannel[TreeEntryCounter] > saturation[TreeEntryCounter])
 	  {
 	    TreeBadevent = true;
-	    //std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
+// 	    std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
 	  }
 	  TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
 	}
@@ -462,7 +462,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   //temp
   //int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};//isn't this very wrong??
   
-  
+  // changing i and j, no more from top left and y x, but x y from bottom left
   std::stringstream sname;
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -489,8 +489,10 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  int mppcJ = (jModule*nmppcy)+jMppc;
 	  // compute the position of this mppc element from the plotPositions taken from config file
 	  // 
- 	  int pos = (mppcI*nmppcx + mppcJ) +1 ; // +1 is because of root multicanvas starting from 1...
- 	  int posID;
+//  	  int pos = (mppcI*nmppcx + mppcJ) +1 ; // +1 is because of root multicanvas starting from 1...
+ 	  int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((4-mppcI)); 
+// 	  std::cout << mppcI << "." << mppcJ << " " << pos << std::endl;
+	  int posID;
  	  for(int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...
 	  {
 	    if(plotPositions[arrayCounter] == pos) posID = arrayCounter;
@@ -513,7 +515,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetDigitizerChannel(translateCh[posID]);
 	  mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
 	  mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
-	  mppc[mppcI][mppcJ]->Print();
+// 	  mppc[mppcI][mppcJ]->Print();
 	  sname.str("");
 	  
 	  module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );
@@ -537,8 +539,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());
 	      crystal[cryI][cryJ]->SetCrystalOn(crystalIsOn[cryI][cryJ]);
 	      crystal[cryI][cryJ]->SetPosition(
-		xPositions[posID] + jCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)  
-	      , yPositions[posID] - iCry*(crystaly+esrThickness) + (ncrystalsy-1)*((crystaly+esrThickness)/2.0)  
+		xPositions[posID] + iCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)  
+	      , yPositions[posID] + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)  
 	      ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
 	      crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
 	      double u  = crystaldata[cryI][cryJ][0];
@@ -550,7 +552,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
-	      crystal[cryI][cryJ]->Print();
+// 	      crystal[cryI][cryJ]->Print();
 	      
 	      mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
 	    }
@@ -722,20 +724,24 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   std::cout << std::endl;
   std::cout << "MPPC ID mapping ";
   std::cout << std::endl;
-  for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+  for(int jMppc = nmppcy-1; jMppc >=0 ; jMppc--)
   {
-    for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
-      std::cout << mppc[iMppc][jMppc]->GetLabel() << "\t";
-    }  
-    std::cout << std::endl;
+      std::cout <<  mppc[iMppc][jMppc]->GetLabel() << "\t";
+      
+//       std::cout <<  mppc[iMppc][jMppc]->GetLabel() << " " <<  mppc[iMppc][jMppc]->GetI() << "." << mppc[iMppc][jMppc]->GetJ() << " " << mppc[iMppc][jMppc]->GetDigitizerChannel();  /*<< "\t"*/;
+//       std::cout <<  " " <<mppc[iMppc][jMppc]->GetX() << " " <<  mppc[iMppc][jMppc]->GetY();
+//       std::cout << std::endl;
+    }  std::cout << std::endl;
+    
   }  
   std::cout << std::endl;
   std::cout << "Digitizer Channels mapping ";
   std::cout << std::endl;
-  for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+  for(int jMppc = nmppcy-1; jMppc >=0 ; jMppc--)
   {
-    for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+    for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
       std::cout << mppc[iMppc][jMppc]->GetDigitizerChannel() << "\t";
     }  
@@ -744,9 +750,9 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   std::cout << std::endl;
   std::cout << "Crystal ID mapping ";
   std::cout << std::endl;
-  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+  for(int jCrystal = ncrystalsy*nmppcy*nmoduley -1 ; jCrystal >=0  ; jCrystal--)
   {
-    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+    for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
     {
       std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
     } 
@@ -756,9 +762,9 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   
   std::cout << "Crystal Positions mapping ";
   std::cout << std::endl;
-  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+  for(int jCrystal = ncrystalsy*nmppcy*nmoduley -1 ; jCrystal >=0  ; jCrystal--)
   {
-    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+    for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
     {
       std::cout << "(" << crystal[iCrystal][jCrystal]->GetX() << "," << crystal[iCrystal][jCrystal]->GetY() << ")"  << "\t";
     } 
