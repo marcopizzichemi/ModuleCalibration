@@ -59,6 +59,11 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   saturation_s                = config.read<std::string>("saturation");
   adcChannels                 = config.read<int>("digitizerTotalCh");
   nclock                      = config.read<double>("nclock",0);
+  crystalx                    = config.read<double>("crystalx",1.5);
+  crystaly                    = config.read<double>("crystaly",1.5);
+  crystalz                    = config.read<double>("crystalz",15);
+  esrThickness                = config.read<double>("esrThickness",0.07);
+  
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
   config.split( mppc_f, mppc_s, "," );
@@ -508,7 +513,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetDigitizerChannel(translateCh[posID]);
 	  mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
 	  mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
-	  //mppc[mppcI][mppcJ]->Print();
+	  mppc[mppcI][mppcJ]->Print();
 	  sname.str("");
 	  
 	  module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );
@@ -531,6 +536,11 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      crystal[cryI][cryJ]->SetJ(cryJ);
 	      crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());
 	      crystal[cryI][cryJ]->SetCrystalOn(crystalIsOn[cryI][cryJ]);
+	      crystal[cryI][cryJ]->SetPosition(
+		xPositions[posID] + jCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)  
+	      , yPositions[posID] - iCry*(crystaly+esrThickness) + (ncrystalsy-1)*((crystaly+esrThickness)/2.0)  
+	      ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
+	      crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
 	      double u  = crystaldata[cryI][cryJ][0];
 	      double v  = crystaldata[cryI][cryJ][1];
 	      double wu = crystaldata[cryI][cryJ][2];
@@ -540,7 +550,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
-	      //crystal[cryI][cryJ]->Print();
+	      crystal[cryI][cryJ]->Print();
 	      
 	      mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
 	    }
@@ -743,6 +753,19 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     std::cout << std::endl;
   }  
   std::cout << std::endl;
+  
+  std::cout << "Crystal Positions mapping ";
+  std::cout << std::endl;
+  for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
+  {
+    for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
+    {
+      std::cout << "(" << crystal[iCrystal][jCrystal]->GetX() << "," << crystal[iCrystal][jCrystal]->GetY() << ")"  << "\t";
+    } 
+    std::cout << std::endl;
+  }  
+  std::cout << std::endl;
+  
   
 //   std::cout << std::endl;
 //   std::cout << "----------- MODULES ---------- ";

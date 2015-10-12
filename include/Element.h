@@ -24,7 +24,8 @@ protected:
   std::string          extendedID;        // sort of unique identifier --> moduleI.moduleJ.mppcI.mppcJ.crystalI.crystalJ
   int                  id;                // id number
   int                  i,j;               // i and j IDs
-  float                x,y,z;             // position coordinate space
+  float                x,y,z;             // position coordinate space [mm]
+  float                dx,dy,dz;          // dimensions of the element [mm] 
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
   
@@ -53,6 +54,9 @@ public:
   float                GetX()                                    {return x;};
   float                GetY()                                    {return y;};
   float                GetZ()                                    {return z;};
+  float                GetDimensionX()                           {return dx;};
+  float                GetDimensionY()                           {return dy;};
+  float                GetDimensionZ()                           {return dz;};
   int                  GetChildrenI()                            {return iChildren;};
   int                  GetChildrenJ()                            {return jChildren;};  
   std::string          GetParentName()                           {return parentName;};
@@ -68,6 +72,7 @@ public:
   void                 SetI(int pi)                              {i = pi;};
   void                 SetJ(int pj)                              {j = pj;};
   void                 SetPosition(float px, float py, float pz) {x = px; y = py; z = pz;};
+  void                 SetDimension(float px, float py, float pz) {dx = px; dy = py; dz = pz;};
   void                 SetChildrenI(int pi)                      {iChildren = pi;};
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};
   void                 SetParentName(std::string aName)          {parentName = aName;};

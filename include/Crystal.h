@@ -19,6 +19,7 @@ private:
   TH1F                 HighlightedSpectrum;  // same spectrum above, but in green and only for the photopeak
   TH1F                 HistoW;               // histogram of w values for this crystal
   TH2F                 VersusTime;           // 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
+  TH2F                 SimDOIplot;           // 2d histogram for simulation, showing z versus w
   
   TCut                 Ellipses;             // the elliptical TCut
   bool                 isOn;                 // if the crystal is on/off
@@ -29,7 +30,6 @@ private:
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
   double               w_width20perc;        // width at 20% maximum for the w histogram
-  
   
 public:
   Crystal();                                 // default constructor
@@ -52,7 +52,7 @@ public:
   float                GetPhotopeakEnergyResolution(){return ((peakSigma*2.35)/peakPosition);};
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return &VersusTime;};
-  
+  TH2F*                GetSimDOIplot(){return &SimDOIplot;};
   
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
@@ -67,6 +67,7 @@ public:
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};
   void                 SetPhotopeak(float a, float b){peakPosition = a;peakSigma = b;};
   void                 SetVersusTime(TH2F aHisto){VersusTime = aHisto;};
+  void                 SetSimDOIplot(TH2F aHisto){SimDOIplot = aHisto;};
   
   void PrintGlobal();
   void PrintSpecific();

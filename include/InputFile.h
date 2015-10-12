@@ -69,6 +69,10 @@ private:
   int                            taggingCrystalChannel;              // channel of the tagging crystal, only for DOI bench data
   double                         nclock;                             // number of clock samples that will be ignored. clock is the digitizer clock (so 1 sample = 16ns for DT5740)
   int                            *translateCh;                       // translates adc channels to analysis channels
+  double                         crystalx;                           // dimension of crystal in x [mm]
+  double                         crystaly;                           // dimension of crystal in x [mm]
+  double                         crystalz;                           // dimension of crystal in x [mm]
+  double                         esrThickness;                       // thickness of esr separation foil [mm]
   
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag

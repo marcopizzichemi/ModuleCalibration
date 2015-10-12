@@ -201,6 +201,8 @@ int main (int argc, char** argv)
   int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");    // input channel where the tagging crystal information is stored
   bool correctingSaturation = config.read<bool>("correctingSaturation");;   // true if saturation correction is applied, false if it's not
   float energyResolution    = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
+  bool usingRealSimData     = config.read<bool>("usingRealSimData",0);
+  
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
@@ -416,10 +418,23 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(CurrentCrystal->CrystalIsOn())
+	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-		TCut CutCrystal = CurrentCrystal->GetCrystalCut();
+		
+		
+		TCut CutCrystal;
+// 		if(usingRealSimData)
+// 		{
+// 		  std::stringstream simCutCrystal;
+// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+// 		  CutCrystal = simCutCrystal.str().c_str();
+// 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
+// 		}
+// 		else
+// 		{
+		  CutCrystal = CurrentCrystal->GetCrystalCut();
+// 		}
 		// 	      std::cout << CutCrystal << std::endl;
 		
 		//-------------------------------------------------------------------------
@@ -554,6 +569,30 @@ int main (int argc, char** argv)
 		sname.str("");
 		delete spectrum2d;
 	      }
+	      
+	      // perform it always if this is a sim dataset
+// 	      if(usingRealSimData)
+// 	      {
+// // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
+// 		std::stringstream simCutCrystal;
+// 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+// 		
+// 		TCut CutCrystal = simCutCrystal.str().c_str();
+// // 		std::cout << CutCrystal << std::endl;
+// 		
+// 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+// 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
+// 		tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
+// 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
+// 		spectrum2d->SetName(sname.str().c_str()); 
+// 		spectrum2d->SetTitle(sname.str().c_str());
+// 		spectrum2d->GetXaxis()->SetTitle("W");
+// 		spectrum2d->GetYaxis()->SetTitle("Z");
+// 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
+// 		sname.str("");
+// 		var.str("");
+// 		delete spectrum2d;
+// 	      }
 	      
 	    }
 	  }
@@ -808,7 +847,7 @@ int main (int argc, char** argv)
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
-	      if(CurrentCrystal->CrystalIsOn()) // save data only if the crystal was specified in the config file
+	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was specified in the config file
 	      {
 		//create a pointer for the current crystal (mainly to make the code more readable)
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
@@ -857,6 +896,15 @@ int main (int argc, char** argv)
 		delete C_spectrum;
 		
 	      }
+// 	      if(usingRealSimData)
+// 	      {
+// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+// 		C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
+// 		C_spectrum->cd();
+// 		CurrentCrystal->GetSimDOIplot()->Draw("COLZ");
+// 		C_spectrum->Write();
+// 		delete C_spectrum;
+// 	      }
 	    }
 	  }
 	}
