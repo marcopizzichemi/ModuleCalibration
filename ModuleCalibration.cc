@@ -221,7 +221,7 @@ int main (int argc, char** argv)
   std::string SumChannels;
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
-    sSumChannels << "+ch" <<digitizer[i];
+    sSumChannels << "+ch" << i; // the analysis ttree will always have channels in order, from 0 to input size
   SumChannels = sSumChannels.str();
   //----------------------------------------------------------//
   
