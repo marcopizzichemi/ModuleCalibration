@@ -838,10 +838,22 @@ int main (int argc, char** argv)
   Wwidth20perc->SetStats(1);
   
   //same plot but just for the "not lateral" channels
-  TH1F *Wwidth20percCentral = new TH1F("Distribution of width at 20% in W plots - Central Crystals","Distribution of width at 20% in W plots - Central Crystals",100,0,0.5);
+  TH1F *Wwidth20percCentral = new TH1F("Central w20 - Central Crystals","Distribution of width at 20% in W plots - Central Crystals",100,0,0.5);
   Wwidth20percCentral->GetXaxis()->SetTitle("W");
   Wwidth20percCentral->GetYaxis()->SetTitle("N");
   Wwidth20percCentral->SetStats(1);
+  
+  TH1F *PeakPositionDistroCentral = new TH1F("Central LY","Distribution photopeak positions - Central Crystals",100,0,histo1Dmax);
+  PeakPositionDistroCentral->GetXaxis()->SetTitle("ADC Channels");
+  PeakPositionDistroCentral->GetYaxis()->SetTitle("N");
+  PeakPositionDistroCentral->SetStats(1);
+  
+  TH1F *PeakEnergyResolutionDistroCentral = new TH1F("Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",100,0,1);
+  PeakEnergyResolutionDistroCentral->GetXaxis()->SetTitle("Energy Resolution FWHM");
+  PeakEnergyResolutionDistroCentral->GetYaxis()->SetTitle("N");
+  PeakEnergyResolutionDistroCentral->SetStats(1);
+  
+  
   
   TH2F *Wwidht20percVsIJ = new TH2F("Distribution of width at 20% in W plots VS. crystal position i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   Wwidht20percVsIJ->GetXaxis()->SetTitle("i");
@@ -949,6 +961,8 @@ int main (int argc, char** argv)
 		if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ))
 		{
 		  Wwidth20percCentral->Fill(CurrentCrystal->GetWwidth20perc());
+		  PeakPositionDistroCentral->Fill(CurrentCrystal->GetPhotopeakPosition());
+		  PeakEnergyResolutionDistroCentral->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 		}
 		
 		
@@ -1020,6 +1034,8 @@ int main (int argc, char** argv)
       WrmsDistro->Write();
       Wwidth20perc->Write();
       Wwidth20percCentral->Write();
+      PeakPositionDistroCentral->Write();
+      PeakEnergyResolutionDistroCentral->Write();
       
       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
