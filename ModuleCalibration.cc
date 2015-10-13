@@ -860,9 +860,7 @@ int main (int argc, char** argv)
   TH2F *WtauFitVsIJ = new TH2F("Distribution of exp slopes in W plots VS. crystal position i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WtauFitVsIJ->GetXaxis()->SetTitle("i");
   WtauFitVsIJ->GetYaxis()->SetTitle("i");
-  WtauFitVsIJ->GetZaxis()->SetTitle("w width at 20%");
-  
-  
+  WtauFitVsIJ->GetZaxis()->SetTitle("tau");
   
   
   //----------------------------------------------------------//
