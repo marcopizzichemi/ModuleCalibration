@@ -787,52 +787,52 @@ int main (int argc, char** argv)
   //plots to summarize the values of relevant variable found on each crystal
   //--Distribution of photopeak positions, in ADC channels
   //histogram
-  TH1F *PeakPositionDistro = new TH1F("Distribution of photopeak positions","Distribution photopeak positions",100,0,12000);
+  TH1F *PeakPositionDistro = new TH1F("Photopeak position","Distribution photopeak positions",100,0,12000);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   PeakPositionDistro->SetStats(1);
   //2d histogram
-  TH2F *PeakPositionVsIJ = new TH2F("Distribution of photopeak positions VS. crystal position i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *PeakPositionVsIJ = new TH2F("Photopeak positions vs. i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   PeakPositionVsIJ->GetXaxis()->SetTitle("i");
   PeakPositionVsIJ->GetYaxis()->SetTitle("j");
   PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
 //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
-  TH1F *PeakEnergyResolutionDistro = new TH1F("Distribution of photopeak energy resolutions FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
+  TH1F *PeakEnergyResolutionDistro = new TH1F("Energy res FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
   PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro->SetStats(1);
   //2d histogram
-  TH2F *EnergyResolutionVsIJ = new TH2F("Distribution of photopeak energy resolutions FWHM VS. crystal position i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("i");
   EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
   EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
 //   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
   //histogram of fwhm
-  TH1F *WfwhmDistro = new TH1F("Distribution of FWHM in W plots","Distribution of FWHM in W plots",100,0,0.5);
+  TH1F *WfwhmDistro = new TH1F("w_fwhm","Distribution of FWHM in W plots",100,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
   WfwhmDistro->SetStats(1);
   //2d histogram of fwhm
-  TH2F *WfwhmVsIJ = new TH2F("Distribution of FWHM in W plots VS. crystal position i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *WfwhmVsIJ = new TH2F("w_fwhm vs. i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WfwhmVsIJ->GetXaxis()->SetTitle("i");
   WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
 //   WfwhmVsIJ->SetStats(1);
   //histogram of rms
-  TH1F *WrmsDistro = new TH1F("Distribution of RMS in W plots","Distribution of RMS in W plots",100,0,0.5);
+  TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",100,0,0.5);
   WrmsDistro->GetXaxis()->SetTitle("W");
   WrmsDistro->GetYaxis()->SetTitle("N");
   WrmsDistro->SetStats(1);
   //2d histogram of rms
-  TH2F *WrmsVsIJ = new TH2F("Distribution of RMS in W plots VS. crystal position i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *WrmsVsIJ = new TH2F("w_rms vs. i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WrmsVsIJ->GetXaxis()->SetTitle("i");
   WrmsVsIJ->GetYaxis()->SetTitle("j");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
   //Distribution of FWHM of W plots
-  TH1F *Wwidth20perc = new TH1F("Distribution of width at 20% in W plots","Distribution of width at 20% in W plots",100,0,0.5);
+  TH1F *Wwidth20perc = new TH1F("w20","Distribution of width at 20% in W plots",100,0,0.5);
   Wwidth20perc->GetXaxis()->SetTitle("W");
   Wwidth20perc->GetYaxis()->SetTitle("N");
   Wwidth20perc->SetStats(1);
@@ -855,26 +855,26 @@ int main (int argc, char** argv)
   
   
   
-  TH2F *Wwidht20percVsIJ = new TH2F("Distribution of width at 20% in W plots VS. crystal position i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   Wwidht20percVsIJ->GetXaxis()->SetTitle("i");
   Wwidht20percVsIJ->GetYaxis()->SetTitle("i");
   Wwidht20percVsIJ->GetZaxis()->SetTitle("w width at 20%");
   
   
   //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
-  TH1F *WDoiDistro = new TH1F("Distribution of doi res","Distribution of doi res",20,0,6);
+  TH1F *WDoiDistro = new TH1F("Doi Res","Distribution of doi res",20,0,6);
   WDoiDistro->GetXaxis()->SetTitle("doi");
   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
   
   //Distribution of fit exp tau for W plots
-  TH1F *WtauFit = new TH1F("Distribution of exp slopes in W plots","Distribution of exp slopes in W plots",1000,0,1);
+  TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
   WtauFit->GetXaxis()->SetTitle("Tau");
   WtauFit->GetYaxis()->SetTitle("N");
   WtauFit->SetStats(1);
   
   
-  TH2F *WtauFitVsIJ = new TH2F("Distribution of exp slopes in W plots VS. crystal position i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  TH2F *WtauFitVsIJ = new TH2F("Exp slopes W vs. i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   WtauFitVsIJ->GetXaxis()->SetTitle("i");
   WtauFitVsIJ->GetYaxis()->SetTitle("i");
   WtauFitVsIJ->GetZaxis()->SetTitle("tau");
