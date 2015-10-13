@@ -420,23 +420,23 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(CurrentCrystal->CrystalIsOn() | usingRealSimData)
+	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
 		
 		
 		TCut CutCrystal;
-		if(usingRealSimData)
-		{
-		  std::stringstream simCutCrystal;
-		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-		  CutCrystal = simCutCrystal.str().c_str();
-// 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
-		}
-		else
-		{
-		  CutCrystal = CurrentCrystal->GetCrystalCut();
-		}
+// 		if(usingRealSimData)
+// 		{
+// 		  std::stringstream simCutCrystal;
+// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+// 		  CutCrystal = simCutCrystal.str().c_str();
+// // 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
+// 		}
+// 		else
+// 		{
+		CutCrystal = CurrentCrystal->GetCrystalCut();
+// 		}
 		
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
@@ -594,21 +594,22 @@ int main (int argc, char** argv)
 		spectrum2d->GetXaxis()->SetTitle("W");
 		spectrum2d->GetYaxis()->SetTitle("Z");
 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
-// 		sname.str("");
-// 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
-// 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-// 		simGraph->SetName(sname.str().c_str()); 
-// 		simGraph->SetTitle(sname.str().c_str());
-// 		simGraph->GetXaxis()->SetTitle("W");
-// 		simGraph->GetYaxis()->SetTitle("Z");
-// 		simGraph->Draw("ap");
-// 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-// 		linear->SetParameter(0,-100);
-// 		linear->SetParameter(1,50);
-// 		simGraph->Fit("linear","","",0,1);
-// 		
-// 		CurrentCrystal->SetSimFit(*linear);
-// 		CurrentCrystal->SetSimGraph(*simGraph);
+		sname.str("");
+		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
+		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+		simGraph->SetName(sname.str().c_str()); 
+		simGraph->SetTitle(sname.str().c_str());
+		simGraph->GetXaxis()->SetTitle("W");
+		simGraph->GetYaxis()->SetTitle("Z");
+		simGraph->Draw("ap");
+		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
+		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
+		linear->SetParameter(0,-100);
+		linear->SetParameter(1,50);
+		simGraph->Fit("linear","Q","",0,1);
+		
+		CurrentCrystal->SetSimFit(*linear);
+		CurrentCrystal->SetSimGraph(*simGraph);
 		sname.str("");
 		var.str("");
 // 		delete linear;
@@ -872,7 +873,7 @@ int main (int argc, char** argv)
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
-	      if(CurrentCrystal->CrystalIsOn() | usingRealSimData) // save data only if the crystal was specified in the config file
+	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was specified in the config file
 	      {
 		//create a pointer for the current crystal (mainly to make the code more readable)
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
@@ -930,13 +931,13 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-// 		C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
-// 		C_spectrum->cd();
-// 		CurrentCrystal->GetSimGraph()->Draw("ap");
-// 		CurrentCrystal->GetSimFit()->Draw("same");
-// 		C_spectrum->Write();		
-// 		delete C_spectrum;
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetSimGraph()->Draw("ap");
+		CurrentCrystal->GetSimFit()->Draw("same");
+		C_spectrum->Write();		
+		delete C_spectrum;
 	      }
 	    }
 	  }
