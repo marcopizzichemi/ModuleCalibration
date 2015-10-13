@@ -573,49 +573,89 @@ int main (int argc, char** argv)
 		var.str("");
 		sname.str("");
 		delete spectrum2d;
+		
+		if(usingRealSimData) // only if this is a sim dataset
+		{
+		  long long int nPoints;
+		  spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+		  var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
+		  nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut,"COLZ"); // a 2d plot of real vs. w, using the same cuts as before
+		  sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
+		  spectrum2d->SetName(sname.str().c_str()); 
+		  spectrum2d->SetTitle(sname.str().c_str());
+		  spectrum2d->GetXaxis()->SetTitle("W");
+		  spectrum2d->GetYaxis()->SetTitle("Z");
+		  CurrentCrystal->SetSimDOIplot(*spectrum2d);
+		  sname.str("");
+		  sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
+		  simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1()); // same but TGraph (so it can be fitted in 1D)
+		  simGraph->SetName(sname.str().c_str()); 
+		  simGraph->SetTitle(sname.str().c_str());
+		  simGraph->GetXaxis()->SetTitle("W");
+		  simGraph->GetYaxis()->SetTitle("Z");
+		  simGraph->Draw("ap");
+		  TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
+		  TF1 *expfit = new TF1("expfit",  "[0]*exp(-x/[1])",0,1);
+		  linear->SetParameter(0,-100);
+		  linear->SetParameter(1,50);
+		  expfit->SetParameter(0,50);
+		  expfit->SetParameter(1,0.1);
+// 		  simGraph->SetStats(1);
+		  simGraph->Fit("expfit","Q","",0.1,0.7);
+		  
+		  CurrentCrystal->SetSimFit(*expfit);
+		  CurrentCrystal->SetSimGraph(*simGraph);
+		  sname.str("");
+		  var.str("");
+		  delete linear;
+		  delete expfit;
+		  delete spectrum2d;
+		  delete simGraph;
+		}
+		
 	      }
 	      
 	      // perform it always if this is a sim dataset
-	      if(usingRealSimData)
-	      {
-// 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-		std::stringstream simCutCrystal;
-		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-		
-		TCut CutCrystal = simCutCrystal.str().c_str();
-// 		std::cout << CutCrystal << std::endl;
-		long long int nPoints;
-		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
-		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
-		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
-		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
-		spectrum2d->SetName(sname.str().c_str()); 
-		spectrum2d->SetTitle(sname.str().c_str());
-		spectrum2d->GetXaxis()->SetTitle("W");
-		spectrum2d->GetYaxis()->SetTitle("Z");
-		CurrentCrystal->SetSimDOIplot(*spectrum2d);
-		sname.str("");
-		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
-		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-		simGraph->SetName(sname.str().c_str()); 
-		simGraph->SetTitle(sname.str().c_str());
-		simGraph->GetXaxis()->SetTitle("W");
-		simGraph->GetYaxis()->SetTitle("Z");
-		simGraph->Draw("ap");
-		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
-		linear->SetParameter(0,-100);
-		linear->SetParameter(1,50);
-		simGraph->Fit("linear","Q","",0,1);
-		
-		CurrentCrystal->SetSimFit(*linear);
-		CurrentCrystal->SetSimGraph(*simGraph);
-		sname.str("");
-		var.str("");
-// 		delete linear;
-		delete spectrum2d;
-		delete simGraph;
-	      }
+// 	      if(usingRealSimData)
+// 	      {
+// // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
+// 		std::stringstream simCutCrystal;
+// 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+// 		
+// 		TCut CutCrystal = simCutCrystal.str().c_str();
+// // 		std::cout << CutCrystal << std::endl;
+// 		long long int nPoints;
+// 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+// 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
+// 		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
+// 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
+// 		spectrum2d->SetName(sname.str().c_str()); 
+// 		spectrum2d->SetTitle(sname.str().c_str());
+// 		spectrum2d->GetXaxis()->SetTitle("W");
+// 		spectrum2d->GetYaxis()->SetTitle("Z");
+// 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
+// 		sname.str("");
+// 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
+// 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+// 		simGraph->SetName(sname.str().c_str()); 
+// 		simGraph->SetTitle(sname.str().c_str());
+// 		simGraph->GetXaxis()->SetTitle("W");
+// 		simGraph->GetYaxis()->SetTitle("Z");
+// 		simGraph->Draw("ap");
+// 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
+// 		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
+// 		linear->SetParameter(0,-100);
+// 		linear->SetParameter(1,50);
+// 		simGraph->Fit("linear","Q","",0,1);
+// 		
+// 		CurrentCrystal->SetSimFit(*linear);
+// 		CurrentCrystal->SetSimGraph(*simGraph);
+// 		sname.str("");
+// 		var.str("");
+// // 		delete linear;
+// 		delete spectrum2d;
+// 		delete simGraph;
+// 	      }
 	      
 	    }
 	  }
@@ -810,6 +850,19 @@ int main (int argc, char** argv)
   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
   
+  //Distribution of fit exp tau for W plots
+  TH1F *WtauFit = new TH1F("Distribution of exp slopes in W plots","Distribution of exp slopes in W plots",1000,0,1);
+  WtauFit->GetXaxis()->SetTitle("Tau");
+  WtauFit->GetYaxis()->SetTitle("N");
+  WtauFit->SetStats(1);
+  
+  
+  TH2F *WtauFitVsIJ = new TH2F("Distribution of exp slopes in W plots VS. crystal position i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  WtauFitVsIJ->GetXaxis()->SetTitle("i");
+  WtauFitVsIJ->GetYaxis()->SetTitle("i");
+  WtauFitVsIJ->GetZaxis()->SetTitle("w width at 20%");
+  
+  
   
   
   //----------------------------------------------------------//
@@ -921,24 +974,29 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-	      }
-	      if(usingRealSimData)
-	      {
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-		C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
-		C_spectrum->cd();
-		CurrentCrystal->GetSimDOIplot()->Draw("COLZ");
-		C_spectrum->Write();
-		delete C_spectrum;
+		if(usingRealSimData)
+		{
+		  WtauFit->Fill(CurrentCrystal->GetSimFit()->GetParameter(1));
+		  WtauFitVsIJ->Fill(CurrentCrystal->GetI() ,CurrentCrystal->GetJ() , CurrentCrystal->GetSimFit()->GetParameter(1));
+		  
+		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		  C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
+		  C_spectrum->cd();
+		  CurrentCrystal->GetSimDOIplot()->Draw("COLZ");
+		  C_spectrum->Write();
+		  delete C_spectrum;
+		  
+		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		  C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
+		  C_spectrum->cd();
+		  CurrentCrystal->GetSimGraph()->Draw("ap");
+		  CurrentCrystal->GetSimFit()->Draw("same");
+		  C_spectrum->Write();		
+		  delete C_spectrum;
+		}
 		
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
-		C_spectrum->cd();
-		CurrentCrystal->GetSimGraph()->Draw("ap");
-		CurrentCrystal->GetSimFit()->Draw("same");
-		C_spectrum->Write();		
-		delete C_spectrum;
 	      }
+	      
 	    }
 	  }
 	}
@@ -982,6 +1040,19 @@ int main (int argc, char** argv)
       EnergyResolutionVsIJ->Draw("LEGO2");
       C_EnergyResolutionVsIJ->Write();
 //       gStyle->SetOptStat(1);
+      
+      if(usingRealSimData)
+      {
+        WtauFit->Write();
+	TCanvas *C_WtauFitVsIJ = new TCanvas("C_WtauFitVsIJ","C_WtauFitVsIJ",800,800);
+        C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
+        C_WtauFitVsIJ->cd();
+        WtauFitVsIJ->Draw("LEGO2");
+        C_WtauFitVsIJ->Write();
+      }
+      
+      
+      
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
