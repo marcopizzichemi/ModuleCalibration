@@ -714,6 +714,7 @@ int main (int argc, char** argv)
   CylindricalYCanvas->Divide(4,4);
   //canvases for the global plots
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
+  TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
@@ -726,6 +727,8 @@ int main (int argc, char** argv)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
+      GlobalFlood2DClean->cd();
+      module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       GlobalFlood2D->cd();
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
@@ -911,6 +914,7 @@ int main (int argc, char** argv)
       directory[iModule+jModule][0][0] = fPlots->mkdir(ModuleDirStream.str().c_str());
       directory[iModule+jModule][0][0]->cd();      
       GlobalFlood2D->Write();
+      GlobalFlood2DClean->Write();
       GlobalFlood3D->Write();
       GlobalSpherical->Write();
       GlobalCylindricalX->Write();
