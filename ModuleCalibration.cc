@@ -447,7 +447,8 @@ int main (int argc, char** argv)
 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal);
 		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - " << CurrentCrystal->GetExtendedID();
 		spectrum->SetName(sname.str().c_str());
-		spectrum->SetTitle(sname.str().c_str());
+// 		spectrum->SetTitle(sname.str().c_str());
+		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
 		spectrum->GetYaxis()->SetTitle("N");
 // 		std::cout << var.str().c_str() << std::endl;
@@ -728,6 +729,7 @@ int main (int argc, char** argv)
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
       GlobalFlood2DClean->cd();
+      module[iModule][jModule]->GetFloodMap2D()->SetTitle(""); // FIXME temporary removed title, for the poster...
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       GlobalFlood2D->cd();
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
@@ -978,6 +980,18 @@ int main (int argc, char** argv)
 		CurrentCrystal->GetHighlightedSpectrum()->SetFillColor(3);
 		CurrentCrystal->GetHighlightedSpectrum()->Draw("same");
 		CurrentCrystal->GetFit()->Draw("same");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		TString title = "mod_";
+		title += CurrentCrystal->GetSpectrum()->GetName() ;
+		C_spectrum->SetName(title);
+		C_spectrum->SetTitle("");
+		C_spectrum->cd();
+		CurrentCrystal->GetSpectrum()->SetFillStyle(3001);
+		CurrentCrystal->GetSpectrum()->SetFillColor(kBlue);
+		CurrentCrystal->GetSpectrum()->Draw();
 		C_spectrum->Write();
 		delete C_spectrum;
 		
