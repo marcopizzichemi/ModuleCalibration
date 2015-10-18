@@ -401,7 +401,7 @@ void InputFile::CreateTree()
     
     if(usingTaggingBench) TreeZPosition = taggingPosition;
     
-    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX,2) + std::pow(TreeFloodY,2) + std::pow(TreeFloodZ,2)) ));
+    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX,2) + std::pow(TreeFloodY,2) + std::pow(TreeFloodZ,2)) )); 
     TreePhi =  std::atan (TreeFloodY / TreeFloodX);
     
     point.x = TreeFloodX;
