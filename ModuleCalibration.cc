@@ -184,25 +184,41 @@ int main (int argc, char** argv)
   InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
   input.CreateTree();                // create the TTree that will be used in analysis
   
-  int ncrystalsx            = config.read<int>("ncrystalsx",2);             // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
-  int ncrystalsy            = config.read<int>("ncrystalsy",2);             // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
-  int nmppcx                = config.read<int>("nmppcx",2);                 // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
-  int nmppcy                = config.read<int>("nmppcy",2);                 // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
-  int nmodulex              = config.read<int>("nmodulex",1);               // number of modules in x direction per mppc - default to 1 if the key is not found in the config file
-  int nmoduley              = config.read<int>("nmoduley",1);               // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
-  int histo1Dmax            = config.read<int>("histo1Dmax");               // max of the 1D charge histograms (in ADC channels)
-  int histo1Dbins           = config.read<int>("histo1Dbins");              // number of bins of the 1D charge histograms
-  int histo2DchannelBin     = config.read<int>("histo2DchannelBin");        // number of bins of the 2D flood histograms, for single channels
-  int histo2DglobalBins     = config.read<int>("histo2DglobalBins");        // number of bins of the 2D flood histograms, for entire module
-  int histo3DchannelBin     = config.read<int>("histo3DchannelBin");        // number of bins of the 3D flood histograms, for single channels
-  int histo3DglobalBins     = config.read<int>("histo3DglobalBins");        // number of bins of the 3D flood histograms, for entire module
-  bool saveAnalysisTree     = config.read<bool>("saveAnalysisTree");        // choice to save or not the analysis TTree, in a file temp.root
-  float taggingPosition     = config.read<float>("taggingPosition");        // position of the tagging bench in mm 
-  bool usingTaggingBench    = config.read<bool>("usingTaggingBench");       // true if the input is using tagging bench, false if not
-  int taggingCrystalChannel = config.read<int>("taggingCrystalChannel");    // input channel where the tagging crystal information is stored
-  bool correctingSaturation = config.read<bool>("correctingSaturation");;   // true if saturation correction is applied, false if it's not
-  float energyResolution    = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
-  bool usingRealSimData     = config.read<bool>("usingRealSimData",0);
+  int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
+  int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
+  int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
+  int nmppcy                    = config.read<int>("nmppcy",2);                     // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
+  int nmodulex                  = config.read<int>("nmodulex",1);                   // number of modules in x direction per mppc - default to 1 if the key is not found in the config file
+  int nmoduley                  = config.read<int>("nmoduley",1);                   // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
+  int histo1Dmax                = config.read<int>("histo1Dmax");                   // max of the 1D charge histograms (in ADC channels)
+  int histo1Dbins               = config.read<int>("histo1Dbins");                  // number of bins of the 1D charge histograms
+  int histo2DchannelBin         = config.read<int>("histo2DchannelBin");            // number of bins of the 2D flood histograms, for single channels
+  int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
+  int histo3DchannelBin         = config.read<int>("histo3DchannelBin");            // number of bins of the 3D flood histograms, for single channels
+  int histo3DglobalBins         = config.read<int>("histo3DglobalBins");            // number of bins of the 3D flood histograms, for entire module
+  bool saveAnalysisTree         = config.read<bool>("saveAnalysisTree");            // choice to save or not the analysis TTree, in a file temp.root
+  float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm 
+  bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
+  int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
+  bool correctingSaturation     = config.read<bool>("correctingSaturation");;       // true if saturation correction is applied, false if it's not
+  float energyResolution        = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
+  bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
+  // paramenters for roto-translations to separate the nxn peaks
+  //lateral, not corners
+  double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
+  double base_lateralQ2         = config.read<double>("lateralQ2",1.1);             // top and bottom
+  double base_lateralDeltaU     = config.read<double>("lateralDeltaU",1);           // used for right and left
+  double base_lateralDeltaV     = config.read<double>("lateralDeltaV",1);           // used for top and bottom
+  double base_lateralRescaleRL  = config.read<double>("lateralRescaleRL",1.5);      // used for right and left 
+  double base_lateralRescaleTB  = config.read<double>("lateralRescaleTB",2);        // used for top and bottom
+  //corners                                                                    
+  double base_cornerQ1          = config.read<double>("cornerQ1",0.675);            // rotation around Z
+  double base_cornerQ2          = config.read<double>("cornerQ2",1.41);             // rotation around X
+  double base_cornerDeltaU      = config.read<double>("cornerDeltaU",3);            // translations
+  double base_cornerDeltaV      = config.read<double>("cornerDeltaV",2.1);          // translations
+  double base_cornerRescale     = config.read<double>("cornerRescale",4);           // rescale factor
+  
+  
   
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
@@ -265,20 +281,7 @@ int main (int argc, char** argv)
   
   //FIXME hardcoded for now
   // angles for separating crystals, translations for having a nice 2d plot
-  //lateral, not corners
   
-  double base_lateralQ1 = 0.905;      //right and left
-  double base_lateralQ2 = 1.1;        // top and bottom
-  double base_lateralDeltaU = 1;      // used for right and left
-  double base_lateralDeltaV = 1;      // used for top and bottom
-  double base_lateralRescaleRL = 1.5; // used for right and left 
-  double base_lateralRescaleTB = 2;   // used for top and bottom
-  //corners
-  double base_cornerQ1 = 0.675;       // rotation around Z
-  double base_cornerQ2 = 1.41;        // rotation around X
-  double base_cornerDeltaU = 3;       // translations
-  double base_cornerDeltaV = 2.1;     // translations
-  double base_cornerRescale = 4;      // rescale factor
   
   double lateralQ1        ;
   double lateralQ2        ;
@@ -1004,10 +1007,8 @@ int main (int argc, char** argv)
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   PeakPositionDistro->SetStats(1);
   //2d histogram
-  TH2F *PeakPositionVsIJ = new TH2F("Photopeak positions vs. i,j","Distribution photopeak positions VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  PeakPositionVsIJ->GetXaxis()->SetTitle("i");
-  PeakPositionVsIJ->GetYaxis()->SetTitle("j");
-  PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
+  
+  
 //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
@@ -1015,11 +1016,7 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro->SetStats(1);
-  //2d histogram
-  TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","Distribution photopeak energy resolutions FWHM VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  EnergyResolutionVsIJ->GetXaxis()->SetTitle("i");
-  EnergyResolutionVsIJ->GetYaxis()->SetTitle("j");
-  EnergyResolutionVsIJ->GetZaxis()->SetTitle("En. Res.");
+  
 //   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
   //histogram of fwhm
@@ -1032,6 +1029,7 @@ int main (int argc, char** argv)
   WfwhmVsIJ->GetXaxis()->SetTitle("i");
   WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
+//   WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
 //   WfwhmVsIJ->SetStats(1);
   //histogram of rms
   TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",100,0,0.5);
@@ -1066,11 +1064,33 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistroCentral->SetStats(1);
   
   
+  //LEGO PLOTS RELEVANT
+  TH2F *PeakPositionVsIJ = new TH2F("Photopeak positions vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  PeakPositionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  PeakPositionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  PeakPositionVsIJ->GetZaxis()->SetTitle("ADC Channels");
+  PeakPositionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  PeakPositionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  PeakPositionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,10000);
+  //2d histogram
+  TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  EnergyResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  EnergyResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  EnergyResolutionVsIJ->GetZaxis()->SetTitle("Energy Resolution FWHM");
+  EnergyResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  EnergyResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
   
-  TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","Distribution of width at 20% in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  Wwidht20percVsIJ->GetXaxis()->SetTitle("i");
-  Wwidht20percVsIJ->GetYaxis()->SetTitle("i");
-  Wwidht20percVsIJ->GetZaxis()->SetTitle("w width at 20%");
+  TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  Wwidht20percVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  Wwidht20percVsIJ->GetYaxis()->SetTitle("i (V axis)");
+  Wwidht20percVsIJ->GetZaxis()->SetRangeUser(0,0.25);
+  Wwidht20percVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  Wwidht20percVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  Wwidht20percVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  Wwidht20percVsIJ->GetZaxis()->SetTitle("W width at 20%");
   
   
   //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
@@ -1265,15 +1285,10 @@ int main (int argc, char** argv)
       PeakPositionDistroCentral->Write();
       PeakEnergyResolutionDistroCentral->Write();
       
-      TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
-      C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
-      C_Wwidht20percVsIJ->cd();
-      Wwidht20percVsIJ->Draw("LEGO2");
-      C_Wwidht20percVsIJ->Write();
+      
       
       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
-      C_WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
       C_WfwhmVsIJ->cd();
       WfwhmVsIJ->Draw("LEGO2");
       C_WfwhmVsIJ->Write();
@@ -1287,16 +1302,24 @@ int main (int argc, char** argv)
       TCanvas *C_PeakPositionVsIJ = new TCanvas("C_PeakPositionVsIJ","C_PeakPositionVsIJ",800,800);
       C_PeakPositionVsIJ->SetName(PeakPositionVsIJ->GetName());
       C_PeakPositionVsIJ->cd();
-      C_PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,10000);
       PeakPositionVsIJ->Draw("LEGO2");
+      C_PeakPositionVsIJ->SetLeftMargin(0.15);
       C_PeakPositionVsIJ->Write();
       
       TCanvas *C_EnergyResolutionVsIJ = new TCanvas("C_EnergyResolutionVsIJ","C_EnergyResolutionVsIJ",800,800);
       C_EnergyResolutionVsIJ->SetName(EnergyResolutionVsIJ->GetName());
       C_EnergyResolutionVsIJ->cd();
-      C_EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
       EnergyResolutionVsIJ->Draw("LEGO2");
+      C_EnergyResolutionVsIJ->SetLeftMargin(0.15);
       C_EnergyResolutionVsIJ->Write();
+      
+      TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
+      C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
+      C_Wwidht20percVsIJ->cd();
+      Wwidht20percVsIJ->Draw("LEGO2");
+      C_Wwidht20percVsIJ->SetLeftMargin(0.15);
+      C_Wwidht20percVsIJ->Write();
+      
 //       gStyle->SetOptStat(1);
       
       if(usingRealSimData)
