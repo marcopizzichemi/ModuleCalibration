@@ -32,6 +32,7 @@ private:
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
   double               w_width20perc;        // width at 20% maximum for the w histogram
+  double               u,v,wu,wv,t;
   
 public:
   Crystal();                                 // default constructor
@@ -57,6 +58,11 @@ public:
   TH2F*                GetVersusTime(){return &VersusTime;};
   TH2F*                GetSimDOIplot(){return &SimDOIplot;};
   TGraph*              GetSimGraph(){return &SimGraph;};
+  double               GetU(){return u;};
+  double               GetV(){return v;};
+  double               GetWU(){return wu;};
+  double               GetWV(){return wv;};
+  double               GetT(){return t;};
   
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
@@ -66,8 +72,9 @@ public:
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
-  void                 SetEllipses(double u,double v,double a,double b,double t);
+  void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
+  void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};
   void                 SetPhotopeak(float a, float b){peakPosition = a;peakSigma = b;};
   void                 SetVersusTime(TH2F aHisto){VersusTime = aHisto;};

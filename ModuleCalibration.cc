@@ -263,6 +263,36 @@ int main (int argc, char** argv)
   TCanvas* C_spectrum;
   std::stringstream var,cut,sname; 
   
+  //FIXME hardcoded for now
+  // angles for separating crystals, translations for having a nice 2d plot
+  //lateral, not corners
+  
+  double base_lateralQ1 = 0.905;      //right and left
+  double base_lateralQ2 = 1.1;        // top and bottom
+  double base_lateralDeltaU = 1;      // used for right and left
+  double base_lateralDeltaV = 1;      // used for top and bottom
+  double base_lateralRescaleRL = 1.5; // used for right and left 
+  double base_lateralRescaleTB = 2;   // used for top and bottom
+  //corners
+  double base_cornerQ1 = 0.675;       // rotation around Z
+  double base_cornerQ2 = 1.41;        // rotation around X
+  double base_cornerDeltaU = 3;       // translations
+  double base_cornerDeltaV = 2.1;     // translations
+  double base_cornerRescale = 4;      // rescale factor
+  
+  double lateralQ1        ;
+  double lateralQ2        ;
+  double lateralDeltaU    ;
+  double lateralDeltaV    ;
+  double lateralRescaleRL ;
+  double lateralRescaleTB ;
+  //corners
+  double cornerQ1      ;
+  double cornerQ2      ;
+  double cornerDeltaU  ;
+  double cornerDeltaV  ;
+  double cornerRescale ;
+  
   TString name;
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -282,36 +312,46 @@ int main (int argc, char** argv)
       spectrum2d->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2D(*spectrum2d);
       delete spectrum2d;
-      //sherical coordinates plot
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
-      tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
-      name = "Spherical Plot - " + module[iModule][jModule]->GetName();
-      spectrum2d->SetName(name);
-      spectrum2d->SetTitle(name);
-      spectrum2d->GetXaxis()->SetTitle("Theta");
-      spectrum2d->GetYaxis()->SetTitle("Phi");
-      module[iModule][jModule]->SetSphericalMap(*spectrum2d);
-      delete spectrum2d;
-      //cylindrical coordinates plot, x and theta
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-      tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
-      name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
-      spectrum2d->SetName(name);
+      //the separated 2d histo. it is created here but will be filled in the mppc loop part
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+      name = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
+      spectrum2d->SetName(name); 
       spectrum2d->SetTitle(name);
       spectrum2d->GetXaxis()->SetTitle("U");
-      spectrum2d->GetYaxis()->SetTitle("Theta");
-      module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
+      spectrum2d->GetYaxis()->SetTitle("V");
+      module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
       delete spectrum2d;
+      
+      //sherical coordinates plot
+//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
+//       tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
+//       name = "Spherical Plot - " + module[iModule][jModule]->GetName();
+//       spectrum2d->SetName(name);
+//       spectrum2d->SetTitle(name);
+//       spectrum2d->GetXaxis()->SetTitle("Theta");
+//       spectrum2d->GetYaxis()->SetTitle("Phi");
+//       module[iModule][jModule]->SetSphericalMap(*spectrum2d);
+//       delete spectrum2d;
+      //cylindrical coordinates plot, x and theta
+//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
+//       tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
+//       name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
+//       spectrum2d->SetName(name);
+//       spectrum2d->SetTitle(name);
+//       spectrum2d->GetXaxis()->SetTitle("U");
+//       spectrum2d->GetYaxis()->SetTitle("Theta");
+//       module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
+//       delete spectrum2d;
       //cylindrical coordinates plot, y and theta
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-      tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
-      name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
-      spectrum2d->SetName(name);
-      spectrum2d->SetTitle(name);
-      spectrum2d->GetXaxis()->SetTitle("V");
-      spectrum2d->GetYaxis()->SetTitle("Theta");
-      module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
-      delete spectrum2d;
+//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
+//       tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
+//       name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
+//       spectrum2d->SetName(name);
+//       spectrum2d->SetTitle(name);
+//       spectrum2d->GetXaxis()->SetTitle("V");
+//       spectrum2d->GetYaxis()->SetTitle("Theta");
+//       module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
+//       delete spectrum2d;
       //3D plot
       spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
@@ -362,46 +402,196 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTriggerSpectrum(*spectrum);
 	  var.str("");
 	  delete spectrum;
+	  
 	  // Flood histogram
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
-	  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger,"COLZ");
+	  // now modified: we plot a different histogram depending on the position of the mppc
+	  std::stringstream varX,varY; // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
+	  // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+	  if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
+	  {
+	    // standard flood 2d
+	    varX << "FloodX";
+	    varY << "FloodY";
+// 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
+	  }
+	  else // we are not in the center
+	  {
+	    if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) ) // we are in top or bottom lateral
+	    {
+	      if(((jModule*nmppcy)+jMppc) == 0 )   // bottom lateral crystals
+	      {
+		lateralQ2         = - base_lateralQ2;
+		lateralDeltaV     = - base_lateralDeltaV;
+		lateralRescaleTB  = + base_lateralRescaleTB;
+// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
+	      }
+	      if(((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top lateral crystals
+	      {
+		lateralQ2         = + base_lateralQ2;
+		lateralDeltaV     = + base_lateralDeltaV;
+		lateralRescaleTB  = + base_lateralRescaleTB;
+// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
+	      }
+	      // left and right crystals have the same var structure
+	      varY << "("
+	      << lateralDeltaV
+	      << " + "
+	      << lateralRescaleTB
+	      << "* ((FloodY)*TMath::Cos(" 
+	      << lateralQ2
+	      << ") - (FloodZ)*TMath::Sin("
+	      << lateralQ2
+	      << ")))";
+	      varX << "(FloodX)";  
+	    }
+	    else
+	    {
+	      if(((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ) )  // we are in left or right lateral
+	      {
+		if(((iModule*nmppcx)+iMppc) == 0 )   // left lateral crystals
+		{
+		  lateralQ1         = + base_lateralQ1;
+		  lateralDeltaU     = - base_lateralDeltaU;
+		  lateralRescaleRL  = + base_lateralRescaleRL;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
+		}
+		if(((iModule*nmppcx)+iMppc) == nmppcx -1 )   // right lateral crystals
+		{
+		  lateralQ1         = - base_lateralQ1;
+		  lateralDeltaU     = + base_lateralDeltaU;
+		  lateralRescaleRL  = + base_lateralRescaleRL;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
+		}
+		// left and right crystals have the same var structure
+		varY << "(FloodY)";  
+		varX << "("
+		<< lateralDeltaU
+		<< " + "
+		<< lateralRescaleRL
+		<< "*(FloodZ*TMath::Sin("
+		<< lateralQ1
+		<< ")+ (FloodX)*TMath::Cos("
+		<< lateralQ1
+		<<")))";
+	      }
+	      else // only corner crystals remain..
+	      {
+		if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom left crystals
+		{
+		  cornerDeltaU   = - base_cornerDeltaU  ;
+		  cornerDeltaV   = - base_cornerDeltaV  ; 
+		  cornerQ1       = + base_cornerQ1      ;
+		  cornerQ2       = - base_cornerQ2      ;
+		  cornerRescale  =   base_cornerRescale ;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
+		}
+		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom right crystals
+		{
+		  cornerDeltaU   = + base_cornerDeltaU  ;
+		  cornerDeltaV   = - base_cornerDeltaV  ;
+		  cornerQ1       = - base_cornerQ1      ;
+		  cornerQ2       = - base_cornerQ2      ;
+		  cornerRescale  =   base_cornerRescale ;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
+		}
+		if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top left crystals
+		{
+		  cornerDeltaU   = - base_cornerDeltaU  ;
+		  cornerDeltaV   = + base_cornerDeltaV  ;
+		  cornerQ1       = - base_cornerQ1      ;
+		  cornerQ2       = + base_cornerQ2      ;
+		  cornerRescale  =   base_cornerRescale ;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
+		}
+		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1)   // top right crystals
+		{
+		  cornerDeltaU   = + base_cornerDeltaU  ;
+		  cornerDeltaV   = + base_cornerDeltaV  ;
+		  cornerQ1       = + base_cornerQ1      ;
+		  cornerQ2       = + base_cornerQ2      ;
+		  cornerRescale  =   base_cornerRescale ;
+// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
+		}
+		varY 
+		<< "( "
+		<< cornerDeltaV
+		<< " + " 
+		<< cornerRescale
+		<<"*((FloodX*TMath::Sin(" 
+		<< cornerQ1 
+		<< ") + FloodY*TMath::Cos( "
+		<< cornerQ1 
+		<< ")) *TMath::Cos("
+		<< cornerQ2
+		<< ") - FloodZ*TMath::Sin("
+		<< cornerQ2 
+		<< ")))" ;
+		varX << " ( " 
+		<< cornerDeltaU
+		<< " + (FloodX*TMath::Cos("
+		<< cornerQ1
+		<< ") - FloodY*TMath::Sin("
+		<< cornerQ1
+		<< ")))";
+		
+// 		std::cout << varY.str() << std::endl;
+// 		std::cout << varX.str() << std::endl;
+		
+	      }
+	    }	    
+	  }
+	  var << varY.str() << ":" << varX.str() << " >> spectrum2d";
+	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
 	  name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  spectrum2d->SetName(name); 
 	  spectrum2d->SetTitle(name);
 	  spectrum2d->GetXaxis()->SetTitle("U");
 	  spectrum2d->GetYaxis()->SetTitle("V");
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap2D(*spectrum2d);
-	  delete spectrum2d;
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
+	  /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
+	  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
+	  
+	  module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
+	  
+// 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
+	  varX.str("");
+	  varY.str("");
+	  var.str("");
+	  delete spectrum2d; 
+	  
 	  //sherical coordinates plot
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
-	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  name = "Spherical Plot - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  spectrum2d->SetName(name);
-	  spectrum2d->SetTitle(name);
-	  spectrum2d->GetXaxis()->SetTitle("Theta");
-	  spectrum2d->GetYaxis()->SetTitle("Phi");
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetSphericalMap(*spectrum2d);
-	  delete spectrum2d;
+// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
+// 	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+// 	  name = "Spherical Plot - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+// 	  spectrum2d->SetName(name);
+// 	  spectrum2d->SetTitle(name);
+// 	  spectrum2d->GetXaxis()->SetTitle("Theta");
+// 	  spectrum2d->GetYaxis()->SetTitle("Phi");
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetSphericalMap(*spectrum2d);
+// 	  delete spectrum2d;
 	  //cylindrical coordinates plot, x and theta
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  spectrum2d->SetName(name);
-	  spectrum2d->SetTitle(name);
-	  spectrum2d->GetXaxis()->SetTitle("U");
-	  spectrum2d->GetYaxis()->SetTitle("Theta");
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalXMap(*spectrum2d);
-	  delete spectrum2d;
+// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
+// 	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+// 	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+// 	  spectrum2d->SetName(name);
+// 	  spectrum2d->SetTitle(name);
+// 	  spectrum2d->GetXaxis()->SetTitle("U");
+// 	  spectrum2d->GetYaxis()->SetTitle("Theta");
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalXMap(*spectrum2d);
+// 	  delete spectrum2d;
 	  //cylindrical coordinates plot, y and theta
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  spectrum2d->SetName(name);
-	  spectrum2d->SetTitle(name);
-	  spectrum2d->GetXaxis()->SetTitle("V");
-	  spectrum2d->GetYaxis()->SetTitle("Theta");
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalYMap(*spectrum2d);
-	  delete spectrum2d;
+// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
+// 	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+// 	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+// 	  spectrum2d->SetName(name);
+// 	  spectrum2d->SetTitle(name);
+// 	  spectrum2d->GetXaxis()->SetTitle("V");
+// 	  spectrum2d->GetYaxis()->SetTitle("Theta");
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalYMap(*spectrum2d);
+// 	  delete spectrum2d;
 	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -424,6 +614,10 @@ int main (int argc, char** argv)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
 		
+		
+		//set crystal elliptical cut on the basis of what are the variables involved, i.e. on the basis of mppc position
+		
+		CurrentCrystal->SetEllipses(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetXvariable(),mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetYvariable());
 		
 		TCut CutCrystal;
 // 		if(usingRealSimData)
@@ -550,6 +744,9 @@ int main (int argc, char** argv)
 		delete spectrum;
 		
 		// Flood histogram 2d for this crystal, to show the elliptic cut
+		// in this case the coordinates are the real u and v, so the cut 
+		// that was probably a circle in the custom coordinates, now it should 
+		// be elongated (especially on frame mppcs)
 		spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
 		tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger+CutCrystal,"COLZ");
 		sname << "Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
@@ -702,24 +899,25 @@ int main (int argc, char** argv)
   TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
   TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
   TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
+  TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
   TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
-  TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
-  TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
-  TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
+//   TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
+//   TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
+//   TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
   RawCanvas->Divide(4,4);
   TriggerCanvas->Divide(4,4);
   FloodHistoCanvas->Divide(4,4);
   FloodHisto3DCanvas->Divide(4,4);
-  SphericalCanvas->Divide(4,4);
-  CylindricalXCanvas->Divide(4,4);
-  CylindricalYCanvas->Divide(4,4);
+//   SphericalCanvas->Divide(4,4);
+//   CylindricalXCanvas->Divide(4,4);
+//   CylindricalYCanvas->Divide(4,4);
   //canvases for the global plots
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
-  TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
-  TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
-  TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
+//   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
+//   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
+//   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
   //canvas for the tagging crystal
   TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);    
   //draw canvases
@@ -733,6 +931,10 @@ int main (int argc, char** argv)
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       GlobalFlood2D->cd();
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
+      
+      FloodSeparatedCanvas->cd();
+      module[iModule][jModule]->GetFloodMap2DSeparated()->Draw("COLZ");
+      
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
@@ -753,14 +955,15 @@ int main (int argc, char** argv)
 	  }
 	}
       } 
+      
       GlobalFlood3D->cd();
       module[iModule][jModule]->GetFloodMap3D()->Draw();
-      GlobalSpherical->cd();
-      module[iModule][jModule]->GetSphericalMap()->Draw("COLZ");
-      GlobalCylindricalX->cd();
-      module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
-      GlobalCylindricalY->cd();
-      module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
+//       GlobalSpherical->cd();
+//       module[iModule][jModule]->GetSphericalMap()->Draw("COLZ");
+//       GlobalCylindricalX->cd();
+//       module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
+//       GlobalCylindricalY->cd();
+//       module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
@@ -771,14 +974,18 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
+	  
 	  FloodHisto3DCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw("COLZ");	  
-	  SphericalCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSphericalMap()->Draw("COLZ");
-	  CylindricalXCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");	  
-	  CylindricalYCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalYMap()->Draw("COLZ");
+// 	  SphericalCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSphericalMap()->Draw("COLZ");
+// 	  CylindricalXCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");	  
+// 	  CylindricalYCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalYMap()->Draw("COLZ");
+	  
+	  // temp debug
+	  
 	}
       }
     }
@@ -917,17 +1124,19 @@ int main (int argc, char** argv)
       directory[iModule+jModule][0][0]->cd();      
       GlobalFlood2D->Write();
       GlobalFlood2DClean->Write();
+      FloodSeparatedCanvas->Write();
       GlobalFlood3D->Write();
-      GlobalSpherical->Write();
-      GlobalCylindricalX->Write();
-      GlobalCylindricalY->Write();
+//       GlobalSpherical->Write();
+//       GlobalCylindricalX->Write();
+//       GlobalCylindricalY->Write();
       RawCanvas->Write();
       TriggerCanvas->Write();
       FloodHistoCanvas->Write();
+      
       FloodHisto3DCanvas->Write();
-      SphericalCanvas->Write();
-      CylindricalXCanvas->Write();
-      CylindricalYCanvas->Write();
+//       SphericalCanvas->Write();
+//       CylindricalXCanvas->Write();
+//       CylindricalYCanvas->Write();
       //save the 3d flood maps separately for each channel
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -938,6 +1147,7 @@ int main (int argc, char** argv)
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0] = directory[iModule+jModule][0][0]->mkdir(MppcDirStream.str().c_str());
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Write();
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)

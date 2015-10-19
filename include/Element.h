@@ -22,6 +22,8 @@ protected:
   std::string          parentName;        // name of parent element
   std::vector<std::string> childrenName;  // name of children elements
   std::string          extendedID;        // sort of unique identifier --> moduleI.moduleJ.mppcI.mppcJ.crystalI.crystalJ
+  std::string          variableX;         // x variable for the specific roto-translated plot of this element
+  std::string          variableY;         // y variable for the specific roto-translated plot of this element
   int                  id;                // id number
   int                  i,j;               // i and j IDs
   float                x,y,z;             // position coordinate space [mm]
@@ -29,11 +31,17 @@ protected:
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
   
+  
   //2d histos
   TH2F                 FloodMap2D;        // u,v map for this element
+  TH2F                 FloodMap2DSeparated; // the 2d maps that combines the correct lateral, corner and central maps
   TH2F                 SphericalMap;      // spherical coordinates map (theta,phi) for this element
   TH2F                 CylindricalXMap;   // cylindrical coordinates map (theta,x) for this element
   TH2F                 CylindricalYMap;   // cylindrical coordinates map (theta,y) for this element
+  //for each element, every possible 2d plot (lateral, corner, central)
+  TH2F                 LateralMap;
+  TH2F                 CornerMap;
+  TH2F                 CentralMap;
   //3d histos
   TH3F                 FloodMap3D;        // u,v,w map for this element
 
@@ -61,10 +69,16 @@ public:
   int                  GetChildrenJ()                            {return jChildren;};  
   std::string          GetParentName()                           {return parentName;};
   TH2F*                GetFloodMap2D()                           {return &FloodMap2D;};
+  TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};
   TH2F*                GetSphericalMap()                         {return &SphericalMap;};
   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};
   TH2F*                GetCylindricalYMap()                      {return &CylindricalYMap;};
+  TH2F*                GetLateralMap()                           {return &LateralMap;};
+  TH2F*                GetCornerMap()                            {return &CornerMap;};
+  TH2F*                GetCentralMap()                           {return &CentralMap;};
   TH3F*                GetFloodMap3D()                           {return &FloodMap3D;};
+  std::string          GetXvariable()                            {return variableX;};
+  std::string          GetYvariable()                            {return variableY;};
   void                 SetName(std::string aname)                {name = aname;};
   void                 SetLabel(std::string aname)               {label = aname;};
   void                 SetID(int pid)                            {id = pid;};
@@ -77,11 +91,16 @@ public:
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};
   void                 SetParentName(std::string aName)          {parentName = aName;};
   void                 SetFloodMap2D(TH2F aHisto)                {FloodMap2D = aHisto;};
+  void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};
   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};
   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};
   void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};
   void                 SetFloodMap3D(TH3F aHisto)                {FloodMap3D = aHisto;};
-  
+  void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};
+  void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};
+  void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};
+  void                 SetXvariable(std::string astring)         {variableX = astring;};
+  void                 SetYvariable(std::string astring)         {variableY = astring;};
   //methods to add and return children elements
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};
   std::vector<std::string> GetChildren()                         {return childrenName;};

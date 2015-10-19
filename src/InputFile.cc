@@ -401,7 +401,7 @@ void InputFile::CreateTree()
     
     if(usingTaggingBench) TreeZPosition = taggingPosition;
     
-    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX,2) + std::pow(TreeFloodY,2) + std::pow(TreeFloodZ,2)) )); 
+    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX - 2.8,2) + std::pow(TreeFloodY - (-1.0),2) + std::pow(TreeFloodZ,2)) )); 
     TreePhi =  std::atan (TreeFloodY / TreeFloodX);
     
     point.x = TreeFloodX;
@@ -548,8 +548,9 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      double wu = crystaldata[cryI][cryJ][2];
 	      double wv = crystaldata[cryI][cryJ][3];
 	      double t  = crystaldata[cryI][cryJ][4];
+	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
 // 	      std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
-	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
+// 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
 // 	      crystal[cryI][cryJ]->Print();
