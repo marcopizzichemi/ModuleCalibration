@@ -697,7 +697,7 @@ int main (int argc, char** argv)
 // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
 		//Compute the energy Tcut
 		std::stringstream streamEnergyCut;
-		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 1.5*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 3.0*std::abs(gauss->GetParameter(2));
+		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 3.0*std::abs(gauss->GetParameter(2));
 		TCut PhotopeakEnergyCut = streamEnergyCut.str().c_str();
 		CurrentCrystal->SetSpectrum(*spectrum);
 		var.str("");
@@ -1273,6 +1273,7 @@ int main (int argc, char** argv)
       
       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
+      C_WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
       C_WfwhmVsIJ->cd();
       WfwhmVsIJ->Draw("LEGO2");
       C_WfwhmVsIJ->Write();
@@ -1286,12 +1287,14 @@ int main (int argc, char** argv)
       TCanvas *C_PeakPositionVsIJ = new TCanvas("C_PeakPositionVsIJ","C_PeakPositionVsIJ",800,800);
       C_PeakPositionVsIJ->SetName(PeakPositionVsIJ->GetName());
       C_PeakPositionVsIJ->cd();
+      C_PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,10000);
       PeakPositionVsIJ->Draw("LEGO2");
       C_PeakPositionVsIJ->Write();
       
       TCanvas *C_EnergyResolutionVsIJ = new TCanvas("C_EnergyResolutionVsIJ","C_EnergyResolutionVsIJ",800,800);
       C_EnergyResolutionVsIJ->SetName(EnergyResolutionVsIJ->GetName());
       C_EnergyResolutionVsIJ->cd();
+      C_EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
       EnergyResolutionVsIJ->Draw("LEGO2");
       C_EnergyResolutionVsIJ->Write();
 //       gStyle->SetOptStat(1);
