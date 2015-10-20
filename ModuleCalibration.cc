@@ -642,10 +642,10 @@ int main (int argc, char** argv)
 		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
 		var << SumChannels << " >> spectrum";
 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal);
-		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - " << CurrentCrystal->GetExtendedID();
+		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 		spectrum->SetName(sname.str().c_str());
-// 		spectrum->SetTitle(sname.str().c_str());
-		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
+		spectrum->SetTitle(sname.str().c_str());
+// 		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
 		spectrum->GetYaxis()->SetTitle("N");
 // 		std::cout << var.str().c_str() << std::endl;
@@ -918,6 +918,24 @@ int main (int argc, char** argv)
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
+  
+  TCanvas* BigSpectraCanvas = new TCanvas("BigSpectra","",800,800);
+  BigSpectraCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
+  int canvascounter = 1;
+  for(int jCrystal = ncrystalsy*nmppcy*nmoduley -1 ; jCrystal >=0  ; jCrystal--)
+  {
+    for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
+    {
+      BigSpectraCanvas->cd(canvascounter);
+      crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
+      crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
+      crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
+      canvascounter++;
+      //std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
+    } 
+    //std::cout << std::endl;
+  }
+  
 //   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
 //   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
 //   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
@@ -977,6 +995,8 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
+	  TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
+	  int nfound2D = peaks2D->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),1,"col",0.3);	
 	  
 	  FloodHisto3DCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw("COLZ");	  
@@ -1145,6 +1165,7 @@ int main (int argc, char** argv)
       GlobalFlood2D->Write();
       GlobalFlood2DClean->Write();
       FloodSeparatedCanvas->Write();
+      BigSpectraCanvas->Write();
       GlobalFlood3D->Write();
 //       GlobalSpherical->Write();
 //       GlobalCylindricalX->Write();
