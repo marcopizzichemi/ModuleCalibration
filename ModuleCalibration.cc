@@ -217,7 +217,7 @@ int main (int argc, char** argv)
   double base_cornerDeltaU      = config.read<double>("cornerDeltaU",3);            // translations
   double base_cornerDeltaV      = config.read<double>("cornerDeltaV",2.1);          // translations
   double base_cornerRescale     = config.read<double>("cornerRescale",4);           // rescale factor
-  
+  bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting
   
   
   
@@ -669,7 +669,7 @@ int main (int argc, char** argv)
 	  
 	  
 	  //automatic crystal finder. for the moment only for doi bench
-	  if(usingTaggingBench)
+	  if(usingTaggingBench && !onlyuserinput)
 	  {
 	    if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	    {
@@ -793,7 +793,7 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi() && !CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored
+	      if(!onlyuserinput && usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi() && !CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored
 	      {
 	      //set the ellipses from here
 		if(iCry == 0)
