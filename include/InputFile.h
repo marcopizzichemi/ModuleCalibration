@@ -50,6 +50,10 @@ private:
   std::vector <float>            saturation;                         // above tokenized string transformed in the proper variable types
   std::string                    **crystal_s;                        // array of string, one for each crystal input by the user in the config file
   std::vector <std::string>      crystal_f;                          // tokenized version
+  std::string                    digitizerDoi_s;                        // input string of the digitizer key from config file 
+  std::vector <std::string>      digitizerDoi_f;                        // tokenization of above strings 
+  std::vector <int>              digitizerDoi;                          // above tokenized string transformed in the proper variable types
+  
   float                          ***crystaldata;                     // i,j matrix with data of the above string transformed in float
   bool                           **crystalIsOn;                      // i,j matrix with crystal ON/OFF
   // variable for the module(s) structure

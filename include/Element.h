@@ -31,7 +31,6 @@ protected:
   int                  iChildren;         // number of children on "i"
   int                  jChildren;         // number of children on "j"
   
-  
   //2d histos
   TH2F                 FloodMap2D;        // u,v map for this element
   TH2F                 FloodMap2DSeparated; // the 2d maps that combines the correct lateral, corner and central maps
@@ -42,6 +41,7 @@ protected:
   TH2F                 LateralMap;
   TH2F                 CornerMap;
   TH2F                 CentralMap;
+  TH2F                 ADCversusW;        // 2d histo of "energy" versus w coordinate
   //3d histos
   TH3F                 FloodMap3D;        // u,v,w map for this element
 
@@ -69,6 +69,7 @@ public:
   int                  GetChildrenJ()                            {return jChildren;};  
   std::string          GetParentName()                           {return parentName;};
   TH2F*                GetFloodMap2D()                           {return &FloodMap2D;};
+  TH2F*                GetADCversusW()                           {return &ADCversusW;};  
   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};
   TH2F*                GetSphericalMap()                         {return &SphericalMap;};
   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};
@@ -91,6 +92,7 @@ public:
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};
   void                 SetParentName(std::string aName)          {parentName = aName;};
   void                 SetFloodMap2D(TH2F aHisto)                {FloodMap2D = aHisto;};
+  void                 SetADCversusW(TH2F aHisto)                {ADCversusW = aHisto;};
   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};
   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};
   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};

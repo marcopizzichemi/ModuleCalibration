@@ -15,6 +15,7 @@ private:
   int                    digitizerChannel;       //which digitizer channel is assigned to this mppc
   int                    canvasPosition;         // position in the canvas of all channels
   std::string            moduleName;             // name of the module
+  bool                   IsOnForDoi;
   
   //histograms
   TH1F                   RawSpectrum;            // raw spectrum of all events seen by this mppc
@@ -41,6 +42,11 @@ public:
   void                   SetRawSpectrum(TH1F aHisto){RawSpectrum = aHisto;};
   TH1F*                  GetTriggerSpectrum(){return &TriggerSpectrum;};
   void                   SetTriggerSpectrum(TH1F aHisto){TriggerSpectrum = aHisto;};
+  void                   SetIsOnForDoi(bool abool){IsOnForDoi = abool;};
+  bool                   GetIsOnForDoi(){return IsOnForDoi;};
+  // methods to analyze the mppc
+  int                    Find2Dpeaks();
+  
   
   void PrintGlobal();
   void PrintSpecific();

@@ -105,6 +105,16 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
+  //read string for doi analysis channels
+  digitizerDoi_s = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
+  config.split( digitizerDoi_f, digitizerDoi_s, "," );
+  for(int i = 0 ; i < digitizerDoi_f.size() ; i++)
+  {
+    config.trim(digitizerDoi_f[i]);
+    digitizerDoi.push_back(atoi(digitizerDoi_f[i].c_str()));
+  }
+  
+  
   
   //read strings that describes crystals
   //a string for input for each crystal
@@ -515,7 +525,15 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetDigitizerChannel(translateCh[posID]);
 	  mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
 	  mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
-// 	  mppc[mppcI][mppcJ]->Print();
+	  
+	  mppc[mppcI][mppcJ]->SetIsOnForDoi(false);
+	  for(int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
+	  {
+	    if(mppc[mppcI][mppcJ]->GetDigitizerChannel() == digitizerDoi[iDoi])
+	      mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
+	  }
+	  
+	  mppc[mppcI][mppcJ]->Print();
 	  sname.str("");
 	  
 	  module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );

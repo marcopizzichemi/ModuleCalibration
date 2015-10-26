@@ -220,6 +220,7 @@ int main (int argc, char** argv)
   
   
   
+  
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
@@ -241,7 +242,10 @@ int main (int argc, char** argv)
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
     sSumChannels << "+ch" << i; // the analysis ttree will always have channels in order, from 0 to input size
-  SumChannels = sSumChannels.str();
+    SumChannels = sSumChannels.str();
+  
+  
+  
   //----------------------------------------------------------//
   
   
@@ -278,6 +282,12 @@ int main (int argc, char** argv)
   TGraph* simGraph; 
   TCanvas* C_spectrum;
   std::stringstream var,cut,sname; 
+  
+  std::ofstream doiFile;
+  if(usingTaggingBench)
+  {
+    doiFile.open("doiData.txt", std::ofstream::out);
+  }
   
   //FIXME hardcoded for now
   // angles for separating crystals, translations for having a nice 2d plot
@@ -326,35 +336,35 @@ int main (int argc, char** argv)
       delete spectrum2d;
       
       //sherical coordinates plot
-//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
-//       tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
-//       name = "Spherical Plot - " + module[iModule][jModule]->GetName();
-//       spectrum2d->SetName(name);
-//       spectrum2d->SetTitle(name);
-//       spectrum2d->GetXaxis()->SetTitle("Theta");
-//       spectrum2d->GetYaxis()->SetTitle("Phi");
-//       module[iModule][jModule]->SetSphericalMap(*spectrum2d);
-//       delete spectrum2d;
+      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
+      //       tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
+      //       name = "Spherical Plot - " + module[iModule][jModule]->GetName();
+      //       spectrum2d->SetName(name);
+      //       spectrum2d->SetTitle(name);
+      //       spectrum2d->GetXaxis()->SetTitle("Theta");
+      //       spectrum2d->GetYaxis()->SetTitle("Phi");
+      //       module[iModule][jModule]->SetSphericalMap(*spectrum2d);
+      //       delete spectrum2d;
       //cylindrical coordinates plot, x and theta
-//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-//       tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
-//       name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
-//       spectrum2d->SetName(name);
-//       spectrum2d->SetTitle(name);
-//       spectrum2d->GetXaxis()->SetTitle("U");
-//       spectrum2d->GetYaxis()->SetTitle("Theta");
-//       module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
-//       delete spectrum2d;
+      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
+      //       tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
+      //       name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
+      //       spectrum2d->SetName(name);
+      //       spectrum2d->SetTitle(name);
+      //       spectrum2d->GetXaxis()->SetTitle("U");
+      //       spectrum2d->GetYaxis()->SetTitle("Theta");
+      //       module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
+      //       delete spectrum2d;
       //cylindrical coordinates plot, y and theta
-//       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-//       tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
-//       name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
-//       spectrum2d->SetName(name);
-//       spectrum2d->SetTitle(name);
-//       spectrum2d->GetXaxis()->SetTitle("V");
-//       spectrum2d->GetYaxis()->SetTitle("Theta");
-//       module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
-//       delete spectrum2d;
+      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
+      //       tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
+      //       name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
+      //       spectrum2d->SetName(name);
+      //       spectrum2d->SetTitle(name);
+      //       spectrum2d->GetXaxis()->SetTitle("V");
+      //       spectrum2d->GetYaxis()->SetTitle("Theta");
+      //       module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
+      //       delete spectrum2d;
       //3D plot
       spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
@@ -416,7 +426,7 @@ int main (int argc, char** argv)
 	    // standard flood 2d
 	    varX << "FloodX";
 	    varY << "FloodY";
-// 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
+	    // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
 	  }
 	  else // we are not in the center
 	  {
@@ -427,14 +437,14 @@ int main (int argc, char** argv)
 		lateralQ2         = - base_lateralQ2;
 		lateralDeltaV     = - base_lateralDeltaV;
 		lateralRescaleTB  = + base_lateralRescaleTB;
-// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
+		// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
 	      }
 	      if(((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top lateral crystals
 	      {
 		lateralQ2         = + base_lateralQ2;
 		lateralDeltaV     = + base_lateralDeltaV;
 		lateralRescaleTB  = + base_lateralRescaleTB;
-// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
+		// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
 	      }
 	      // left and right crystals have the same var structure
 	      varY << "("
@@ -457,14 +467,14 @@ int main (int argc, char** argv)
 		  lateralQ1         = + base_lateralQ1;
 		  lateralDeltaU     = - base_lateralDeltaU;
 		  lateralRescaleRL  = + base_lateralRescaleRL;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
 		}
 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 )   // right lateral crystals
 		{
 		  lateralQ1         = - base_lateralQ1;
 		  lateralDeltaU     = + base_lateralDeltaU;
 		  lateralRescaleRL  = + base_lateralRescaleRL;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
 		}
 		// left and right crystals have the same var structure
 		varY << "(FloodY)";  
@@ -487,7 +497,7 @@ int main (int argc, char** argv)
 		  cornerQ1       = + base_cornerQ1      ;
 		  cornerQ2       = - base_cornerQ2      ;
 		  cornerRescale  =   base_cornerRescale ;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
 		}
 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom right crystals
 		{
@@ -496,7 +506,7 @@ int main (int argc, char** argv)
 		  cornerQ1       = - base_cornerQ1      ;
 		  cornerQ2       = - base_cornerQ2      ;
 		  cornerRescale  =   base_cornerRescale ;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
 		}
 		if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top left crystals
 		{
@@ -505,7 +515,7 @@ int main (int argc, char** argv)
 		  cornerQ1       = - base_cornerQ1      ;
 		  cornerQ2       = + base_cornerQ2      ;
 		  cornerRescale  =   base_cornerRescale ;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
 		}
 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1)   // top right crystals
 		{
@@ -514,7 +524,7 @@ int main (int argc, char** argv)
 		  cornerQ1       = + base_cornerQ1      ;
 		  cornerQ2       = + base_cornerQ2      ;
 		  cornerRescale  =   base_cornerRescale ;
-// 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
+		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
 		}
 		varY 
 		<< "( "
@@ -538,8 +548,8 @@ int main (int argc, char** argv)
 		<< cornerQ1
 		<< ")))";
 		
-// 		std::cout << varY.str() << std::endl;
-// 		std::cout << varX.str() << std::endl;
+		// 		std::cout << varY.str() << std::endl;
+		// 		std::cout << varX.str() << std::endl;
 		
 	      }
 	    }	    
@@ -555,46 +565,46 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
 	  /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
-	  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
+	   *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
 	  
 	  module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
 	  
-// 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
+	  // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
 	  varX.str("");
 	  varY.str("");
 	  var.str("");
 	  delete spectrum2d; 
 	  
 	  //sherical coordinates plot
-// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
-// 	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-// 	  name = "Spherical Plot - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-// 	  spectrum2d->SetName(name);
-// 	  spectrum2d->SetTitle(name);
-// 	  spectrum2d->GetXaxis()->SetTitle("Theta");
-// 	  spectrum2d->GetYaxis()->SetTitle("Phi");
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetSphericalMap(*spectrum2d);
-// 	  delete spectrum2d;
+	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
+	  // 	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  // 	  name = "Spherical Plot - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  // 	  spectrum2d->SetName(name);
+	  // 	  spectrum2d->SetTitle(name);
+	  // 	  spectrum2d->GetXaxis()->SetTitle("Theta");
+	  // 	  spectrum2d->GetYaxis()->SetTitle("Phi");
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetSphericalMap(*spectrum2d);
+	  // 	  delete spectrum2d;
 	  //cylindrical coordinates plot, x and theta
-// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-// 	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-// 	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-// 	  spectrum2d->SetName(name);
-// 	  spectrum2d->SetTitle(name);
-// 	  spectrum2d->GetXaxis()->SetTitle("U");
-// 	  spectrum2d->GetYaxis()->SetTitle("Theta");
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalXMap(*spectrum2d);
-// 	  delete spectrum2d;
+	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
+	  // 	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  // 	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  // 	  spectrum2d->SetName(name);
+	  // 	  spectrum2d->SetTitle(name);
+	  // 	  spectrum2d->GetXaxis()->SetTitle("U");
+	  // 	  spectrum2d->GetYaxis()->SetTitle("Theta");
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalXMap(*spectrum2d);
+	  // 	  delete spectrum2d;
 	  //cylindrical coordinates plot, y and theta
-// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-// 	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-// 	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-// 	  spectrum2d->SetName(name);
-// 	  spectrum2d->SetTitle(name);
-// 	  spectrum2d->GetXaxis()->SetTitle("V");
-// 	  spectrum2d->GetYaxis()->SetTitle("Theta");
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalYMap(*spectrum2d);
-// 	  delete spectrum2d;
+	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
+	  // 	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
+	  // 	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  // 	  spectrum2d->SetName(name);
+	  // 	  spectrum2d->SetTitle(name);
+	  // 	  spectrum2d->GetXaxis()->SetTitle("V");
+	  // 	  spectrum2d->GetYaxis()->SetTitle("Theta");
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalYMap(*spectrum2d);
+	  // 	  delete spectrum2d;
 	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -606,6 +616,131 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(*spectrum3d);
 	  delete spectrum3d;
 	  
+	  int nofcrystals = 2;//FIXME for the moment hardcoded to find the line 
+	  double *fit2DmeanX = new double[nofcrystals];
+	      double *fit2DmeanY = new double[nofcrystals];
+	      double *fit2DsigmaX = new double[nofcrystals];
+	      double *fit2DsigmaY = new double[nofcrystals];
+	  
+	  
+	  //automatic crystal finder. for the moment only for doi bench
+	  if(usingTaggingBench)
+	  {
+	    if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+	    {
+	      
+	      
+	      TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line 
+	      int nfound = peak2d->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),2,"col",0.4);
+	      
+// 	      std::cout << nfound << std::endl;
+	      
+	      //store what has been found in the params struct
+	      float *xpeaks = peak2d->GetPositionX();
+	      float *ypeaks = peak2d->GetPositionY();
+	      double *xsigma = new double[nofcrystals];
+	      double *ysigma = new double[nofcrystals];
+	      
+	      
+	      double *tempXsigma = new double[nofcrystals];
+	      double *tempYsigma = new double[nofcrystals];
+	      
+	      
+	      
+	      
+	      
+	      for(int i = 0 ; i < nofcrystals ; i++)
+	      {
+		tempXsigma[i] = 0.2;
+		tempYsigma[i] = 0.2;
+		xsigma[i] =tempXsigma[i];
+		ysigma[i] = tempYsigma[i];
+	      }
+	      
+	      
+	      //2d fit
+	      for ( int j = 0 ; j < nfound ; j++)
+	      {
+		
+		TF2 *f2 = new TF2("f2","[0]*TMath::Gaus(x,[1],[2])*TMath::Gaus(y,[3],[4])",xpeaks[j]-2.0*xsigma[j],xpeaks[j]+2.0*xsigma[j],ypeaks[j]-2.0*ysigma[j],ypeaks[j]+2.0*ysigma[j]);
+		f2->SetParameters(14,xpeaks[j],xsigma[j],ypeaks[j],ysigma[j]);
+		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Fit("f2","QNR");
+		fit2DmeanX[j] = xpeaks[j];
+		fit2DmeanY[j] = ypeaks[j];
+		//we insert the 2.5 sigma limit here, it makes things easier
+		fit2DsigmaX[j] = 2.5*TMath::Abs(f2->GetParameter(2));
+		fit2DsigmaY[j] = 2.5*TMath::Abs(f2->GetParameter(4));
+	      }
+	      
+	      
+	      for ( int j = 0 ; j < nfound ; j++)
+	      {
+		float sx,sy;
+		sx = fit2DsigmaX[j];
+		sy = fit2DsigmaY[j];
+		fit2DsigmaX[j] = (sx+sy)/2.0;
+		fit2DsigmaY[j] = (sx+sy)/2.0;
+	      }
+	      
+	      
+	      
+	      
+	      
+	      
+	      
+	      //   now for each peak, check if any other peak is closer than the sum of the relative circles
+	      for ( int j = 0 ; j < nfound ; j++)// run on all peaks
+	      {
+		for ( int jOther = 0 ; jOther < nfound ; jOther++)//run on all peaks again, but...
+		{
+		  if (jOther != j) //...do it only if it's not the same peak
+		  {
+		    float distance = TMath::Sqrt( TMath::Power(fit2DmeanX[j]-fit2DmeanX[jOther],2) + TMath::Power(fit2DmeanY[j]-fit2DmeanY[jOther],2) );
+		    float sumOfRadii = (fit2DsigmaX[j]+fit2DsigmaX[jOther]);
+		    if ( distance < sumOfRadii )
+		    {
+		      //std::cout << "WARNING: Peaks of Module " << k << " Channel " << i << " are overlapping!" << std::endl;
+		      fit2DsigmaX[j] = distance * ( fit2DsigmaX[j] / sumOfRadii );
+		      fit2DsigmaX[jOther] = distance * ( fit2DsigmaX[jOther] / sumOfRadii );
+		      fit2DsigmaY[j] = fit2DsigmaX[j];
+		      fit2DsigmaY[jOther] = fit2DsigmaX[jOther];
+		    }
+		  }
+		}
+	      }
+	      
+	      // sort them so that first is lower y
+	      double swapFit2DmeanX,swapFit2DmeanY,swapFit2DsigmaX,swapFit2DsigmaY;
+	      if(fit2DmeanY[0] > fit2DmeanY[1])
+	      {
+		swapFit2DmeanX  = fit2DmeanX[1];
+		swapFit2DmeanY  = fit2DmeanY[1];
+		swapFit2DsigmaX = fit2DsigmaX[1];
+		swapFit2DsigmaY = fit2DsigmaY[1];
+		
+		fit2DmeanX[1] = fit2DmeanX[0];
+		fit2DmeanY[1] = fit2DmeanY[0];
+		fit2DsigmaX[1] = fit2DsigmaX[0];
+		fit2DsigmaY[1] = fit2DsigmaY[0];
+		
+		fit2DmeanX[0] = swapFit2DmeanX  ;
+		fit2DmeanY[0] = swapFit2DmeanY  ;
+		fit2DsigmaX[0] =swapFit2DsigmaX ;
+		fit2DsigmaY[0] =swapFit2DsigmaY ;
+		
+	      }
+	      
+	      
+	      
+	      
+	      
+	      
+	      
+	      // 		return nfound;
+	      
+	    }
+	  }
+	  
 	  //spectra for each crystal
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
@@ -613,6 +748,32 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
+	      if(usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+	      {
+	      //set the ellipses from here
+		if(iCry == 0)
+		{
+		  // we have only two peaks. assign them to two crystals in a line in this mppc (which ones? doesn't matter for now.... FIXME)
+		  CurrentCrystal->SetCrystalOn(true);
+		  CurrentCrystal->SetCrystalData(fit2DmeanX[jCry],fit2DmeanY[jCry],fit2DsigmaX[jCry],fit2DsigmaY[jCry],0);
+		  TEllipse *ellipse = new TEllipse(fit2DmeanX[jCry],fit2DmeanY[jCry],fit2DsigmaX[jCry],fit2DsigmaY[jCry],0,360,0);
+		  CurrentCrystal->SetGraphicalCut(*ellipse);
+		  
+		  //     ellipseCenterX[j] = fit2DmeanX[j];
+		  //     ellipseCenterY[j] = fit2DmeanY[j];
+		  //     ellipseWidthX[j] = fit2DsigmaX[j];
+		  //     ellipseWidthY[j] = fit2DsigmaY[j];
+		  //     TEllipse *ellipses;
+		  //     ellipses = new TEllipse(ellipseCenterX[j],ellipseCenterY[j],ellipseWidthX[j],ellipseWidthY[j]);
+		  //     //ellipses->SetFillColor(42);
+		  //     ellipses->SetFillStyle(4001);
+		  //     ellipses->SetLineColor(kRed);
+		  //     ellipses->SetLineWidth(2);
+		  //     ellipses->Draw();
+// 		  std::cout  <<  fit2DmeanX[jCry] << " " << fit2DmeanY[jCry]<< " " << fit2DsigmaX[jCry] << " " << fit2DsigmaY[jCry] << std::endl;
+		}
+	      }
+	      
 	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
@@ -623,17 +784,17 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetEllipses(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetXvariable(),mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetYvariable());
 		
 		TCut CutCrystal;
-// 		if(usingRealSimData)
-// 		{
-// 		  std::stringstream simCutCrystal;
-// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-// 		  CutCrystal = simCutCrystal.str().c_str();
-// // 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
-// 		}
-// 		else
-// 		{
+		// 		if(usingRealSimData)
+		// 		{
+		// 		  std::stringstream simCutCrystal;
+		// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+		// 		  CutCrystal = simCutCrystal.str().c_str();
+		// // 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
+		// 		}
+		// 		else
+		// 		{
 		CutCrystal = CurrentCrystal->GetCrystalCut();
-// 		}
+		// 		}
 		
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
@@ -645,18 +806,18 @@ int main (int argc, char** argv)
 		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 		spectrum->SetName(sname.str().c_str());
 		spectrum->SetTitle(sname.str().c_str());
-// 		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
+		// 		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
 		spectrum->GetYaxis()->SetTitle("N");
-// 		std::cout << var.str().c_str() << std::endl;
-// 		std::cout << CutXYZ << std::endl;
-// 		std::cout << CutTrigger << std::endl;
-// 		std::cout << CutCrystal << std::endl;
+		// 		std::cout << var.str().c_str() << std::endl;
+		// 		std::cout << CutXYZ << std::endl;
+		// 		std::cout << CutTrigger << std::endl;
+		// 		std::cout << CutCrystal << std::endl;
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		TSpectrum *s;
 		s = new TSpectrum(20);
-// 		Input[i].SumSpectraCanvas->cd(j+1);
+		// 		Input[i].SumSpectraCanvas->cd(j+1);
 		Int_t CrystalPeaksN = s->Search(spectrum,2,"goff",0.5); 
 		Float_t *CrystalPeaks = s->GetPositionX();
 		Float_t *CrystalPeaksY = s->GetPositionY();
@@ -695,9 +856,9 @@ int main (int argc, char** argv)
 		if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
 		  CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
 		CurrentCrystal->SetFit(*gauss);
-// 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
-// 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
-// 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
+		// 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
+		// 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
+		// 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
 		//Compute the energy Tcut
 		std::stringstream streamEnergyCut;
 		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 3.0*std::abs(gauss->GetParameter(2));
@@ -742,6 +903,19 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetHistoWfwhm(fwhm);
 		CurrentCrystal->SetHistoWrms(rms);
 		CurrentCrystal->SetHistoWwidth20perc(width20perc);
+		if(usingTaggingBench)
+		{
+		  TF1 *gaussW = new TF1("gaussW",  "gaus",0,1);
+		  int binmax = spectrum->GetMaximumBin();
+                  double maximum = spectrum->GetXaxis()->GetBinCenter(binmax);
+		  gaussW->SetParameter(0,maximum);
+		  gaussW->SetParameter(1,spectrum->GetMean());
+		  gaussW->SetParameter(2,rms);
+		  spectrum->Fit("gaussW","R");
+		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2) << std::endl;;
+		  CurrentCrystal->SetHistoWfit(*gaussW);
+		}
+		
 		var.str("");
 		sname.str("");
 		delete spectrum;
@@ -775,9 +949,34 @@ int main (int argc, char** argv)
 		sname.str("");
 		delete spectrum2d;
 		
+		//histogram of w versus adc channels
+		long long int nPoints;
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,histo1Dbins,0,histo1Dmax);
+		var << SumChannels << ":FloodZ >> spectrum2d";
+		nPoints = tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		sname << "ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
+		spectrum2d->SetName(sname.str().c_str()); 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("W");
+		spectrum2d->GetYaxis()->SetTitle("ADC channels");
+		//make a TGraph from this th2f
+		// 		TGraph *CrystalGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+		// 		TF1 *linearCrystal = new TF1("linearCrystal",  "[0]*x + [1]",0,1);
+		// 		CrystalGraph->Fit("linearCrystal","","",0.1,0.9);
+		
+		// 		CurrentCrystal->SetADCversusWgraph(*CrystalGraph);
+		// 		CurrentCrystal->SetADCversusWfit(*linearCrystal);
+		CurrentCrystal->SetADCversusW(*spectrum2d);
+		var.str("");
+		sname.str("");
+		delete spectrum2d;
+		
+		
+		
+		
 		if(usingRealSimData) // only if this is a sim dataset
 		{
-		  long long int nPoints;
+		  // 		  long long int nPoints;
 		  spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
 		  var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
 		  nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut,"COLZ"); // a 2d plot of real vs. w, using the same cuts as before
@@ -801,7 +1000,7 @@ int main (int argc, char** argv)
 		  linear->SetParameter(1,50);
 		  expfit->SetParameter(0,50);
 		  expfit->SetParameter(1,0.1);
-// 		  simGraph->SetStats(1);
+		  // 		  simGraph->SetStats(1);
 		  simGraph->Fit("expfit","Q","",0.1,0.7);
 		  
 		  CurrentCrystal->SetSimFit(*expfit);
@@ -817,46 +1016,46 @@ int main (int argc, char** argv)
 	      }
 	      
 	      // perform it always if this is a sim dataset
-// 	      if(usingRealSimData)
-// 	      {
-// // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-// 		std::stringstream simCutCrystal;
-// 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-// 		
-// 		TCut CutCrystal = simCutCrystal.str().c_str();
-// // 		std::cout << CutCrystal << std::endl;
-// 		long long int nPoints;
-// 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
-// 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
-// 		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
-// 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
-// 		spectrum2d->SetName(sname.str().c_str()); 
-// 		spectrum2d->SetTitle(sname.str().c_str());
-// 		spectrum2d->GetXaxis()->SetTitle("W");
-// 		spectrum2d->GetYaxis()->SetTitle("Z");
-// 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
-// 		sname.str("");
-// 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
-// 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-// 		simGraph->SetName(sname.str().c_str()); 
-// 		simGraph->SetTitle(sname.str().c_str());
-// 		simGraph->GetXaxis()->SetTitle("W");
-// 		simGraph->GetYaxis()->SetTitle("Z");
-// 		simGraph->Draw("ap");
-// 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-// 		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
-// 		linear->SetParameter(0,-100);
-// 		linear->SetParameter(1,50);
-// 		simGraph->Fit("linear","Q","",0,1);
-// 		
-// 		CurrentCrystal->SetSimFit(*linear);
-// 		CurrentCrystal->SetSimGraph(*simGraph);
-// 		sname.str("");
-// 		var.str("");
-// // 		delete linear;
-// 		delete spectrum2d;
-// 		delete simGraph;
-// 	      }
+	      // 	      if(usingRealSimData)
+	      // 	      {
+	      // // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
+	      // 		std::stringstream simCutCrystal;
+	      // 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
+	      // 		
+	      // 		TCut CutCrystal = simCutCrystal.str().c_str();
+	      // // 		std::cout << CutCrystal << std::endl;
+	      // 		long long int nPoints;
+	      // 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+	      // 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
+	      // 		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
+	      // 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
+	      // 		spectrum2d->SetName(sname.str().c_str()); 
+	      // 		spectrum2d->SetTitle(sname.str().c_str());
+	      // 		spectrum2d->GetXaxis()->SetTitle("W");
+	      // 		spectrum2d->GetYaxis()->SetTitle("Z");
+	      // 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
+	      // 		sname.str("");
+	      // 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
+	      // 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+	      // 		simGraph->SetName(sname.str().c_str()); 
+	      // 		simGraph->SetTitle(sname.str().c_str());
+	      // 		simGraph->GetXaxis()->SetTitle("W");
+	      // 		simGraph->GetYaxis()->SetTitle("Z");
+	      // 		simGraph->Draw("ap");
+	      // 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
+	      // 		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
+	      // 		linear->SetParameter(0,-100);
+	      // 		linear->SetParameter(1,50);
+	      // 		simGraph->Fit("linear","Q","",0,1);
+	      // 		
+	      // 		CurrentCrystal->SetSimFit(*linear);
+	      // 		CurrentCrystal->SetSimGraph(*simGraph);
+	      // 		sname.str("");
+	      // 		var.str("");
+	      // // 		delete linear;
+	      // 		delete spectrum2d;
+	      // 		delete simGraph;
+	      // 	      }
 	      
 	    }
 	  }
@@ -904,16 +1103,16 @@ int main (int argc, char** argv)
   TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
   TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
   TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
-//   TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
-//   TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
-//   TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
+  //   TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
+  //   TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
+  //   TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
   RawCanvas->Divide(4,4);
   TriggerCanvas->Divide(4,4);
   FloodHistoCanvas->Divide(4,4);
   FloodHisto3DCanvas->Divide(4,4);
-//   SphericalCanvas->Divide(4,4);
-//   CylindricalXCanvas->Divide(4,4);
-//   CylindricalYCanvas->Divide(4,4);
+  //   SphericalCanvas->Divide(4,4);
+  //   CylindricalXCanvas->Divide(4,4);
+  //   CylindricalYCanvas->Divide(4,4);
   //canvases for the global plots
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
@@ -936,9 +1135,9 @@ int main (int argc, char** argv)
     //std::cout << std::endl;
   }
   
-//   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
-//   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
-//   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
+  //   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
+  //   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
+  //   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
   //canvas for the tagging crystal
   TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);    
   //draw canvases
@@ -979,12 +1178,12 @@ int main (int argc, char** argv)
       
       GlobalFlood3D->cd();
       module[iModule][jModule]->GetFloodMap3D()->Draw();
-//       GlobalSpherical->cd();
-//       module[iModule][jModule]->GetSphericalMap()->Draw("COLZ");
-//       GlobalCylindricalX->cd();
-//       module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
-//       GlobalCylindricalY->cd();
-//       module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
+      //       GlobalSpherical->cd();
+      //       module[iModule][jModule]->GetSphericalMap()->Draw("COLZ");
+      //       GlobalCylindricalX->cd();
+      //       module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
+      //       GlobalCylindricalY->cd();
+      //       module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
@@ -995,17 +1194,17 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
-	  TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
-	  int nfound2D = peaks2D->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),1,"col",0.3);	
+	  // 	  TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
+	  // 	  int nfound2D = peaks2D->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),1,"col",0.6);	
 	  
 	  FloodHisto3DCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw("COLZ");	  
-// 	  SphericalCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSphericalMap()->Draw("COLZ");
-// 	  CylindricalXCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");	  
-// 	  CylindricalYCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalYMap()->Draw("COLZ");
+	  // 	  SphericalCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSphericalMap()->Draw("COLZ");
+	  // 	  CylindricalXCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalXMap()->Draw("COLZ");	  
+	  // 	  CylindricalYCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCylindricalYMap()->Draw("COLZ");
 	  
 	  // temp debug
 	  
@@ -1029,7 +1228,7 @@ int main (int argc, char** argv)
   //2d histogram
   
   
-//   PeakPositionVsIJ->SetStats(1);
+  //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
   TH1F *PeakEnergyResolutionDistro = new TH1F("Energy res FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
@@ -1037,7 +1236,7 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro->SetStats(1);
   
-//   EnergyResolutionVsIJ->SetStats(1);
+  //   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
   //histogram of fwhm
   TH1F *WfwhmDistro = new TH1F("w_fwhm","Distribution of FWHM in W plots",100,0,0.5);
@@ -1049,8 +1248,8 @@ int main (int argc, char** argv)
   WfwhmVsIJ->GetXaxis()->SetTitle("i");
   WfwhmVsIJ->GetYaxis()->SetTitle("j");
   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
-//   WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
-//   WfwhmVsIJ->SetStats(1);
+  //   WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
+  //   WfwhmVsIJ->SetStats(1);
   //histogram of rms
   TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",100,0,0.5);
   WrmsDistro->GetXaxis()->SetTitle("W");
@@ -1167,17 +1366,17 @@ int main (int argc, char** argv)
       FloodSeparatedCanvas->Write();
       BigSpectraCanvas->Write();
       GlobalFlood3D->Write();
-//       GlobalSpherical->Write();
-//       GlobalCylindricalX->Write();
-//       GlobalCylindricalY->Write();
+      //       GlobalSpherical->Write();
+      //       GlobalCylindricalX->Write();
+      //       GlobalCylindricalY->Write();
       RawCanvas->Write();
       TriggerCanvas->Write();
       FloodHistoCanvas->Write();
       
       FloodHisto3DCanvas->Write();
-//       SphericalCanvas->Write();
-//       CylindricalXCanvas->Write();
-//       CylindricalYCanvas->Write();
+      //       SphericalCanvas->Write();
+      //       CylindricalXCanvas->Write();
+      //       CylindricalYCanvas->Write();
       //save the 3d flood maps separately for each channel
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -1250,6 +1449,7 @@ int main (int argc, char** argv)
 		C_spectrum->SetName(CurrentCrystal->GetHistoW()->GetName());
 		C_spectrum->cd();
 		CurrentCrystal->GetHistoW()->Draw();
+		CurrentCrystal->GetHistoWfit()->Draw("same");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
@@ -1266,6 +1466,15 @@ int main (int argc, char** argv)
 		CurrentCrystal->GetVersusTime()->Draw("COLZ");
 		C_spectrum->Write();
 		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		C_spectrum->SetName(CurrentCrystal->GetADCversusW()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetADCversusW()->Draw("COLZ");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+		
 		
 		if(usingRealSimData)
 		{
@@ -1341,16 +1550,16 @@ int main (int argc, char** argv)
       C_Wwidht20percVsIJ->SetLeftMargin(0.15);
       C_Wwidht20percVsIJ->Write();
       
-//       gStyle->SetOptStat(1);
+      //       gStyle->SetOptStat(1);
       
       if(usingRealSimData)
       {
-        WtauFit->Write();
+	WtauFit->Write();
 	TCanvas *C_WtauFitVsIJ = new TCanvas("C_WtauFitVsIJ","C_WtauFitVsIJ",800,800);
-        C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
-        C_WtauFitVsIJ->cd();
-        WtauFitVsIJ->Draw("LEGO2");
-        C_WtauFitVsIJ->Write();
+	C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
+	C_WtauFitVsIJ->cd();
+	WtauFitVsIJ->Draw("LEGO2");
+	C_WtauFitVsIJ->Write();
       }
       
       
@@ -1367,7 +1576,10 @@ int main (int argc, char** argv)
   }
   fPlots->Close();
   //----------------------------------------------------------//
-  
+  if(usingTaggingBench)
+  {
+    doiFile.close();
+  }
   
   delete crystal;
   delete mppc;

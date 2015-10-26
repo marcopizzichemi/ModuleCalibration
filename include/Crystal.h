@@ -29,6 +29,7 @@ private:
   float                peakSigma;            // sigma (after fitting) for the photopeak
   TF1                  Fit;                  // fit function (it's a gaussian)
   TF1                  SimFit;
+  TF1                  Wfit;
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
   double               w_width20perc;        // width at 20% maximum for the w histogram
@@ -46,6 +47,7 @@ public:
   TH1F*                GetHistoW(){return &HistoW;};
   TF1*                 GetFit(){return &Fit;};
   TF1*                 GetSimFit(){return &SimFit;};
+  TF1*                 GetHistoWfit(){return &Wfit;};
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
   double               GetWwidth20perc(){return w_width20perc;};
@@ -72,6 +74,7 @@ public:
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
+  void                 SetHistoWfit(TF1 aFit){Wfit = aFit;};
   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
@@ -81,6 +84,8 @@ public:
   void                 SetSimDOIplot(TH2F aHisto){SimDOIplot = aHisto;};
   void                 SetSimGraph(TGraph aGraph){SimGraph = aGraph;};
   void                 SetSimFit(TF1 aFit){SimFit = aFit;};
+  
+  void                 Analyze();
   
   void PrintGlobal();
   void PrintSpecific();
