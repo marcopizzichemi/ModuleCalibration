@@ -533,7 +533,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
 	  }
 	  
-	  mppc[mppcI][mppcJ]->Print();
+// 	  mppc[mppcI][mppcJ]->Print();
 	  sname.str("");
 	  
 	  module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );

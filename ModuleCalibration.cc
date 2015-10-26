@@ -284,6 +284,9 @@ int main (int argc, char** argv)
   std::stringstream var,cut,sname; 
   
   std::ofstream doiFile;
+  TCut triggerPhotopeakCut = "" ;
+  TH1F* TaggingCrystalSpectrum;
+  TH1F *TriggerSpectrumHighlight;
   if(usingTaggingBench)
   {
     doiFile.open("doiData.txt", std::ofstream::out);
@@ -376,6 +379,48 @@ int main (int argc, char** argv)
       spectrum3d->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(*spectrum3d);
       delete spectrum3d;
+      
+      if(usingTaggingBench)//trigger spectrum
+      {
+	TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,0,12000);
+	var << "Tagging >> TaggingCrystalSpectrum";
+	TaggingCrystalSpectrum->SetName("TaggingCrystalSpectrum");
+	TaggingCrystalSpectrum->GetXaxis()->SetTitle("ADC");
+	TaggingCrystalSpectrum->GetYaxis()->SetTitle("Counts");
+	TaggingCrystalSpectrum->SetTitle("Spectrum of Tagging Crystal");
+	tree->Draw(var.str().c_str(),"");
+	
+	//restrict the region where to look for peaks. Fix for tspectrum...
+	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(6000,11000);
+	
+	//find peak in the tagging crystal
+	TSpectrum *sTagCrystal;
+	sTagCrystal = new TSpectrum(1);
+	Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5); //TODO pass to "goff"
+	Float_t *TagCrystalPeaks = sTagCrystal->GetPositionX();
+	//Float_t *TagCrystalPeaksY = sTagCrystal->GetPositionY();
+	TF1 *gaussTag = new TF1("gaussTag", "gaus");
+	TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[0] - 0.075*TagCrystalPeaks[0],TagCrystalPeaks[0] + 0.075*TagCrystalPeaks[0]);
+	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(0,12000);
+	//define a TCut for this peak
+	double tagPhotopeakMin = gaussTag->GetParameter(1) - 1.5*gaussTag->GetParameter(2);
+	double tagPhotopeakMax = gaussTag->GetParameter(1) + 2.0*gaussTag->GetParameter(2);
+	std::stringstream tagString;
+	tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
+	triggerPhotopeakCut = tagString.str().c_str();
+	
+	TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",1200,0,12000);
+	var.str("");
+	var << "Tagging >> TriggerSpectrumHighlight";
+	TriggerSpectrumHighlight->SetLineColor(3);
+	TriggerSpectrumHighlight->SetFillColor(3);
+	TriggerSpectrumHighlight->SetFillStyle(3001);
+	tree->Draw(var.str().c_str(),triggerPhotopeakCut);
+	var.str("");
+	
+      }
+      
+      
       //spectra for each mppc
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -886,7 +931,7 @@ int main (int argc, char** argv)
 		//w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
 		spectrum = new TH1F("spectrum","spectrum",250,0,1);	  
 		var << "(ch" << channel << "/(" << SumChannels << ")) >> spectrum";
-		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut);
+		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut+triggerPhotopeakCut);
 		sname << "W histogram - Crystal " << CurrentCrystal->GetID();
 		spectrum->SetName(sname.str().c_str());
 		spectrum->SetTitle(sname.str().c_str());
@@ -911,7 +956,7 @@ int main (int argc, char** argv)
 		  gaussW->SetParameter(0,maximum);
 		  gaussW->SetParameter(1,spectrum->GetMean());
 		  gaussW->SetParameter(2,rms);
-		  spectrum->Fit("gaussW","R");
+		  spectrum->Fit("gaussW","QR");
 		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2) << std::endl;;
 		  CurrentCrystal->SetHistoWfit(*gaussW);
 		}
@@ -1103,6 +1148,7 @@ int main (int argc, char** argv)
   TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
   TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
   TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
+  
   //   TCanvas* SphericalCanvas = new TCanvas("Spherical","Spherical",1200,800);
   //   TCanvas* CylindricalXCanvas = new TCanvas("CylindricalX","CylindricalX",1200,800);
   //   TCanvas* CylindricalYCanvas = new TCanvas("CylindricalY","CylindricalY",1200,800);
@@ -1114,6 +1160,10 @@ int main (int argc, char** argv)
   //   CylindricalXCanvas->Divide(4,4);
   //   CylindricalYCanvas->Divide(4,4);
   //canvases for the global plots
+  
+  TCanvas* C_TaggingCrystalSpectrum= new TCanvas("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,800);
+  
+  
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
@@ -1331,6 +1381,8 @@ int main (int argc, char** argv)
   WtauFitVsIJ->GetZaxis()->SetTitle("tau");
   
   
+  
+  
   //----------------------------------------------------------//
   
   
@@ -1364,6 +1416,12 @@ int main (int argc, char** argv)
       GlobalFlood2D->Write();
       GlobalFlood2DClean->Write();
       FloodSeparatedCanvas->Write();
+      
+      C_TaggingCrystalSpectrum->cd();
+      TaggingCrystalSpectrum->Draw();
+      TriggerSpectrumHighlight->Draw("same");
+      C_TaggingCrystalSpectrum->Write();
+      
       BigSpectraCanvas->Write();
       GlobalFlood3D->Write();
       //       GlobalSpherical->Write();
