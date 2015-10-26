@@ -793,7 +793,7 @@ int main (int argc, char** argv)
 	    {
 	      
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+	      if(usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi() && !CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored
 	      {
 	      //set the ellipses from here
 		if(iCry == 0)
