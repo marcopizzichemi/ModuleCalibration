@@ -391,7 +391,7 @@ int main (int argc, char** argv)
 	tree->Draw(var.str().c_str(),"");
 	
 	//restrict the region where to look for peaks. Fix for tspectrum...
-	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(6000,11000);
+	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(8000,11000);
 	
 	//find peak in the tagging crystal
 	TSpectrum *sTagCrystal;
