@@ -676,7 +676,7 @@ int main (int argc, char** argv)
 	      
 	      
 	      TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line 
-	      int nfound = peak2d->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),2,"col",0.4);
+	      int nfound = peak2d->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),2,"col",0.25);
 	      
 // 	      std::cout << nfound << std::endl;
 	      
