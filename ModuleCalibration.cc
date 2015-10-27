@@ -465,7 +465,7 @@ int main (int argc, char** argv)
 	  // now modified: we plot a different histogram depending on the position of the mppc
 	  std::stringstream varX,varY; // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
 	  // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
-	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 	  if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
 	  {
 	    // standard flood 2d
