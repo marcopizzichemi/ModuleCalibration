@@ -329,7 +329,7 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetFloodMap2D(*spectrum2d);
       delete spectrum2d;
       //the separated 2d histo. it is created here but will be filled in the mppc loop part
-      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+      spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
       name = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
       spectrum2d->SetName(name); 
       spectrum2d->SetTitle(name);
