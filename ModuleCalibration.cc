@@ -890,8 +890,8 @@ int main (int argc, char** argv)
 		float par0 = CrystalPeaksY[peakID];
 		float par1 = CrystalPeaks[peakID];
 		float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
-		float fitmin = par1-1.8*par2;
-		float fitmax = par1+2*par2;
+		float fitmin = par1-1.5*par2;
+		float fitmax = par1+1.8*par2;
 		TF1 *gauss = new TF1("gauss",  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
 		gauss->SetParameter(0,par0);
 		gauss->SetParameter(1,par1);
@@ -906,7 +906,7 @@ int main (int argc, char** argv)
 		// 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
 		//Compute the energy Tcut
 		std::stringstream streamEnergyCut;
-		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 3.0*std::abs(gauss->GetParameter(2));
+		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2.5*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
 		TCut PhotopeakEnergyCut = streamEnergyCut.str().c_str();
 		CurrentCrystal->SetSpectrum(*spectrum);
 		var.str("");
