@@ -890,8 +890,8 @@ int main (int argc, char** argv)
 		float par0 = CrystalPeaksY[peakID];
 		float par1 = CrystalPeaks[peakID];
 		float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
-		float fitmin = par1-1*par2;
-		float fitmax = par1+1.8*par2;
+		float fitmin = par1-1.8*par2;
+		float fitmax = par1+2*par2;
 		TF1 *gauss = new TF1("gauss",  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
 		gauss->SetParameter(0,par0);
 		gauss->SetParameter(1,par1);
@@ -1417,10 +1417,13 @@ int main (int argc, char** argv)
       GlobalFlood2DClean->Write();
       FloodSeparatedCanvas->Write();
       
-      C_TaggingCrystalSpectrum->cd();
-      TaggingCrystalSpectrum->Draw();
-      TriggerSpectrumHighlight->Draw("same");
-      C_TaggingCrystalSpectrum->Write();
+      if(usingTaggingBench)
+      {
+	C_TaggingCrystalSpectrum->cd();
+        TaggingCrystalSpectrum->Draw();
+        TriggerSpectrumHighlight->Draw("same");
+        C_TaggingCrystalSpectrum->Write();
+      }
       
       BigSpectraCanvas->Write();
       GlobalFlood3D->Write();
