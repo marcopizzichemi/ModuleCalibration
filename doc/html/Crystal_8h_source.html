@@ -67,7 +67,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -176,17 +176,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  <span class="keywordtype">void</span>                 Analyze();</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  </div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  <span class="keywordtype">void</span> PrintGlobal();</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="keywordtype">void</span> PrintSpecific();</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classCrystal.html#a12cf58149ed3037247f27a924c70d411">PrintSpecific</a>();</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;};</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif  // CRYSTAL_H</span></div>
+<div class="ttc" id="classCrystal_html_a12cf58149ed3037247f27a924c70d411"><div class="ttname"><a href="classCrystal.html#a12cf58149ed3037247f27a924c70d411">Crystal::PrintSpecific</a></div><div class="ttdeci">void PrintSpecific()</div><div class="ttdoc">prints specific info of this element. polimorphic implementation in the specific class of each elemen...</div><div class="ttdef"><b>Definition:</b> Crystal.cc:78</div></div>
 <div class="ttc" id="classMppc_html"><div class="ttname"><a href="classMppc.html">Mppc</a></div><div class="ttdef"><b>Definition:</b> Mppc.h:10</div></div>
-<div class="ttc" id="classElement_html"><div class="ttname"><a href="classElement.html">Element</a></div><div class="ttdef"><b>Definition:</b> Element.h:16</div></div>
+<div class="ttc" id="classElement_html"><div class="ttname"><a href="classElement.html">Element</a></div><div class="ttdoc">Base class of the analysis. </div><div class="ttdef"><b>Definition:</b> Element.h:24</div></div>
 <div class="ttc" id="classCrystal_html"><div class="ttname"><a href="classCrystal.html">Crystal</a></div><div class="ttdef"><b>Definition:</b> Crystal.h:13</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jan 4 2016 15:01:21 for ModuleCalibration by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 4 2016 15:29:28 for ModuleCalibration by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.7
 </small></address>

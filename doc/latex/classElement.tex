@@ -3,8 +3,16 @@
 }
 
 
-Inheritance diagram for Element\+:
-\nopagebreak
+Base class of the analysis.  
+
+
+
+
+{\ttfamily \#include $<$Element.\+h$>$}
+
+
+
+Inheritance diagram for Element\+:\nopagebreak
 \begin{figure}[H]
 \begin{center}
 \leavevmode
@@ -13,8 +21,7 @@ Inheritance diagram for Element\+:
 \end{figure}
 
 
-Collaboration diagram for Element\+:
-\nopagebreak
+Collaboration diagram for Element\+:\nopagebreak
 \begin{figure}[H]
 \begin{center}
 \leavevmode
@@ -24,8 +31,9 @@ Collaboration diagram for Element\+:
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classElement_a35c96bb94fc3c42ebb4eab1c51ce2a63}{{\bfseries Element} (const \hyperlink{classElement}{Element} \&obj)}\label{classElement_a35c96bb94fc3c42ebb4eab1c51ce2a63}
-
+\hyperlink{classElement_ab0d0e20be9a36ae676202db753faeec9}{Element} ()
+\item 
+\hyperlink{classElement_a35c96bb94fc3c42ebb4eab1c51ce2a63}{Element} (const \hyperlink{classElement}{Element} \&obj)
 \item 
 \hypertarget{classElement_aa38eb6cc012786635a632f11ec0c3c41}{std\+::string {\bfseries Get\+Name} ()}\label{classElement_aa38eb6cc012786635a632f11ec0c3c41}
 
@@ -183,102 +191,157 @@ Collaboration diagram for Element\+:
 \hypertarget{classElement_ab027b4d21940058225371012e3e9ce37}{std\+::vector$<$ std\+::string $>$ {\bfseries Get\+Children} ()}\label{classElement_ab027b4d21940058225371012e3e9ce37}
 
 \item 
-\hypertarget{classElement_afcde5aa81a52b90a8bcf903d9b773ebc}{void {\bfseries Print\+Global} ()}\label{classElement_afcde5aa81a52b90a8bcf903d9b773ebc}
-
-\item 
-\hypertarget{classElement_adef0eb8aa2179a099c38d96217c237c0}{virtual void {\bfseries Print\+Specific} ()}\label{classElement_adef0eb8aa2179a099c38d96217c237c0}
-
-\item 
+void \hyperlink{classElement_afcde5aa81a52b90a8bcf903d9b773ebc}{Print\+Global} ()
+\begin{DoxyCompactList}\small\item\em prints global info \end{DoxyCompactList}\item 
+virtual void \hyperlink{classElement_adef0eb8aa2179a099c38d96217c237c0}{Print\+Specific} ()
+\begin{DoxyCompactList}\small\item\em prints specific info of this element. polimorphic implementation in the specific class of each elements \end{DoxyCompactList}\item 
 \hypertarget{classElement_a623ce34f0347c395e33e79ef43d9b93d}{void {\bfseries Print} ()}\label{classElement_a623ce34f0347c395e33e79ef43d9b93d}
 
 \end{DoxyCompactItemize}
 \subsection*{Protected Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\hypertarget{classElement_a159736231f5227e65e36f4a9e5537afd}{std\+::string {\bfseries name}}\label{classElement_a159736231f5227e65e36f4a9e5537afd}
+\hypertarget{classElement_a159736231f5227e65e36f4a9e5537afd}{std\+::string \hyperlink{classElement_a159736231f5227e65e36f4a9e5537afd}{name}}\label{classElement_a159736231f5227e65e36f4a9e5537afd}
 
-\item 
-\hypertarget{classElement_a2e3029a6dec4d74046ce1e4efe72d5f7}{std\+::string {\bfseries label}}\label{classElement_a2e3029a6dec4d74046ce1e4efe72d5f7}
+\begin{DoxyCompactList}\small\item\em name \end{DoxyCompactList}\item 
+\hypertarget{classElement_a2e3029a6dec4d74046ce1e4efe72d5f7}{std\+::string \hyperlink{classElement_a2e3029a6dec4d74046ce1e4efe72d5f7}{label}}\label{classElement_a2e3029a6dec4d74046ce1e4efe72d5f7}
 
-\item 
-\hypertarget{classElement_abe6237e9f33c87cca4e24ed5ebc51bfb}{std\+::string {\bfseries parent\+Name}}\label{classElement_abe6237e9f33c87cca4e24ed5ebc51bfb}
+\begin{DoxyCompactList}\small\item\em label \end{DoxyCompactList}\item 
+\hypertarget{classElement_abe6237e9f33c87cca4e24ed5ebc51bfb}{std\+::string \hyperlink{classElement_abe6237e9f33c87cca4e24ed5ebc51bfb}{parent\+Name}}\label{classElement_abe6237e9f33c87cca4e24ed5ebc51bfb}
 
-\item 
-\hypertarget{classElement_ab1248ff46559a0cb27d56568e6e479f5}{std\+::vector$<$ std\+::string $>$ {\bfseries children\+Name}}\label{classElement_ab1248ff46559a0cb27d56568e6e479f5}
+\begin{DoxyCompactList}\small\item\em name of parent element \end{DoxyCompactList}\item 
+\hypertarget{classElement_ab1248ff46559a0cb27d56568e6e479f5}{std\+::vector$<$ std\+::string $>$ \hyperlink{classElement_ab1248ff46559a0cb27d56568e6e479f5}{children\+Name}}\label{classElement_ab1248ff46559a0cb27d56568e6e479f5}
 
-\item 
-\hypertarget{classElement_aff44a78d101de8f17f4448e0bc65e4a2}{std\+::string {\bfseries extended\+I\+D}}\label{classElement_aff44a78d101de8f17f4448e0bc65e4a2}
+\begin{DoxyCompactList}\small\item\em name of children elements \end{DoxyCompactList}\item 
+\hypertarget{classElement_aff44a78d101de8f17f4448e0bc65e4a2}{std\+::string \hyperlink{classElement_aff44a78d101de8f17f4448e0bc65e4a2}{extended\+I\+D}}\label{classElement_aff44a78d101de8f17f4448e0bc65e4a2}
 
-\item 
-\hypertarget{classElement_ab176775b7d8a64ad8a8cc24e1f0f3d3f}{std\+::string {\bfseries variable\+X}}\label{classElement_ab176775b7d8a64ad8a8cc24e1f0f3d3f}
+\begin{DoxyCompactList}\small\item\em sort of unique identifier --$>$ module\+I.\+module\+J.\+mppc\+I.\+mppc\+J.\+crystal\+I.\+crystal\+J \end{DoxyCompactList}\item 
+\hypertarget{classElement_ab176775b7d8a64ad8a8cc24e1f0f3d3f}{std\+::string \hyperlink{classElement_ab176775b7d8a64ad8a8cc24e1f0f3d3f}{variable\+X}}\label{classElement_ab176775b7d8a64ad8a8cc24e1f0f3d3f}
 
-\item 
-\hypertarget{classElement_ad34ac2c8cf07782f878b2ae48f69c4c4}{std\+::string {\bfseries variable\+Y}}\label{classElement_ad34ac2c8cf07782f878b2ae48f69c4c4}
+\begin{DoxyCompactList}\small\item\em x variable for the specific roto-\/translated plot of this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_ad34ac2c8cf07782f878b2ae48f69c4c4}{std\+::string \hyperlink{classElement_ad34ac2c8cf07782f878b2ae48f69c4c4}{variable\+Y}}\label{classElement_ad34ac2c8cf07782f878b2ae48f69c4c4}
 
-\item 
-\hypertarget{classElement_a3bd136c994cd7b24a62cb464f78990ad}{int {\bfseries id}}\label{classElement_a3bd136c994cd7b24a62cb464f78990ad}
+\begin{DoxyCompactList}\small\item\em y variable for the specific roto-\/translated plot of this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_a3bd136c994cd7b24a62cb464f78990ad}{int \hyperlink{classElement_a3bd136c994cd7b24a62cb464f78990ad}{id}}\label{classElement_a3bd136c994cd7b24a62cb464f78990ad}
 
-\item 
-\hypertarget{classElement_ae973e652f252c0d41cf2f251c07fcf30}{int {\bfseries i}}\label{classElement_ae973e652f252c0d41cf2f251c07fcf30}
+\begin{DoxyCompactList}\small\item\em id number \end{DoxyCompactList}\item 
+\hypertarget{classElement_ae973e652f252c0d41cf2f251c07fcf30}{int \hyperlink{classElement_ae973e652f252c0d41cf2f251c07fcf30}{i}}\label{classElement_ae973e652f252c0d41cf2f251c07fcf30}
 
-\item 
-\hypertarget{classElement_afc114c80c73d8264637ab15b022a6ad2}{int {\bfseries j}}\label{classElement_afc114c80c73d8264637ab15b022a6ad2}
+\begin{DoxyCompactList}\small\item\em i I\+D \end{DoxyCompactList}\item 
+\hypertarget{classElement_afc114c80c73d8264637ab15b022a6ad2}{int \hyperlink{classElement_afc114c80c73d8264637ab15b022a6ad2}{j}}\label{classElement_afc114c80c73d8264637ab15b022a6ad2}
 
-\item 
-\hypertarget{classElement_a32de6866d49c3cd4634f290fde2280d3}{float {\bfseries x}}\label{classElement_a32de6866d49c3cd4634f290fde2280d3}
+\begin{DoxyCompactList}\small\item\em i I\+D \end{DoxyCompactList}\item 
+\hypertarget{classElement_a32de6866d49c3cd4634f290fde2280d3}{float \hyperlink{classElement_a32de6866d49c3cd4634f290fde2280d3}{x}}\label{classElement_a32de6866d49c3cd4634f290fde2280d3}
 
-\item 
-\hypertarget{classElement_a39fa54b6d5c56d067748a8e13f0be851}{float {\bfseries y}}\label{classElement_a39fa54b6d5c56d067748a8e13f0be851}
+\begin{DoxyCompactList}\small\item\em x position coordinate space \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a39fa54b6d5c56d067748a8e13f0be851}{float \hyperlink{classElement_a39fa54b6d5c56d067748a8e13f0be851}{y}}\label{classElement_a39fa54b6d5c56d067748a8e13f0be851}
 
-\item 
-\hypertarget{classElement_a9673a121290573dd806820bbdf5a5c27}{float {\bfseries z}}\label{classElement_a9673a121290573dd806820bbdf5a5c27}
+\begin{DoxyCompactList}\small\item\em y position coordinate space \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a9673a121290573dd806820bbdf5a5c27}{float \hyperlink{classElement_a9673a121290573dd806820bbdf5a5c27}{z}}\label{classElement_a9673a121290573dd806820bbdf5a5c27}
 
-\item 
-\hypertarget{classElement_a596ef7a8bf00c43ec69ab34552e0bcf5}{float {\bfseries dx}}\label{classElement_a596ef7a8bf00c43ec69ab34552e0bcf5}
+\begin{DoxyCompactList}\small\item\em z position coordinate space \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a596ef7a8bf00c43ec69ab34552e0bcf5}{float \hyperlink{classElement_a596ef7a8bf00c43ec69ab34552e0bcf5}{dx}}\label{classElement_a596ef7a8bf00c43ec69ab34552e0bcf5}
 
-\item 
-\hypertarget{classElement_a8fb86b3d6acc44716d46124fe1ca3910}{float {\bfseries dy}}\label{classElement_a8fb86b3d6acc44716d46124fe1ca3910}
+\begin{DoxyCompactList}\small\item\em x dimensions of the element \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a8fb86b3d6acc44716d46124fe1ca3910}{float \hyperlink{classElement_a8fb86b3d6acc44716d46124fe1ca3910}{dy}}\label{classElement_a8fb86b3d6acc44716d46124fe1ca3910}
 
-\item 
-\hypertarget{classElement_a14e5f51fbe61d3bdbbe4d44c65f03dc5}{float {\bfseries dz}}\label{classElement_a14e5f51fbe61d3bdbbe4d44c65f03dc5}
+\begin{DoxyCompactList}\small\item\em y dimensions of the element \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a14e5f51fbe61d3bdbbe4d44c65f03dc5}{float \hyperlink{classElement_a14e5f51fbe61d3bdbbe4d44c65f03dc5}{dz}}\label{classElement_a14e5f51fbe61d3bdbbe4d44c65f03dc5}
 
-\item 
-\hypertarget{classElement_a37c5bed50bec96560c89fddb9dd10d6a}{int {\bfseries i\+Children}}\label{classElement_a37c5bed50bec96560c89fddb9dd10d6a}
+\begin{DoxyCompactList}\small\item\em z dimensions of the element \mbox{[}mm\mbox{]} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a37c5bed50bec96560c89fddb9dd10d6a}{int \hyperlink{classElement_a37c5bed50bec96560c89fddb9dd10d6a}{i\+Children}}\label{classElement_a37c5bed50bec96560c89fddb9dd10d6a}
 
-\item 
-\hypertarget{classElement_a7347c8c6c06759f8ae2a2cd15543c85b}{int {\bfseries j\+Children}}\label{classElement_a7347c8c6c06759f8ae2a2cd15543c85b}
+\begin{DoxyCompactList}\small\item\em number of children on \char`\"{}i\char`\"{} \end{DoxyCompactList}\item 
+\hypertarget{classElement_a7347c8c6c06759f8ae2a2cd15543c85b}{int \hyperlink{classElement_a7347c8c6c06759f8ae2a2cd15543c85b}{j\+Children}}\label{classElement_a7347c8c6c06759f8ae2a2cd15543c85b}
 
-\item 
-\hypertarget{classElement_adb8076cb5e85bbd5b22ff0469fbf120c}{T\+H2\+F {\bfseries Flood\+Map2\+D}}\label{classElement_adb8076cb5e85bbd5b22ff0469fbf120c}
+\begin{DoxyCompactList}\small\item\em number of children on \char`\"{}j\char`\"{} \end{DoxyCompactList}\item 
+\hypertarget{classElement_adb8076cb5e85bbd5b22ff0469fbf120c}{T\+H2\+F \hyperlink{classElement_adb8076cb5e85bbd5b22ff0469fbf120c}{Flood\+Map2\+D}}\label{classElement_adb8076cb5e85bbd5b22ff0469fbf120c}
 
-\item 
-\hypertarget{classElement_a6e1fe25cbd51761ff59d92bfd380b58e}{T\+H2\+F {\bfseries Flood\+Map2\+D\+Separated}}\label{classElement_a6e1fe25cbd51761ff59d92bfd380b58e}
+\begin{DoxyCompactList}\small\item\em u,v map for this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_a6e1fe25cbd51761ff59d92bfd380b58e}{T\+H2\+F \hyperlink{classElement_a6e1fe25cbd51761ff59d92bfd380b58e}{Flood\+Map2\+D\+Separated}}\label{classElement_a6e1fe25cbd51761ff59d92bfd380b58e}
 
-\item 
-\hypertarget{classElement_acbf98095e81976bfad9aa6a0cae62687}{T\+H2\+F {\bfseries Spherical\+Map}}\label{classElement_acbf98095e81976bfad9aa6a0cae62687}
+\begin{DoxyCompactList}\small\item\em the 2d maps that combines the correct lateral, corner and central maps \end{DoxyCompactList}\item 
+\hypertarget{classElement_acbf98095e81976bfad9aa6a0cae62687}{T\+H2\+F \hyperlink{classElement_acbf98095e81976bfad9aa6a0cae62687}{Spherical\+Map}}\label{classElement_acbf98095e81976bfad9aa6a0cae62687}
 
-\item 
-\hypertarget{classElement_a41a0b90394cc0d4460c47566eeba6739}{T\+H2\+F {\bfseries Cylindrical\+X\+Map}}\label{classElement_a41a0b90394cc0d4460c47566eeba6739}
+\begin{DoxyCompactList}\small\item\em spherical coordinates map (theta,phi) for this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_a41a0b90394cc0d4460c47566eeba6739}{T\+H2\+F \hyperlink{classElement_a41a0b90394cc0d4460c47566eeba6739}{Cylindrical\+X\+Map}}\label{classElement_a41a0b90394cc0d4460c47566eeba6739}
 
-\item 
-\hypertarget{classElement_ac147ebacd2963fb1ef2baed0014e160c}{T\+H2\+F {\bfseries Cylindrical\+Y\+Map}}\label{classElement_ac147ebacd2963fb1ef2baed0014e160c}
+\begin{DoxyCompactList}\small\item\em cylindrical coordinates map (theta,x) for this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_ac147ebacd2963fb1ef2baed0014e160c}{T\+H2\+F \hyperlink{classElement_ac147ebacd2963fb1ef2baed0014e160c}{Cylindrical\+Y\+Map}}\label{classElement_ac147ebacd2963fb1ef2baed0014e160c}
 
-\item 
-\hypertarget{classElement_a82cfb891b137602dc49bbb18c1039b5c}{T\+H2\+F {\bfseries Lateral\+Map}}\label{classElement_a82cfb891b137602dc49bbb18c1039b5c}
+\begin{DoxyCompactList}\small\item\em cylindrical coordinates map (theta,y) for this element \end{DoxyCompactList}\item 
+\hypertarget{classElement_a82cfb891b137602dc49bbb18c1039b5c}{T\+H2\+F \hyperlink{classElement_a82cfb891b137602dc49bbb18c1039b5c}{Lateral\+Map}}\label{classElement_a82cfb891b137602dc49bbb18c1039b5c}
 
-\item 
-\hypertarget{classElement_ad01d15c50d4d01716f8d9d03162521f9}{T\+H2\+F {\bfseries Corner\+Map}}\label{classElement_ad01d15c50d4d01716f8d9d03162521f9}
+\begin{DoxyCompactList}\small\item\em Rotated map. \end{DoxyCompactList}\item 
+\hypertarget{classElement_ad01d15c50d4d01716f8d9d03162521f9}{T\+H2\+F \hyperlink{classElement_ad01d15c50d4d01716f8d9d03162521f9}{Corner\+Map}}\label{classElement_ad01d15c50d4d01716f8d9d03162521f9}
 
-\item 
-\hypertarget{classElement_ac25c0eb24baee3f0b3228b6279791d21}{T\+H2\+F {\bfseries Central\+Map}}\label{classElement_ac25c0eb24baee3f0b3228b6279791d21}
+\begin{DoxyCompactList}\small\item\em Rotated map. \end{DoxyCompactList}\item 
+\hypertarget{classElement_ac25c0eb24baee3f0b3228b6279791d21}{T\+H2\+F \hyperlink{classElement_ac25c0eb24baee3f0b3228b6279791d21}{Central\+Map}}\label{classElement_ac25c0eb24baee3f0b3228b6279791d21}
 
-\item 
-\hypertarget{classElement_a62ed98e003ba00fee131353869cfe314}{T\+H2\+F {\bfseries A\+D\+Cversus\+W}}\label{classElement_a62ed98e003ba00fee131353869cfe314}
+\begin{DoxyCompactList}\small\item\em Rotated map. \end{DoxyCompactList}\item 
+\hypertarget{classElement_a62ed98e003ba00fee131353869cfe314}{T\+H2\+F \hyperlink{classElement_a62ed98e003ba00fee131353869cfe314}{A\+D\+Cversus\+W}}\label{classElement_a62ed98e003ba00fee131353869cfe314}
 
-\item 
-\hypertarget{classElement_a97f8372319c77f20eff4314a6f32c4ad}{T\+H3\+F {\bfseries Flood\+Map3\+D}}\label{classElement_a97f8372319c77f20eff4314a6f32c4ad}
+\begin{DoxyCompactList}\small\item\em 2d histo of \char`\"{}energy\char`\"{} versus w coordinate \end{DoxyCompactList}\item 
+\hypertarget{classElement_a97f8372319c77f20eff4314a6f32c4ad}{T\+H3\+F \hyperlink{classElement_a97f8372319c77f20eff4314a6f32c4ad}{Flood\+Map3\+D}}\label{classElement_a97f8372319c77f20eff4314a6f32c4ad}
 
-\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em u,v,w map for this element \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Base class of the analysis. 
+
+Detailed description follows here. \begin{DoxyAuthor}{Author}
+M. Pizzichemi 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+Nov 2015 
+\end{DoxyDate}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classElement_ab0d0e20be9a36ae676202db753faeec9}{\index{Element@{Element}!Element@{Element}}
+\index{Element@{Element}!Element@{Element}}
+\subsubsection[{Element}]{\setlength{\rightskip}{0pt plus 5cm}Element\+::\+Element (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classElement_ab0d0e20be9a36ae676202db753faeec9}
+Default constructor Set a standard name (\char`\"{}\+Defaut Element\char`\"{}) Set id = i = j = 0 Set x = y = z = 0\hypertarget{classElement_a35c96bb94fc3c42ebb4eab1c51ce2a63}{\index{Element@{Element}!Element@{Element}}
+\index{Element@{Element}!Element@{Element}}
+\subsubsection[{Element}]{\setlength{\rightskip}{0pt plus 5cm}Element\+::\+Element (
+\begin{DoxyParamCaption}
+\item[{const {\bf Element} \&}]{obj}
+\end{DoxyParamCaption}
+)}}\label{classElement_a35c96bb94fc3c42ebb4eab1c51ce2a63}
+Copy constructor
+
+\subsection{Member Function Documentation}
+\hypertarget{classElement_afcde5aa81a52b90a8bcf903d9b773ebc}{\index{Element@{Element}!Print\+Global@{Print\+Global}}
+\index{Print\+Global@{Print\+Global}!Element@{Element}}
+\subsubsection[{Print\+Global}]{\setlength{\rightskip}{0pt plus 5cm}void Element\+::\+Print\+Global (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classElement_afcde5aa81a52b90a8bcf903d9b773ebc}
+
+
+prints global info 
+
+Prints \hyperlink{classElement}{Element} info to terminal Variables printed here are common to all families of elements\hypertarget{classElement_adef0eb8aa2179a099c38d96217c237c0}{\index{Element@{Element}!Print\+Specific@{Print\+Specific}}
+\index{Print\+Specific@{Print\+Specific}!Element@{Element}}
+\subsubsection[{Print\+Specific}]{\setlength{\rightskip}{0pt plus 5cm}void Element\+::\+Print\+Specific (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}}\label{classElement_adef0eb8aa2179a099c38d96217c237c0}
+
+
+prints specific info of this element. polimorphic implementation in the specific class of each elements 
+
+Prints \hyperlink{classElement}{Element} info to terminal Variables printed here are specific to this type of element
+
+Reimplemented in \hyperlink{classCrystal_a12cf58149ed3037247f27a924c70d411}{Crystal}, \hyperlink{classMppc_aab23e14995583c428c4cce1879936601}{Mppc}, and \hyperlink{classModule_af48d2b96b740b2bce1c4435f089ed515}{Module}.
+
 
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}

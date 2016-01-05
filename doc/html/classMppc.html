@@ -62,6 +62,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
       <li><a href="inherits.html"><span>Class&#160;Hierarchy</span></a></li>
+      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -69,7 +70,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Variables</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -92,14 +93,14 @@ Inheritance diagram for Mppc:</div>
 <div class="dyncontent">
 <div class="center"><img src="classMppc__inherit__graph.png" border="0" usemap="#Mppc_inherit__map" alt="Inheritance graph"/></div>
 <map name="Mppc_inherit__map" id="Mppc_inherit__map">
-<area shape="rect" id="node2" href="classElement.html" title="Element" alt="" coords="5,5,75,32"/></map>
+<area shape="rect" id="node2" href="classElement.html" title="Base class of the analysis. " alt="" coords="5,5,75,32"/></map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for Mppc:</div>
 <div class="dyncontent">
 <div class="center"><img src="classMppc__coll__graph.png" border="0" usemap="#Mppc_coll__map" alt="Collaboration graph"/></div>
 <map name="Mppc_coll__map" id="Mppc_coll__map">
-<area shape="rect" id="node2" href="classElement.html" title="Element" alt="" coords="5,168,75,195"/></map>
+<area shape="rect" id="node2" href="classElement.html" title="Base class of the analysis. " alt="" coords="5,168,75,195"/></map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -158,12 +159,13 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>Find2Dpeaks</b> ()</td
 <tr class="memitem:ac9ee63497a9c7d0fce0c8a03f6f337dd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac9ee63497a9c7d0fce0c8a03f6f337dd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintGlobal</b> ()</td></tr>
 <tr class="separator:ac9ee63497a9c7d0fce0c8a03f6f337dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab23e14995583c428c4cce1879936601"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aab23e14995583c428c4cce1879936601"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintSpecific</b> ()</td></tr>
+<tr class="memitem:aab23e14995583c428c4cce1879936601"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMppc.html#aab23e14995583c428c4cce1879936601">PrintSpecific</a> ()</td></tr>
+<tr class="memdesc:aab23e14995583c428c4cce1879936601"><td class="mdescLeft">&#160;</td><td class="mdescRight">prints specific info of this element. polimorphic implementation in the specific class of each elements  <a href="#aab23e14995583c428c4cce1879936601">More...</a><br /></td></tr>
 <tr class="separator:aab23e14995583c428c4cce1879936601"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classElement"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classElement')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classElement.html">Element</a></td></tr>
-<tr class="memitem:a35c96bb94fc3c42ebb4eab1c51ce2a63 inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a35c96bb94fc3c42ebb4eab1c51ce2a63"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Element</b> (const <a class="el" href="classElement.html">Element</a> &amp;obj)</td></tr>
+<tr class="memitem:ab0d0e20be9a36ae676202db753faeec9 inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ab0d0e20be9a36ae676202db753faeec9">Element</a> ()</td></tr>
+<tr class="separator:ab0d0e20be9a36ae676202db753faeec9 inherit pub_methods_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35c96bb94fc3c42ebb4eab1c51ce2a63 inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a35c96bb94fc3c42ebb4eab1c51ce2a63">Element</a> (const <a class="el" href="classElement.html">Element</a> &amp;obj)</td></tr>
 <tr class="separator:a35c96bb94fc3c42ebb4eab1c51ce2a63 inherit pub_methods_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa38eb6cc012786635a632f11ec0c3c41 inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa38eb6cc012786635a632f11ec0c3c41"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>GetName</b> ()</td></tr>
@@ -321,8 +323,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AddChild</b> (std::st
 <tr class="memitem:ab027b4d21940058225371012e3e9ce37 inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab027b4d21940058225371012e3e9ce37"></a>
 std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetChildren</b> ()</td></tr>
 <tr class="separator:ab027b4d21940058225371012e3e9ce37 inherit pub_methods_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcde5aa81a52b90a8bcf903d9b773ebc inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afcde5aa81a52b90a8bcf903d9b773ebc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PrintGlobal</b> ()</td></tr>
+<tr class="memitem:afcde5aa81a52b90a8bcf903d9b773ebc inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#afcde5aa81a52b90a8bcf903d9b773ebc">PrintGlobal</a> ()</td></tr>
+<tr class="memdesc:afcde5aa81a52b90a8bcf903d9b773ebc inherit pub_methods_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">prints global info  <a href="#afcde5aa81a52b90a8bcf903d9b773ebc">More...</a><br /></td></tr>
 <tr class="separator:afcde5aa81a52b90a8bcf903d9b773ebc inherit pub_methods_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a623ce34f0347c395e33e79ef43d9b93d inherit pub_methods_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a623ce34f0347c395e33e79ef43d9b93d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Print</b> ()</td></tr>
@@ -332,90 +334,147 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Print</b> ()</td></tr
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pro_attribs_classElement"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classElement')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classElement.html">Element</a></td></tr>
 <tr class="memitem:a159736231f5227e65e36f4a9e5537afd inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a159736231f5227e65e36f4a9e5537afd"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a159736231f5227e65e36f4a9e5537afd">name</a></td></tr>
+<tr class="memdesc:a159736231f5227e65e36f4a9e5537afd inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">name <br /></td></tr>
 <tr class="separator:a159736231f5227e65e36f4a9e5537afd inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e3029a6dec4d74046ce1e4efe72d5f7 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2e3029a6dec4d74046ce1e4efe72d5f7"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>label</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a2e3029a6dec4d74046ce1e4efe72d5f7">label</a></td></tr>
+<tr class="memdesc:a2e3029a6dec4d74046ce1e4efe72d5f7 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">label <br /></td></tr>
 <tr class="separator:a2e3029a6dec4d74046ce1e4efe72d5f7 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe6237e9f33c87cca4e24ed5ebc51bfb inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abe6237e9f33c87cca4e24ed5ebc51bfb"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>parentName</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#abe6237e9f33c87cca4e24ed5ebc51bfb">parentName</a></td></tr>
+<tr class="memdesc:abe6237e9f33c87cca4e24ed5ebc51bfb inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">name of parent element <br /></td></tr>
 <tr class="separator:abe6237e9f33c87cca4e24ed5ebc51bfb inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab1248ff46559a0cb27d56568e6e479f5 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab1248ff46559a0cb27d56568e6e479f5"></a>
-std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>childrenName</b></td></tr>
+std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ab1248ff46559a0cb27d56568e6e479f5">childrenName</a></td></tr>
+<tr class="memdesc:ab1248ff46559a0cb27d56568e6e479f5 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">name of children elements <br /></td></tr>
 <tr class="separator:ab1248ff46559a0cb27d56568e6e479f5 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff44a78d101de8f17f4448e0bc65e4a2 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aff44a78d101de8f17f4448e0bc65e4a2"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>extendedID</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#aff44a78d101de8f17f4448e0bc65e4a2">extendedID</a></td></tr>
+<tr class="memdesc:aff44a78d101de8f17f4448e0bc65e4a2 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">sort of unique identifier &ndash;&gt; moduleI.moduleJ.mppcI.mppcJ.crystalI.crystalJ <br /></td></tr>
 <tr class="separator:aff44a78d101de8f17f4448e0bc65e4a2 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab176775b7d8a64ad8a8cc24e1f0f3d3f inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab176775b7d8a64ad8a8cc24e1f0f3d3f"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>variableX</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ab176775b7d8a64ad8a8cc24e1f0f3d3f">variableX</a></td></tr>
+<tr class="memdesc:ab176775b7d8a64ad8a8cc24e1f0f3d3f inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">x variable for the specific roto-translated plot of this element <br /></td></tr>
 <tr class="separator:ab176775b7d8a64ad8a8cc24e1f0f3d3f inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad34ac2c8cf07782f878b2ae48f69c4c4 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad34ac2c8cf07782f878b2ae48f69c4c4"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>variableY</b></td></tr>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ad34ac2c8cf07782f878b2ae48f69c4c4">variableY</a></td></tr>
+<tr class="memdesc:ad34ac2c8cf07782f878b2ae48f69c4c4 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">y variable for the specific roto-translated plot of this element <br /></td></tr>
 <tr class="separator:ad34ac2c8cf07782f878b2ae48f69c4c4 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3bd136c994cd7b24a62cb464f78990ad inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3bd136c994cd7b24a62cb464f78990ad"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>id</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a3bd136c994cd7b24a62cb464f78990ad">id</a></td></tr>
+<tr class="memdesc:a3bd136c994cd7b24a62cb464f78990ad inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">id number <br /></td></tr>
 <tr class="separator:a3bd136c994cd7b24a62cb464f78990ad inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae973e652f252c0d41cf2f251c07fcf30 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae973e652f252c0d41cf2f251c07fcf30"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>i</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ae973e652f252c0d41cf2f251c07fcf30">i</a></td></tr>
+<tr class="memdesc:ae973e652f252c0d41cf2f251c07fcf30 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">i ID <br /></td></tr>
 <tr class="separator:ae973e652f252c0d41cf2f251c07fcf30 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc114c80c73d8264637ab15b022a6ad2 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afc114c80c73d8264637ab15b022a6ad2"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>j</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#afc114c80c73d8264637ab15b022a6ad2">j</a></td></tr>
+<tr class="memdesc:afc114c80c73d8264637ab15b022a6ad2 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">i ID <br /></td></tr>
 <tr class="separator:afc114c80c73d8264637ab15b022a6ad2 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32de6866d49c3cd4634f290fde2280d3 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a32de6866d49c3cd4634f290fde2280d3"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>x</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a32de6866d49c3cd4634f290fde2280d3">x</a></td></tr>
+<tr class="memdesc:a32de6866d49c3cd4634f290fde2280d3 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">x position coordinate space [mm] <br /></td></tr>
 <tr class="separator:a32de6866d49c3cd4634f290fde2280d3 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39fa54b6d5c56d067748a8e13f0be851 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a39fa54b6d5c56d067748a8e13f0be851"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>y</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a39fa54b6d5c56d067748a8e13f0be851">y</a></td></tr>
+<tr class="memdesc:a39fa54b6d5c56d067748a8e13f0be851 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">y position coordinate space [mm] <br /></td></tr>
 <tr class="separator:a39fa54b6d5c56d067748a8e13f0be851 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9673a121290573dd806820bbdf5a5c27 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9673a121290573dd806820bbdf5a5c27"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>z</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a9673a121290573dd806820bbdf5a5c27">z</a></td></tr>
+<tr class="memdesc:a9673a121290573dd806820bbdf5a5c27 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">z position coordinate space [mm] <br /></td></tr>
 <tr class="separator:a9673a121290573dd806820bbdf5a5c27 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a596ef7a8bf00c43ec69ab34552e0bcf5 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a596ef7a8bf00c43ec69ab34552e0bcf5"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>dx</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a596ef7a8bf00c43ec69ab34552e0bcf5">dx</a></td></tr>
+<tr class="memdesc:a596ef7a8bf00c43ec69ab34552e0bcf5 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">x dimensions of the element [mm] <br /></td></tr>
 <tr class="separator:a596ef7a8bf00c43ec69ab34552e0bcf5 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fb86b3d6acc44716d46124fe1ca3910 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8fb86b3d6acc44716d46124fe1ca3910"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>dy</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a8fb86b3d6acc44716d46124fe1ca3910">dy</a></td></tr>
+<tr class="memdesc:a8fb86b3d6acc44716d46124fe1ca3910 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">y dimensions of the element [mm] <br /></td></tr>
 <tr class="separator:a8fb86b3d6acc44716d46124fe1ca3910 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a14e5f51fbe61d3bdbbe4d44c65f03dc5 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a14e5f51fbe61d3bdbbe4d44c65f03dc5"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>dz</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a14e5f51fbe61d3bdbbe4d44c65f03dc5">dz</a></td></tr>
+<tr class="memdesc:a14e5f51fbe61d3bdbbe4d44c65f03dc5 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">z dimensions of the element [mm] <br /></td></tr>
 <tr class="separator:a14e5f51fbe61d3bdbbe4d44c65f03dc5 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37c5bed50bec96560c89fddb9dd10d6a inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a37c5bed50bec96560c89fddb9dd10d6a"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>iChildren</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a37c5bed50bec96560c89fddb9dd10d6a">iChildren</a></td></tr>
+<tr class="memdesc:a37c5bed50bec96560c89fddb9dd10d6a inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of children on "i" <br /></td></tr>
 <tr class="separator:a37c5bed50bec96560c89fddb9dd10d6a inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7347c8c6c06759f8ae2a2cd15543c85b inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7347c8c6c06759f8ae2a2cd15543c85b"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>jChildren</b></td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a7347c8c6c06759f8ae2a2cd15543c85b">jChildren</a></td></tr>
+<tr class="memdesc:a7347c8c6c06759f8ae2a2cd15543c85b inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of children on "j" <br /></td></tr>
 <tr class="separator:a7347c8c6c06759f8ae2a2cd15543c85b inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb8076cb5e85bbd5b22ff0469fbf120c inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adb8076cb5e85bbd5b22ff0469fbf120c"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>FloodMap2D</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#adb8076cb5e85bbd5b22ff0469fbf120c">FloodMap2D</a></td></tr>
+<tr class="memdesc:adb8076cb5e85bbd5b22ff0469fbf120c inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">u,v map for this element <br /></td></tr>
 <tr class="separator:adb8076cb5e85bbd5b22ff0469fbf120c inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e1fe25cbd51761ff59d92bfd380b58e inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6e1fe25cbd51761ff59d92bfd380b58e"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>FloodMap2DSeparated</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a6e1fe25cbd51761ff59d92bfd380b58e">FloodMap2DSeparated</a></td></tr>
+<tr class="memdesc:a6e1fe25cbd51761ff59d92bfd380b58e inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">the 2d maps that combines the correct lateral, corner and central maps <br /></td></tr>
 <tr class="separator:a6e1fe25cbd51761ff59d92bfd380b58e inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbf98095e81976bfad9aa6a0cae62687 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acbf98095e81976bfad9aa6a0cae62687"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>SphericalMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#acbf98095e81976bfad9aa6a0cae62687">SphericalMap</a></td></tr>
+<tr class="memdesc:acbf98095e81976bfad9aa6a0cae62687 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">spherical coordinates map (theta,phi) for this element <br /></td></tr>
 <tr class="separator:acbf98095e81976bfad9aa6a0cae62687 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41a0b90394cc0d4460c47566eeba6739 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a41a0b90394cc0d4460c47566eeba6739"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>CylindricalXMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a41a0b90394cc0d4460c47566eeba6739">CylindricalXMap</a></td></tr>
+<tr class="memdesc:a41a0b90394cc0d4460c47566eeba6739 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">cylindrical coordinates map (theta,x) for this element <br /></td></tr>
 <tr class="separator:a41a0b90394cc0d4460c47566eeba6739 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac147ebacd2963fb1ef2baed0014e160c inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac147ebacd2963fb1ef2baed0014e160c"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>CylindricalYMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ac147ebacd2963fb1ef2baed0014e160c">CylindricalYMap</a></td></tr>
+<tr class="memdesc:ac147ebacd2963fb1ef2baed0014e160c inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">cylindrical coordinates map (theta,y) for this element <br /></td></tr>
 <tr class="separator:ac147ebacd2963fb1ef2baed0014e160c inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a82cfb891b137602dc49bbb18c1039b5c inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a82cfb891b137602dc49bbb18c1039b5c"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>LateralMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a82cfb891b137602dc49bbb18c1039b5c">LateralMap</a></td></tr>
+<tr class="memdesc:a82cfb891b137602dc49bbb18c1039b5c inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotated map. <br /></td></tr>
 <tr class="separator:a82cfb891b137602dc49bbb18c1039b5c inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad01d15c50d4d01716f8d9d03162521f9 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad01d15c50d4d01716f8d9d03162521f9"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>CornerMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ad01d15c50d4d01716f8d9d03162521f9">CornerMap</a></td></tr>
+<tr class="memdesc:ad01d15c50d4d01716f8d9d03162521f9 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotated map. <br /></td></tr>
 <tr class="separator:ad01d15c50d4d01716f8d9d03162521f9 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac25c0eb24baee3f0b3228b6279791d21 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac25c0eb24baee3f0b3228b6279791d21"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>CentralMap</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#ac25c0eb24baee3f0b3228b6279791d21">CentralMap</a></td></tr>
+<tr class="memdesc:ac25c0eb24baee3f0b3228b6279791d21 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rotated map. <br /></td></tr>
 <tr class="separator:ac25c0eb24baee3f0b3228b6279791d21 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a62ed98e003ba00fee131353869cfe314 inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a62ed98e003ba00fee131353869cfe314"></a>
-TH2F&#160;</td><td class="memItemRight" valign="bottom"><b>ADCversusW</b></td></tr>
+TH2F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a62ed98e003ba00fee131353869cfe314">ADCversusW</a></td></tr>
+<tr class="memdesc:a62ed98e003ba00fee131353869cfe314 inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">2d histo of "energy" versus w coordinate <br /></td></tr>
 <tr class="separator:a62ed98e003ba00fee131353869cfe314 inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a97f8372319c77f20eff4314a6f32c4ad inherit pro_attribs_classElement"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a97f8372319c77f20eff4314a6f32c4ad"></a>
-TH3F&#160;</td><td class="memItemRight" valign="bottom"><b>FloodMap3D</b></td></tr>
+TH3F&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classElement.html#a97f8372319c77f20eff4314a6f32c4ad">FloodMap3D</a></td></tr>
+<tr class="memdesc:a97f8372319c77f20eff4314a6f32c4ad inherit pro_attribs_classElement"><td class="mdescLeft">&#160;</td><td class="mdescRight">u,v,w map for this element <br /></td></tr>
 <tr class="separator:a97f8372319c77f20eff4314a6f32c4ad inherit pro_attribs_classElement"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="aab23e14995583c428c4cce1879936601"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Mppc::PrintSpecific </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>prints specific info of this element. polimorphic implementation in the specific class of each elements </p>
+<p>Prints <a class="el" href="classElement.html" title="Base class of the analysis. ">Element</a> info to terminal Variables printed here are specific to this type of element</p>
+
+<p>Reimplemented from <a class="el" href="classElement.html#adef0eb8aa2179a099c38d96217c237c0">Element</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/<a class="el" href="Mppc_8h_source.html">Mppc.h</a></li>
 <li>src/Mppc.cc</li>
@@ -423,7 +482,7 @@ TH3F&#160;</td><td class="memItemRight" valign="bottom"><b>FloodMap3D</b></td></
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jan 4 2016 15:01:21 for ModuleCalibration by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jan 4 2016 15:29:28 for ModuleCalibration by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.7
 </small></address>

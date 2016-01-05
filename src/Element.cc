@@ -1,9 +1,15 @@
 #include <iostream>
 #include "Element.h"
 
+
+
 Element::Element()
 {
-  //default constructor
+  /**Default constructor
+     Set a standard name ("Defaut Element") 
+     Set id = i = j = 0
+     Set x = y = z = 0
+  */
   name = "Default Element";
   id = i = j = 0;
   x = y = z = 0;
@@ -14,11 +20,15 @@ Element::Element()
 
 Element::Element(const Element &obj) 
 {
-  //copy constructor
+  /**Copy constructor
+   */
 }
 
 void Element::PrintGlobal()
 {
+  /**Prints Element info to terminal
+   * Variables printed here are common to all families of elements
+   */
   std::cout << "Name \t\t = "    << name << std::endl;
   std::cout << "ID \t\t = "      << id << std::endl;
   std::cout << "Extended ID \t = "      << extendedID << std::endl;
@@ -35,5 +45,8 @@ void Element::PrintGlobal()
 
 void Element::PrintSpecific()
 {
+  /**Prints Element info to terminal
+   * Variables printed here are specific to this type of element
+   */
 //   std::cout << "Abstract Element, nothing specific to print" << std::endl;
 }

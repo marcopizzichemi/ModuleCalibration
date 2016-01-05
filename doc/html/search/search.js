@@ -7,14 +7,18 @@
 
 var indexSectionsWithContent =
 {
-  0: "cefikmps",
-  1: "cefikmps"
+  0: "acdefijklmnpsvxyz",
+  1: "cefikmps",
+  2: "ep",
+  3: "acdefijlnpsvxyz"
 };
 
 var indexSectionNames =
 {
   0: "all",
-  1: "classes"
+  1: "classes",
+  2: "functions",
+  3: "variables"
 };
 
 function convertToId(search)

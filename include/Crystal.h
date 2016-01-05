@@ -23,6 +23,7 @@ private:
   TH2F                 SimDOIplot;           // 2d histogram for simulation, showing z versus w
   TGraph               SimGraph;             
   TCut                 Ellipses;             // the elliptical TCut
+  TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
   bool                 isOn;                 // if the crystal is on/off
   TEllipse             GraphicalCut;         // TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         // position of mean (after fitting) for the photopeak 
@@ -30,6 +31,7 @@ private:
   TF1                  Fit;                  // fit function (it's a gaussian)
   TF1                  SimFit;
   TF1                  Wfit;
+  TF1                  ProfileXFit;
   double               w_fwhm;               // width at half maximum for the w histogram
   double               w_rms;                // rms of w histogram
   double               w_width20perc;        // width at 20% maximum for the w histogram
@@ -48,6 +50,7 @@ public:
   TF1*                 GetFit(){return &Fit;};
   TF1*                 GetSimFit(){return &SimFit;};
   TF1*                 GetHistoWfit(){return &Wfit;};
+  TF1*                 GetProfileXFit(){return &ProfileXFit;};
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
   double               GetWwidth20perc(){return w_width20perc;};
@@ -65,6 +68,7 @@ public:
   double               GetWU(){return wu;};
   double               GetWV(){return wv;};
   double               GetT(){return t;};
+  TCut                 GetW20percCut(){return w20percCut;};
   
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
@@ -84,7 +88,8 @@ public:
   void                 SetSimDOIplot(TH2F aHisto){SimDOIplot = aHisto;};
   void                 SetSimGraph(TGraph aGraph){SimGraph = aGraph;};
   void                 SetSimFit(TF1 aFit){SimFit = aFit;};
-  
+  void                 SetW20percCut(TCut aCut){w20percCut = aCut;};
+  void                 SetProfileXFit(TF1 aFit){ProfileXFit = aFit;};
   void                 Analyze();
   
   void PrintGlobal();

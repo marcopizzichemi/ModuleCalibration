@@ -68,6 +68,7 @@
 #include "TCutG.h"
 #include "TGaxis.h"
 #include "TPaveStats.h"
+#include "TProfile.h"
 
 #include <iostream>
 #include <fstream>
@@ -941,6 +942,14 @@ int main (int argc, char** argv)
 		int bin2 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/2.0);
 		int bin3 = spectrum->FindFirstBinAbove(spectrum->GetMaximum()/5.0);
 		int bin4 = spectrum->FindLastBinAbove(spectrum->GetMaximum()/5.0);
+		
+		std::stringstream ssCut20w;
+		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrum->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrum->GetBinCenter(bin4);
+		TCut w20percCut = ssCut20w.str().c_str();
+		CurrentCrystal->SetW20percCut(w20percCut);
+// 		double binA =  spectrum->GetBinCenter(bin3);
+// 		double binB =  spectrum->GetBinCenter(bin4);
+		
 		double width20perc =spectrum->GetBinCenter(bin4) - spectrum->GetBinCenter(bin3);
 		double fwhm = spectrum->GetBinCenter(bin2) - spectrum->GetBinCenter(bin1);
 		double rms = spectrum->GetRMS();
@@ -996,25 +1005,47 @@ int main (int argc, char** argv)
 		
 		//histogram of w versus adc channels
 		long long int nPoints;
+		
 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,histo1Dbins,0,histo1Dmax);
 		var << SumChannels << ":FloodZ >> spectrum2d";
-		nPoints = tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		nPoints = tree->Draw(var.str().c_str(),CutTrigger+CutCrystal+PhotopeakEnergyCut+w20percCut,"COLZ");
 		sname << "ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
-		spectrum2d->SetName(sname.str().c_str()); 
+		/*spectrum2d->SetName(sname.str().c_str());*/ 
 		spectrum2d->SetTitle(sname.str().c_str());
 		spectrum2d->GetXaxis()->SetTitle("W");
 		spectrum2d->GetYaxis()->SetTitle("ADC channels");
-		//make a TGraph from this th2f
-		// 		TGraph *CrystalGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-		// 		TF1 *linearCrystal = new TF1("linearCrystal",  "[0]*x + [1]",0,1);
-		// 		CrystalGraph->Fit("linearCrystal","","",0.1,0.9);
 		
-		// 		CurrentCrystal->SetADCversusWgraph(*CrystalGraph);
+		//mayhem
+		spectrum2d->FitSlicesX(0, 0, -1, 0, "QNR");
+		TH1F *spectrum2d_1 = (TH1D*)gDirectory->Get("spectrum2d_1");
+		
+		
+		
+		spectrum2d->SetName(sname.str().c_str());
+		TProfile *pf = spectrum2d->ProfileX("pf");
+		
+		//make a TGraph from this th2f
+		//TGraph *CrystalGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
+		TF1 *linearCrystal = new TF1("linearCrystal",  "[0]*x + [1]",0,1);
+		pf->Fit("linearCrystal","Q","",0.1,0.9);
+		pf->SetName("TProfileX"); 
+		//CrystalGraph->SetName("TGraph ADC channels vs. W - Crystal"); 
+		//CurrentCrystal->SetADCversusWgraph(*CrystalGraph);
+		
+		double ADCvsWparM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
+		double ADCvsWparQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
+		
+		CurrentCrystal->SetProfileX(*pf);
+		CurrentCrystal->SetProfileXFit(*linearCrystal);
 		// 		CurrentCrystal->SetADCversusWfit(*linearCrystal);
 		CurrentCrystal->SetADCversusW(*spectrum2d);
 		var.str("");
 		sname.str("");
 		delete spectrum2d;
+		
+		//spectrum corrected for DOI
+		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
+		var << SumChannels << " >> spectrum";
 		
 		
 		
@@ -1534,6 +1565,22 @@ int main (int argc, char** argv)
 		CurrentCrystal->GetADCversusW()->Draw("COLZ");
 		C_spectrum->Write();
 		delete C_spectrum;
+		
+// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		C_spectrum->SetName(CurrentCrystal->GetADCversusWgraph()->GetName());
+// 		C_spectrum->cd();
+// 		CurrentCrystal->GetADCversusWgraph()->Draw("AP");
+// 		C_spectrum->Write();
+// 		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetProfileX()->Draw();
+		CurrentCrystal->GetProfileXFit()->Draw("same");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
 		
 		
 		
