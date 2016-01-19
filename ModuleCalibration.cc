@@ -69,6 +69,7 @@
 #include "TGaxis.h"
 #include "TPaveStats.h"
 #include "TProfile.h"
+#include "TH1D.h"
 
 #include <iostream>
 #include <fstream>
@@ -201,7 +202,8 @@ int main (int argc, char** argv)
   float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm 
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
-  bool correctingSaturation     = config.read<bool>("correctingSaturation");;       // true if saturation correction is applied, false if it's not
+  bool correctingSaturation     = config.read<bool>("correctingSaturation");        // true if saturation correction is applied, false if it's not
+  bool correctingForDOI         = config.read<bool>("correctingForDOI");            // true if the energy correction using DOI info is computed    
   float energyResolution        = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
   bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
   // paramenters for roto-translations to separate the nxn peaks
@@ -945,7 +947,8 @@ int main (int argc, char** argv)
 		
 		std::stringstream ssCut20w;
 		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrum->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrum->GetBinCenter(bin4);
-		TCut w20percCut = ssCut20w.str().c_str();
+		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
+		double meanW20 = (spectrum->GetBinCenter(bin4) + spectrum->GetBinCenter(bin3)) / 2.0;
 		CurrentCrystal->SetW20percCut(w20percCut);
 // 		double binA =  spectrum->GetBinCenter(bin3);
 // 		double binB =  spectrum->GetBinCenter(bin4);
@@ -1014,40 +1017,135 @@ int main (int argc, char** argv)
 		spectrum2d->SetTitle(sname.str().c_str());
 		spectrum2d->GetXaxis()->SetTitle("W");
 		spectrum2d->GetYaxis()->SetTitle("ADC channels");
+                double parM;
 		
-		//mayhem
-		spectrum2d->FitSlicesX(0, 0, -1, 0, "QNR");
-		TH1F *spectrum2d_1 = (TH1D*)gDirectory->Get("spectrum2d_1");
-		
-		
+		if(correctingForDOI)
+		{
+		  //mayhem
+		  //i.e. use FitSlicesX to get the gaussian fit of each slices of the TH2F. Sliced in x (bin by bin)
+		  spectrum2d->FitSlicesY(0, 0, -1, 0, "QNR");
+		  TH1D *spectrum2d_1 = (TH1D*)gDirectory->Get("spectrum2d_1"); // _1 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the mean values
+		  
+		  TF1 *linearCrystal = new TF1("linearCrystal",  "[0]*x + [1]",0,1);
+		  spectrum2d_1->Fit("linearCrystal","Q");
+		  
+		  parM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
+// 		  double parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
+		  CurrentCrystal->SetSlicesMean(*spectrum2d_1);
+		  CurrentCrystal->SetSlicesMeanFit(*linearCrystal);
+		}
 		
 		spectrum2d->SetName(sname.str().c_str());
-		TProfile *pf = spectrum2d->ProfileX("pf");
-		
-		//make a TGraph from this th2f
-		//TGraph *CrystalGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-		TF1 *linearCrystal = new TF1("linearCrystal",  "[0]*x + [1]",0,1);
-		pf->Fit("linearCrystal","Q","",0.1,0.9);
-		pf->SetName("TProfileX"); 
-		//CrystalGraph->SetName("TGraph ADC channels vs. W - Crystal"); 
-		//CurrentCrystal->SetADCversusWgraph(*CrystalGraph);
-		
-		double ADCvsWparM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
-		double ADCvsWparQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
-		
-		CurrentCrystal->SetProfileX(*pf);
-		CurrentCrystal->SetProfileXFit(*linearCrystal);
-		// 		CurrentCrystal->SetADCversusWfit(*linearCrystal);
 		CurrentCrystal->SetADCversusW(*spectrum2d);
 		var.str("");
 		sname.str("");
+		if(correctingForDOI)
+		{
+		  
+		  
+		  
+		  //spectrum corrected for DOI
+		  spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
+		  var << "("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ) >> spectrum";
+		  // 		std::cout << var.str() << std::endl;
+		  sname << "Charge Spectrum Corrected - Crystal " << CurrentCrystal->GetID();
+		  tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		  spectrum->SetName(sname.str().c_str());
+		  spectrum->SetTitle(sname.str().c_str());
+		  spectrum->GetXaxis()->SetTitle("ADC channels");
+		  spectrum->GetYaxis()->SetTitle("Counts");
+		  
+		  
+		  CurrentCrystal->SetCorrectedSpectrum(*spectrum);
+		  
+		  //find peaks in each crystal spectrum, with TSpectrum
+		  TSpectrum *s_corr;
+		  s_corr = new TSpectrum(20);
+		  // 		Input[i].SumSpectraCanvas->cd(j+1);
+		  Int_t CrystalPeaksN_corr = s_corr->Search(spectrum,2,"goff",0.5); 
+		  Float_t *CrystalPeaks_corr = s_corr->GetPositionX();
+		  Float_t *CrystalPeaksY_corr = s_corr->GetPositionY();
+		  float maxPeak_corr = 0.0;
+		  int peakID_corr = 0;
+		  for (int peakCounter = 0 ; peakCounter < CrystalPeaksN_corr ; peakCounter++ )
+		  {
+		    if(CrystalPeaks_corr[peakCounter] > maxPeak_corr)
+		    {
+		      maxPeak_corr = CrystalPeaks_corr[peakCounter];
+		      peakID_corr = peakCounter;
+		    }
+		  }
+		  //std::cout << CrystalPeaks[0] << std::endl;
+		  //std::cout << CrystalPeaksY[0] << std::endl;
+		  //fit the spectra - TODO use the gaussian plus fermi?
+		  //float energyResolution;
+		  if (energyResolution == 0)
+		  {
+		    if (correctingSaturation)
+		      energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION; 
+		    else
+		      energyResolution = ENERGY_RESOLUTION;
+		  }
+		  float par0_corr = CrystalPeaksY_corr[peakID_corr];
+		  float par1_corr = CrystalPeaks_corr[peakID_corr];
+		  float par2_corr = (CrystalPeaks_corr[peakID_corr]*energyResolution)/2.35;
+		  float fitmin_corr = par1_corr-1.5*par2_corr;
+		  float fitmax_corr = par1_corr+1.8*par2_corr;
+		  TF1 *gauss_corr = new TF1("gauss_corr",  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin_corr,fitmax_corr);
+		  gauss_corr->SetParameter(0,par0);
+		  gauss_corr->SetParameter(1,par1);
+		  gauss_corr->SetParameter(2,par2); 
+		  spectrum->Fit("gauss_corr","Q","",fitmin_corr,fitmax_corr);
+		  //store the mean and sigma in the crystal
+		  if(gauss_corr->GetParameter(1) > 0) // otherwise the fit was very wrong..)
+		    CurrentCrystal->SetPhotopeakCorrected(gauss_corr->GetParameter(1),std::abs(gauss_corr->GetParameter(2)));
+		  CurrentCrystal->SetFitCorrected(*gauss_corr);
+		  // 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
+		  // 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
+		  // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
+		  //Compute the energy Tcut
+		  // 		std::stringstream streamEnergyCut;
+		  // 		streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2.5*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
+		  // 		TCut PhotopeakEnergyCut = streamEnergyCut.str().c_str();
+		  // 		CurrentCrystal->SetSpectrum(*spectrum);
+		  var.str("");
+		  sname.str("");
+		  delete gauss_corr;
+		  delete spectrum;
+		  // then prepare the highlighted spectrum and store it in the crystal
+		  // 		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
+		  // 		var << SumChannels << " >> spectrum";
+		  // 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut);
+		  // 		sname << "Hg Charge Spectrum - Crystal " << CurrentCrystal->GetID();
+		  // 		spectrum->SetName(sname.str().c_str());
+		  // 		spectrum->SetTitle(sname.str().c_str());
+		  // 		spectrum->GetXaxis()->SetTitle("ADC Channels");
+		  // 		spectrum->GetYaxis()->SetTitle("N");
+		  // 		CurrentCrystal->SetHighlightedSpectrum(*spectrum);
+		  // 		var.str("");
+		  // 		sname.str("");
+		  // 		delete spectrum;
+		  
+		}
+		
+		
 		delete spectrum2d;
 		
-		//spectrum corrected for DOI
-		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
-		var << SumChannels << " >> spectrum";
+		//histogram of w versus adc channels - this time without the photopeak cut (so it looks nicer in the paper...)
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,histo1Dbins,0,histo1Dmax);
+		var << SumChannels << ":FloodZ >> spectrum2d";
+		nPoints = tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		sname << "Complete ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
+		/*spectrum2d->SetName(sname.str().c_str());*/ 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("W");
+		spectrum2d->GetYaxis()->SetTitle("ADC channels");
+		spectrum2d->SetName(sname.str().c_str());
+		CurrentCrystal->SetADCversusWComplete(*spectrum2d);
 		
-		
+		var.str("");
+		sname.str("");
+		delete spectrum2d;
 		
 		
 		if(usingRealSimData) // only if this is a sim dataset
@@ -1364,6 +1462,18 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistroCentral->SetStats(1);
   
   
+  TH1F *PeakEnergyResolutionDistro_corr = new TH1F("Corrected Energy res FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
+  PeakEnergyResolutionDistro_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
+  PeakEnergyResolutionDistro_corr->GetYaxis()->SetTitle("N");
+  PeakEnergyResolutionDistro_corr->SetStats(1);
+  
+  
+  TH1F *PeakEnergyResolutionDistroCentral_corr = new TH1F("Corrected Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",100,0,1);
+  PeakEnergyResolutionDistroCentral_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
+  PeakEnergyResolutionDistroCentral_corr->GetYaxis()->SetTitle("N");
+  PeakEnergyResolutionDistroCentral_corr->SetStats(1);
+  
+  
   //LEGO PLOTS RELEVANT
   TH2F *PeakPositionVsIJ = new TH2F("Photopeak positions vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   PeakPositionVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1382,6 +1492,16 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
+  
+  TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  EnergyResolutionVsIJ_corr->GetXaxis()->SetTitle("i (U axis)");
+  EnergyResolutionVsIJ_corr->GetYaxis()->SetTitle("j (V axis)");
+  EnergyResolutionVsIJ_corr->GetZaxis()->SetTitle("Energy Resolution FWHM");
+  EnergyResolutionVsIJ_corr->GetXaxis()->SetTitleOffset(1.8);
+  EnergyResolutionVsIJ_corr->GetYaxis()->SetTitleOffset(1.8);
+  EnergyResolutionVsIJ_corr->GetZaxis()->SetTitleOffset(2.2);
+  EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,0.3);
+  
   
   TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   Wwidht20percVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1496,10 +1616,15 @@ int main (int argc, char** argv)
 		//fill the global distributions histograms
 		PeakPositionDistro->Fill(CurrentCrystal->GetPhotopeakPosition());
 		PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
+		if(correctingForDOI)
+		{
+		  PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
+		}
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
 		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
 		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
 		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
+		EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
 		WrmsVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWrms());
@@ -1511,6 +1636,10 @@ int main (int argc, char** argv)
 		  Wwidth20percCentral->Fill(CurrentCrystal->GetWwidth20perc());
 		  PeakPositionDistroCentral->Fill(CurrentCrystal->GetPhotopeakPosition());
 		  PeakEnergyResolutionDistroCentral->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
+		  if(correctingForDOI)
+		  {
+		    PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
+		  }
 		}
 		
 		
@@ -1559,10 +1688,17 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 		C_spectrum->SetName(CurrentCrystal->GetADCversusW()->GetName());
 		C_spectrum->cd();
 		CurrentCrystal->GetADCversusW()->Draw("COLZ");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		C_spectrum->SetName(CurrentCrystal->GetADCversusWComplete()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetADCversusWComplete()->Draw("COLZ");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
@@ -1573,14 +1709,32 @@ int main (int argc, char** argv)
 // 		C_spectrum->Write();
 // 		delete C_spectrum;
 		
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
-		C_spectrum->cd();
-		CurrentCrystal->GetProfileX()->Draw();
-		CurrentCrystal->GetProfileXFit()->Draw("same");
-		C_spectrum->Write();
-		delete C_spectrum;
+// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
+// 		C_spectrum->cd();
+// 		CurrentCrystal->GetProfileX()->Draw();
+// 		CurrentCrystal->GetProfileXFit()->Draw("same");
+// 		C_spectrum->Write();
+// 		delete C_spectrum;
 		
+		if(correctingForDOI)
+		{
+		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		  C_spectrum->SetName(CurrentCrystal->GetSlicesMean()->GetName());
+		  C_spectrum->cd();
+		  CurrentCrystal->GetSlicesMean()->Draw();
+		  CurrentCrystal->GetSlicesMeanFit()->Draw("same");
+		  C_spectrum->Write();
+		  delete C_spectrum;
+		  
+		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		  C_spectrum->SetName(CurrentCrystal->GetCorrectedSpectrum()->GetName());
+		  C_spectrum->cd();
+		  CurrentCrystal->GetCorrectedSpectrum()->Draw();
+		  CurrentCrystal->GetFitCorrected()->Draw("same");
+		  C_spectrum->Write();
+		  delete C_spectrum;
+		}
 		
 		
 		
@@ -1615,6 +1769,10 @@ int main (int argc, char** argv)
       //write the summary histos and canvases, that were filled during file saving
       PeakPositionDistro->Write();
       PeakEnergyResolutionDistro->Write();
+      if(correctingForDOI)
+      {
+        PeakEnergyResolutionDistro_corr->Write();
+      }
       WfwhmDistro->Write();
       WDoiDistro->Write();
       WrmsDistro->Write();
@@ -1622,7 +1780,10 @@ int main (int argc, char** argv)
       Wwidth20percCentral->Write();
       PeakPositionDistroCentral->Write();
       PeakEnergyResolutionDistroCentral->Write();
-      
+      if(correctingForDOI)
+      {
+        PeakEnergyResolutionDistroCentral_corr->Write();
+      }
       
       
       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
@@ -1650,6 +1811,16 @@ int main (int argc, char** argv)
       EnergyResolutionVsIJ->Draw("LEGO2");
       C_EnergyResolutionVsIJ->SetLeftMargin(0.15);
       C_EnergyResolutionVsIJ->Write();
+      
+      if(correctingForDOI)
+      {
+	TCanvas *C_EnergyResolutionVsIJ_corr = new TCanvas("C_EnergyResolutionVsIJ_corr","C_EnergyResolutionVsIJ_corr",800,800);
+	C_EnergyResolutionVsIJ_corr->SetName(EnergyResolutionVsIJ_corr->GetName());
+	C_EnergyResolutionVsIJ_corr->cd();
+	EnergyResolutionVsIJ_corr->Draw("LEGO2");
+	C_EnergyResolutionVsIJ_corr->SetLeftMargin(0.15);
+	C_EnergyResolutionVsIJ_corr->Write();
+      }
       
       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());

@@ -58,6 +58,7 @@ protected:
   TH2F                 CornerMap;           ///< Rotated map
   TH2F                 CentralMap;          ///< Rotated map
   TH2F                 ADCversusW;          ///< 2d histo of "energy" versus w coordinate
+  TH2F                 ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
   TGraph               ADCversusWgraph;     ///< TGraph of "energy" versus w coordinate
   TProfile             ProfileX;
   //3d histos
@@ -88,8 +89,9 @@ public:
   std::string          GetParentName()                           {return parentName;};                  
   TH2F*                GetFloodMap2D()                           {return &FloodMap2D;};                 
   TH2F*                GetADCversusW()                           {return &ADCversusW;};   
-  TGraph*              GetADCversusWgraph()                      {return &ADCversusWgraph;};
-  TProfile*            GetProfileX()                             {return &ProfileX;};
+  TH2F*                GetADCversusWComplete()                   {return &ADCversusWComplete;};  
+//   TGraph*              GetADCversusWgraph()                      {return &ADCversusWgraph;};
+//   TProfile*            GetProfileX()                             {return &ProfileX;};
   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};        
   TH2F*                GetSphericalMap()                         {return &SphericalMap;};               
   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};            
@@ -112,9 +114,10 @@ public:
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};                     
   void                 SetParentName(std::string aName)          {parentName = aName;};                 
   void                 SetFloodMap2D(TH2F aHisto)                {FloodMap2D = aHisto;};                
-  void                 SetADCversusW(TH2F aHisto)                {ADCversusW = aHisto;};    
-  void                 SetADCversusWgraph(TGraph aGraph)         {ADCversusWgraph = aGraph;};
-  void                 SetProfileX(TProfile pf)                 {ProfileX = pf;} ;
+  void                 SetADCversusW(TH2F aHisto)                {ADCversusW = aHisto;};   
+  void                 SetADCversusWComplete(TH2F aHisto)        {ADCversusWComplete = aHisto;};   
+//   void                 SetADCversusWgraph(TGraph aGraph)         {ADCversusWgraph = aGraph;};
+//   void                 SetProfileX(TProfile pf)                 {ProfileX = pf;} ;
   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};       
   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
