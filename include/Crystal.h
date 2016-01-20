@@ -14,40 +14,40 @@ class Crystal : public Element
 {
   
 private:
-  Element* parentMppc;                       // pointer for parent element
+  Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
-  TH1F                 Spectrum;             // charge spectrum for this crystal. It's always the sum of all mppcs charges
-  TH1F                 CorrectedSpectrum;    // charge spectrum for this crystal corrected by DOI
-  TH1F                 HighlightedSpectrum;  // same spectrum above, but in green and only for the photopeak
-  TH1F                 HistoW;               // histogram of w values for this crystal
-  TH1D                 SlicesMean;           // histogram of fitted mean values of profiles from TH2F ADCvsW distribution
-  TH2F                 VersusTime;           // 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
-  TH2F                 SimDOIplot;           // 2d histogram for simulation, showing z versus w
+  TH1F                 Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
+  TH1F                 CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
+  TH1F                 HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
+  TH1F                 HistoW;               ///< histogram of w values for this crystal
+  TH1D                 SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
+  TH2F                 VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
+  TH2F                 SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
   TGraph               SimGraph;             
-  TCut                 Ellipses;             // the elliptical TCut
+  TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
-  bool                 isOn;                 // if the crystal is on/off
-  TEllipse             GraphicalCut;         // TEllipse to visualize the cut on the u,v global plot
-  float                peakPosition;         // position of mean (after fitting) for the photopeak 
-  float                peakSigma;            // sigma (after fitting) for the photopeak
-  float                peakPositionCorrected;         // position of mean (after fitting) for the photopeak, corrected by DOI
-  float                peakSigmaCorrected;            // sigma (after fitting) for the photopeak, corrected by DOI
+  bool                 isOn;                 ///< if the crystal is on/off
+  TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
+  float                peakPosition;         ///< position of mean (after fitting) for the photopeak 
+  float                peakSigma;            ///< sigma (after fitting) for the photopeak
+  float                peakPositionCorrected;         ///< position of mean (after fitting) for the photopeak, corrected by DOI
+  float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
   
-  TF1                  Fit;                  // fit function (it's a gaussian)
+  TF1                  Fit;                  ///< fit function (it's a gaussian)
   TF1                  SimFit;
   TF1                  Wfit;
   TF1                  FitCorrected;
 //   TF1                  ProfileXFit;
   TF1                  SlicesMeanFit;
-  double               w_fwhm;               // width at half maximum for the w histogram
-  double               w_rms;                // rms of w histogram
-  double               w_width20perc;        // width at 20% maximum for the w histogram
+  double               w_fwhm;               ///< width at half maximum for the w histogram
+  double               w_rms;                ///< rms of w histogram
+  double               w_width20perc;        ///< width at 20% maximum for the w histogram
   double               u,v,wu,wv,t;
   
 public:
-  Crystal();                                 // default constructor
-  Crystal(const Crystal &obj);               // copy constructor
-  ~Crystal();                                // destructor
+  Crystal();                                 ///< default constructor
+  Crystal(const Crystal &obj);               ///< copy constructor
+  ~Crystal();                                ///< destructor
   
   // methods to get and set the private variables. Names should be self explanatory
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};

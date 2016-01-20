@@ -2,7 +2,7 @@
 // this class reads the input tchain and generates the TTree that will be used for the analysis /plot production
 // Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
 // makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
-// the config file. Mainly it's the parent sons structure.
+// the config file. 
 
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
@@ -15,6 +15,18 @@
 #include "Crystal.h"
 #include "Module.h"
 #include "Mppc.h"
+
+
+/** @brief Class that controls the input files
+ * 
+ *  This class reads the input tchain and generates the TTree that will be used for the analysis /plot production
+ *  Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
+ *  makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
+ *  the config file.
+ * 
+ *  @author M. Pizzichemi
+ *  @date Nov 2015
+*/
 
 class InputFile
 {

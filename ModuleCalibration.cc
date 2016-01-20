@@ -84,62 +84,22 @@
 #include <assert.h>
 #include <cstddef>
 
-
 #include "ConfigFile.h"
 #include "InputFile.h"
 #include "Element.h"
 #include "Crystal.h"
 #include "Module.h"
 #include "Mppc.h"
-// #include "Classes.h"
 
 #define ENERGY_RESOLUTION 0.12
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
-
-// void ReverseXAxis (TH1 *h)
-// {
-//    // Remove the current axis
-//    h->GetXaxis()->SetLabelOffset(999);
-//    h->GetXaxis()->SetTickLength(0);
-//                                                                                 
-//    // Redraw the new axis
-//    gPad->Update();
-//    TGaxis *newaxis = new TGaxis(gPad->GetUxmax(),
-//                                 gPad->GetUymin(),
-//                                 gPad->GetUxmin(),
-//                                 gPad->GetUymin(),
-//                                 h->GetXaxis()->GetXmin(),
-//                                 h->GetXaxis()->GetXmax(),
-//                                 510,"-");
-//    newaxis->SetLabelOffset(-0.03);
-//    newaxis->Draw();
-// }
-//                                                                                 
-// void ReverseYAxis (TH1 *h)
-// {
-//    // Remove the current axis
-//    h->GetYaxis()->SetLabelOffset(999);
-//    h->GetYaxis()->SetTickLength(0);
-//                                                                                 
-//    // Redraw the new axis
-//    gPad->Update();
-//    TGaxis *newaxis = new TGaxis(gPad->GetUxmin(),
-//                                 gPad->GetUymax(),
-//                                 gPad->GetUxmin()-0.001,
-//                                 gPad->GetUymin(),
-//                                 h->GetYaxis()->GetXmin(),
-//                                 h->GetYaxis()->GetXmax(),
-//                                 510,"+");
-//    newaxis->SetLabelOffset(-0.03);
-//    newaxis->Draw();
-// }
-
 
 
 int main (int argc, char** argv)
 {
   
   gStyle->SetOptStat(0);
+  
   //----------------------------------------------------------//
   //  Check input                                             //
   //----------------------------------------------------------//
@@ -164,14 +124,13 @@ int main (int argc, char** argv)
   std::cout<<"\n\n"<<std::endl;
   std::cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<std::endl;
   
-  
   //----------------------------------------------------------//
   //  Import input and parse the config file                  //
   //----------------------------------------------------------//
   // Set a default config file name
   std::string ConfigFileName = "config.cfg"; 
   // and assume as default that there is no config file name from command line 
-  //then check
+  // then check
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
     ConfigFileName = argv[2];
@@ -181,8 +140,8 @@ int main (int argc, char** argv)
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
-  ConfigFile config(ConfigFileName); // create a ConfigFile object
   
+  ConfigFile config(ConfigFileName); // create a ConfigFile object
   InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
   input.CreateTree();                // create the TTree that will be used in analysis
   
@@ -206,23 +165,21 @@ int main (int argc, char** argv)
   bool correctingForDOI         = config.read<bool>("correctingForDOI");            // true if the energy correction using DOI info is computed    
   float energyResolution        = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
   bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
-  // paramenters for roto-translations to separate the nxn peaks
-  //lateral, not corners
+  // --- paramenters for roto-translations to separate the nXn peaks
+  // lateral, not corners
   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
   double base_lateralQ2         = config.read<double>("lateralQ2",1.1);             // top and bottom
   double base_lateralDeltaU     = config.read<double>("lateralDeltaU",1);           // used for right and left
   double base_lateralDeltaV     = config.read<double>("lateralDeltaV",1);           // used for top and bottom
   double base_lateralRescaleRL  = config.read<double>("lateralRescaleRL",1.5);      // used for right and left 
   double base_lateralRescaleTB  = config.read<double>("lateralRescaleTB",2);        // used for top and bottom
-  //corners                                                                    
+  // corners                                                                    
   double base_cornerQ1          = config.read<double>("cornerQ1",0.675);            // rotation around Z
   double base_cornerQ2          = config.read<double>("cornerQ2",1.41);             // rotation around X
   double base_cornerDeltaU      = config.read<double>("cornerDeltaU",3);            // translations
   double base_cornerDeltaV      = config.read<double>("cornerDeltaV",2.1);          // translations
   double base_cornerRescale     = config.read<double>("cornerRescale",4);           // rescale factor
   bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting
-  
-  
   
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
@@ -245,10 +202,7 @@ int main (int argc, char** argv)
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
     sSumChannels << "+ch" << i; // the analysis ttree will always have channels in order, from 0 to input size
-    SumChannels = sSumChannels.str();
-  
-  
-  
+  SumChannels = sSumChannels.str(); 
   //----------------------------------------------------------//
   
   
@@ -295,24 +249,23 @@ int main (int argc, char** argv)
     doiFile.open("doiData.txt", std::ofstream::out);
   }
   
-  //FIXME hardcoded for now
-  // angles for separating crystals, translations for having a nice 2d plot
-  
-  
-  double lateralQ1        ;
-  double lateralQ2        ;
-  double lateralDeltaU    ;
-  double lateralDeltaV    ;
-  double lateralRescaleRL ;
-  double lateralRescaleTB ;
+  // angles for separating crystals, translations for having a nice 2d plot  
+  double lateralQ1;
+  double lateralQ2;
+  double lateralDeltaU;
+  double lateralDeltaV;
+  double lateralRescaleR;
+  double lateralRescaleT;
   //corners
-  double cornerQ1      ;
-  double cornerQ2      ;
-  double cornerDeltaU  ;
-  double cornerDeltaV  ;
-  double cornerRescale ;
+  double cornerQ1;
+  double cornerQ2;
+  double cornerDeltaU;
+  double cornerDeltaV;
+  double cornerRescale;
   
   TString name;
+
+  // Loop on modules, mppcs and crystal
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -340,37 +293,6 @@ int main (int argc, char** argv)
       spectrum2d->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
       delete spectrum2d;
-      
-      //sherical coordinates plot
-      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,1.1,3.1415/2.0,histo2DglobalBins,-3.14/2.0,3.14/2.0); 
-      //       tree->Draw("Phi:Theta >> spectrum2d",CutXYZ,"COLZ");
-      //       name = "Spherical Plot - " + module[iModule][jModule]->GetName();
-      //       spectrum2d->SetName(name);
-      //       spectrum2d->SetTitle(name);
-      //       spectrum2d->GetXaxis()->SetTitle("Theta");
-      //       spectrum2d->GetYaxis()->SetTitle("Phi");
-      //       module[iModule][jModule]->SetSphericalMap(*spectrum2d);
-      //       delete spectrum2d;
-      //cylindrical coordinates plot, x and theta
-      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-      //       tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ,"COLZ");
-      //       name = "Cylindrical Plot Theta:X - Module " + module[iModule][jModule]->GetName();
-      //       spectrum2d->SetName(name);
-      //       spectrum2d->SetTitle(name);
-      //       spectrum2d->GetXaxis()->SetTitle("U");
-      //       spectrum2d->GetYaxis()->SetTitle("Theta");
-      //       module[iModule][jModule]->SetCylindricalXMap(*spectrum2d);
-      //       delete spectrum2d;
-      //cylindrical coordinates plot, y and theta
-      //       spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,1.1,3.1415/2.0); 
-      //       tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ,"COLZ");
-      //       name = "Cylindrical Plot Theta:Y - Module " + module[iModule][jModule]->GetName();
-      //       spectrum2d->SetName(name);
-      //       spectrum2d->SetTitle(name);
-      //       spectrum2d->GetXaxis()->SetTitle("V");
-      //       spectrum2d->GetYaxis()->SetTitle("Theta");
-      //       module[iModule][jModule]->SetCylindricalYMap(*spectrum2d);
-      //       delete spectrum2d;
       //3D plot
       spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
