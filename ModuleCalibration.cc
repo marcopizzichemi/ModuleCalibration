@@ -140,11 +140,9 @@ int main (int argc, char** argv)
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
-  
   ConfigFile config(ConfigFileName); // create a ConfigFile object
   InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
   input.CreateTree();                // create the TTree that will be used in analysis
-  
   int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
   int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
@@ -157,6 +155,8 @@ int main (int argc, char** argv)
   int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
   int histo3DchannelBin         = config.read<int>("histo3DchannelBin");            // number of bins of the 3D flood histograms, for single channels
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins");            // number of bins of the 3D flood histograms, for entire module
+  int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   bool saveAnalysisTree         = config.read<bool>("saveAnalysisTree");            // choice to save or not the analysis TTree, in a file temp.root
   float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm 
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
@@ -179,12 +179,10 @@ int main (int argc, char** argv)
   double base_cornerDeltaU      = config.read<double>("cornerDeltaU",3);            // translations
   double base_cornerDeltaV      = config.read<double>("cornerDeltaV",2.1);          // translations
   double base_cornerRescale     = config.read<double>("cornerRescale",4);           // rescale factor
-  bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting
-  
+  bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting  
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
   outputFileName += ".root";
-  
   // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
   // first get the input digitizer channels
   std::string digitizer_s   = config.read<std::string>("digitizer");
@@ -239,7 +237,6 @@ int main (int argc, char** argv)
   TGraph* simGraph; 
   TCanvas* C_spectrum;
   std::stringstream var,cut,sname; 
-  
   std::ofstream doiFile;
   TCut triggerPhotopeakCut = "" ;
   TH1F* TaggingCrystalSpectrum;
@@ -254,8 +251,8 @@ int main (int argc, char** argv)
   double lateralQ2;
   double lateralDeltaU;
   double lateralDeltaV;
-  double lateralRescaleR;
-  double lateralRescaleT;
+  double lateralRescaleRL;
+  double lateralRescaleTB;
   //corners
   double cornerQ1;
   double cornerQ2;
@@ -316,7 +313,7 @@ int main (int argc, char** argv)
 	tree->Draw(var.str().c_str(),"");
 	
 	//restrict the region where to look for peaks. Fix for tspectrum...
-	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(8000,11000);
+	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingPeakMin,taggingPeakMax); //FIXME hardcoded!!
 	
 	//find peak in the tagging crystal
 	TSpectrum *sTagCrystal;
@@ -386,6 +383,7 @@ int main (int argc, char** argv)
 	  var.str("");
 	  delete spectrum;
 	  
+	  //-------------------------------------------------------------------------------
 	  // Flood histogram
 	  // now modified: we plot a different histogram depending on the position of the mppc
 	  std::stringstream varX,varY; // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
@@ -520,7 +518,6 @@ int main (int argc, char** argv)
 		
 		// 		std::cout << varY.str() << std::endl;
 		// 		std::cout << varX.str() << std::endl;
-		
 	      }
 	    }	    
 	  }
@@ -536,45 +533,16 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
 	  /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
 	   *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
-	  
 	  module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
-	  
 	  // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
 	  varX.str("");
 	  varY.str("");
 	  var.str("");
 	  delete spectrum2d; 
+	  //-------------------------------------------------------------------------------
 	  
-	  //sherical coordinates plot
-	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,1.1,3.1415/2.0,histo2DchannelBin,-3.14/2.0,3.14/2.0); 
-	  // 	  tree->Draw("Phi:Theta >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  // 	  name = "Spherical Plot - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  // 	  spectrum2d->SetName(name);
-	  // 	  spectrum2d->SetTitle(name);
-	  // 	  spectrum2d->GetXaxis()->SetTitle("Theta");
-	  // 	  spectrum2d->GetYaxis()->SetTitle("Phi");
-	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetSphericalMap(*spectrum2d);
-	  // 	  delete spectrum2d;
-	  //cylindrical coordinates plot, x and theta
-	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-	  // 	  tree->Draw("Theta:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  // 	  name = "Cylindrical Plot Theta:X - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  // 	  spectrum2d->SetName(name);
-	  // 	  spectrum2d->SetTitle(name);
-	  // 	  spectrum2d->GetXaxis()->SetTitle("U");
-	  // 	  spectrum2d->GetYaxis()->SetTitle("Theta");
-	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalXMap(*spectrum2d);
-	  // 	  delete spectrum2d;
-	  //cylindrical coordinates plot, y and theta
-	  // 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,1.1,3.1415/2.0); 
-	  // 	  tree->Draw("Theta:FloodY >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
-	  // 	  name = "Cylindrical Plot Theta:Y - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  // 	  spectrum2d->SetName(name);
-	  // 	  spectrum2d->SetTitle(name);
-	  // 	  spectrum2d->GetXaxis()->SetTitle("V");
-	  // 	  spectrum2d->GetYaxis()->SetTitle("Theta");
-	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetCylindricalYMap(*spectrum2d);
-	  // 	  delete spectrum2d;
+	  
+	  // 3D spectrum for this mppc
 	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -586,11 +554,11 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(*spectrum3d);
 	  delete spectrum3d;
 	  
-	  int nofcrystals = 2;//FIXME for the moment hardcoded to find the line 
+	  int nofcrystals = 2;//FIXME for the moment hardcoded to find the line in DOI bench
 	  double *fit2DmeanX = new double[nofcrystals];
-	      double *fit2DmeanY = new double[nofcrystals];
-	      double *fit2DsigmaX = new double[nofcrystals];
-	      double *fit2DsigmaY = new double[nofcrystals];
+	  double *fit2DmeanY = new double[nofcrystals];
+	  double *fit2DsigmaX = new double[nofcrystals];
+	  double *fit2DsigmaY = new double[nofcrystals];
 	  
 	  
 	  //automatic crystal finder. for the moment only for doi bench
@@ -599,26 +567,19 @@ int main (int argc, char** argv)
 	    if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	    {
 	      
-	      
 	      TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line 
 	      int nfound = peak2d->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),2,"col",0.25);
 	      
 // 	      std::cout << nfound << std::endl;
 	      
-	      //store what has been found in the params struct
+	      //store what has been found s
 	      float *xpeaks = peak2d->GetPositionX();
 	      float *ypeaks = peak2d->GetPositionY();
 	      double *xsigma = new double[nofcrystals];
 	      double *ysigma = new double[nofcrystals];
-	      
-	      
 	      double *tempXsigma = new double[nofcrystals];
 	      double *tempYsigma = new double[nofcrystals];
-	      
-	      
-	      
-	      
-	      
+
 	      for(int i = 0 ; i < nofcrystals ; i++)
 	      {
 		tempXsigma[i] = 0.2;
@@ -626,7 +587,6 @@ int main (int argc, char** argv)
 		xsigma[i] =tempXsigma[i];
 		ysigma[i] = tempYsigma[i];
 	      }
-	      
 	      
 	      //2d fit
 	      for ( int j = 0 ; j < nfound ; j++)
@@ -651,12 +611,6 @@ int main (int argc, char** argv)
 		fit2DsigmaX[j] = (sx+sy)/2.0;
 		fit2DsigmaY[j] = (sx+sy)/2.0;
 	      }
-	      
-	      
-	      
-	      
-	      
-	      
 	      
 	      //   now for each peak, check if any other peak is closer than the sum of the relative circles
 	      for ( int j = 0 ; j < nfound ; j++)// run on all peaks
@@ -699,13 +653,6 @@ int main (int argc, char** argv)
 		fit2DsigmaY[0] =swapFit2DsigmaY ;
 		
 	      }
-	      
-	      
-	      
-	      
-	      
-	      
-	      
 	      // 		return nfound;
 	      
 	    }
@@ -1788,3 +1735,10 @@ int main (int argc, char** argv)
   
   return 0;
 }
+
+
+// TH2F* make2Dspectrum(TH2F *spectrum2d)
+// {
+//   
+//   return spectrum2d;
+// }
