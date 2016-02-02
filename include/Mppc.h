@@ -21,7 +21,15 @@ private:
   TH1F                   RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F                   TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
   
-  
+//   double*                fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+//   double*                fit2DmeanY ;
+//   double*                fit2DsigmaX;
+//   double*                fit2DsigmaY;
+
+  std::vector<double>                fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  std::vector<double>                fit2DmeanY ;
+  std::vector<double>                fit2DsigmaX;
+  std::vector<double>                fit2DsigmaY;
   
 public:
   Mppc();                                        ///< default constructor
@@ -44,8 +52,12 @@ public:
   void                   SetTriggerSpectrum(TH1F aHisto){TriggerSpectrum = aHisto;};
   void                   SetIsOnForDoi(bool abool){IsOnForDoi = abool;};
   bool                   GetIsOnForDoi(){return IsOnForDoi;};
+  std::vector<double>*   GetFit2DmeanX(){return &fit2DmeanX;};
+  std::vector<double>*   GetFit2DmeanY(){return &fit2DmeanY;};
+  std::vector<double>*   GetFit2DsigmaX(){return &fit2DsigmaX;};
+  std::vector<double>*   GetFit2DsigmaY(){return &fit2DsigmaY;};
   // methods to analyze the mppc
-  int                    Find2Dpeaks();
+  int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d);
   
   
   void PrintGlobal();

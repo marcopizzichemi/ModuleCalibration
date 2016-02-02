@@ -218,7 +218,11 @@ T ConfigFile::read( const string& key ) const
 {
   // Read the value corresponding to key
   mapci p = myContents.find(key);
-  if( p == myContents.end() ) throw key_not_found(key);
+  if( p == myContents.end() ) 
+  {
+    std::cout << "Key not found = " << key << std::endl;
+    throw key_not_found(key);
+  }
   return string_as_T<T>( p->second );
 }
 

@@ -126,7 +126,9 @@ public:
   void                 SetYvariable(std::string astring)         {variableY = astring;};                
   //methods to add and return children elements                                                         
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};      
-  std::vector<std::string> GetChildren()                         {return childrenName;};                
+  std::vector<std::string> GetChildren()                         {return childrenName;};     
+  
+//   TH2F*                Generate2Dhistogram(TString var,TCut);
   
   // methods to print element information
   void                 PrintGlobal();        ///< prints global info

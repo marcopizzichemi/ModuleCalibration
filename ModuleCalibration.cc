@@ -95,6 +95,9 @@
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
 
 
+
+
+
 int main (int argc, char** argv)
 {
   
@@ -162,7 +165,7 @@ int main (int argc, char** argv)
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
   bool correctingSaturation     = config.read<bool>("correctingSaturation");        // true if saturation correction is applied, false if it's not
-  bool correctingForDOI         = config.read<bool>("correctingForDOI");            // true if the energy correction using DOI info is computed    
+  bool correctingForDOI         = config.read<bool>("correctingForDOI",0);            // true if the energy correction using DOI info is computed    
   float energyResolution        = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
   bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
   // --- paramenters for roto-translations to separate the nXn peaks
@@ -200,7 +203,7 @@ int main (int argc, char** argv)
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
     sSumChannels << "+ch" << i; // the analysis ttree will always have channels in order, from 0 to input size
-  SumChannels = sSumChannels.str(); 
+    SumChannels = sSumChannels.str(); 
   //----------------------------------------------------------//
   
   
@@ -234,7 +237,8 @@ int main (int argc, char** argv)
   TH1F* spectrum;
   TH2F* spectrum2d;
   TH3F* spectrum3d;
-  TGraph* simGraph; 
+  TGraph* graph; 
+  
   TCanvas* C_spectrum;
   std::stringstream var,cut,sname; 
   std::ofstream doiFile;
@@ -261,7 +265,7 @@ int main (int argc, char** argv)
   double cornerRescale;
   
   TString name;
-
+  
   // Loop on modules, mppcs and crystal
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -554,164 +558,60 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(*spectrum3d);
 	  delete spectrum3d;
 	  
-	  int nofcrystals = 2;//FIXME for the moment hardcoded to find the line in DOI bench
-	  double *fit2DmeanX = new double[nofcrystals];
-	  double *fit2DmeanY = new double[nofcrystals];
-	  double *fit2DsigmaX = new double[nofcrystals];
-	  double *fit2DsigmaY = new double[nofcrystals];
-	  
-	  
-	  //automatic crystal finder. for the moment only for doi bench
-	  if(usingTaggingBench && !onlyuserinput)
+	  //automatic crystal finder on the mppc
+	  // it runs always, unless the user has set onlyuserinput
+	  if(!onlyuserinput)
 	  {
-	    if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+	    if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
 	    {
-	      
-	      TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line 
-	      int nfound = peak2d->Search(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D(),2,"col",0.25);
-	      
-// 	      std::cout << nfound << std::endl;
-	      
-	      //store what has been found s
-	      float *xpeaks = peak2d->GetPositionX();
-	      float *ypeaks = peak2d->GetPositionY();
-	      double *xsigma = new double[nofcrystals];
-	      double *ysigma = new double[nofcrystals];
-	      double *tempXsigma = new double[nofcrystals];
-	      double *tempYsigma = new double[nofcrystals];
-
-	      for(int i = 0 ; i < nofcrystals ; i++)
+	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	      {
-		tempXsigma[i] = 0.2;
-		tempYsigma[i] = 0.2;
-		xsigma[i] =tempXsigma[i];
-		ysigma[i] = tempYsigma[i];
+		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	      }
-	      
-	      //2d fit
-	      for ( int j = 0 ; j < nfound ; j++)
-	      {
-		
-		TF2 *f2 = new TF2("f2","[0]*TMath::Gaus(x,[1],[2])*TMath::Gaus(y,[3],[4])",xpeaks[j]-2.0*xsigma[j],xpeaks[j]+2.0*xsigma[j],ypeaks[j]-2.0*ysigma[j],ypeaks[j]+2.0*ysigma[j]);
-		f2->SetParameters(14,xpeaks[j],xsigma[j],ypeaks[j],ysigma[j]);
-		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Fit("f2","QNR");
-		fit2DmeanX[j] = xpeaks[j];
-		fit2DmeanY[j] = ypeaks[j];
-		//we insert the 2.5 sigma limit here, it makes things easier
-		fit2DsigmaX[j] = 2.5*TMath::Abs(f2->GetParameter(2));
-		fit2DsigmaY[j] = 2.5*TMath::Abs(f2->GetParameter(4));
-	      }
-	      
-	      
-	      for ( int j = 0 ; j < nfound ; j++)
-	      {
-		float sx,sy;
-		sx = fit2DsigmaX[j];
-		sy = fit2DsigmaY[j];
-		fit2DsigmaX[j] = (sx+sy)/2.0;
-		fit2DsigmaY[j] = (sx+sy)/2.0;
-	      }
-	      
-	      //   now for each peak, check if any other peak is closer than the sum of the relative circles
-	      for ( int j = 0 ; j < nfound ; j++)// run on all peaks
-	      {
-		for ( int jOther = 0 ; jOther < nfound ; jOther++)//run on all peaks again, but...
-		{
-		  if (jOther != j) //...do it only if it's not the same peak
-		  {
-		    float distance = TMath::Sqrt( TMath::Power(fit2DmeanX[j]-fit2DmeanX[jOther],2) + TMath::Power(fit2DmeanY[j]-fit2DmeanY[jOther],2) );
-		    float sumOfRadii = (fit2DsigmaX[j]+fit2DsigmaX[jOther]);
-		    if ( distance < sumOfRadii )
-		    {
-		      //std::cout << "WARNING: Peaks of Module " << k << " Channel " << i << " are overlapping!" << std::endl;
-		      fit2DsigmaX[j] = distance * ( fit2DsigmaX[j] / sumOfRadii );
-		      fit2DsigmaX[jOther] = distance * ( fit2DsigmaX[jOther] / sumOfRadii );
-		      fit2DsigmaY[j] = fit2DsigmaX[j];
-		      fit2DsigmaY[jOther] = fit2DsigmaX[jOther];
-		    }
-		  }
-		}
-	      }
-	      
-	      // sort them so that first is lower y
-	      double swapFit2DmeanX,swapFit2DmeanY,swapFit2DsigmaX,swapFit2DsigmaY;
-	      if(fit2DmeanY[0] > fit2DmeanY[1])
-	      {
-		swapFit2DmeanX  = fit2DmeanX[1];
-		swapFit2DmeanY  = fit2DmeanY[1];
-		swapFit2DsigmaX = fit2DsigmaX[1];
-		swapFit2DsigmaY = fit2DsigmaY[1];
-		
-		fit2DmeanX[1] = fit2DmeanX[0];
-		fit2DmeanY[1] = fit2DmeanY[0];
-		fit2DsigmaX[1] = fit2DsigmaX[0];
-		fit2DsigmaY[1] = fit2DsigmaY[0];
-		
-		fit2DmeanX[0] = swapFit2DmeanX  ;
-		fit2DmeanY[0] = swapFit2DmeanY  ;
-		fit2DsigmaX[0] =swapFit2DsigmaX ;
-		fit2DsigmaY[0] =swapFit2DsigmaY ;
-		
-	      }
-	      // 		return nfound;
-	      
 	    }
+	    else
+	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	  }
 	  
+	  
 	  //spectra for each crystal
+	  int crystalCounter = 0; // counter of crystals for which the peaks found by the automatic function are used
+	  int crystalFoundOnMPPC = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DmeanX()->size(); // get the number of crystals found by the automatic finder
+	  // get the position and size of the peaks found
+	  std::vector<double>* fit2DmeanX  = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DmeanX();
+	  std::vector<double>* fit2DmeanY  = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DmeanY();
+	  std::vector<double>* fit2DsigmaX = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DsigmaX();
+	  std::vector<double>* fit2DsigmaY = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DsigmaY();
+	  
+	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
-	      
+	      // get a pointer for this crystal
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
-	      if(!onlyuserinput && usingTaggingBench && mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi() && !CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored
+	      
+	      // first, find the crystal limits
+	      if(!CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored because the crystal limits are already set somewhere else (by the user in the config file)
 	      {
-	      //set the ellipses from here
-		if(iCry == 0)
-		{
-		  // we have only two peaks. assign them to two crystals in a line in this mppc (which ones? doesn't matter for now.... FIXME)
-		  CurrentCrystal->SetCrystalOn(true);
-		  CurrentCrystal->SetCrystalData(fit2DmeanX[jCry],fit2DmeanY[jCry],fit2DsigmaX[jCry],fit2DsigmaY[jCry],0);
-		  TEllipse *ellipse = new TEllipse(fit2DmeanX[jCry],fit2DmeanY[jCry],fit2DsigmaX[jCry],fit2DsigmaY[jCry],0,360,0);
+		//if the user didn't set only user input, and if there are enough peaks found by the automatic finder
+		if(!onlyuserinput && (crystalCounter < crystalFoundOnMPPC)) 
+		{  
+		  CurrentCrystal->SetCrystalOn(true); // set the crystal to ON
+		  CurrentCrystal->SetCrystalData(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),0);
+		  TEllipse *ellipse = new TEllipse(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),0,360,0);
 		  CurrentCrystal->SetGraphicalCut(*ellipse);
-		  
-		  //     ellipseCenterX[j] = fit2DmeanX[j];
-		  //     ellipseCenterY[j] = fit2DmeanY[j];
-		  //     ellipseWidthX[j] = fit2DsigmaX[j];
-		  //     ellipseWidthY[j] = fit2DsigmaY[j];
-		  //     TEllipse *ellipses;
-		  //     ellipses = new TEllipse(ellipseCenterX[j],ellipseCenterY[j],ellipseWidthX[j],ellipseWidthY[j]);
-		  //     //ellipses->SetFillColor(42);
-		  //     ellipses->SetFillStyle(4001);
-		  //     ellipses->SetLineColor(kRed);
-		  //     ellipses->SetLineWidth(2);
-		  //     ellipses->Draw();
-// 		  std::cout  <<  fit2DmeanX[jCry] << " " << fit2DmeanY[jCry]<< " " << fit2DsigmaX[jCry] << " " << fit2DsigmaY[jCry] << std::endl;
+		  crystalCounter++;
 		}
 	      }
-	      
+	      //at this point we can concentrate on the crystals that are ON
 	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/)
 	      {
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-		
-		
 		//set crystal elliptical cut on the basis of what are the variables involved, i.e. on the basis of mppc position
-		
 		CurrentCrystal->SetEllipses(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetXvariable(),mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetYvariable());
-		
 		TCut CutCrystal;
-		// 		if(usingRealSimData)
-		// 		{
-		// 		  std::stringstream simCutCrystal;
-		// 		  simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-		// 		  CutCrystal = simCutCrystal.str().c_str();
-		// // 		  std::cout << CurrentCrystal->GetID() << " " << CutCrystal << std::endl;
-		// 		}
-		// 		else
-		// 		{
 		CutCrystal = CurrentCrystal->GetCrystalCut();
-		// 		}
 		
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
@@ -726,10 +626,6 @@ int main (int argc, char** argv)
 		// 		spectrum->SetTitle(""); //FIXME temporary for the poster. turn back to the one before
 		spectrum->GetXaxis()->SetTitle("ADC Channels");
 		spectrum->GetYaxis()->SetTitle("N");
-		// 		std::cout << var.str().c_str() << std::endl;
-		// 		std::cout << CutXYZ << std::endl;
-		// 		std::cout << CutTrigger << std::endl;
-		// 		std::cout << CutCrystal << std::endl;
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		TSpectrum *s;
@@ -819,8 +715,8 @@ int main (int argc, char** argv)
 		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
 		double meanW20 = (spectrum->GetBinCenter(bin4) + spectrum->GetBinCenter(bin3)) / 2.0;
 		CurrentCrystal->SetW20percCut(w20percCut);
-// 		double binA =  spectrum->GetBinCenter(bin3);
-// 		double binB =  spectrum->GetBinCenter(bin4);
+		// 		double binA =  spectrum->GetBinCenter(bin3);
+		// 		double binB =  spectrum->GetBinCenter(bin4);
 		
 		double width20perc =spectrum->GetBinCenter(bin4) - spectrum->GetBinCenter(bin3);
 		double fwhm = spectrum->GetBinCenter(bin2) - spectrum->GetBinCenter(bin1);
@@ -833,7 +729,7 @@ int main (int argc, char** argv)
 		{
 		  TF1 *gaussW = new TF1("gaussW",  "gaus",0,1);
 		  int binmax = spectrum->GetMaximumBin();
-                  double maximum = spectrum->GetXaxis()->GetBinCenter(binmax);
+		  double maximum = spectrum->GetXaxis()->GetBinCenter(binmax);
 		  gaussW->SetParameter(0,maximum);
 		  gaussW->SetParameter(1,spectrum->GetMean());
 		  gaussW->SetParameter(2,rms);
@@ -886,7 +782,7 @@ int main (int argc, char** argv)
 		spectrum2d->SetTitle(sname.str().c_str());
 		spectrum2d->GetXaxis()->SetTitle("W");
 		spectrum2d->GetYaxis()->SetTitle("ADC channels");
-                double parM;
+		double parM;
 		
 		if(correctingForDOI)
 		{
@@ -899,7 +795,7 @@ int main (int argc, char** argv)
 		  spectrum2d_1->Fit("linearCrystal","Q");
 		  
 		  parM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
-// 		  double parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
+		  // 		  double parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
 		  CurrentCrystal->SetSlicesMean(*spectrum2d_1);
 		  CurrentCrystal->SetSlicesMeanFit(*linearCrystal);
 		}
@@ -1020,9 +916,10 @@ int main (int argc, char** argv)
 		if(usingRealSimData) // only if this is a sim dataset
 		{
 		  // 		  long long int nPoints;
+		  // a 2d plot of real vs. w, using the same cuts as before
 		  spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
 		  var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
-		  nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut,"COLZ"); // a 2d plot of real vs. w, using the same cuts as before
+		  nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CutCrystal+PhotopeakEnergyCut,"COLZ"); 
 		  sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
 		  spectrum2d->SetName(sname.str().c_str()); 
 		  spectrum2d->SetTitle(sname.str().c_str());
@@ -1030,81 +927,44 @@ int main (int argc, char** argv)
 		  spectrum2d->GetYaxis()->SetTitle("Z");
 		  CurrentCrystal->SetSimDOIplot(*spectrum2d);
 		  sname.str("");
+		  // same plot but with a TGraph, to allow fitting
 		  sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
-		  simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1()); // same but TGraph (so it can be fitted in 1D)
-		  simGraph->SetName(sname.str().c_str()); 
-		  simGraph->SetTitle(sname.str().c_str());
-		  simGraph->GetXaxis()->SetTitle("W");
-		  simGraph->GetYaxis()->SetTitle("Z");
-		  simGraph->Draw("ap");
+		  graph = new TGraph(nPoints,tree->GetV2(),tree->GetV1()); // same but TGraph (so it can be fitted in 1D)
+		  graph->SetName(sname.str().c_str()); 
+		  graph->SetTitle(sname.str().c_str());
+		  graph->GetXaxis()->SetTitle("W");
+		  graph->GetYaxis()->SetTitle("Z");
+		  graph->Draw("ap");
 		  TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
 		  TF1 *expfit = new TF1("expfit",  "[0]*exp(-x/[1])",0,1);
 		  linear->SetParameter(0,-100);
 		  linear->SetParameter(1,50);
 		  expfit->SetParameter(0,50);
 		  expfit->SetParameter(1,0.1);
-		  // 		  simGraph->SetStats(1);
-		  simGraph->Fit("expfit","Q","",0.1,0.7);
+		  // 		  graph->SetStats(1);
+		  graph->Fit("expfit","Q","",0.1,0.7);
 		  
 		  CurrentCrystal->SetSimFit(*expfit);
-		  CurrentCrystal->SetSimGraph(*simGraph);
+		  CurrentCrystal->SetSimGraph(*graph);
 		  sname.str("");
 		  var.str("");
 		  delete linear;
 		  delete expfit;
 		  delete spectrum2d;
-		  delete simGraph;
+		  delete graph;
+		  
+		  //a plot of Real Y vs Real X
+		  spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
+		  
 		}
 		
 	      }
-	      
-	      // perform it always if this is a sim dataset
-	      // 	      if(usingRealSimData)
-	      // 	      {
-	      // // 		std::cout << "Generating Z vs. W plots for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
-	      // 		std::stringstream simCutCrystal;
-	      // 		simCutCrystal << "RealX > " << CurrentCrystal->GetX() - CurrentCrystal->GetDimensionX()/2.0 << " && RealX < " << CurrentCrystal->GetX() + CurrentCrystal->GetDimensionX()/2.0 << "  && RealY > " << CurrentCrystal->GetY() - CurrentCrystal->GetDimensionY()/2.0 << " && RealY < " << CurrentCrystal->GetY() + CurrentCrystal->GetDimensionY()/2.0;
-	      // 		
-	      // 		TCut CutCrystal = simCutCrystal.str().c_str();
-	      // // 		std::cout << CutCrystal << std::endl;
-	      // 		long long int nPoints;
-	      // 		spectrum2d = new TH2F("spectrum2d","spectrum2d",100,0,1,100,0,15);
-	      // 		var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> spectrum2d"; 
-	      // 		nPoints = tree->Draw(var.str().c_str(),CutCrystal,"COLZ");
-	      // 		sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
-	      // 		spectrum2d->SetName(sname.str().c_str()); 
-	      // 		spectrum2d->SetTitle(sname.str().c_str());
-	      // 		spectrum2d->GetXaxis()->SetTitle("W");
-	      // 		spectrum2d->GetYaxis()->SetTitle("Z");
-	      // 		CurrentCrystal->SetSimDOIplot(*spectrum2d);
-	      // 		sname.str("");
-	      // 		sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
-	      // 		simGraph = new TGraph(nPoints,tree->GetV2(),tree->GetV1());
-	      // 		simGraph->SetName(sname.str().c_str()); 
-	      // 		simGraph->SetTitle(sname.str().c_str());
-	      // 		simGraph->GetXaxis()->SetTitle("W");
-	      // 		simGraph->GetYaxis()->SetTitle("Z");
-	      // 		simGraph->Draw("ap");
-	      // 		TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-	      // 		TF1 *expfit = new TF1("expfit",  "[0]*exp(x/[1])",0,1);
-	      // 		linear->SetParameter(0,-100);
-	      // 		linear->SetParameter(1,50);
-	      // 		simGraph->Fit("linear","Q","",0,1);
-	      // 		
-	      // 		CurrentCrystal->SetSimFit(*linear);
-	      // 		CurrentCrystal->SetSimGraph(*simGraph);
-	      // 		sname.str("");
-	      // 		var.str("");
-	      // // 		delete linear;
-	      // 		delete spectrum2d;
-	      // 		delete simGraph;
-	      // 	      }
-	      
 	    }
+	    
 	  }
-	  
 	}
       }
+      
     }
   }
   //----------------------------------------------------------//
@@ -1440,9 +1300,9 @@ int main (int argc, char** argv)
       if(usingTaggingBench)
       {
 	C_TaggingCrystalSpectrum->cd();
-        TaggingCrystalSpectrum->Draw();
-        TriggerSpectrumHighlight->Draw("same");
-        C_TaggingCrystalSpectrum->Write();
+	TaggingCrystalSpectrum->Draw();
+	TriggerSpectrumHighlight->Draw("same");
+	C_TaggingCrystalSpectrum->Write();
       }
       
       BigSpectraCanvas->Write();
@@ -1571,20 +1431,20 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-// 		C_spectrum->SetName(CurrentCrystal->GetADCversusWgraph()->GetName());
-// 		C_spectrum->cd();
-// 		CurrentCrystal->GetADCversusWgraph()->Draw("AP");
-// 		C_spectrum->Write();
-// 		delete C_spectrum;
+		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		// 		C_spectrum->SetName(CurrentCrystal->GetADCversusWgraph()->GetName());
+		// 		C_spectrum->cd();
+		// 		CurrentCrystal->GetADCversusWgraph()->Draw("AP");
+		// 		C_spectrum->Write();
+		// 		delete C_spectrum;
 		
-// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-// 		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
-// 		C_spectrum->cd();
-// 		CurrentCrystal->GetProfileX()->Draw();
-// 		CurrentCrystal->GetProfileXFit()->Draw("same");
-// 		C_spectrum->Write();
-// 		delete C_spectrum;
+		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		// 		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
+		// 		C_spectrum->cd();
+		// 		CurrentCrystal->GetProfileX()->Draw();
+		// 		CurrentCrystal->GetProfileXFit()->Draw("same");
+		// 		C_spectrum->Write();
+		// 		delete C_spectrum;
 		
 		if(correctingForDOI)
 		{
@@ -1640,7 +1500,7 @@ int main (int argc, char** argv)
       PeakEnergyResolutionDistro->Write();
       if(correctingForDOI)
       {
-        PeakEnergyResolutionDistro_corr->Write();
+	PeakEnergyResolutionDistro_corr->Write();
       }
       WfwhmDistro->Write();
       WDoiDistro->Write();
@@ -1651,7 +1511,7 @@ int main (int argc, char** argv)
       PeakEnergyResolutionDistroCentral->Write();
       if(correctingForDOI)
       {
-        PeakEnergyResolutionDistroCentral_corr->Write();
+	PeakEnergyResolutionDistroCentral_corr->Write();
       }
       
       
@@ -1735,10 +1595,3 @@ int main (int argc, char** argv)
   
   return 0;
 }
-
-
-// TH2F* make2Dspectrum(TH2F *spectrum2d)
-// {
-//   
-//   return spectrum2d;
-// }
