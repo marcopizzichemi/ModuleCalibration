@@ -42,7 +42,7 @@ void Crystal::SetEllipses(std::string varX,std::string varY)
                   << u 
                   << ")*TMath::Cos( ("
 		  << t
-		  << "/180.0) * TMath::Pi() ) + ((" 
+		  << "/180.0) * TMath::Pi() ) - ((" 
 		  
 		  << varY
 		  
@@ -61,7 +61,7 @@ void Crystal::SetEllipses(std::string varX,std::string varY)
                   << u 
                   << ")*TMath::Sin( ("
 		  << t
-		  << "/180.0) * TMath::Pi() ) - (("
+		  << "/180.0) * TMath::Pi() ) + (("
 		  
 		  << varY 
 		  
@@ -77,6 +77,6 @@ void Crystal::SetEllipses(std::string varX,std::string varY)
 
 void Crystal::PrintSpecific()
 {
-//   std::cout << "TCut \t \t= " << Ellipses  << std::endl;
+  std::cout << "TCut \t \t= " << Ellipses  << std::endl;
   std::cout << "On \t\t= " << isOn  << std::endl; 
 }

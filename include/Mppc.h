@@ -30,6 +30,7 @@ private:
   std::vector<double>                fit2DmeanY ;
   std::vector<double>                fit2DsigmaX;
   std::vector<double>                fit2DsigmaY;
+  std::vector<double>                fit2Dtheta;
   
 public:
   Mppc();                                        ///< default constructor
@@ -56,8 +57,9 @@ public:
   std::vector<double>*   GetFit2DmeanY(){return &fit2DmeanY;};
   std::vector<double>*   GetFit2DsigmaX(){return &fit2DsigmaX;};
   std::vector<double>*   GetFit2DsigmaY(){return &fit2DsigmaY;};
+  std::vector<double>*   GetFit2Dtheta(){return &fit2Dtheta;};
   // methods to analyze the mppc
-  int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d);
+  int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
   
   
   void PrintGlobal();

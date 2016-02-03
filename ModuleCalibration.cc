@@ -582,13 +582,23 @@ int main (int argc, char** argv)
 	  std::vector<double>* fit2DmeanY  = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DmeanY();
 	  std::vector<double>* fit2DsigmaX = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DsigmaX();
 	  std::vector<double>* fit2DsigmaY = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2DsigmaY();
+	  std::vector<double>* fit2Dtheta = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFit2Dtheta();
+	  
+// 	  if(iMppc == 0 && jMppc == 2)
+// 	  {
+// 	    for(int count = 0 ; count < 4 ; count++)
+// 	    {
+// 	      std::cout << fit2DmeanX->at(count) << " " << fit2DmeanY->at(count) << " "<< fit2DsigmaX->at(count) << " " << fit2DsigmaY->at(count) << " " << fit2Dtheta->at(count) << std::endl;
+// 	    } 
+// 	  }
+	  
 	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
-	      // get a pointer for this crystal
+	      // get a pointer to this crystal
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 	      
 	      // first, find the crystal limits
@@ -598,8 +608,8 @@ int main (int argc, char** argv)
 		if(!onlyuserinput && (crystalCounter < crystalFoundOnMPPC)) 
 		{  
 		  CurrentCrystal->SetCrystalOn(true); // set the crystal to ON
-		  CurrentCrystal->SetCrystalData(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),0);
-		  TEllipse *ellipse = new TEllipse(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),0,360,0);
+		  CurrentCrystal->SetCrystalData(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),fit2Dtheta->at(crystalCounter));
+		  TEllipse *ellipse = new TEllipse(fit2DmeanX->at(crystalCounter),fit2DmeanY->at(crystalCounter),fit2DsigmaX->at(crystalCounter),fit2DsigmaY->at(crystalCounter),0,360,-fit2Dtheta->at(crystalCounter));
 		  CurrentCrystal->SetGraphicalCut(*ellipse);
 		  crystalCounter++;
 		}
@@ -612,6 +622,13 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetEllipses(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetXvariable(),mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetYvariable());
 		TCut CutCrystal;
 		CutCrystal = CurrentCrystal->GetCrystalCut();
+		
+// 		//DEBUG
+// 		if(iMppc == 0 && jMppc == 2)
+// 		{
+// 		  std::cout << CurrentCrystal->GetU() << " " << CurrentCrystal->GetV() << " "<< CurrentCrystal->GetWU() << " " << CurrentCrystal->GetWV() << " " << CurrentCrystal->GetT() << std::endl;
+// 		}
+		
 		
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
@@ -756,6 +773,24 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetFloodMap2D(*spectrum2d);
 		sname.str("");
 		delete spectrum2d;
+		
+		//now the 2d histo for this crystal, but rotated, so the onw where the
+		// real cut was performed (mainly to check the cut itself)
+		
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+		var << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetYvariable() << ":" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetXvariable() << ">> spectrum2d";
+		
+		tree->Draw(var.str().c_str(),CutTrigger+CutCrystal,"COLZ");
+		sname << "Rotated Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
+		spectrum2d->SetName(sname.str().c_str()); 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("U");
+		spectrum2d->GetYaxis()->SetTitle("V");
+		CurrentCrystal->SetFloodMap2DSeparated(*spectrum2d);
+		var.str("");
+		sname.str("");
+		delete spectrum2d;
+		
 		
 		// Histogram 2d of the photopeak time evolution
 		spectrum2d = new TH2F("spectrum2d","spectrum2d",250,0,tree->GetMaximum("ExtendedTimeTag"),histo1Dbins,0,histo1Dmax);
@@ -959,6 +994,7 @@ int main (int argc, char** argv)
 		}
 		
 	      }
+// 	      CurrentCrystal->Print();
 	    }
 	    
 	  }
@@ -1407,6 +1443,13 @@ int main (int argc, char** argv)
 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2D()->GetName());
 		C_spectrum->cd();
 		CurrentCrystal->GetFloodMap2D()->Draw("COLZ");
+		C_spectrum->Write();
+		delete C_spectrum;
+		
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		C_spectrum->SetName(CurrentCrystal->GetFloodMap2DSeparated()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetFloodMap2DSeparated()->Draw("COLZ");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
