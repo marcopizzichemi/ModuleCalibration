@@ -4,6 +4,8 @@
 #include "TF2.h"
 #include "TMath.h"
 #include "TEllipse.h"
+#include "TROOT.h"
+
 
 Double_t g2(Double_t *x, Double_t *par) { //A Gaussian function
    Double_t r1 = Double_t((x[0]-par[1])/par[2]);
@@ -223,6 +225,37 @@ int Mppc::Find2Dpeaks(int nofcrystals,TH2F* histogram2d)
   return nfound;
 }
 
+void Mppc::FindProjectionPlane()
+{
+  TString name = FloodMap3D.GetName();
+//   std::cout << FloodMap3D.GetName() << std::endl;
+  
+  TString string_zy = name + "_zy";
+  TString string_zx = name + "_zx";
+  
+  FloodMap3D.Project3D("zy");
+  projection_zy = (TH2D*) gDirectory->Get(string_zy);
+  
+  FloodMap3D.Project3D("zx");
+  projection_zx = (TH2D*) gDirectory->Get(string_zx);
+  
+  projection_y = projection_zy->ProjectionY("spectrum3d_x");
+  projection_x = projection_zx->ProjectionY("spectrum3d_y");
+  
+  profileX = projection_zx->ProfileY();
+  profileY = projection_zy->ProfileY();
+  
+  lineX = new TF1("lineX",  "[0]*x + [1]",0,1);
+  lineY = new TF1("lineY",  "[0]*x + [1]",0,1);
+  
+  profileX->Fit("lineX","Q");
+  profileY->Fit("lineY","Q");
+  
+  //FIXME
+  Q1 = TMath::Pi()/2.0 + TMath::ATan(lineX->GetParameter(0));
+  Q2 = TMath::Pi()/2.0 + TMath::ATan(lineY->GetParameter(0));
+  
+}
 
 
 

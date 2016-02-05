@@ -387,6 +387,29 @@ int main (int argc, char** argv)
 	  var.str("");
 	  delete spectrum;
 	  
+	  // 3D spectrum for this mppc
+	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
+	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
+	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  spectrum3d->SetName(name);
+	  spectrum3d->SetTitle(name);
+	  spectrum3d->GetXaxis()->SetTitle("U");
+	  spectrum3d->GetYaxis()->SetTitle("V");
+	  spectrum3d->GetZaxis()->SetTitle("W");
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(*spectrum3d);
+	  delete spectrum3d;
+	  
+	  
+	  //-------------------------------------------------------------------------------
+	  // Projection planes
+	  // Find the best values for the projection planes
+	  // first approach, they are input by the user in the config file
+	  // They are already stored in the "base" variables when the config file is parsed above
+	  // for the moment, let's start by finding them...
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindProjectionPlane();
+	  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetQ1() << "\t" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetQ2() << std::endl;
+	  std::cout << base_lateralQ1 << "\t" << base_lateralQ2 << std::endl;
+	  
 	  //-------------------------------------------------------------------------------
 	  // Flood histogram
 	  // now modified: we plot a different histogram depending on the position of the mppc
@@ -545,18 +568,6 @@ int main (int argc, char** argv)
 	  delete spectrum2d; 
 	  //-------------------------------------------------------------------------------
 	  
-	  
-	  // 3D spectrum for this mppc
-	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
-	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
-	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-	  spectrum3d->SetName(name);
-	  spectrum3d->SetTitle(name);
-	  spectrum3d->GetXaxis()->SetTitle("U");
-	  spectrum3d->GetYaxis()->SetTitle("V");
-	  spectrum3d->GetZaxis()->SetTitle("W");
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(*spectrum3d);
-	  delete spectrum3d;
 	  
 	  //automatic crystal finder on the mppc
 	  // it runs always, unless the user has set onlyuserinput

@@ -2,6 +2,10 @@
 #define MPPC_H
 #include "Element.h"
 #include "TH1F.h"
+#include "TH2D.h"
+#include "TH1D.h"
+#include "TProfile.h"
+#include "TF1.h"
 
 #include <vector>
 #include <iostream>
@@ -15,22 +19,28 @@ private:
   int                    digitizerChannel;       ///< which digitizer channel is assigned to this mppc
   int                    canvasPosition;         ///< position in the canvas of all channels
   std::string            moduleName;             ///< name of the module
-  bool                   IsOnForDoi;
+  bool                   IsOnForDoi;             ///<
+  double                 Q1;                     ///<
+  double                 Q2;                     ///<
   
   //histograms
   TH1F                   RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F                   TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
+  TH2D*                  projection_zy;          ///<
+  TH2D*                  projection_zx;          ///<
+  TH1D*                  projection_x;           ///<
+  TH1D*                  projection_y;           ///<
+  TProfile*              profileX;               ///<
+  TProfile*              profileY;               ///<
+  TF1*                   lineX;                  ///<
+  TF1*                   lineY;                  ///<
   
-//   double*                fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
-//   double*                fit2DmeanY ;
-//   double*                fit2DsigmaX;
-//   double*                fit2DsigmaY;
-
-  std::vector<double>                fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
-  std::vector<double>                fit2DmeanY ;
-  std::vector<double>                fit2DsigmaX;
-  std::vector<double>                fit2DsigmaY;
-  std::vector<double>                fit2Dtheta;
+  std::vector<double>    fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  std::vector<double>    fit2DmeanY ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  std::vector<double>    fit2DsigmaX;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  std::vector<double>    fit2DsigmaY;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  std::vector<double>    fit2Dtheta;             ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  
   
 public:
   Mppc();                                        ///< default constructor
@@ -58,10 +68,14 @@ public:
   std::vector<double>*   GetFit2DsigmaX(){return &fit2DsigmaX;};
   std::vector<double>*   GetFit2DsigmaY(){return &fit2DsigmaY;};
   std::vector<double>*   GetFit2Dtheta(){return &fit2Dtheta;};
+  double                 GetQ1(){return Q1;};
+  double                 GetQ2(){return Q2;};
+  
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
+  void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
   
-  
+  //print methods
   void PrintGlobal();
   void PrintSpecific();
 };
