@@ -407,7 +407,7 @@ int main (int argc, char** argv)
 	  // They are already stored in the "base" variables when the config file is parsed above
 	  // for the moment, let's start by finding them...
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindProjectionPlane();
-	  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetQ1() << "\t" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetQ2() << std::endl;
+	  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWU() << "\t" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWV() << std::endl;
 	  std::cout << base_lateralQ1 << "\t" << base_lateralQ2 << std::endl;
 	  
 	  //-------------------------------------------------------------------------------
@@ -1376,7 +1376,13 @@ int main (int argc, char** argv)
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Write();
-	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+          
+          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZX()->Write();
+          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZY()->Write();
+          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileX()->Write();
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileY()->Write();
+          
+          for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {

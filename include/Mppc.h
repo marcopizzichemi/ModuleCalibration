@@ -20,8 +20,8 @@ private:
   int                    canvasPosition;         ///< position in the canvas of all channels
   std::string            moduleName;             ///< name of the module
   bool                   IsOnForDoi;             ///<
-  double                 Q1;                     ///<
-  double                 Q2;                     ///<
+  double                 ThetaWU;                     ///< angle from w to u in radiants
+  double                 ThetaWV;                     ///< angle from w to v in radiants
   
   //histograms
   TH1F                   RawSpectrum;            ///< raw spectrum of all events seen by this mppc
@@ -68,8 +68,12 @@ public:
   std::vector<double>*   GetFit2DsigmaX(){return &fit2DsigmaX;};
   std::vector<double>*   GetFit2DsigmaY(){return &fit2DsigmaY;};
   std::vector<double>*   GetFit2Dtheta(){return &fit2Dtheta;};
-  double                 GetQ1(){return Q1;};
-  double                 GetQ2(){return Q2;};
+  TProfile*              GetProfileX(){return profileX;};
+  TProfile*              GetProfileY(){return profileY;};
+  TH2D*                  GetProjectionZX(){return projection_zx;};
+  TH2D*                  GetProjectionZY(){return projection_zy;};
+  double                 GetThetaWU(){return ThetaWU;};
+  double                 GetThetaWV(){return ThetaWV;};
   
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module

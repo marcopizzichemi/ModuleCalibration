@@ -225,6 +225,7 @@ int Mppc::Find2Dpeaks(int nofcrystals,TH2F* histogram2d)
   return nfound;
 }
 
+
 void Mppc::FindProjectionPlane()
 {
   TString name = FloodMap3D.GetName();
@@ -233,27 +234,32 @@ void Mppc::FindProjectionPlane()
   TString string_zy = name + "_zy";
   TString string_zx = name + "_zx";
   
-  FloodMap3D.Project3D("zy");
+  FloodMap3D.Project3D("zy");  // projection of u,v,w points on v,w plane 
   projection_zy = (TH2D*) gDirectory->Get(string_zy);
   
-  FloodMap3D.Project3D("zx");
+  FloodMap3D.Project3D("zx");  // projection of u,v,w points on u,w plane
   projection_zx = (TH2D*) gDirectory->Get(string_zx);
   
-  projection_y = projection_zy->ProjectionY("spectrum3d_x");
-  projection_x = projection_zx->ProjectionY("spectrum3d_y");
+//   projection_y = projection_zy->ProjectionY("spectrum3d_x"); 
+//   projection_x = projection_zx->ProjectionY("spectrum3d_y");
   
-  profileX = projection_zx->ProfileY();
-  profileY = projection_zy->ProfileY();
+  profileX = projection_zx->ProfileY();  // profile along w of u,w plot. for each bin in w, average u is plotted with stdev 
+  profileY = projection_zy->ProfileY();  // profile along w of u,w plot. for each bin in w, average v is plotted with stdev 
   
-  lineX = new TF1("lineX",  "[0]*x + [1]",0,1);
-  lineY = new TF1("lineY",  "[0]*x + [1]",0,1);
+  lineX = new TF1("lineX",  "[0]*x + [1]",0,1);  // line becomes u(w) = m*w + c
+  lineY = new TF1("lineY",  "[0]*x + [1]",0,1);  // line becomes v(w) = m*w + c
   
   profileX->Fit("lineX","Q");
   profileY->Fit("lineY","Q");
   
   //FIXME
-  Q1 = TMath::Pi()/2.0 + TMath::ATan(lineX->GetParameter(0));
-  Q2 = TMath::Pi()/2.0 + TMath::ATan(lineY->GetParameter(0));
+  ThetaWU = TMath::ATan(lineX->GetParameter(0)); // --> Q1 = atan(u/w) --> angle from w to u in radiants
+  ThetaWV = TMath::ATan(lineY->GetParameter(0)); // --> Q2 = atan(v/w) --> angle from w to v in radiants
+  
+  //equations become 
+  // u" = u*cos(t_wu) + (v*sin(t_wv) + w*cos(t_wv))*sin(t_wu) 
+  // v" = v * cos(t_wv) - w*sin(t_wv)
+  
   
 }
 
