@@ -63,6 +63,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   crystaly                    = config.read<double>("crystaly",1.5);
   crystalz                    = config.read<double>("crystalz",15);
   esrThickness                = config.read<double>("esrThickness",0.07);
+  usingAllChannels            = config.read<bool>("usingAllChannels",1);
   
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -349,7 +350,8 @@ void InputFile::CreateTree()
   
   
   
-  for (Int_t i=0;i<nevent;i++) 
+  for (Int_t i=0;i<nevent;i++)
+//   for(Int_t i=0;i<1;i++)
   { 
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
@@ -364,7 +366,8 @@ void InputFile::CreateTree()
     
     int TreeEntryCounter = 0;
     
-    for (int j = 0 ; j < adcChannels ; j++) //loop on input chain channels
+    //loop to fill the channel
+    for (int j = 0 ; j < adcChannels ; j++) 
     {
       if(DigitizerChannelOn[j])
       {
@@ -387,11 +390,7 @@ void InputFile::CreateTree()
 	{
 	  maxCharge = TreeAdcChannel[TreeEntryCounter];
 	  TreeTriggerChannel = TreeEntryCounter;
-	}
-	//update total, row and columnsum
-	total += TreeAdcChannel[TreeEntryCounter];
-	rowsum += TreeAdcChannel[TreeEntryCounter]*xPositions[TreeEntryCounter];
-	columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
+	}	
 	TreeEntryCounter++;
       }
       
@@ -405,6 +404,132 @@ void InputFile::CreateTree()
       }
     }
     
+    // terrible implementation to allow us of only neighbour channels...
+    //loop to find the neighbour channels of trigger (if needed)
+    //read position of the trigger channel
+    double xTrigger;
+    double yTrigger;
+    std::vector<float> allowedX,allowedY;
+    std::vector <bool> isNeighbour; // channel is neighbour of trigger 
+    if(!usingAllChannels)
+    {
+      for(int iFill = 0; iFill < xPositions.size(); iFill++)
+      {
+	isNeighbour.push_back(false);
+      }
+      
+      xTrigger = xPositions[TreeTriggerChannel];
+      yTrigger = yPositions[TreeTriggerChannel];	  
+      std::vector<float> xCopyTemp = xPositions;
+      std::vector<float> yCopyTemp = yPositions;
+      std::sort (xCopyTemp.begin(),xCopyTemp.end());
+      std::sort (yCopyTemp.begin(),yCopyTemp.end());
+      //filter repetitions
+      std::vector<float> xCopy;
+      std::vector<float> yCopy;
+      xCopy.push_back(xCopyTemp[0]);
+      yCopy.push_back(yCopyTemp[0]);
+      int xCounter = 0;
+      int yCounter = 0;
+      for (int j = 0 ; j < xCopyTemp.size() ; j++)
+      {
+	if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted
+	{
+	  xCopy.push_back(xCopyTemp[j]);
+	  xCounter++;
+	}
+      }
+      for (int j = 0 ; j < yCopyTemp.size() ; j++)
+      {
+	if(yCopy[yCounter] != yCopyTemp[j])// this will work only because xCopyTemp is already sorted
+	{
+	  yCopy.push_back(yCopyTemp[j]);
+	  yCounter++;
+	}
+      }
+      // by default trigger row and column are allowed
+      allowedX.push_back(xTrigger);
+      allowedY.push_back(yTrigger);
+      
+      int TrigI,TrigJ;
+      //locate trigger in the new vectors
+      for(int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+      {
+	if(xCopy[xPos] == xTrigger) TrigI = xPos;
+      }
+      for(int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+      {
+	if(yCopy[yPos] == yTrigger) TrigJ = yPos;
+      }
+
+      // take x and y of neighbours
+      double xleft,xright,ytop,ybottom;
+      if(TrigI != 0)
+      {
+	allowedX.push_back(xCopy[TrigI-1]);
+      }
+      if(TrigI != nmppcx-1)
+      {
+	allowedX.push_back(xCopy[TrigI+1]);
+      }
+      if(TrigJ != 0)
+      {
+	allowedY.push_back(yCopy[TrigJ-1]);
+      }
+      if(TrigJ != nmppcy-1)
+      {
+	allowedY.push_back(yCopy[TrigJ+1]);
+      }
+      
+      for (int j = 0 ; j < adcChannels ; j++) 
+      {
+	if(DigitizerChannelOn[j])
+        {
+	  for(int iCheck = 0; iCheck < allowedX.size(); iCheck++)
+	  {
+	    if(xPositions[j] == allowedX[iCheck]) //check if x is allowed
+	    {
+	      for(int jCheck = 0; jCheck < allowedY.size(); jCheck++)
+	      {
+		if(yPositions[j] == allowedY[jCheck]) //check if y is allowed
+	        {
+		  isNeighbour[j] = true;
+		}
+	      }
+	    }
+	  }	   
+	}
+      }
+    }
+  
+    //loop to calculate u,v
+    for (int j = 0 ; j < adcChannels ; j++) 
+    {
+      if(DigitizerChannelOn[j])
+      {
+        //two options to calculate FloodX_Y_Z
+	//First, use all the channels
+	//Second, use only the neighbours of the trigger channel
+	if(usingAllChannels)
+	{
+	  total     += TreeAdcChannel[j];
+	  rowsum    += TreeAdcChannel[j]*xPositions[j];
+	  columnsum += TreeAdcChannel[j]*yPositions[j];
+	}  
+	else
+	{
+	  if(isNeighbour[j])
+	  {
+	    total     += TreeAdcChannel[j];
+	    rowsum    += TreeAdcChannel[j]*xPositions[j];
+	    columnsum += TreeAdcChannel[j]*yPositions[j];
+	  }
+	}
+      }
+    }
+    
+    
+    //compute u,v,w
     TreeFloodX = rowsum/total;
     TreeFloodY = columnsum/total;
     TreeFloodZ =  maxCharge/total;
@@ -469,8 +594,6 @@ void InputFile::CreateTree()
 // takes the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..)
 void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 {
-  //temp
-  //int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};//isn't this very wrong??
   
   // changing i and j, no more from top left and y x, but x y from bottom left
   std::stringstream sname;

@@ -47,6 +47,7 @@ protected:
   int                  jChildren;         ///< number of children on "j"                                                   
   
   //2d histos
+  TH2F                 TempMap2D;
   TH2F                 FloodMap2D;          ///< u,v map for this element
   TH2F                 FloodMap2DSeparated; ///< the 2d maps that combines the correct lateral, corner and central maps
   TH2F                 SphericalMap;        ///< spherical coordinates map (theta,phi) for this element
@@ -127,6 +128,10 @@ public:
   //methods to add and return children elements                                                         
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};      
   std::vector<std::string> GetChildren()                         {return childrenName;};     
+  
+  
+  void SetTempMap2D(TH2F aHisto){TempMap2D = aHisto;};
+  TH2F* GetTempMap2D(){return &TempMap2D;};
   
 //   TH2F*                Generate2Dhistogram(TString var,TCut);
   

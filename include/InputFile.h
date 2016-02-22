@@ -82,6 +82,7 @@ private:
   float                          taggingPosition;                    // tagging DOI bench position
   bool                           usingTaggingBench;                  // true if the input datasets uses the DOI tagging
   bool                           usingRealSimData;                   // true if the "real" gamma interaction point is used (of course valid only for simulation datasets)
+  bool                           usingAllChannels;
   int                            taggingCrystalChannel;              // channel of the tagging crystal, only for DOI bench data
   double                         nclock;                             // number of clock samples that will be ignored. clock is the digitizer clock (so 1 sample = 16ns for DT5740)
   int                            *translateCh;                       // translates adc channels to analysis channels

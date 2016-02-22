@@ -406,14 +406,65 @@ int main (int argc, char** argv)
 	  // first approach, they are input by the user in the config file
 	  // They are already stored in the "base" variables when the config file is parsed above
 	  // for the moment, let's start by finding them...
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindProjectionPlane();
-	  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWU() << "\t" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWV() << std::endl;
-	  std::cout << base_lateralQ1 << "\t" << base_lateralQ2 << std::endl;
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindProjectionPlane();
+	  //mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->MakeRotatedFlood();
+// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
+// 	  std::stringstream varX,varY;
+// 	  double t_wu = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWU(); 
+// 	  double t_wv = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWV();
+	  
+// 	  t_wu = base_lateralQ1;//DEBUG
+// 	  t_wv = 0; //DEBUG
+	  
+// 	  varX << "FloodX * TMath::Cos("
+// 	       << t_wu
+// 	       << ") + (FloodY * TMath::Sin("
+// 	       << t_wv
+// 	       << ") + FloodZ * TMath::Cos("
+// 	       << t_wv
+// 	       << "))* TMath::Sin("
+// 	       << t_wu
+// 	       << ")";
+// 	  varY << "FloodY * TMath::Cos("
+// 	       << t_wv 
+// 	       << ") - FloodZ * TMath::Sin("
+// 	       << t_wv
+// 	       << ")";
+//           varX << "FloodX * TMath::Cos("  << t_wu << ") + FloodZ * TMath::Sin(" << t_wu << ")";
+//           varY << "FloodY";
+	  
+	  
+// 	  var << "(" << varY.str()  << "):(" << varX.str() << ") >> spectrum2d";    
+	  
+// 	  std::cout << "Automatic : " << var.str() << std::endl;
+// 	  std::cout << t_wu << "\t" << t_wv << std::endl;
+	  //std::cout << base_lateralQ1 << "\t" << base_lateralQ2 << std::endl;
+	  
+// 	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
+// 	  name = "Temp - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+// 	  spectrum2d->SetName(name); 
+// 	  spectrum2d->SetTitle(name);
+// 	  spectrum2d->GetXaxis()->SetTitle("U");
+// 	  spectrum2d->GetYaxis()->SetTitle("V");
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTempMap2D(*spectrum2d);
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
+	  /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
+	   *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
+// 	  module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
+	  // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
+// 	  varX.str("");
+// 	  varY.str("");
+// 	  var.str("");
+// 	  delete spectrum2d; 
 	  
 	  //-------------------------------------------------------------------------------
 	  // Flood histogram
 	  // now modified: we plot a different histogram depending on the position of the mppc
-	  std::stringstream varX,varY; // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
+	  std::stringstream varX,varY;
+// 	  var.str("");
+// 	  varX.str("");
+// 	  varY.str(""); // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
 	  // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 	  if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
@@ -549,6 +600,7 @@ int main (int argc, char** argv)
 	    }	    
 	  }
 	  var << varY.str() << ":" << varX.str() << " >> spectrum2d";
+// 	  std::cout << "Config   : " << var.str() << std::endl;
 	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
 	  name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  spectrum2d->SetName(name); 
@@ -1338,6 +1390,7 @@ int main (int argc, char** argv)
       std::stringstream ModuleDirStream;
       ModuleDirStream << "Module " << iModule << "." << jModule;
       ModuleDirStream.str();
+//       std::cout << ModuleDirStream.str() << std::endl;
       directory[iModule+jModule][0][0] = fPlots->mkdir(ModuleDirStream.str().c_str());
       directory[iModule+jModule][0][0]->cd();      
       GlobalFlood2D->Write();
@@ -1372,16 +1425,18 @@ int main (int argc, char** argv)
 	{
 	  std::stringstream MppcDirStream;
 	  MppcDirStream << "MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " - " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetExtendedID();
+// 	  std::cout << MppcDirStream.str() << std::endl;
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0] = directory[iModule+jModule][0][0]->mkdir(MppcDirStream.str().c_str());
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Write();
           
-          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZX()->Write();
-          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZY()->Write();
-          mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileX()->Write();
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileY()->Write();
-          
+//        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZX()->Write();
+//        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZY()->Write();
+//        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileX()->Write();
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileY()->Write();
+// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTempMap2D()->Write();
+	  
           for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
@@ -1389,6 +1444,7 @@ int main (int argc, char** argv)
 	      std::stringstream CrystalDirStream;
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
+// 	      std::cout << CrystalDirStream.str() << std::endl;
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
 	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was specified in the config file
@@ -1403,7 +1459,7 @@ int main (int argc, char** argv)
 		  PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		}
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
-		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
+		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // FIXME CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
 		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
 		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
 		EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());

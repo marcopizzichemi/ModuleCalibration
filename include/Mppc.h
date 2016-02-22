@@ -19,21 +19,21 @@ private:
   int                    digitizerChannel;       ///< which digitizer channel is assigned to this mppc
   int                    canvasPosition;         ///< position in the canvas of all channels
   std::string            moduleName;             ///< name of the module
-  bool                   IsOnForDoi;             ///<
-  double                 ThetaWU;                     ///< angle from w to u in radiants
-  double                 ThetaWV;                     ///< angle from w to v in radiants
+  bool                   IsOnForDoi;             ///< if the mppc is on the DOI tagging line
+  double                 ThetaWU;                ///< angle from w to u in radiants
+  double                 ThetaWV;                ///< angle from w to v in radiants
   
   //histograms
   TH1F                   RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F                   TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
-  TH2D*                  projection_zy;          ///<
-  TH2D*                  projection_zx;          ///<
-  TH1D*                  projection_x;           ///<
-  TH1D*                  projection_y;           ///<
-  TProfile*              profileX;               ///<
-  TProfile*              profileY;               ///<
-  TF1*                   lineX;                  ///<
-  TF1*                   lineY;                  ///<
+  TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
+  TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
+//   TH1D*                  projection_x;           ///< 
+//   TH1D*                  projection_y;           ///<
+  TProfile*              profileX;               ///< Profile of w,u histogram (for each bin in w, mean u and sigma are plotted)
+  TProfile*              profileY;               ///< Profile of w,v histogram (for each bin in w, mean v and sigma are plotted)
+  TF1*                   lineX;                  ///< Line to fit the profileX plot -> u(w) = m*w + c
+  TF1*                   lineY;                  ///< Line to fit the profileX plot -> v(w) = m*w + c
   
   std::vector<double>    fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DmeanY ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
@@ -78,6 +78,8 @@ public:
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
+  
+  void                   MakeRotatedFlood();
   
   //print methods
   void PrintGlobal();
