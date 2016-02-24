@@ -6,6 +6,7 @@
 
 #include "Element.h"
 #include "TCut.h"
+#include "TCutG.h"
 #include "TEllipse.h"
 #include "TF1.h"
 #include "TGraph.h"
@@ -26,6 +27,7 @@ private:
   TGraph               SimGraph;             
   TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
+  TCutG               *cutg[2];
   bool                 isOn;                 ///< if the crystal is on/off
   TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         ///< position of mean (after fitting) for the photopeak 
@@ -84,7 +86,11 @@ public:
   TCut                 GetW20percCut(){return w20percCut;};
   TH1D*                GetSlicesMean(){return &SlicesMean;};
   TF1*                 GetFitCorrected(){return &FitCorrected;};
+  TCutG*               GetZXCut(){return cutg[0];};
+  TCutG*               GetZYCut(){return cutg[1];};
   
+  void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
+  void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F aHisto){Spectrum = aHisto;};
   void                 SetHighlightedSpectrum(TH1F aHisto){HighlightedSpectrum = aHisto;};

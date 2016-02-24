@@ -4,6 +4,8 @@
 #include "TH1F.h"
 #include "TH2D.h"
 #include "TH1D.h"
+#include "TH3F.h"
+#include "TCutG.h"
 #include "TProfile.h"
 #include "TF1.h"
 
@@ -40,6 +42,13 @@ private:
   std::vector<double>    fit2DsigmaX;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DsigmaY;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2Dtheta;             ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+  struct point
+  {
+    int i;
+    int j;
+    int k;
+  };
+  
   
   
 public:
@@ -80,6 +89,8 @@ public:
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
   
   void                   MakeRotatedFlood();
+  bool                   FindCrystalCuts(TCutG*** cutg);///< Finds the density volumes that represents the crystals
+  
   
   //print methods
   void PrintGlobal();

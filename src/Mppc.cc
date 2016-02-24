@@ -5,6 +5,8 @@
 #include "TMath.h"
 #include "TEllipse.h"
 #include "TROOT.h"
+#include <stack>
+#include "TCanvas.h"
 
 
 Double_t g2(Double_t *x, Double_t *par) { //A Gaussian function
@@ -278,162 +280,382 @@ void Mppc::MakeRotatedFlood()
   
   
   // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
-//   spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
-//   if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
-//   {
-//     // standard flood 2d
-//     varX << "FloodX";
-//     varY << "FloodY";
-//     // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
-//   }
-//   else // we are not in the center
-//   {
-//     if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) ) // we are in top or bottom lateral
-//     {
-//       if(((jModule*nmppcy)+jMppc) == 0 )   // bottom lateral crystals
-//       {
-// 	lateralQ2         = - base_lateralQ2;
-// 	lateralDeltaV     = - base_lateralDeltaV;
-// 	lateralRescaleTB  = + base_lateralRescaleTB;
-// 	// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
-//       }
-//       if(((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top lateral crystals
-//       {
-// 	lateralQ2         = + base_lateralQ2;
-// 	lateralDeltaV     = + base_lateralDeltaV;
-// 	lateralRescaleTB  = + base_lateralRescaleTB;
-// 	// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
-//       }
-//       // left and right crystals have the same var structure
-//       varY << "("
-//       << lateralDeltaV
-//       << " + "
-//       << lateralRescaleTB
-//       << "* ((FloodY)*TMath::Cos(" 
-//       << lateralQ2
-//       << ") - (FloodZ)*TMath::Sin("
-//       << lateralQ2
-//       << ")))";
-//       varX << "(FloodX)";  
-//     }
-//     else
-//     {
-//       if(((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ) )  // we are in left or right lateral
-//       {
-// 	if(((iModule*nmppcx)+iMppc) == 0 )   // left lateral crystals
-// 	{
-// 	  lateralQ1         = + base_lateralQ1;
-// 	  lateralDeltaU     = - base_lateralDeltaU;
-// 	  lateralRescaleRL  = + base_lateralRescaleRL;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
-// 	}
-// 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 )   // right lateral crystals
-// 	{
-// 	  lateralQ1         = - base_lateralQ1;
-// 	  lateralDeltaU     = + base_lateralDeltaU;
-// 	  lateralRescaleRL  = + base_lateralRescaleRL;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
-// 	}
-// 	// left and right crystals have the same var structure
-// 	varY << "(FloodY)";  
-// 	varX << "("
-// 	<< lateralDeltaU
-// 	<< " + "
-// 	<< lateralRescaleRL
-// 	<< "*(FloodZ*TMath::Sin("
-// 	<< lateralQ1
-// 	<< ")+ (FloodX)*TMath::Cos("
-// 	<< lateralQ1
-// 	<<")))";
-//       }
-//       else // only corner crystals remain..
-//       {
-// 	if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom left crystals
-// 	{
-// 	  cornerDeltaU   = - base_cornerDeltaU  ;
-// 	  cornerDeltaV   = - base_cornerDeltaV  ; 
-// 	  cornerQ1       = + base_cornerQ1      ;
-// 	  cornerQ2       = - base_cornerQ2      ;
-// 	  cornerRescale  =   base_cornerRescale ;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
-// 	}
-// 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom right crystals
-// 	{
-// 	  cornerDeltaU   = + base_cornerDeltaU  ;
-// 	  cornerDeltaV   = - base_cornerDeltaV  ;
-// 	  cornerQ1       = - base_cornerQ1      ;
-// 	  cornerQ2       = - base_cornerQ2      ;
-// 	  cornerRescale  =   base_cornerRescale ;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
-// 	}
-// 	if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top left crystals
-// 	{
-// 	  cornerDeltaU   = - base_cornerDeltaU  ;
-// 	  cornerDeltaV   = + base_cornerDeltaV  ;
-// 	  cornerQ1       = - base_cornerQ1      ;
-// 	  cornerQ2       = + base_cornerQ2      ;
-// 	  cornerRescale  =   base_cornerRescale ;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
-// 	}
-// 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1)   // top right crystals
-// 	{
-// 	  cornerDeltaU   = + base_cornerDeltaU  ;
-// 	  cornerDeltaV   = + base_cornerDeltaV  ;
-// 	  cornerQ1       = + base_cornerQ1      ;
-// 	  cornerQ2       = + base_cornerQ2      ;
-// 	  cornerRescale  =   base_cornerRescale ;
-// 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
-// 	}
-// 	varY 
-// 	<< "( "
-// 	<< cornerDeltaV
-// 	<< " + " 
-// 	<< cornerRescale
-// 	<<"*((FloodX*TMath::Sin(" 
-// 	<< cornerQ1 
-// 	<< ") + FloodY*TMath::Cos( "
-// 	<< cornerQ1 
-// 	<< ")) *TMath::Cos("
-// 	<< cornerQ2
-// 	<< ") - FloodZ*TMath::Sin("
-// 	<< cornerQ2 
-// 	<< ")))" ;
-// 	varX << " ( " 
-// 	<< cornerDeltaU
-// 	<< " + (FloodX*TMath::Cos("
-// 	<< cornerQ1
-// 	<< ") - FloodY*TMath::Sin("
-// 	<< cornerQ1
-// 	<< ")))";
-// 	
-// 	// 		std::cout << varY.str() << std::endl;
-// 	// 		std::cout << varX.str() << std::endl;
-//       }
-//     }	    
-//   }
-//   var << varY.str() << ":" << varX.str() << " >> spectrum2d";
-//   std::cout << var << std::endl;
-//   tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
-//   name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-//   spectrum2d->SetName(name); 
-//   spectrum2d->SetTitle(name);
-//   spectrum2d->GetXaxis()->SetTitle("U");
-//   spectrum2d->GetYaxis()->SetTitle("V");
-//   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap2D(*spectrum2d);
-//   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
-//   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
-//   /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
-//    *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
-//   module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
-//   // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
-//   varX.str("");
-//   varY.str("");
-//   var.str("");
-//   delete spectrum2d; 
+  //   spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
+  //   if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
+  //   {
+  //     // standard flood 2d
+  //     varX << "FloodX";
+  //     varY << "FloodY";
+  //     // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
+  //   }
+  //   else // we are not in the center
+  //   {
+  //     if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) ) // we are in top or bottom lateral
+  //     {
+  //       if(((jModule*nmppcy)+jMppc) == 0 )   // bottom lateral crystals
+  //       {
+  // 	lateralQ2         = - base_lateralQ2;
+  // 	lateralDeltaV     = - base_lateralDeltaV;
+  // 	lateralRescaleTB  = + base_lateralRescaleTB;
+  // 	// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
+  //       }
+  //       if(((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top lateral crystals
+  //       {
+  // 	lateralQ2         = + base_lateralQ2;
+  // 	lateralDeltaV     = + base_lateralDeltaV;
+  // 	lateralRescaleTB  = + base_lateralRescaleTB;
+  // 	// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
+  //       }
+  //       // left and right crystals have the same var structure
+  //       varY << "("
+  //       << lateralDeltaV
+  //       << " + "
+  //       << lateralRescaleTB
+  //       << "* ((FloodY)*TMath::Cos(" 
+  //       << lateralQ2
+  //       << ") - (FloodZ)*TMath::Sin("
+  //       << lateralQ2
+  //       << ")))";
+  //       varX << "(FloodX)";  
+  //     }
+  //     else
+  //     {
+  //       if(((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ) )  // we are in left or right lateral
+  //       {
+  // 	if(((iModule*nmppcx)+iMppc) == 0 )   // left lateral crystals
+  // 	{
+  // 	  lateralQ1         = + base_lateralQ1;
+  // 	  lateralDeltaU     = - base_lateralDeltaU;
+  // 	  lateralRescaleRL  = + base_lateralRescaleRL;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
+  // 	}
+  // 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 )   // right lateral crystals
+  // 	{
+  // 	  lateralQ1         = - base_lateralQ1;
+  // 	  lateralDeltaU     = + base_lateralDeltaU;
+  // 	  lateralRescaleRL  = + base_lateralRescaleRL;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
+  // 	}
+  // 	// left and right crystals have the same var structure
+  // 	varY << "(FloodY)";  
+  // 	varX << "("
+  // 	<< lateralDeltaU
+  // 	<< " + "
+  // 	<< lateralRescaleRL
+  // 	<< "*(FloodZ*TMath::Sin("
+  // 	<< lateralQ1
+  // 	<< ")+ (FloodX)*TMath::Cos("
+  // 	<< lateralQ1
+  // 	<<")))";
+  //       }
+  //       else // only corner crystals remain..
+  //       {
+  // 	if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom left crystals
+  // 	{
+  // 	  cornerDeltaU   = - base_cornerDeltaU  ;
+  // 	  cornerDeltaV   = - base_cornerDeltaV  ; 
+  // 	  cornerQ1       = + base_cornerQ1      ;
+  // 	  cornerQ2       = - base_cornerQ2      ;
+  // 	  cornerRescale  =   base_cornerRescale ;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
+  // 	}
+  // 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom right crystals
+  // 	{
+  // 	  cornerDeltaU   = + base_cornerDeltaU  ;
+  // 	  cornerDeltaV   = - base_cornerDeltaV  ;
+  // 	  cornerQ1       = - base_cornerQ1      ;
+  // 	  cornerQ2       = - base_cornerQ2      ;
+  // 	  cornerRescale  =   base_cornerRescale ;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
+  // 	}
+  // 	if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top left crystals
+  // 	{
+  // 	  cornerDeltaU   = - base_cornerDeltaU  ;
+  // 	  cornerDeltaV   = + base_cornerDeltaV  ;
+  // 	  cornerQ1       = - base_cornerQ1      ;
+  // 	  cornerQ2       = + base_cornerQ2      ;
+  // 	  cornerRescale  =   base_cornerRescale ;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
+  // 	}
+  // 	if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1)   // top right crystals
+  // 	{
+  // 	  cornerDeltaU   = + base_cornerDeltaU  ;
+  // 	  cornerDeltaV   = + base_cornerDeltaV  ;
+  // 	  cornerQ1       = + base_cornerQ1      ;
+  // 	  cornerQ2       = + base_cornerQ2      ;
+  // 	  cornerRescale  =   base_cornerRescale ;
+  // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
+  // 	}
+  // 	varY 
+  // 	<< "( "
+  // 	<< cornerDeltaV
+  // 	<< " + " 
+  // 	<< cornerRescale
+  // 	<<"*((FloodX*TMath::Sin(" 
+  // 	<< cornerQ1 
+  // 	<< ") + FloodY*TMath::Cos( "
+  // 	<< cornerQ1 
+  // 	<< ")) *TMath::Cos("
+  // 	<< cornerQ2
+  // 	<< ") - FloodZ*TMath::Sin("
+  // 	<< cornerQ2 
+  // 	<< ")))" ;
+  // 	varX << " ( " 
+  // 	<< cornerDeltaU
+  // 	<< " + (FloodX*TMath::Cos("
+  // 	<< cornerQ1
+  // 	<< ") - FloodY*TMath::Sin("
+  // 	<< cornerQ1
+  // 	<< ")))";
+  // 	
+  // 	// 		std::cout << varY.str() << std::endl;
+  // 	// 		std::cout << varX.str() << std::endl;
+  //       }
+  //     }	    
+  //   }
+  //   var << varY.str() << ":" << varX.str() << " >> spectrum2d";
+  //   std::cout << var << std::endl;
+  //   tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
+  //   name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+  //   spectrum2d->SetName(name); 
+  //   spectrum2d->SetTitle(name);
+  //   spectrum2d->GetXaxis()->SetTitle("U");
+  //   spectrum2d->GetYaxis()->SetTitle("V");
+  //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap2D(*spectrum2d);
+  //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
+  //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
+  //   /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
+  //    *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
+  //   module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
+  //   // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
+  //   varX.str("");
+  //   varY.str("");
+  //   var.str("");
+  //   delete spectrum2d; 
   //-------------------------------------------------------------------------------
   
 }
 
+
+
+
+bool Mppc::FindCrystalCuts(TCutG*** cutg)
+{
+  TH3F *histogram_original = &this->FloodMap3D;
+  // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
+  int NbinX = histogram_original->GetXaxis()->GetNbins();
+  int NbinY = histogram_original->GetYaxis()->GetNbins();
+  int NbinZ = histogram_original->GetZaxis()->GetNbins();
+  const int numbOfCrystals = 4;
+  std::stack<point> stack;   // prepare a stack of point type
+  TH3I *done;
+  TH3I *mask[numbOfCrystals];
+  Int_t u,v,w;  
+  histogram_original->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
+  double max = histogram_original->GetBinContent(u,v,w); //get ax bin content
+  const int div = 10;  
+  double step = max/((double) div); // calculated the step of the separation search
+  bool found = false;
+  double threshold = step;
+  //   std::cout << "Max bin content " << max << std::endl;
+  while(!found)
+  {
+    //     std::cout << "Trying with threshold " << threshold << std::endl;
+    long int nBinsXMask[numbOfCrystals] = {0,0,0,0};
+    int nMasks = 0;    
+    for(int i = 0 ; i < numbOfCrystals ; i++)//create the masks
+    {
+      std::stringstream name;
+      name << "mask" << i;
+      mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),500,-7,7,500,-7,7,100,0,1);
+    }
+    done = new TH3I("done","done",500,-7,7,500,-7,7,100,0,1); //create the histogram to hold the "done" flags
+    TH3F *histogram = (TH3F*) histogram_original->Clone(); // take an histogram from the original 3d histo
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    {
+      histogram->GetMaximumBin(u,v,w); // have to do it at each step
+      point p0 = {u,v,w}; // first element of the mask
+      mask[iMasks]->SetBinContent(p0.i,p0.j,p0.k,1);
+      done->SetBinContent(p0.i,p0.j,p0.k,1);
+      stack.push(p0);
+      nBinsXMask[iMasks]++;
+      while (!stack.empty()) // analyze histo
+      {
+	point pSeed = stack.top(); //take next point
+	stack.pop(); //remove it from stack
+	for(int i = -1 ; i < 2 ; i++) //take the 26 neighbours of point
+	{
+	  for(int j = -1 ; j < 2 ; j++) 
+	  {
+	    for(int k = -1 ; k < 2 ; k++) 
+	    {
+	      point p = {pSeed.i+i,pSeed.j+j,pSeed.k+k};
+	      
+	      if(!done->GetBinContent(p.i,p.j,p.k)) // if the point has not been checked before
+	      {
+		if(histogram->GetBinContent(p.i,p.j,p.k) > threshold)
+		{
+		  stack.push(p); // add it to the stack, it becomes a seed. if it's zero, it's no seed
+		  mask[iMasks]->SetBinContent(p.i,p.j,p.k,1);
+		  nBinsXMask[iMasks]++;
+		}
+		done->SetBinContent(p.i,p.j,p.k,1); // set the point as checked (its neighbourhood has been checked)
+	      }
+	    }
+	  }
+	}
+      }
+      
+      // now take away the points of this mask
+      for(int i = 1 ; i < NbinX+1 ; i++) 
+      {
+	for(int j = 1 ; j < NbinY+1 ; j++) 
+	{
+	  for(int k = 1 ; k < NbinZ+1 ; k++)
+	  {
+	    if( mask[iMasks]->GetBinContent(i,j,k) )
+	    {
+	      histogram->SetBinContent(i,j,k,0);
+	    }
+	  }
+	}
+      }
+      if(nBinsXMask[iMasks] < 20) //check the mask, if it holds too few points, don't accept it
+	break;
+      else
+	nMasks++; //otherwise count it as +1 good mask found
+    }
+    if(nMasks == numbOfCrystals) // now, check if you found 4 masks
+      found = true; // if you did, set found as true and the while cycle will end here
+      else 
+      {
+	threshold += step;  // increase the threshold for next search
+	for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
+	{
+	  delete mask[i];
+	}
+	delete done;
+	if(threshold > max) // check if you found passed the threshold, in which case kill the while cycle
+	  break;
+      }
+  }
+  
+  if(found)  
+  {
+    //TEST check for overlapping masks
+    for(int i = 1 ; i < NbinX+1 ; i++) 
+    {
+      for(int j = 1 ; j < NbinY+1 ; j++) 
+      {
+	for(int k = 1 ; k < NbinZ+1 ; k++)
+	{
+	  int nnn = 0;
+	  for(int iMasks = 0 ; iMasks < 4 ; iMasks++) 
+	  {
+	    nnn += mask[iMasks]->GetBinContent(i,j,k); 
+	  }
+	  if( nnn > 1 )
+	  {
+	    std::cout << "Overlap at bin "<< i << "," << j << "," << k << std::endl;
+	  }
+	}
+      }
+    }
+    
+    
+    // now generate a "TCutg" from these selections of points
+    // simplest way is a bit stupid..
+    // first project each mask on xz and yz
+    // then find a tcutg on these two planes, and there intersection will define the 3d area of TCutG you want
+    
+    TH2D* mask_zx[numbOfCrystals];
+    TH2D* mask_zy[numbOfCrystals];
+    TCanvas *C_contours[numbOfCrystals];
+    TCanvas *C_graph[numbOfCrystals];
+    
+    //   TCutG ***cutg;
+    
+    
+    
+    
+    TString plane[2] = {"zx","zy"};
+    TString varX[2] = {"FloodX","FloodY"};
+    //   TCut Cut3D[numbOfCrystals];
+    
+    Double_t contours[2] = {0.5,1}; //fixed level to get the all the points
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    {
+      std::stringstream name;
+      
+      name << "C_" << mask[iMasks]->GetName();
+      C_contours[iMasks] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,600);
+      C_contours[iMasks]->Divide(2,1);
+      
+      name.str("");
+      name << "Gr_" << mask[iMasks]->GetName();
+      C_graph[iMasks] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,600);
+      C_graph[iMasks]->Divide(2,1);
+      
+      for(int iCut =0 ; iCut < 2 ; iCut++)
+      {
+	
+	
+	name.str("");
+	name << mask[iMasks]->GetName() << "_" << plane[iCut];
+	mask[iMasks]->Project3D(plane[iCut]);
+	mask_zx[iMasks] = (TH2D*) gDirectory->Get(name.str().c_str());
+	mask_zx[iMasks]->SetContour(2, contours);
+	C_contours[iMasks]->cd(1);
+	mask_zx[iMasks]->Draw("CONT Z LIST");
+	C_contours[iMasks]->Update();
+	
+	TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
+	TList* contLevel = NULL;
+	TGraph* curv     = NULL;
+	TGraph* gc       = NULL;
+	
+	Int_t nGraphs    = 0;
+	Int_t TotalConts = 0;
+	
+	if (conts == NULL)
+	{
+	  printf("*** No Contours Were Extracted!\n");
+	  TotalConts = 0;
+	} 
+	else 
+	{
+	  TotalConts = conts->GetSize();
+	}
+	
+	//     std::cout << TotalConts << std::endl;
+	contLevel = (TList*)conts->At(0); //take the lowest level
+	curv = (TGraph*)contLevel->First(); // i expect only 1 graph
+	//     std::stringstream name;
+	C_graph[iMasks]->cd(1);
+	curv->Draw("alp");
+	
+	name.str("");
+	name << "cutg_" << iCut << "_" << iMasks ;
+	//     cutg[j] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
+	
+	cutg[iCut][iMasks] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
+	cutg[iCut][iMasks]->SetVarX(varX[iCut]);
+	cutg[iCut][iMasks]->SetVarY("FloodZ");
+      }
+      
+      //Cut3D[iMasks] = cutg[0][iMasks] + cutg[1][iMasks];
+      
+    }
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+  
+  
+  
+}
 
 
 
