@@ -89,7 +89,7 @@ public:
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
   
   void                   MakeRotatedFlood();
-  bool                   FindCrystalCuts(TCutG*** cutg);///< Finds the density volumes that represents the crystals
+  bool                   FindCrystalCuts(TCutG**** cutg);///< Finds the density volumes that represents the crystals
   
   
   //print methods

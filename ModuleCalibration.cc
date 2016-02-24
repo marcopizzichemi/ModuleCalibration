@@ -401,208 +401,7 @@ int main (int argc, char** argv)
 	  delete spectrum3d;
 	  
 	  
-	  //-------------------------------------------------------------------------------
-	  // Projection planes
-	  // Find the best values for the projection planes
-	  // first approach, they are input by the user in the config file
-	  // They are already stored in the "base" variables when the config file is parsed above
-	  // for the moment, let's start by finding them...
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindProjectionPlane();
-	  //mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->MakeRotatedFlood();
-// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
-// 	  std::stringstream varX,varY;
-// 	  double t_wu = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWU(); 
-// 	  double t_wv = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetThetaWV();
-	  
-// 	  t_wu = base_lateralQ1;//DEBUG
-// 	  t_wv = 0; //DEBUG
-	  
-// 	  varX << "FloodX * TMath::Cos("
-// 	       << t_wu
-// 	       << ") + (FloodY * TMath::Sin("
-// 	       << t_wv
-// 	       << ") + FloodZ * TMath::Cos("
-// 	       << t_wv
-// 	       << "))* TMath::Sin("
-// 	       << t_wu
-// 	       << ")";
-// 	  varY << "FloodY * TMath::Cos("
-// 	       << t_wv 
-// 	       << ") - FloodZ * TMath::Sin("
-// 	       << t_wv
-// 	       << ")";
-//           varX << "FloodX * TMath::Cos("  << t_wu << ") + FloodZ * TMath::Sin(" << t_wu << ")";
-//           varY << "FloodY";
-	  
-	  
-// 	  var << "(" << varY.str()  << "):(" << varX.str() << ") >> spectrum2d";    
-	  
-// 	  std::cout << "Automatic : " << var.str() << std::endl;
-// 	  std::cout << t_wu << "\t" << t_wv << std::endl;
-	  //std::cout << base_lateralQ1 << "\t" << base_lateralQ2 << std::endl;
-	  
-// 	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
-// 	  name = "Temp - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-// 	  spectrum2d->SetName(name); 
-// 	  spectrum2d->SetTitle(name);
-// 	  spectrum2d->GetXaxis()->SetTitle("U");
-// 	  spectrum2d->GetYaxis()->SetTitle("V");
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTempMap2D(*spectrum2d);
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
-	  /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
-	   *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
-// 	  module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
-	  // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
-// 	  varX.str("");
-// 	  varY.str("");
-// 	  var.str("");
-// 	  delete spectrum2d; 
-	  
-	  //-------------------------------------------------------------------------------
-	  // Flood histogram
-	  // now modified: we plot a different histogram depending on the position of the mppc
-// 	  std::stringstream varX,varY;
-// // 	  var.str("");
-// // 	  varX.str("");
-// // 	  varY.str(""); // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
-// 	  // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
-// 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
-// 	  if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
-// 	  {
-// 	    // standard flood 2d
-// 	    varX << "FloodX";
-// 	    varY << "FloodY";
-// 	    // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
-// 	  }
-// 	  else // we are not in the center
-// 	  {
-// 	    if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) ) // we are in top or bottom lateral
-// 	    {
-// 	      if(((jModule*nmppcy)+jMppc) == 0 )   // bottom lateral crystals
-// 	      {
-// 		lateralQ2         = - base_lateralQ2;
-// 		lateralDeltaV     = - base_lateralDeltaV;
-// 		lateralRescaleTB  = + base_lateralRescaleTB;
-// 		// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LATERAL"<< std::endl;
-// 	      }
-// 	      if(((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top lateral crystals
-// 	      {
-// 		lateralQ2         = + base_lateralQ2;
-// 		lateralDeltaV     = + base_lateralDeltaV;
-// 		lateralRescaleTB  = + base_lateralRescaleTB;
-// 		// 		std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LATERAL"<< std::endl;
-// 	      }
-// 	      // left and right crystals have the same var structure
-// 	      varY << "("
-// 	      << lateralDeltaV
-// 	      << " + "
-// 	      << lateralRescaleTB
-// 	      << "* ((FloodY)*TMath::Cos(" 
-// 	      << lateralQ2
-// 	      << ") - (FloodZ)*TMath::Sin("
-// 	      << lateralQ2
-// 	      << ")))";
-// 	      varX << "(FloodX)";  
-// 	    }
-// 	    else
-// 	    {
-// 	      if(((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ) )  // we are in left or right lateral
-// 	      {
-// 		if(((iModule*nmppcx)+iMppc) == 0 )   // left lateral crystals
-// 		{
-// 		  lateralQ1         = + base_lateralQ1;
-// 		  lateralDeltaU     = - base_lateralDeltaU;
-// 		  lateralRescaleRL  = + base_lateralRescaleRL;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " LEFT LATERAL "<< std::endl;
-// 		}
-// 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 )   // right lateral crystals
-// 		{
-// 		  lateralQ1         = - base_lateralQ1;
-// 		  lateralDeltaU     = + base_lateralDeltaU;
-// 		  lateralRescaleRL  = + base_lateralRescaleRL;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
-// 		}
-// 		// left and right crystals have the same var structure
-// 		varY << "(FloodY)";  
-// 		varX << "("
-// 		<< lateralDeltaU
-// 		<< " + "
-// 		<< lateralRescaleRL
-// 		<< "*(FloodZ*TMath::Sin("
-// 		<< lateralQ1
-// 		<< ")+ (FloodX)*TMath::Cos("
-// 		<< lateralQ1
-// 		<<")))";
-// 	      }
-// 	      else // only corner crystals remain..
-// 	      {
-// 		if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom left crystals
-// 		{
-// 		  cornerDeltaU   = - base_cornerDeltaU  ;
-// 		  cornerDeltaV   = - base_cornerDeltaV  ; 
-// 		  cornerQ1       = + base_cornerQ1      ;
-// 		  cornerQ2       = - base_cornerQ2      ;
-// 		  cornerRescale  =   base_cornerRescale ;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM LEFT"<< std::endl;
-// 		}
-// 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom right crystals
-// 		{
-// 		  cornerDeltaU   = + base_cornerDeltaU  ;
-// 		  cornerDeltaV   = - base_cornerDeltaV  ;
-// 		  cornerQ1       = - base_cornerQ1      ;
-// 		  cornerQ2       = - base_cornerQ2      ;
-// 		  cornerRescale  =   base_cornerRescale ;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " BOTTOM RIGTH"<< std::endl;
-// 		}
-// 		if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1 )   // top left crystals
-// 		{
-// 		  cornerDeltaU   = - base_cornerDeltaU  ;
-// 		  cornerDeltaV   = + base_cornerDeltaV  ;
-// 		  cornerQ1       = - base_cornerQ1      ;
-// 		  cornerQ2       = + base_cornerQ2      ;
-// 		  cornerRescale  =   base_cornerRescale ;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP LEFT"<< std::endl;
-// 		}
-// 		if(((iModule*nmppcx)+iMppc) == nmppcx -1 &&  ((jModule*nmppcy)+jMppc) == nmppcy -1)   // top right crystals
-// 		{
-// 		  cornerDeltaU   = + base_cornerDeltaU  ;
-// 		  cornerDeltaV   = + base_cornerDeltaV  ;
-// 		  cornerQ1       = + base_cornerQ1      ;
-// 		  cornerQ2       = + base_cornerQ2      ;
-// 		  cornerRescale  =   base_cornerRescale ;
-// 		  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
-// 		}
-// 		varY 
-// 		<< "( "
-// 		<< cornerDeltaV
-// 		<< " + " 
-// 		<< cornerRescale
-// 		<<"*((FloodX*TMath::Sin(" 
-// 		<< cornerQ1 
-// 		<< ") + FloodY*TMath::Cos( "
-// 		<< cornerQ1 
-// 		<< ")) *TMath::Cos("
-// 		<< cornerQ2
-// 		<< ") - FloodZ*TMath::Sin("
-// 		<< cornerQ2 
-// 		<< ")))" ;
-// 		varX << " ( " 
-// 		<< cornerDeltaU
-// 		<< " + (FloodX*TMath::Cos("
-// 		<< cornerQ1
-// 		<< ") - FloodY*TMath::Sin("
-// 		<< cornerQ1
-// 		<< ")))";
-// 		
-// 		// 		std::cout << varY.str() << std::endl;
-// 		// 		std::cout << varX.str() << std::endl;
-// 	      }
-// 	    }	    
-// 	  }
-// 	  var << varY.str() << ":" << varX.str() << " >> spectrum2d";
-// // 	  std::cout << "Config   : " << var.str() << std::endl;
-// 	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
+	  //standard 2d plot
 	  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 	  tree->Draw("FloodY:FloodX >> spectrum2d",CutXYZ+CutTrigger,"COLZ");
 	  name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -612,17 +411,20 @@ int main (int argc, char** argv)
 	  spectrum2d->GetYaxis()->SetTitle("V");
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap2D(*spectrum2d);
 	  delete spectrum2d; 
-	  //-------------------------------------------------------------------------------
 	  
 	  
 	  //automatic crystal finder on the mppc
 	  // it runs always, unless the user has set onlyuserinput
-	  TCutG ***cutg; // prepare the graphical cuts
+	  TCutG**** cutg; // prepare the graphical cuts
 	  //const int numbOfCrystals = 4;
-	  cutg = new TCutG**[2]; // two planes of cuts, their intersection will create a 3d cut
+	  cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
 	  for(int iCut =0 ; iCut < 2 ; iCut++)
 	  {
-	    cutg[iCut] = new TCutG*[ncrystalsx*ncrystalsy];
+	    cutg[iCut] = new TCutG**[ncrystalsx];
+	    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+	    {
+	      cutg[iCut][iCry] = new TCutG*[ncrystalsy];
+	    }
 	  }
 	  bool found = false;
 	  if(!onlyuserinput)
@@ -671,9 +473,9 @@ int main (int argc, char** argv)
 		// get a pointer to this crystal
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 		CurrentCrystal->SetCrystalOn(true);
-		CurrentCrystal->SetZXCut(cutg[0][crystalCounter]);
-		CurrentCrystal->SetZYCut(cutg[1][crystalCounter]);
-		crystalCounter++;
+		CurrentCrystal->SetZXCut(cutg[0][iCry][jCry]);
+		CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
+// 		crystalCounter++;
 		// first, find the crystal limits
 // 		if(!CurrentCrystal->CrystalIsOn()) // so if crystal is ON, it's ignored because the crystal limits are already set somewhere else (by the user in the config file)
 // 		{
@@ -842,16 +644,16 @@ int main (int argc, char** argv)
 		  // in this case the coordinates are the real u and v, so the cut 
 		  // that was probably a circle in the custom coordinates, now it should 
 		  // be elongated (especially on frame mppcs)
-		  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
-		  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
-		  sname << "Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
-		  spectrum2d->SetName(sname.str().c_str()); 
-		  spectrum2d->SetTitle(sname.str().c_str());
-		  spectrum2d->GetXaxis()->SetTitle("U");
-		  spectrum2d->GetYaxis()->SetTitle("V");
-		  CurrentCrystal->SetFloodMap2D(*spectrum2d);
-		  sname.str("");
-		  delete spectrum2d;
+// 		  spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+// 		  tree->Draw("FloodY:FloodX >> spectrum2d",CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
+// 		  sname << "Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
+// 		  spectrum2d->SetName(sname.str().c_str()); 
+// 		  spectrum2d->SetTitle(sname.str().c_str());
+// 		  spectrum2d->GetXaxis()->SetTitle("U");
+// 		  spectrum2d->GetYaxis()->SetTitle("V");
+// 		  CurrentCrystal->SetFloodMap2D(*spectrum2d);
+// 		  sname.str("");
+// 		  delete spectrum2d;
 		  
 		  //now the 2d histo for this crystal, but rotated, so the onw where the
 		  // real cut was performed (mainly to check the cut itself)
@@ -920,9 +722,6 @@ int main (int argc, char** argv)
 		  sname.str("");
 		  if(correctingForDOI)
 		  {
-		    
-		    
-		    
 		    //spectrum corrected for DOI
 		    spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
 		    var << "("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ) >> spectrum";
@@ -1189,14 +988,14 @@ int main (int argc, char** argv)
       //       module[iModule][jModule]->GetCylindricalXMap()->Draw("COLZ");
       //       GlobalCylindricalY->cd();
       //       module[iModule][jModule]->GetCylindricalYMap()->Draw("COLZ");
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw(); 
-// 	  TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
-// 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
+      for(int iMppc = 0; iMppc < nmppcx ; iMppc++)   
+      {
+	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+	{
+	  RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw(); 
+	  TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
 // 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
 // 	  // 	  TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
@@ -1213,8 +1012,8 @@ int main (int argc, char** argv)
 // 	  
 // 	  // temp debug
 // 	  
-// 	}
-//       }
+	}
+      }
     }
   }
   //----------------------------------------------------------//
@@ -1513,12 +1312,12 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-		C_spectrum->SetName(CurrentCrystal->GetFloodMap2D()->GetName());
-		C_spectrum->cd();
-		CurrentCrystal->GetFloodMap2D()->Draw("COLZ");
-		C_spectrum->Write();
-		delete C_spectrum;
+// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+// 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2D()->GetName());
+// 		C_spectrum->cd();
+// 		CurrentCrystal->GetFloodMap2D()->Draw("COLZ");
+// 		C_spectrum->Write();
+// 		delete C_spectrum;
 		
 // 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 // 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2DSeparated()->GetName());

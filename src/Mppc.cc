@@ -1,4 +1,5 @@
 #include <iostream>
+// #include <algorithm>
 #include "Mppc.h"
 #include "TSpectrum2.h"
 #include "TF2.h"
@@ -439,14 +440,30 @@ void Mppc::MakeRotatedFlood()
 
 
 
-bool Mppc::FindCrystalCuts(TCutG*** cutg)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
 {
+//   std::cout << iChildren << " " << jChildren << std::endl;
+  
+  int ncrystalsx = iChildren;
+  int ncrystalsy = jChildren;
+  
+  TCutG*** cutg;
+  const int numbOfCrystals = ncrystalsx*ncrystalsy;
+//   std::cout << numbOfCrystals<< std::endl;
+//   std::cout << ncrystalsx << " " << ncrystalsy << std::endl;
+  cutg = new TCutG**[2]; // two planes of cuts, their intersection will create a 3d cut
+  for(int iCut =0 ; iCut < 2 ; iCut++)
+  {
+    cutg[iCut] = new TCutG*[numbOfCrystals];
+  }
+  
+  
   TH3F *histogram_original = &this->FloodMap3D;
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
   int NbinY = histogram_original->GetYaxis()->GetNbins();
   int NbinZ = histogram_original->GetZaxis()->GetNbins();
-  const int numbOfCrystals = 4;
+  
   std::stack<point> stack;   // prepare a stack of point type
   TH3I *done;
   TH3I *mask[numbOfCrystals];
@@ -458,10 +475,23 @@ bool Mppc::FindCrystalCuts(TCutG*** cutg)
   bool found = false;
   double threshold = step;
   //   std::cout << "Max bin content " << max << std::endl;
+  
+  double meanx[numbOfCrystals];
+  double meany[numbOfCrystals];
+  double meanz[numbOfCrystals];
+  int    maskID[numbOfCrystals];
+  int    maskI[numbOfCrystals];
+  int    maskJ[numbOfCrystals];
   while(!found)
   {
     //     std::cout << "Trying with threshold " << threshold << std::endl;
-    long int nBinsXMask[numbOfCrystals] = {0,0,0,0};
+    
+    long int nBinsXMask[numbOfCrystals] ;
+    for(int count = 0; count < numbOfCrystals ; count++)
+    {
+      nBinsXMask[count] = 0;
+    }
+    
     int nMasks = 0;    
     for(int i = 0 ; i < numbOfCrystals ; i++)//create the masks
     {
@@ -525,44 +555,114 @@ bool Mppc::FindCrystalCuts(TCutG*** cutg)
       else
 	nMasks++; //otherwise count it as +1 good mask found
     }
-    if(nMasks == numbOfCrystals) // now, check if you found 4 masks
+    if(nMasks == numbOfCrystals) // now, check if you found NxN masks
+    {
       found = true; // if you did, set found as true and the while cycle will end here
-      else 
+    } 
+    else 
+    {
+      threshold += step;  // increase the threshold for next search
+      for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
       {
-	threshold += step;  // increase the threshold for next search
-	for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
-	{
-	  delete mask[i];
-	}
-	delete done;
-	if(threshold > max) // check if you found passed the threshold, in which case kill the while cycle
-	  break;
+	delete mask[i];
       }
+      delete done;
+      if(threshold > max) // check if you found passed the threshold, in which case kill the while cycle
+	break;
+    }
   }
+  
   
   if(found)  
   {
-    //TEST check for overlapping masks
-    for(int i = 1 ; i < NbinX+1 ; i++) 
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
-      for(int j = 1 ; j < NbinY+1 ; j++) 
+	meanx[iMasks] = mask[iMasks]->GetMean(1);
+	meany[iMasks] = mask[iMasks]->GetMean(2);
+	meanz[iMasks] = mask[iMasks]->GetMean(3);
+	maskID[iMasks] = iMasks;
+    }
+    
+    double temp1,temp2,temp3;
+    for (int i = 0; i < numbOfCrystals; ++i)
+    {
+      for (int j = i + 1; j < numbOfCrystals; ++j)
       {
-	for(int k = 1 ; k < NbinZ+1 ; k++)
+	if (meanx[i] > meanx[j])
 	{
-	  int nnn = 0;
-	  for(int iMasks = 0 ; iMasks < 4 ; iMasks++) 
+	  temp1 =  meanx[i];
+	  meanx[i] = meanx[j];
+	  meanx[j] = temp1;
+	}
+      }
+    }
+    
+    for (int i = 0; i < numbOfCrystals; ++i)
+    {
+      for (int j = i + 1; j < numbOfCrystals; ++j)
+      {
+	if (meany[i] > meany[j])
+	{
+	  temp2 =  meany[i];
+	  meany[i] = meany[j];
+	  meany[j] = temp2;
+	}
+      }
+    }
+    
+    for (int i = 0; i < numbOfCrystals; ++i)
+    {
+      for (int j = i + 1; j < numbOfCrystals; ++j)
+      {
+	if (meanz[i] > meanz[j])
+	{
+	  temp3 =  meanz[i];
+	  meanz[i] = meanz[j];
+	  meanz[j] = temp3;
+	}
+      }
+    }
+    
+
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    {
+      bool set = false;
+
+      for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+      {
+	if(!set)
+	{
+	  if( mask[iMasks]->GetMean(1) <= meanx[((iCry+1)*ncrystalsy)-1]) 
 	  {
-	    nnn += mask[iMasks]->GetBinContent(i,j,k); 
-	  }
-	  if( nnn > 1 )
-	  {
-	    std::cout << "Overlap at bin "<< i << "," << j << "," << k << std::endl;
+	    maskI[iMasks] = iCry;
+	    set = true;
 	  }
 	}
       }
     }
     
     
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    {
+      bool set = false;
+      for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+      {
+	if(!set)
+	{
+	  if( mask[iMasks]->GetMean(2) <= meany[((jCry+1)*ncrystalsx)-1]) 
+	  {
+	    maskJ[iMasks] = jCry;
+	    set = true;
+	  }
+	}
+      }
+    }
+    
+    //DEBUG
+//     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+//     {
+//       std::cout << mask[iMasks]->GetMean(1) << " " << mask[iMasks]->GetMean(2) << " " <<  maskI[iMasks] << " " << maskJ[iMasks] << std::endl;
+//     }
     // now generate a "TCutg" from these selections of points
     // simplest way is a bit stupid..
     // first project each mask on xz and yz
@@ -646,6 +746,17 @@ bool Mppc::FindCrystalCuts(TCutG*** cutg)
       //Cut3D[iMasks] = cutg[0][iMasks] + cutg[1][iMasks];
       
     }
+    
+    
+    // run on the cutg and assign them to cutg_external
+    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    {
+      cutg_external[0][maskI[iMasks]][maskJ[iMasks]] = cutg[0][iMasks];
+      cutg_external[1][maskI[iMasks]][maskJ[iMasks]] = cutg[1][iMasks];
+    }
+    
+    
+    
     return true;
   }
   else
