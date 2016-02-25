@@ -482,11 +482,17 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
   int    maskID[numbOfCrystals];
   int    maskI[numbOfCrystals];
   int    maskJ[numbOfCrystals];
+  long int nBinsXMask[numbOfCrystals] ;
+  for(int count = 0; count < numbOfCrystals ; count++)
+  {
+    nBinsXMask[count] = 0;
+  }
+  
   while(!found)
   {
     //     std::cout << "Trying with threshold " << threshold << std::endl;
     
-    long int nBinsXMask[numbOfCrystals] ;
+    
     for(int count = 0; count < numbOfCrystals ; count++)
     {
       nBinsXMask[count] = 0;
@@ -550,7 +556,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
 	  }
 	}
       }
-      if(nBinsXMask[iMasks] < 20) //check the mask, if it holds too few points, don't accept it
+      if(nBinsXMask[iMasks] < 7) //check the mask, if it holds too few points, don't accept it //FIXME this is ridiculous...
 	break;
       else
 	nMasks++; //otherwise count it as +1 good mask found
@@ -573,8 +579,18 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
   }
   
   
+  
+  
   if(found)  
   {
+    //DEBUG
+    for(int count = 0; count < numbOfCrystals ; count++)
+    {  
+      std::cout << nBinsXMask[count] << "\t" ;
+    }
+    std::cout << std::endl;
+    //-----
+    
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
 	meanx[iMasks] = mask[iMasks]->GetMean(1);
