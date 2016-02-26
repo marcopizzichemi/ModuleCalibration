@@ -4,7 +4,7 @@
 #include "TH1F.h"
 #include "TH2D.h"
 #include "TH1D.h"
-#include "TH3F.h"
+#include "TH3I.h"
 #include "TCutG.h"
 #include "TProfile.h"
 #include "TF1.h"

@@ -4,8 +4,9 @@
 #include <iostream>
 #include <vector>
 #include "TH2F.h"
-#include "TH3F.h"
+#include "TH3I.h"
 #include "TGraph.h"
+#include "TGraph2D.h"
 #include "TProfile.h"
 
 class Module;
@@ -60,9 +61,12 @@ protected:
   TH2F                 ADCversusW;          ///< 2d histo of "energy" versus w coordinate
   TH2F                 ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
   TGraph               ADCversusWgraph;     ///< TGraph of "energy" versus w coordinate
+  
+  TGraph               GraphFlood2D;        ///< TGraph dumped from the FloodMap2D
+  TGraph2D             GraphFlood3D;        ///< TGraph2D dumped fromt the FloodMap3D
   TProfile             ProfileX;            ///< Profile plots over X 
   //3d histos
-  TH3F                 FloodMap3D;          ///< u,v,w map for this element
+  TH3I                 FloodMap3D;          ///< u,v,w map for this element
 
   
 public:
@@ -97,9 +101,11 @@ public:
   TH2F*                GetLateralMap()                           {return &LateralMap;};                 
   TH2F*                GetCornerMap()                            {return &CornerMap;};                  
   TH2F*                GetCentralMap()                           {return &CentralMap;};                 
-  TH3F*                GetFloodMap3D()                           {return &FloodMap3D;};                 
+  TH3I*                GetFloodMap3D()                           {return &FloodMap3D;};                 
   std::string          GetXvariable()                            {return variableX;};                   
-  std::string          GetYvariable()                            {return variableY;};                   
+  std::string          GetYvariable()                            {return variableY;};    
+  TGraph*              GetGraphFlood2D()                         {return &GraphFlood2D;};    
+  TGraph2D*            GetGraphFlood3D()                         {return &GraphFlood3D;}; 
   
   void                 SetName(std::string aname)                {name = aname;};                       
   void                 SetLabel(std::string aname)               {label = aname;};                      
@@ -119,12 +125,15 @@ public:
   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
   void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};           
-  void                 SetFloodMap3D(TH3F aHisto)                {FloodMap3D = aHisto;};                
+  void                 SetFloodMap3D(TH3I aHisto)                {FloodMap3D = aHisto;};                
   void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};                
   void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};                 
   void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};                
   void                 SetXvariable(std::string astring)         {variableX = astring;};                
-  void                 SetYvariable(std::string astring)         {variableY = astring;};                
+  void                 SetYvariable(std::string astring)         {variableY = astring;};    
+  void                 SetGraphFlood2D(TGraph aGraph)            {GraphFlood2D = aGraph;};
+  void                 SetGraphFlood3D(TGraph2D aGraph)          {GraphFlood3D = aGraph;};
+  
   //methods to add and return children elements                                                         
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};      
   std::vector<std::string> GetChildren()                         {return childrenName;};     

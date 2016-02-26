@@ -461,7 +461,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
     cutg[iCut] = new TCutG*[numbOfCrystals];
   }
   
-  TH3F *histogram_original = &this->FloodMap3D; // get the 3D map of this channel
+  TH3I *histogram_original = &this->FloodMap3D; // get the 3D map of this channel
   
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
@@ -511,7 +511,15 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
       mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
     }
     done = new TH3I("done","done",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1); //create the histogram to hold the "done" flags
-    TH3F *histogram = (TH3F*) histogram_original->Clone(); // take an histogram from the original 3d histo
+    TH3I *histogram = (TH3I*) histogram_original->Clone(); // take an histogram from the original 3d histo
+    
+    //now the messy part: start with very broad binning, then mak it finer and finer...
+//     for(int i = 0 ; i < numbOfCrystals ; i++)//create the masks
+//     {
+//       mask[i]
+//     }
+    
+    
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
       histogram->GetMaximumBin(u,v,w); // have to do it at each step
@@ -591,11 +599,11 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   if(found)  
   {
     //DEBUG
-    for(int count = 0; count < numbOfCrystals ; count++)
-    {  
-      std::cout << nBinsXMask[count] << "\t" ;
-    }
-    std::cout << std::endl;
+//     for(int count = 0; count < numbOfCrystals ; count++)
+//     {  
+//       std::cout << nBinsXMask[count] << "\t" ;
+//     }
+//     std::cout << std::endl;
     //-----
     
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)

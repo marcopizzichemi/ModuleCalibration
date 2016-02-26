@@ -45,7 +45,7 @@
 #include "TCanvas.h"
 #include "TH1F.h"
 #include "TH2F.h"
-#include "TH3F.h"
+#include "TH3I.h"
 #include "TString.h"
 #include "TApplication.h"
 #include "TLegend.h"
@@ -70,6 +70,7 @@
 #include "TPaveStats.h"
 #include "TProfile.h"
 #include "TH1D.h"
+#include "TPaveText.h"
 
 #include <iostream>
 #include <fstream>
@@ -237,10 +238,13 @@ int main (int argc, char** argv)
   // prepare spectra
   TH1F* spectrum;
   TH2F* spectrum2d;
-  TH3F* spectrum3d;
+  TH3I* spectrum3d;
   TGraph* graph; 
-  
+  TGraph2D* graph2D;
+  TCanvas* C_graph;
   TCanvas* C_spectrum;
+  TCanvas* C_multi;
+  TCanvas* C_multi_2;
   std::stringstream var,cut,sname; 
   std::ofstream doiFile;
   TCut triggerPhotopeakCut = "" ;
@@ -288,7 +292,7 @@ int main (int argc, char** argv)
       delete spectrum2d;
       
       //3D plot
-      spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
+      spectrum3d = new TH3I("spectrum3d","spectrum3d",histo3DglobalBins,-7,7,histo3DglobalBins,-7,7,histo3DglobalBins,0,1);
       tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ);
       name = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
       spectrum3d->SetName(name);
@@ -387,10 +391,10 @@ int main (int argc, char** argv)
 	  spectrum2d->GetXaxis()->SetTitle("U");
 	  spectrum2d->GetYaxis()->SetTitle("V");
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap2D(*spectrum2d);
-	  delete spectrum2d; 
+	  delete spectrum2d;
 	  
 	  // 3D spectrum for this mppc
-// 	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
+// 	  spectrum3d = new TH3I("spectrum3d","spectrum3d",histo3DchannelBin,-7,7,histo3DchannelBin,-7,7,histo3DchannelBin,0,1);
 	  //little trick to try and use less bins
 	  // take the mean x and y and their sigma from previous 2dplot, define the limit of this 3dplot in x and y accordingly
 	  double minX3Dplot = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetMean(1) - 3.0*mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetRMS(1);
@@ -402,7 +406,7 @@ int main (int argc, char** argv)
 // 	  std::cout << "###### Main Program " << std::endl;
 // 	  std::cout << minX3Dplot << " " << maxX3Dplot << " " << minY3Dplot << " "<< maxY3Dplot << std::endl;
 // 	  std::cout << "----------------- " << std::endl;
-	  spectrum3d = new TH3F("spectrum3d","spectrum3d",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
+	  spectrum3d = new TH3I("spectrum3d","spectrum3d",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
 	  tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ+CutTrigger);
 	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  spectrum3d->SetName(name);
@@ -537,6 +541,50 @@ int main (int argc, char** argv)
 		sname.str("");
 		delete spectrum;
 		//-----------------------------------------------------------------------
+		
+		// a 3d historgram for this crystal, mainly to check the 3d cut
+		// at the same time, also the TGraph2D that will be useful for checks
+		spectrum3d = new TH3I("spectrum3d","spectrum3d",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
+		long int nGraph2D = tree->Draw("FloodZ:FloodY:FloodX >> spectrum3d",CutXYZ + CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+		sname << "Flood Histogram 3D - Crystal " << CurrentCrystal->GetID();
+		spectrum3d->SetName(sname.str().c_str());
+		spectrum3d->SetTitle(sname.str().c_str());
+		spectrum3d->GetXaxis()->SetTitle("U");
+		spectrum3d->GetYaxis()->SetTitle("V");
+		spectrum3d->GetZaxis()->SetTitle("W");
+		graph2D = new TGraph2D(nGraph2D,tree->GetV1(),tree->GetV2(),tree->GetV2());
+		graph2D->SetName(sname.str().c_str());
+		graph2D->SetTitle(sname.str().c_str());
+		graph2D->GetXaxis()->SetTitle("U");
+		graph2D->GetYaxis()->SetTitle("V");
+		graph2D->GetZaxis()->SetTitle("W");
+		graph2D->Draw("AP");
+		CurrentCrystal->SetFloodMap3D(*spectrum3d);
+		CurrentCrystal->SetGraphFlood3D(*graph2D);
+		sname.str("");
+		delete spectrum3d;
+		delete graph2D;
+		
+		
+		//standard 2d plot - again for sanity checks
+		spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
+		tree->Draw("FloodY:FloodX >> spectrum2d",CutXYZ+CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
+		sname << "Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
+		spectrum2d->SetName(sname.str().c_str()); 
+		spectrum2d->SetTitle(sname.str().c_str());
+		spectrum2d->GetXaxis()->SetTitle("U");
+		spectrum2d->GetYaxis()->SetTitle("V");
+		CurrentCrystal->SetFloodMap2D(*spectrum2d);
+// 		graph = new TGraph(nGraph,tree->GetV1(),tree->GetV2());
+// 		graph->SetName(sname.str().c_str());
+// 		graph->SetTitle(sname.str().c_str());
+// 		graph->GetXaxis()->SetTitle("U");
+// 		graph->GetYaxis()->SetTitle("V");
+// 		graph->Draw("AP");
+// 		CurrentCrystal->SetGraphFlood2D(*graph);
+		sname.str("");
+		delete spectrum2d; 
+// 		delete graph;
 		
 		//w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
 		spectrum = new TH1F("spectrum","spectrum",250,0,1);	  
@@ -1051,7 +1099,7 @@ int main (int argc, char** argv)
   PeakPositionVsIJ->GetXaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,10000);
+  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,12000);
   //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1136,8 +1184,6 @@ int main (int argc, char** argv)
       directory[iModule+jModule][0][0]->cd();      
       GlobalFlood2D->Write();
       GlobalFlood3D->Write();
-      //       GlobalFlood2DClean->Write();
-      //       FloodSeparatedCanvas->Write();
       
       if(usingTaggingBench)
       {
@@ -1146,52 +1192,58 @@ int main (int argc, char** argv)
 	TriggerSpectrumHighlight->Draw("same");
 	C_TaggingCrystalSpectrum->Write();
       }
-      
-      
-      
-      //       GlobalSpherical->Write();
-      //       GlobalCylindricalX->Write();
-      //       GlobalCylindricalY->Write();
+
       RawCanvas->Write();
       TriggerCanvas->Write();
       BigSpectraCanvas->Write();
-      //       FloodHistoCanvas->Write();
-      
-      //       FloodHisto3DCanvas->Write();
-      //       SphericalCanvas->Write();
-      //       CylindricalXCanvas->Write();
-      //       CylindricalYCanvas->Write();
-      //save the 3d flood maps separately for each channel
+
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
+	  //directory
 	  std::stringstream MppcDirStream;
 	  MppcDirStream << "MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " - " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetExtendedID();
-	  // 	  std::cout << MppcDirStream.str() << std::endl;
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0] = directory[iModule+jModule][0][0]->mkdir(MppcDirStream.str().c_str());
 	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Write();
-	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Write();
 	  
-	  //        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZX()->Write();
-	  //        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProjectionZY()->Write();
-	  //        mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileX()->Write();
-	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetProfileY()->Write();
-	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTempMap2D()->Write();
+	  //2d flood map
+	  C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+	  C_spectrum->SetName(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetName());
+	  C_spectrum->cd();
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
+	  C_spectrum->Write();
+	  delete C_spectrum;
 	  
+	  // 3d flood map
+	  C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+	  C_spectrum->SetName(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->GetName());
+	  C_spectrum->cd();
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw();
+	  C_spectrum->Write();
+	  delete C_spectrum;
 	  
+	  //prepare a Canvas for the nxn 3D cuts
+	  C_multi = new TCanvas("C_multi","C_multi",1200,1200);
+	  name = "3D Cuts - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  C_multi->SetName(name);
+	  C_multi->SetTitle(name);	  
+	  TLegend *legend = new TLegend(0.7,0.75,0.893,0.89,"");
+          legend->SetFillStyle(0);
+	  int counter = 1;
+          
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
+	      //directory
 	      std::stringstream CrystalDirStream;
 	      Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 	      CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
-	      // 	      std::cout << CrystalDirStream.str() << std::endl;
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1] = directory[iModule+jModule][(iMppc+jMppc)+1][0]->mkdir(CrystalDirStream.str().c_str());
 	      directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->cd(); 
-	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was specified in the config file
+	      
+	      if(CurrentCrystal->CrystalIsOn() /*| usingRealSimData*/) // save data only if the crystal was found
 	      {
 		//create a pointer for the current crystal (mainly to make the code more readable)
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
@@ -1224,8 +1276,16 @@ int main (int argc, char** argv)
 		  }
 		}
 		
+		//draw also the 3d cuts in the common canvas of this mppc
+		C_multi->cd();
+		CurrentCrystal->GetFloodMap3D()->SetMarkerColor(counter);
+		CurrentCrystal->GetFloodMap3D()->SetFillColor(counter);
+		legend->AddEntry(CurrentCrystal->GetFloodMap3D(),CurrentCrystal->GetFloodMap3D()->GetName(),"f");
+		CurrentCrystal->GetFloodMap3D()->Draw("same");
+		legend->Draw();
+		counter++;
 		
-		
+		// spectrum
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetSpectrum()->GetName());
 		C_spectrum->cd();
@@ -1236,6 +1296,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		// spectrum without highligth
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		TString title = "mod_";
 		title += CurrentCrystal->GetSpectrum()->GetName() ;
@@ -1248,6 +1309,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		//w histo
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetHistoW()->GetName());
 		C_spectrum->cd();
@@ -1256,20 +1318,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-		// 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2D()->GetName());
-		// 		C_spectrum->cd();
-		// 		CurrentCrystal->GetFloodMap2D()->Draw("COLZ");
-		// 		C_spectrum->Write();
-		// 		delete C_spectrum;
-		
-		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-		// 		C_spectrum->SetName(CurrentCrystal->GetFloodMap2DSeparated()->GetName());
-		// 		C_spectrum->cd();
-		// 		CurrentCrystal->GetFloodMap2DSeparated()->Draw("COLZ");
-		// 		C_spectrum->Write();
-		// 		delete C_spectrum;
-		
+		// adc versus time
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetVersusTime()->GetName());
 		C_spectrum->cd();
@@ -1277,6 +1326,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		// adc versus w
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 		C_spectrum->SetName(CurrentCrystal->GetADCversusW()->GetName());
 		C_spectrum->cd();
@@ -1284,6 +1334,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		// adc versus w complete
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 		C_spectrum->SetName(CurrentCrystal->GetADCversusWComplete()->GetName());
 		C_spectrum->cd();
@@ -1291,20 +1342,6 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
-		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		// 		C_spectrum->SetName(CurrentCrystal->GetADCversusWgraph()->GetName());
-		// 		C_spectrum->cd();
-		// 		CurrentCrystal->GetADCversusWgraph()->Draw("AP");
-		// 		C_spectrum->Write();
-		// 		delete C_spectrum;
-		
-		// 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		// 		C_spectrum->SetName(CurrentCrystal->GetProfileX()->GetName());
-		// 		C_spectrum->cd();
-		// 		CurrentCrystal->GetProfileX()->Draw();
-		// 		CurrentCrystal->GetProfileXFit()->Draw("same");
-		// 		C_spectrum->Write();
-		// 		delete C_spectrum;
 		
 		if(correctingForDOI)
 		{
@@ -1324,7 +1361,6 @@ int main (int argc, char** argv)
 		  C_spectrum->Write();
 		  delete C_spectrum;
 		}
-		
 		
 		
 		if(usingRealSimData)
@@ -1352,6 +1388,19 @@ int main (int argc, char** argv)
 	      
 	    }
 	  }
+	  
+	  directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
+//   	  pt->Draw();
+	  name = "3D Cuts - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  C_multi->SetName(name);
+	  C_multi->SetTitle(name);
+	  C_multi->Update();
+	  C_multi->Write();
+// 	  C_multi_2->Write();
+// 	  C_graph->Write();
+// 	  delete C_graph;
+// 	  delete C_multi_2;
+	  delete C_multi;
 	}
       }
       directory[iModule+jModule][0][0]->cd(); // go back to main directory
