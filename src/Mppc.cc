@@ -440,42 +440,49 @@ void Mppc::MakeRotatedFlood()
 
 
 
-bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int div)
 {
-//   std::cout << iChildren << " " << jChildren << std::endl;
-  
-  int ncrystalsx = iChildren;
+  /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
+     Takes as input:
+     cutg_external = the pointer to the matrix of cutg that will be used in the main program to select the crystals
+     histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically chainging the amount of RAM used by the program. 100 is a reasonable choice. 
+                         The parameter is set in the config file (default to 100)
+     div = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
+  */
+    
+  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
   int ncrystalsy = jChildren;
   
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;
-//   std::cout << numbOfCrystals<< std::endl;
-//   std::cout << ncrystalsx << " " << ncrystalsy << std::endl;
   cutg = new TCutG**[2]; // two planes of cuts, their intersection will create a 3d cut
   for(int iCut =0 ; iCut < 2 ; iCut++)
   {
     cutg[iCut] = new TCutG*[numbOfCrystals];
   }
   
+  TH3F *histogram_original = &this->FloodMap3D; // get the 3D map of this channel
   
-  TH3F *histogram_original = &this->FloodMap3D;
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
   int NbinY = histogram_original->GetYaxis()->GetNbins();
   int NbinZ = histogram_original->GetZaxis()->GetNbins();
+  //find min e max for the axis
+  double minX3Dplot = histogram_original->GetXaxis()->GetBinCenter(1) - 0.5*histogram_original->GetXaxis()->GetBinWidth(1);
+  double maxX3Dplot = histogram_original->GetXaxis()->GetBinCenter(NbinX) + 0.5*histogram_original->GetXaxis()->GetBinWidth(NbinX);
+  double minY3Dplot = histogram_original->GetYaxis()->GetBinCenter(1) - 0.5*histogram_original->GetYaxis()->GetBinWidth(1);
+  double maxY3Dplot = histogram_original->GetYaxis()->GetBinCenter(NbinY) + 0.5*histogram_original->GetYaxis()->GetBinWidth(NbinY);
   
-  std::stack<point> stack;   // prepare a stack of point type
+  std::stack<point> stack;   // prepare a stack of point type. point type defined in the header
   TH3I *done;
   TH3I *mask[numbOfCrystals];
   Int_t u,v,w;  
   histogram_original->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
   double max = histogram_original->GetBinContent(u,v,w); //get ax bin content
-  const int div = 10;  
   double step = max/((double) div); // calculated the step of the separation search
   bool found = false;
   double threshold = step;
-  //   std::cout << "Max bin content " << max << std::endl;
-  
+    
   double meanx[numbOfCrystals];
   double meany[numbOfCrystals];
   double meanz[numbOfCrystals];
@@ -483,16 +490,14 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
   int    maskI[numbOfCrystals];
   int    maskJ[numbOfCrystals];
   long int nBinsXMask[numbOfCrystals] ;
+  
   for(int count = 0; count < numbOfCrystals ; count++)
   {
     nBinsXMask[count] = 0;
   }
   
   while(!found)
-  {
-    //     std::cout << "Trying with threshold " << threshold << std::endl;
-    
-    
+  { 
     for(int count = 0; count < numbOfCrystals ; count++)
     {
       nBinsXMask[count] = 0;
@@ -503,9 +508,9 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
     {
       std::stringstream name;
       name << "mask" << i;
-      mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),500,-7,7,500,-7,7,100,0,1);
+      mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
     }
-    done = new TH3I("done","done",500,-7,7,500,-7,7,100,0,1); //create the histogram to hold the "done" flags
+    done = new TH3I("done","done",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1); //create the histogram to hold the "done" flags
     TH3F *histogram = (TH3F*) histogram_original->Clone(); // take an histogram from the original 3d histo
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
@@ -564,6 +569,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
     if(nMasks == numbOfCrystals) // now, check if you found NxN masks
     {
       found = true; // if you did, set found as true and the while cycle will end here
+      delete histogram;
     } 
     else 
     {
@@ -573,12 +579,13 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
 	delete mask[i];
       }
       delete done;
+      delete histogram;
       if(threshold > max) // check if you found passed the threshold, in which case kill the while cycle
 	break;
     }
   }
   
-  
+  //delete done;
   
   
   if(found)  
@@ -674,11 +681,6 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
       }
     }
     
-    //DEBUG
-//     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
-//     {
-//       std::cout << mask[iMasks]->GetMean(1) << " " << mask[iMasks]->GetMean(2) << " " <<  maskI[iMasks] << " " << maskJ[iMasks] << std::endl;
-//     }
     // now generate a "TCutg" from these selections of points
     // simplest way is a bit stupid..
     // first project each mask on xz and yz
@@ -688,16 +690,8 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
     TH2D* mask_zy[numbOfCrystals];
     TCanvas *C_contours[numbOfCrystals];
     TCanvas *C_graph[numbOfCrystals];
-    
-    //   TCutG ***cutg;
-    
-    
-    
-    
     TString plane[2] = {"zx","zy"};
-    TString varX[2] = {"FloodX","FloodY"};
-    //   TCut Cut3D[numbOfCrystals];
-    
+    TString varX[2] = {"FloodX","FloodY"};    
     Double_t contours[2] = {0.5,1}; //fixed level to get the all the points
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
@@ -714,8 +708,6 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
       
       for(int iCut =0 ; iCut < 2 ; iCut++)
       {
-	
-	
 	name.str("");
 	name << mask[iMasks]->GetName() << "_" << plane[iCut];
 	mask[iMasks]->Project3D(plane[iCut]);
@@ -743,26 +735,19 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
 	  TotalConts = conts->GetSize();
 	}
 	
-	//     std::cout << TotalConts << std::endl;
 	contLevel = (TList*)conts->At(0); //take the lowest level
 	curv = (TGraph*)contLevel->First(); // i expect only 1 graph
-	//     std::stringstream name;
 	C_graph[iMasks]->cd(1);
 	curv->Draw("alp");
 	
 	name.str("");
-	name << "cutg_" << iCut << "_" << iMasks ;
-	//     cutg[j] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
-	
+	name << "cutg_" << iCut << "_" << iMasks ;	
 	cutg[iCut][iMasks] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
 	cutg[iCut][iMasks]->SetVarX(varX[iCut]);
 	cutg[iCut][iMasks]->SetVarY("FloodZ");
+	
       }
-      
-      //Cut3D[iMasks] = cutg[0][iMasks] + cutg[1][iMasks];
-      
     }
-    
     
     // run on the cutg and assign them to cutg_external
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
@@ -771,7 +756,10 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
       cutg_external[1][maskI[iMasks]][maskJ[iMasks]] = cutg[1][iMasks];
     }
     
-    
+    for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks 
+    {
+      delete mask[i];
+    }
     
     return true;
   }
@@ -779,9 +767,6 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external)
   {
     return false;
   }
-  
-  
-  
 }
 
 
