@@ -49,7 +49,34 @@ private:
     int k;
   };
   
+  struct masks_t
+  {
+    double meanx;
+    double meany;
+    double meanz;
+    int maskID;
+    int maskI;
+    int maskJ;
+    long int nBinsXMask;
+//     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+  };
   
+  
+  struct compare_by_x
+  {
+    bool operator()(const masks_t& lhs, const masks_t& rhs) const
+    {
+      return lhs.meanx < rhs.meanx;
+    }
+  };
+
+  struct compare_by_y
+  {
+    bool operator()(const masks_t& lhs, const masks_t& rhs) const
+    {
+      return lhs.meany < rhs.meany;
+    }
+  };
   
 public:
   Mppc();                                        ///< default constructor
@@ -90,6 +117,11 @@ public:
   
   void                   MakeRotatedFlood();
   bool                   FindCrystalCuts(TCutG**** cutg,int histo3DchannelBin, int div);///< Finds the density volumes that represents the crystals
+  
+//   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
+//   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
+  
+  
   
   
   //print methods

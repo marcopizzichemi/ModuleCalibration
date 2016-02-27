@@ -480,27 +480,36 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   histogram_original->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
   double max = histogram_original->GetBinContent(u,v,w); //get ax bin content
   double step = max/((double) div); // calculated the step of the separation search
-  bool found = false;
+  
   double threshold = step;
-    
-  double meanx[numbOfCrystals];
-  double meany[numbOfCrystals];
-  double meanz[numbOfCrystals];
-  int    maskID[numbOfCrystals];
-  int    maskI[numbOfCrystals];
-  int    maskJ[numbOfCrystals];
-  long int nBinsXMask[numbOfCrystals] ;
+  
+  bool found = false;
+  std::vector<masks_t> mask_pos;
+  /*
+  std::vector<double> meanx;
+  std::vector<double> meany;
+  std::vector<double> meanz;*/
+//   std::vector<int> maskID;
+//   std::vector<int> maskI;
+//   std::vector<int> maskJ;
+//   double meany[numbOfCrystals];
+//   double meanz[numbOfCrystals];
+//   std::vector<int> maskID;
+//   int    maskI[numbOfCrystals];
+//   int    maskJ[numbOfCrystals];
+//   long int nBinsXMask[numbOfCrystals] ;
   
   for(int count = 0; count < numbOfCrystals ; count++)
   {
-    nBinsXMask[count] = 0;
+    masks_t temp = {0,0,0,0,0,0,0};
+    mask_pos.push_back(temp);
   }
   
   while(!found)
   { 
     for(int count = 0; count < numbOfCrystals ; count++)
     {
-      nBinsXMask[count] = 0;
+      mask_pos[count].nBinsXMask = 0;
     }
     
     int nMasks = 0;    
@@ -527,7 +536,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
       mask[iMasks]->SetBinContent(p0.i,p0.j,p0.k,1);
       done->SetBinContent(p0.i,p0.j,p0.k,1);
       stack.push(p0);
-      nBinsXMask[iMasks]++;
+      mask_pos[iMasks].nBinsXMask++;
       while (!stack.empty()) // analyze histo
       {
 	point pSeed = stack.top(); //take next point
@@ -546,7 +555,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
 		{
 		  stack.push(p); // add it to the stack, it becomes a seed. if it's zero, it's no seed
 		  mask[iMasks]->SetBinContent(p.i,p.j,p.k,1);
-		  nBinsXMask[iMasks]++;
+		  mask_pos[iMasks].nBinsXMask++;
 		}
 		done->SetBinContent(p.i,p.j,p.k,1); // set the point as checked (its neighbourhood has been checked)
 	      }
@@ -569,7 +578,9 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
 	  }
 	}
       }
-      if(nBinsXMask[iMasks] < 7) //check the mask, if it holds too few points, don't accept it //FIXME this is ridiculous...
+      
+      
+      if(mask_pos[iMasks].nBinsXMask++ < 7) //check the mask, if it holds too few points, don't accept it //FIXME this is ridiculous...
 	break;
       else
 	nMasks++; //otherwise count it as +1 good mask found
@@ -598,101 +609,79 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   
   if(found)  
   {
-    //DEBUG
+//     //DEBUG
 //     for(int count = 0; count < numbOfCrystals ; count++)
 //     {  
 //       std::cout << nBinsXMask[count] << "\t" ;
 //     }
 //     std::cout << std::endl;
-    //-----
+//     //-----
     
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
-	meanx[iMasks] = mask[iMasks]->GetMean(1);
-	meany[iMasks] = mask[iMasks]->GetMean(2);
-	meanz[iMasks] = mask[iMasks]->GetMean(3);
-	maskID[iMasks] = iMasks;
+      mask_pos[iMasks].meanx  = mask[iMasks]->GetMean(1);
+      mask_pos[iMasks].meany  = mask[iMasks]->GetMean(2);
+      mask_pos[iMasks].meanz  = mask[iMasks]->GetMean(3);
+      mask_pos[iMasks].maskID = iMasks;
+//       std::cout << "Mask numb " << iMasks << "\t" << mask[iMasks]->GetMean(1) << "\t" <<  mask[iMasks]->GetMean(2) << "\t" <<  mask[iMasks]->GetMean(3) << std::endl;
     }
     
-    double temp1,temp2,temp3;
-    for (int i = 0; i < numbOfCrystals; ++i)
+//     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+//     {
+//       std::cout << 
+//       mask_pos[iMasks].meanx << " " <<
+//       mask_pos[iMasks].meany << " " <<
+//       mask_pos[iMasks].meanz << " " <<
+//       mask_pos[iMasks].maskID << std::endl;
+//     }
+    
+    //sort the vector of struct by the x position
+    std::sort (mask_pos.begin(),mask_pos.end(),compare_by_x());
+//     std::cout << "----------------------" << std::endl;
+//     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+//     {
+//       std::cout << 
+//       mask_pos[iMasks].meanx << " " <<
+//       mask_pos[iMasks].meany << " " <<
+//       mask_pos[iMasks].meanz << " " <<
+//       mask_pos[iMasks].maskID << std::endl;
+//     }
+    //now split the vector in ncrystalsy parts, sort each part internally by y
+    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
     {
-      for (int j = i + 1; j < numbOfCrystals; ++j)
-      {
-	if (meanx[i] > meanx[j])
-	{
-	  temp1 =  meanx[i];
-	  meanx[i] = meanx[j];
-	  meanx[j] = temp1;
-	}
-      }
+//       std::cout << (iCry * ncrystalsy) << " " <<  ( ((iCry+1) * ncrystalsy) ) << std::endl;
+      std::sort ( mask_pos.begin()+(iCry * ncrystalsy), mask_pos.begin() + ( ((iCry+1) * ncrystalsy) ),compare_by_y());
     }
-    
-    for (int i = 0; i < numbOfCrystals; ++i)
+    //now the masks IDs are ordered like in a double loop that starts looping on iCry and inside loops on jCry
+    // lets therefore simply assign the maskI and maskJ
+    int maskCounter = 0;
+    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
     {
-      for (int j = i + 1; j < numbOfCrystals; ++j)
-      {
-	if (meany[i] > meany[j])
-	{
-	  temp2 =  meany[i];
-	  meany[i] = meany[j];
-	  meany[j] = temp2;
-	}
-      }
-    }
-    
-    for (int i = 0; i < numbOfCrystals; ++i)
-    {
-      for (int j = i + 1; j < numbOfCrystals; ++j)
-      {
-	if (meanz[i] > meanz[j])
-	{
-	  temp3 =  meanz[i];
-	  meanz[i] = meanz[j];
-	  meanz[j] = temp3;
-	}
-      }
-    }
-    
-
-    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
-    {
-      bool set = false;
-
-      for(int iCry = 0; iCry < ncrystalsx ; iCry++)
-      {
-	if(!set)
-	{
-	  if( mask[iMasks]->GetMean(1) <= meanx[((iCry+1)*ncrystalsy)-1]) 
-	  {
-	    maskI[iMasks] = iCry;
-	    set = true;
-	  }
-	}
-      }
-    }
-    
-    
-    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
-    {
-      bool set = false;
       for(int jCry = 0; jCry < ncrystalsy ; jCry++)
       {
-	if(!set)
-	{
-	  if( mask[iMasks]->GetMean(2) <= meany[((jCry+1)*ncrystalsx)-1]) 
-	  {
-	    maskJ[iMasks] = jCry;
-	    set = true;
-	  }
-	}
+	mask_pos[maskCounter].maskI = iCry;
+	mask_pos[maskCounter].maskJ = jCry;
+	maskCounter++;
       }
     }
+    
+//     std::cout << "----------------------" << std::endl;
+//     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+//     {
+//       std::cout << 
+//       mask_pos[iMasks].meanx << " " <<
+//       mask_pos[iMasks].meany << " " <<
+//       mask_pos[iMasks].meanz << " " <<
+//       mask_pos[iMasks].maskI << " " <<
+//       mask_pos[iMasks].maskJ << " " <<
+//       mask_pos[iMasks].maskID << std::endl;
+//     }
+    
     
     // now generate a "TCutg" from these selections of points
     // simplest way is a bit stupid..
     // first project each mask on xz and yz
-    // then find a tcutg on these two planes, and there intersection will define the 3d area of TCutG you want
+    // then find a tcutg on these two planes, and their intersection will define the 3d area of TCutG you want
     
     TH2D* mask_zx[numbOfCrystals];
     TH2D* mask_zy[numbOfCrystals];
@@ -757,11 +746,29 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
       }
     }
     
-    // run on the cutg and assign them to cutg_external
-    for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+    
+    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
     {
-      cutg_external[0][maskI[iMasks]][maskJ[iMasks]] = cutg[0][iMasks];
-      cutg_external[1][maskI[iMasks]][maskJ[iMasks]] = cutg[1][iMasks];
+      for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+      {
+	//look for the i and j in the masks
+	for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
+	{
+	  //look for i
+	  if(mask_pos[iMasks].maskI == iCry)
+	  {
+	    //then look for j
+	    for(int jMasks =0 ; jMasks < numbOfCrystals ; jMasks++)
+	    {
+	      if(mask_pos[iMasks].maskJ == jCry)
+	      {
+		cutg_external[0][iCry][jCry] = cutg[0][mask_pos[iMasks].maskID];
+	        cutg_external[1][iCry][jCry] = cutg[1][mask_pos[iMasks].maskID];
+	      }
+	    }
+	  }
+	}
+      }     
     }
     
     for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks 

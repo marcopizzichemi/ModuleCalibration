@@ -121,9 +121,9 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   std::cout<<"\n"<<std::endl;
   std::cout<<"###########################################################"<<std::endl;  
-  std::cout<<"#                                                          #"<<std::endl;
-  std::cout<<"#           New Clear PEM module calibration               #"<<std::endl;  
-  std::cout<<"#                                                          #"<<std::endl;  
+  std::cout<<"#                                                         #"<<std::endl;
+  std::cout<<"#           New Clear PEM module calibration              #"<<std::endl;  
+  std::cout<<"#                                                         #"<<std::endl;  
   std::cout<<"###########################################################"<<std::endl;
   std::cout<<"\n\n"<<std::endl;
   std::cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<std::endl;
@@ -442,9 +442,20 @@ int main (int argc, char** argv)
 	      }
 	    }
 	    else
+	    {
 	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision);
 	    // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
+	    }
+// 	    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+// 	    {
+// 	      for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+// 	      {
+// 	        std::cout << cutg[0][iCry][jCry]->GetName() << "\t" << cutg[1][iCry][jCry]->GetName() << std::endl;
+// 	      }
+// 	    }
 	  }
+	  
+	  
 	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
 	  
@@ -454,6 +465,7 @@ int main (int argc, char** argv)
 	    {
 	      if(found)
 	      {
+		
 		// get a pointer to this crystal
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 		CurrentCrystal->SetCrystalOn(true);
@@ -468,7 +480,15 @@ int main (int argc, char** argv)
 		//draw spectrum
 		spectrum = new TH1F("spectrum","spectrum",histo1Dbins,1,histo1Dmax);	  
 		var << SumChannels << " >> spectrum";
+		
+// 		std::cout << "########## "<< var.str().c_str() << std::endl;
+// 		std::cout << "########## "<< CutXYZ << std::endl;
+// 		std::cout << "########## "<< CutTrigger << std::endl;
+// 		std::cout << "########## "<< CurrentCrystal->GetZXCut()->GetName() << std::endl;
+// 		std::cout << "########## "<< CurrentCrystal->GetZYCut()->GetName() << std::endl;
+		
 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+		
 		sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 		spectrum->SetName(sname.str().c_str());
 		spectrum->SetTitle(sname.str().c_str());
@@ -477,6 +497,7 @@ int main (int argc, char** argv)
 		spectrum->GetYaxis()->SetTitle("N");
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
+		
 		TSpectrum *s;
 		s = new TSpectrum(20);
 		// 		Input[i].SumSpectraCanvas->cd(j+1);
@@ -541,6 +562,8 @@ int main (int argc, char** argv)
 		sname.str("");
 		delete spectrum;
 		//-----------------------------------------------------------------------
+		
+		
 		
 		// a 3d historgram for this crystal, mainly to check the 3d cut
 		// at the same time, also the TGraph2D that will be useful for checks
