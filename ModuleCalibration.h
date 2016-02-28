@@ -5,7 +5,7 @@
 #include "TCanvas.h"
 #include "TH1F.h"
 #include "TH2F.h"
-#include "TH3F.h"
+#include "TH3I.h"
 #include "TString.h"
 #include "TApplication.h"
 #include "TLegend.h"
@@ -30,6 +30,7 @@
 #include "TPaveStats.h"
 #include "TProfile.h"
 #include "TH1D.h"
+#include "TPaveText.h"
 
 #include <iostream>
 #include <fstream>
@@ -54,8 +55,8 @@
 #define ENERGY_RESOLUTION 0.12
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
 
-
-int ncrystalsx                  = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
+/*
+  int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
   int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
   int nmppcy                    = config.read<int>("nmppcy",2);                     // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
@@ -94,3 +95,4 @@ int ncrystalsx                  = config.read<int>("ncrystalsx",2);             
   bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting  
   // set output file name                                                   
   std::string outputFileName = config.read<std::string>("output");
+*/
