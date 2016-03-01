@@ -22,6 +22,7 @@ private:
   TH1F                 HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
   TH1F                 HighlightedSpectrumCorrected; ///<
   TH1F                 HistoW;               ///< histogram of w values for this crystal
+  TH1F                 HistoWCorrected;
   TH1D                 SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   TH2F                 VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F                 SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
@@ -59,6 +60,7 @@ public:
   TH1F*                GetHighlightedSpectrum(){return &HighlightedSpectrum;};
   TH1F*                GetHighlightedSpectrumCorrected(){return &HighlightedSpectrumCorrected;};
   TH1F*                GetHistoW(){return &HistoW;};
+  TH1F*                GetHistoWCorrected(){return &HistoWCorrected;};
   TF1*                 GetFit(){return &Fit;};
   TF1*                 GetSimFit(){return &SimFit;};
   TF1*                 GetHistoWfit(){return &Wfit;};
@@ -98,6 +100,7 @@ public:
   void                 SetHighlightedSpectrum(TH1F aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHighlightedSpectrumCorrected(TH1F aHisto){HighlightedSpectrumCorrected = aHisto;};
   void                 SetHistoW(TH1F aHisto){HistoW = aHisto;};
+  void                 SetHistoWCorrected(TH1F aHisto){HistoWCorrected = aHisto;};
   void                 SetFit(TF1 aFit){Fit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
