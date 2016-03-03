@@ -122,6 +122,21 @@ private:
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
+  
+  struct detector_t
+  {
+    int digitizerChannel;
+    std::string label;
+    float saturation;
+    int plotPosition;
+    float xPosition;
+    float yPosition;
+    int OnForDOI;
+    bool isNeighbour;
+//     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+  };
+  
+  std::vector<detector_t> detector;
 
 public:
   
@@ -132,7 +147,7 @@ public:
                                                                      
   TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
   TTree*        GetTree() const { return ftree; };                   // method to provide a pointer to the analysis TTree
-  void          CreateTree();                                        // method to run on the input and fill the analysis TTree
+  void          FillTree();                                        // method to run on the input and fill the analysis TTree
   void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
 };
 

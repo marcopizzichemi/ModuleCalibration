@@ -148,7 +148,7 @@ int main (int argc, char** argv)
   }
   ConfigFile config(ConfigFileName); // create a ConfigFile object
   InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
-  input.CreateTree();                // create the TTree that will be used in analysis
+  input.FillTree();                // create the TTree that will be used in analysis
   int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
   int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
@@ -208,8 +208,9 @@ int main (int argc, char** argv)
   std::string SumChannels;
   sSumChannels << "ch" <<  digitizer[0];
   for(int i = 1 ; i < digitizer.size() ; i++)
-    sSumChannels << "+ch" << i; // the analysis ttree will always have channels in order, from 0 to input size
-    SumChannels = sSumChannels.str(); 
+    sSumChannels << "+ch" << digitizer[i]; 
+  SumChannels = sSumChannels.str(); 
+//   std::cout << SumChannels << std::endl;
   //----------------------------------------------------------//
   
   
@@ -293,7 +294,7 @@ int main (int argc, char** argv)
       
       nameModule = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
       varModule << "FloodY:FloodX >> " << nameModule; 
-      std::cout << nameModule << " ... ";
+//       std::cout << nameModule << " ... ";
       TH2F *spectrum2dModule = new TH2F(nameModule,nameModule,histo2DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo2DglobalBins,-moduleLateralSideY,moduleLateralSideY);
       tree->Draw(varModule.str().c_str(),"","COLZ");
       spectrum2dModule->SetName(nameModule); 
@@ -302,27 +303,27 @@ int main (int argc, char** argv)
       spectrum2dModule->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2D(spectrum2dModule);
       varModule.str("");
-      std::cout << " done" << std::endl;
+//       std::cout << " done" << std::endl;
 //       delete spectrum2dModule;
       
       //3D plot
       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
       varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
-      std::cout << nameModule << " ... ";
+//       std::cout << nameModule << " ... ";
       TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
       tree->Draw(varModule.str().c_str(),CutXYZ);
       spectrum3dModule->GetXaxis()->SetTitle("U");
       spectrum3dModule->GetYaxis()->SetTitle("V");
       spectrum3dModule->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
-      std::cout << " done" << std::endl;
+//       std::cout << " done" << std::endl;
 //       delete spectrum3dModule;
       
       if(usingTaggingBench)//trigger spectrum
       {
 	TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,0,12000);
 	varModule << "Tagging >> TaggingCrystalSpectrum";
-	std::cout << nameModule << " ... ";
+// 	std::cout << nameModule << " ... ";
 	TaggingCrystalSpectrum->SetName("TaggingCrystalSpectrum");
 	TaggingCrystalSpectrum->GetXaxis()->SetTitle("ADC");
 	TaggingCrystalSpectrum->GetYaxis()->SetTitle("Counts");
@@ -358,7 +359,7 @@ int main (int argc, char** argv)
 	varModule.str("");
 // 	delete sTagCrystal;
 	delete gaussTag;
-	std::cout << " done" << std::endl;
+// 	std::cout << " done" << std::endl;
       }
       
       //spectra for each mppc
@@ -437,7 +438,6 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(spectrum3dMPPC);
 	  var.str("");
 // 	  delete spectrum3d;
-	  
 	  // automatic crystal finder on the mppc
 	  // it runs always, unless the user has set onlyuserinput
 	  TCutG**** cutg; // prepare the graphical cuts
