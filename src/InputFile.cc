@@ -116,7 +116,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
   
   
-  
+  //FIXME from here to the ---- it's now useless
   //read strings that describes crystals
   //a string for input for each crystal
   crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
@@ -145,7 +145,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
       }
     }
   }
-  
   int crystalCounter = 0;
   for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
   {
@@ -176,47 +175,9 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     }
     crystalCounter++;
   }
+  //----------------------------------------------------------
   
-  //   crystalu_s              = config.read<std::string>("crystalu");
-  //   crystalv_s              = config.read<std::string>("crystalv");
-  //   crystalwu_s             = config.read<std::string>("crystalwu");
-  //   crystalwv_s             = config.read<std::string>("crystalwv");
-  //   crystalt_s              = config.read<std::string>("crystalt");
-  //   config.split( crystalu_f, crystalu_s, "," );
-  //   config.split( crystalv_f, crystalv_s, "," );
-  //   config.split( crystalwu_f, crystalwu_s, "," );
-  //   config.split( crystalwv_f, crystalwv_s, "," );
-  //   config.split( crystalt_f, crystalt_s, "," );
-  //   for(int i = 0 ; i < crystalu_f.size() ; i++)
-  //   {
-  //     config.trim(crystalu_f[i]);
-  //     crystalu.push_back(atof(crystalu_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalv_f.size() ; i++)
-  //   {
-  //     config.trim(crystalv_f[i]);
-  //     crystalv.push_back(atof(crystalv_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalwu_f.size() ; i++)
-  //   {
-  //     config.trim(crystalwu_f[i]);
-  //     crystalwu.push_back(atof(crystalwu_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalwv_f.size() ; i++)
-  //   {
-  //     config.trim(crystalwv_f[i]);
-  //     crystalwv.push_back(atof(crystalwv_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalt_f.size() ; i++)
-  //   {
-  //     config.trim(crystalt_f[i]);
-  //     crystalt.push_back(atof(crystalt_f[i].c_str()));
-  //   }
-  
-  
-  
-  
-  if(digitizer.size() > 16) 
+  if(digitizer.size() > 16) //FIXME is this necessary?
   {
     std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
   }
@@ -317,7 +278,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
 }
 
-// More than creating the TTree (which was created in fact in the constructor, it runs on the input TChain elements 
+// More like creating the TTree (which was created in fact in the constructor) it runs on the input TChain elements 
 // and fills the analysis TTree. Bad choice of method name! :P
 void InputFile::CreateTree()
 {
@@ -350,8 +311,8 @@ void InputFile::CreateTree()
   
   
   
-  for (Int_t i=0;i<nevent;i++)
-//   for(Int_t i=0;i<1;i++)
+//   for (Int_t i=0;i<nevent;i++)
+  for(Int_t i=0;i<2;i++)
   { 
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory

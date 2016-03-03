@@ -26,8 +26,8 @@ private:
   double                 ThetaWV;                ///< angle from w to v in radiants
   
   //histograms
-  TH1F                   RawSpectrum;            ///< raw spectrum of all events seen by this mppc
-  TH1F                   TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
+  TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
+  TH1F*                  TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
   TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
   TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
 //   TH1D*                  projection_x;           ///< 
@@ -93,10 +93,10 @@ public:
   void                   SetCrystal(Crystal *pCrystal);
   int                    GetCrystalsNumber(){return vCrystal.size();};
   Crystal*               GetCrystal(int pi, int pj);
-  TH1F*                  GetRawSpectrum(){return &RawSpectrum;};
-  void                   SetRawSpectrum(TH1F aHisto){RawSpectrum = aHisto;};
-  TH1F*                  GetTriggerSpectrum(){return &TriggerSpectrum;};
-  void                   SetTriggerSpectrum(TH1F aHisto){TriggerSpectrum = aHisto;};
+  TH1F*                  GetRawSpectrum(){return RawSpectrum;};
+  void                   SetRawSpectrum(TH1F* aHisto){RawSpectrum = aHisto;};
+  TH1F*                  GetTriggerSpectrum(){return TriggerSpectrum;};
+  void                   SetTriggerSpectrum(TH1F* aHisto){TriggerSpectrum = aHisto;};
   void                   SetIsOnForDoi(bool abool){IsOnForDoi = abool;};
   bool                   GetIsOnForDoi(){return IsOnForDoi;};
   std::vector<double>*   GetFit2DmeanX(){return &fit2DmeanX;};

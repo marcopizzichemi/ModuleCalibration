@@ -24,6 +24,25 @@ Element::Element(const Element &obj)
    */
 }
 
+// int Element::MakeFloodMap2D(TTree* tree)
+// {
+//   std::stringstream var,cut,sname; 
+//   sname << "Flood Histogram 2D - " << this->GetName();
+//   var << "FloodY:FloodX >> " << sname.str();
+//   int histo2DglobalBins = 1000;
+//   TH2F *spectrum2d = new TH2F(sname.str().c_str(),sname.str().c_str(),histo2DglobalBins,-7,7,histo2DglobalBins,-7,7);
+//   tree->Draw(var.str().c_str() ,"","COLZ");
+// //   nameModule = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
+//   spectrum2d->SetName(sname.str().c_str()); 
+//   spectrum2d->SetTitle(sname.str().c_str());
+//   spectrum2d->GetXaxis()->SetTitle("U");
+//   spectrum2d->GetYaxis()->SetTitle("V");
+//   this->SetFloodMap2D(*spectrum2d);
+// //   delete spectrum2dModule;
+//   return 0;
+// }
+
+
 void Element::PrintGlobal()
 {
   /**Prints Element info to terminal

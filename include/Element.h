@@ -8,6 +8,7 @@
 #include "TGraph.h"
 #include "TGraph2D.h"
 #include "TProfile.h"
+#include "TTree.h"
 
 class Module;
 class Mppc;
@@ -48,25 +49,25 @@ protected:
   int                  jChildren;         ///< number of children on "j"                                                   
   
   //2d histos
-  TH2F                 TempMap2D;
-  TH2F                 FloodMap2D;          ///< u,v map for this element
-  TH2F                 FloodMap2DSeparated; ///< the 2d maps that combines the correct lateral, corner and central maps
-  TH2F                 SphericalMap;        ///< spherical coordinates map (theta,phi) for this element
-  TH2F                 CylindricalXMap;     ///< cylindrical coordinates map (theta,x) for this element
-  TH2F                 CylindricalYMap;     ///< cylindrical coordinates map (theta,y) for this element
-  //for each element, every possible 2d plot (lateral, corner, central)
-  TH2F                 LateralMap;          ///< Rotated map
-  TH2F                 CornerMap;           ///< Rotated map
-  TH2F                 CentralMap;          ///< Rotated map
-  TH2F                 ADCversusW;          ///< 2d histo of "energy" versus w coordinate
-  TH2F                 ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
-  TGraph               ADCversusWgraph;     ///< TGraph of "energy" versus w coordinate
+//   TH2F                 TempMap2D;
+  TH2F*                FloodMap2D;          ///< u,v map for this element
+//   TH2F                 FloodMap2DSeparated; ///< the 2d maps that combines the correct lateral, corner and central maps
+//   TH2F                 SphericalMap;        ///< spherical coordinates map (theta,phi) for this element
+//   TH2F                 CylindricalXMap;     ///< cylindrical coordinates map (theta,x) for this element
+//   TH2F                 CylindricalYMap;     ///< cylindrical coordinates map (theta,y) for this element
+//   //for each element, every possible 2d plot (lateral, corner, central)
+//   TH2F                 LateralMap;          ///< Rotated map
+//   TH2F                 CornerMap;           ///< Rotated map
+//   TH2F                 CentralMap;          ///< Rotated map
+  TH2F*                ADCversusW;          ///< 2d histo of "energy" versus w coordinate
+  TH2F*                ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
+//   TGraph               ADCversusWgraph;     ///< TGraph of "energy" versus w coordinate
   
-  TGraph               GraphFlood2D;        ///< TGraph dumped from the FloodMap2D
-  TGraph2D             GraphFlood3D;        ///< TGraph2D dumped fromt the FloodMap3D
-  TProfile             ProfileX;            ///< Profile plots over X 
+//   TGraph               GraphFlood2D;        ///< TGraph dumped from the FloodMap2D
+//   TGraph2D             GraphFlood3D;        ///< TGraph2D dumped fromt the FloodMap3D
+//   TProfile             ProfileX;            ///< Profile plots over X 
   //3d histos
-  TH3I                 FloodMap3D;          ///< u,v,w map for this element
+  TH3I*                FloodMap3D;          ///< u,v,w map for this element
 
   
 public:
@@ -91,21 +92,21 @@ public:
   int                  GetChildrenI()                            {return iChildren;};                   
   int                  GetChildrenJ()                            {return jChildren;};                   
   std::string          GetParentName()                           {return parentName;};                  
-  TH2F*                GetFloodMap2D()                           {return &FloodMap2D;};                 
-  TH2F*                GetADCversusW()                           {return &ADCversusW;};   
-  TH2F*                GetADCversusWComplete()                   {return &ADCversusWComplete;};  
-  TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};        
-  TH2F*                GetSphericalMap()                         {return &SphericalMap;};               
-  TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};            
-  TH2F*                GetCylindricalYMap()                      {return &CylindricalYMap;};            
-  TH2F*                GetLateralMap()                           {return &LateralMap;};                 
-  TH2F*                GetCornerMap()                            {return &CornerMap;};                  
-  TH2F*                GetCentralMap()                           {return &CentralMap;};                 
-  TH3I*                GetFloodMap3D()                           {return &FloodMap3D;};                 
+  TH2F*                GetFloodMap2D()                           {return FloodMap2D;};                 
+  TH2F*                GetADCversusW()                           {return ADCversusW;};   
+  TH2F*                GetADCversusWComplete()                   {return ADCversusWComplete;};  
+//   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};        
+//   TH2F*                GetSphericalMap()                         {return &SphericalMap;};               
+//   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};            
+//   TH2F*                GetCylindricalYMap()                      {return &CylindricalYMap;};            
+//   TH2F*                GetLateralMap()                           {return &LateralMap;};                 
+//   TH2F*                GetCornerMap()                            {return &CornerMap;};                  
+//   TH2F*                GetCentralMap()                           {return &CentralMap;};                 
+  TH3I*                GetFloodMap3D()                           {return FloodMap3D;};                 
   std::string          GetXvariable()                            {return variableX;};                   
   std::string          GetYvariable()                            {return variableY;};    
-  TGraph*              GetGraphFlood2D()                         {return &GraphFlood2D;};    
-  TGraph2D*            GetGraphFlood3D()                         {return &GraphFlood3D;}; 
+//   TGraph*              GetGraphFlood2D()                         {return &GraphFlood2D;};    
+//   TGraph2D*            GetGraphFlood3D()                         {return &GraphFlood3D;}; 
   
   void                 SetName(std::string aname)                {name = aname;};                       
   void                 SetLabel(std::string aname)               {label = aname;};                      
@@ -118,29 +119,31 @@ public:
   void                 SetChildrenI(int pi)                      {iChildren = pi;};                     
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};                     
   void                 SetParentName(std::string aName)          {parentName = aName;};                 
-  void                 SetFloodMap2D(TH2F aHisto)                {FloodMap2D = aHisto;};                
-  void                 SetADCversusW(TH2F aHisto)                {ADCversusW = aHisto;};   
-  void                 SetADCversusWComplete(TH2F aHisto)        {ADCversusWComplete = aHisto;};   
-  void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};       
-  void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
-  void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
-  void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};           
-  void                 SetFloodMap3D(TH3I aHisto)                {FloodMap3D = aHisto;};                
-  void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};                
-  void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};                 
-  void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};                
+  void                 SetFloodMap2D(TH2F* aHisto)                {FloodMap2D = aHisto;};                
+  void                 SetADCversusW(TH2F* aHisto)                {ADCversusW = aHisto;};   
+  void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};   
+//   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};       
+//   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
+//   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
+//   void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};           
+  void                 SetFloodMap3D(TH3I* aHisto)                {FloodMap3D = aHisto;};                
+//   void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};                
+//   void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};                 
+//   void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};                
   void                 SetXvariable(std::string astring)         {variableX = astring;};                
   void                 SetYvariable(std::string astring)         {variableY = astring;};    
-  void                 SetGraphFlood2D(TGraph aGraph)            {GraphFlood2D = aGraph;};
-  void                 SetGraphFlood3D(TGraph2D aGraph)          {GraphFlood3D = aGraph;};
+//   void                 SetGraphFlood2D(TGraph aGraph)            {GraphFlood2D = aGraph;};
+//   void                 SetGraphFlood3D(TGraph2D aGraph)          {GraphFlood3D = aGraph;};
   
   //methods to add and return children elements                                                         
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};      
   std::vector<std::string> GetChildren()                         {return childrenName;};     
   
   
-  void SetTempMap2D(TH2F aHisto){TempMap2D = aHisto;};
-  TH2F* GetTempMap2D(){return &TempMap2D;};
+//   void SetTempMap2D(TH2F aHisto){TempMap2D = aHisto;};
+//   TH2F* GetTempMap2D(){return &TempMap2D;};
+  
+  int MakeFloodMap2D(TTree* tree);
   
 //   TH2F*                Generate2Dhistogram(TString var,TCut);
   
