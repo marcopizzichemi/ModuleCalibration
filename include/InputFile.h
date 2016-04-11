@@ -98,6 +98,8 @@ private:
   Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
+  Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
+  Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
   
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
@@ -106,6 +108,9 @@ private:
   TBranch      *bRealX;                                              // branches for above data
   TBranch      *bRealY;                                              // branches for above data
   TBranch      *bRealZ;                                              // branches for above data
+  TBranch      *bCrystalsHit;                                        // branches for above data
+  TBranch      *bNumbOfInteractions;                                 // branches for above data
+  
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
@@ -122,6 +127,8 @@ private:
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
+  Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
+  Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
   
   struct detector_t
   {

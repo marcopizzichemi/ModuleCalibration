@@ -445,7 +445,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
      Takes as input:
      cutg_external = the pointer to the matrix of cutg that will be used in the main program to select the crystals
-     histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically chainging the amount of RAM used by the program. 100 is a reasonable choice. 
+     histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice. 
                          The parameter is set in the config file (default to 100)
      div = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
   */
@@ -588,6 +588,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
     if(nMasks == numbOfCrystals) // now, check if you found NxN masks
     {
       found = true; // if you did, set found as true and the while cycle will end here
+//       std::cout << "Found threshold at " << threshold << " - Max = " << max << std::endl;
       delete histogram;
     } 
     else 

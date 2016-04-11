@@ -51,6 +51,7 @@ protected:
   //2d histos
 //   TH2F                 TempMap2D;
   TH2F*                FloodMap2D;          ///< u,v map for this element
+  TH2F*                FloodMap2DSingleCrystalHit; ///< Simulation dataset: u,v map for this element, accepting only events where energy was deposited in just one crystal
 //   TH2F                 FloodMap2DSeparated; ///< the 2d maps that combines the correct lateral, corner and central maps
 //   TH2F                 SphericalMap;        ///< spherical coordinates map (theta,phi) for this element
 //   TH2F                 CylindricalXMap;     ///< cylindrical coordinates map (theta,x) for this element
@@ -92,7 +93,8 @@ public:
   int                  GetChildrenI()                            {return iChildren;};                   
   int                  GetChildrenJ()                            {return jChildren;};                   
   std::string          GetParentName()                           {return parentName;};                  
-  TH2F*                GetFloodMap2D()                           {return FloodMap2D;};                 
+  TH2F*                GetFloodMap2D()                           {return FloodMap2D;};  
+  TH2F*                GetFloodMap2DSingleCrystalHit()           {return FloodMap2DSingleCrystalHit;}; 
   TH2F*                GetADCversusW()                           {return ADCversusW;};   
   TH2F*                GetADCversusWComplete()                   {return ADCversusWComplete;};  
 //   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};        
@@ -119,7 +121,8 @@ public:
   void                 SetChildrenI(int pi)                      {iChildren = pi;};                     
   void                 SetChildrenJ(int pj)                      {jChildren = pj;};                     
   void                 SetParentName(std::string aName)          {parentName = aName;};                 
-  void                 SetFloodMap2D(TH2F* aHisto)                {FloodMap2D = aHisto;};                
+  void                 SetFloodMap2D(TH2F* aHisto)                {FloodMap2D = aHisto;};  
+  void                 SetFloodMap2DSingleCrystalHit(TH2F* aHisto)  {FloodMap2DSingleCrystalHit = aHisto;};  
   void                 SetADCversusW(TH2F* aHisto)                {ADCversusW = aHisto;};   
   void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};   
 //   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};       

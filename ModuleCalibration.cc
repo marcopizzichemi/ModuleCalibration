@@ -92,7 +92,7 @@
 #include "Module.h"
 #include "Mppc.h"
 
-#include <omp.h>
+// #include <omp.h>
 
 #define ENERGY_RESOLUTION 0.12
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
@@ -274,7 +274,18 @@ int main (int argc, char** argv)
   
 //   TString name;
   
+  TCut SingleCrystalInteraction;
+  TCut SingleEnergyDeposition;
+  
+  if(usingRealSimData) // only if this is a sim dataset
+  {
+    SingleCrystalInteraction = "CrystalsHit == 1";
+    SingleEnergyDeposition = "NumbOfInteractions == 1";
+  }
   // Loop on modules, mppcs and crystal
+  
+  
+  
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -316,6 +327,7 @@ int main (int argc, char** argv)
       spectrum3dModule->GetYaxis()->SetTitle("V");
       spectrum3dModule->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
+      varModule.str("");
 //       std::cout << " done" << std::endl;
 //       delete spectrum3dModule;
       
@@ -360,6 +372,25 @@ int main (int argc, char** argv)
 // 	delete sTagCrystal;
 	delete gaussTag;
 // 	std::cout << " done" << std::endl;
+      }
+      
+      if(usingRealSimData)
+      {
+	// GLOBAL SPECTRA but with events confined in one crystal (from sim data)
+	// Flood histogram
+	nameModule = "SIM - Crystal Hit = 1 - Flood Histogram 2D - " + module[iModule][jModule]->GetName();
+	varModule << "FloodY:FloodX >> " << nameModule; 
+	//       std::cout << nameModule << " ... ";
+	TH2F *spectrum2dModuleSingleCrystalHit = new TH2F(nameModule,nameModule,histo2DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo2DglobalBins,-moduleLateralSideY,moduleLateralSideY);
+	tree->Draw(varModule.str().c_str(),SingleCrystalInteraction,"COLZ");
+	spectrum2dModuleSingleCrystalHit->SetName(nameModule); 
+	spectrum2dModuleSingleCrystalHit->SetTitle(nameModule);
+	spectrum2dModuleSingleCrystalHit->GetXaxis()->SetTitle("U");
+	spectrum2dModuleSingleCrystalHit->GetYaxis()->SetTitle("V");
+	module[iModule][jModule]->SetFloodMap2DSingleCrystalHit(spectrum2dModuleSingleCrystalHit);
+	varModule.str("");
+	
+	
       }
       
       //spectra for each mppc
@@ -607,6 +638,7 @@ int main (int argc, char** argv)
 		sname.str("");
 		
 		
+		
 		//histogram of w versus adc channels
 		//it will be useful fot doi correction
 		long long int nPoints;
@@ -701,6 +733,8 @@ int main (int argc, char** argv)
 		  //store the mean and sigma in the crystal
 		  if(gauss_corr->GetParameter(1) > 0) // otherwise the fit was very wrong..)
 		    CurrentCrystal->SetPhotopeakCorrected(gauss_corr->GetParameter(1),std::abs(gauss_corr->GetParameter(2)));
+// 		  else
+// 		    CurrentCrystal->SetPhotopeakCorrected(1,1);
 		  CurrentCrystal->SetFitCorrected(gauss_corr);
 		  // 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
 		  // 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
@@ -726,7 +760,6 @@ int main (int argc, char** argv)
 		}
 		
 		// a 3d historgram for this crystal, mainly to check the 3d cut
-		// at the same time, also the TGraph2D that will be useful for checks
 		sname << "Flood Histogram 3D - Crystal " << CurrentCrystal->GetID();
 		var << "FloodZ:FloodY:FloodX >> " << sname.str();
 		TH3I* spectrum3dCrystal = new TH3I(sname.str().c_str(),sname.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
@@ -737,6 +770,40 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetFloodMap3D(spectrum3dCrystal);
 		sname.str("");
 		var.str("");
+		
+		// a 3d historgram for this crystal, mainly to check the 3d cut
+		sname << "Flood Histogram 2D - Crystal " << CurrentCrystal->GetID();
+		var << "FloodY:FloodX >> " << sname.str();
+		TH2F* spectrum2dCrystal = new TH2F(sname.str().c_str(),sname.str().c_str(),histo2DchannelBin,-moduleLateralSideX,moduleLateralSideX,histo2DchannelBin,-moduleLateralSideY,moduleLateralSideY);
+		tree->Draw(var.str().c_str(),CutXYZ + CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+		spectrum2dCrystal->GetXaxis()->SetTitle("U");
+		spectrum2dCrystal->GetYaxis()->SetTitle("V");
+		CurrentCrystal->SetFloodMap2D(spectrum2dCrystal);
+		sname.str("");
+		var.str("");
+		
+		//density histogram - 1d histo of entries per bin in the cutg volume
+		sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
+		Int_t u,v,w;  
+		spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
+		 //get ax bin content
+		TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w)-1,1,spectrum3dCrystal->GetBinContent(u,v,w));
+		densityHisto->GetXaxis()->SetTitle("Numb of Entries");
+		int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
+                int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
+                int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
+		for(int iContent = 1 ; iContent < NbinX+1 ; iContent++) 
+		{
+		  for(int jContent = 1 ; jContent < NbinY+1 ; jContent++) 
+		  {
+		    for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
+		    {
+		      densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
+		    }
+		  }
+		}
+		CurrentCrystal->SetDensityHisto(densityHisto);
+		sname.str("");
 		
 		// Histogram 2d of the photopeak time evolution
 		sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
@@ -831,6 +898,7 @@ int main (int argc, char** argv)
   
   TCanvas* C_spectrum;
   TCanvas* C_multi;
+  TCanvas* C_multi_2d;
   TCanvas* C_global;
   TCanvas* C_multi_2;
   
@@ -875,9 +943,9 @@ int main (int argc, char** argv)
       BigSpectraCanvas->cd(canvascounter);
       if(crystal[iCrystal][jCrystal]->CrystalIsOn())
       {
-        crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
-        crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
-        crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
+        crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
+        crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
+        crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
       }
       canvascounter++;
       //std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
@@ -957,7 +1025,7 @@ int main (int argc, char** argv)
   //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
-  TH1F *PeakEnergyResolutionDistro = new TH1F("Energy res FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
+  TH1F *PeakEnergyResolutionDistro = new TH1F("Energy res FWHM","Distribution photopeak energy resolutions FWHM",200,0,1);
   PeakEnergyResolutionDistro->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro->SetStats(1);
@@ -965,7 +1033,7 @@ int main (int argc, char** argv)
   //   EnergyResolutionVsIJ->SetStats(1);
   //Distribution of FWHM of W plots
   //histogram of fwhm
-  TH1F *WfwhmDistro = new TH1F("w_fwhm","Distribution of FWHM in W plots",100,0,0.5);
+  TH1F *WfwhmDistro = new TH1F("w_fwhm","Distribution of FWHM in W plots",200,0,0.5);
   WfwhmDistro->GetXaxis()->SetTitle("W");
   WfwhmDistro->GetYaxis()->SetTitle("N");
   WfwhmDistro->SetStats(1);
@@ -977,7 +1045,7 @@ int main (int argc, char** argv)
   //   WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
   //   WfwhmVsIJ->SetStats(1);
   //histogram of rms
-  TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",100,0,0.5);
+  TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",200,0,0.5);
   WrmsDistro->GetXaxis()->SetTitle("W");
   WrmsDistro->GetYaxis()->SetTitle("N");
   WrmsDistro->SetStats(1);
@@ -987,35 +1055,35 @@ int main (int argc, char** argv)
   WrmsVsIJ->GetYaxis()->SetTitle("j");
   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
   //Distribution of FWHM of W plots
-  TH1F *Wwidth20perc = new TH1F("w20","Distribution of width at 20% in W plots",100,0,0.5);
+  TH1F *Wwidth20perc = new TH1F("w20","Distribution of width at 20% in W plots",200,0,0.5);
   Wwidth20perc->GetXaxis()->SetTitle("W");
   Wwidth20perc->GetYaxis()->SetTitle("N");
   Wwidth20perc->SetStats(1);
   
   //same plot but just for the "not lateral" channels
-  TH1F *Wwidth20percCentral = new TH1F("Central w20 - Central Crystals","Distribution of width at 20% in W plots - Central Crystals",100,0,0.5);
+  TH1F *Wwidth20percCentral = new TH1F("Central w20 - Central Crystals","Distribution of width at 20% in W plots - Central Crystals",200,0,0.5);
   Wwidth20percCentral->GetXaxis()->SetTitle("W");
   Wwidth20percCentral->GetYaxis()->SetTitle("N");
   Wwidth20percCentral->SetStats(1);
   
-  TH1F *PeakPositionDistroCentral = new TH1F("Central LY","Distribution photopeak positions - Central Crystals",100,0,histo1Dmax);
+  TH1F *PeakPositionDistroCentral = new TH1F("Central LY","Distribution photopeak positions - Central Crystals",200,0,histo1Dmax);
   PeakPositionDistroCentral->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistroCentral->GetYaxis()->SetTitle("N");
   PeakPositionDistroCentral->SetStats(1);
   
-  TH1F *PeakEnergyResolutionDistroCentral = new TH1F("Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",100,0,1);
+  TH1F *PeakEnergyResolutionDistroCentral = new TH1F("Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",200,0,1);
   PeakEnergyResolutionDistroCentral->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistroCentral->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistroCentral->SetStats(1);
   
   
-  TH1F *PeakEnergyResolutionDistro_corr = new TH1F("Corrected Energy res FWHM","Distribution photopeak energy resolutions FWHM",100,0,1);
+  TH1F *PeakEnergyResolutionDistro_corr = new TH1F("Corrected Energy res FWHM","Distribution photopeak energy resolutions FWHM",200,0,1);
   PeakEnergyResolutionDistro_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro_corr->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro_corr->SetStats(1);
   
   
-  TH1F *PeakEnergyResolutionDistroCentral_corr = new TH1F("Corrected Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",100,0,1);
+  TH1F *PeakEnergyResolutionDistroCentral_corr = new TH1F("Corrected Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",200,0,1);
   PeakEnergyResolutionDistroCentral_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistroCentral_corr->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistroCentral_corr->SetStats(1);
@@ -1115,6 +1183,17 @@ int main (int argc, char** argv)
       GlobalFlood2D->Write();
       GlobalFlood3D->Write();
       
+      if(usingRealSimData)
+      {
+	C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+	C_spectrum->SetName(module[iModule][jModule]->GetFloodMap2DSingleCrystalHit()->GetName());
+	C_spectrum->cd();
+	module[iModule][jModule]->GetFloodMap2DSingleCrystalHit()->Draw("COLZ");
+	C_spectrum->Write();
+	delete C_spectrum;
+	
+      }
+      
       if(usingTaggingBench)
       {
 	C_TaggingCrystalSpectrum->cd();
@@ -1168,6 +1247,14 @@ int main (int argc, char** argv)
           legend->SetFillStyle(0);
 	  int counter = 1;
           
+	  C_multi_2d = new TCanvas("C_multi_2d","C_multi_2d",1200,1200);
+	  TString nameMppc_2d = "3D Cuts in 2D plots - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  C_multi_2d->SetName(nameMppc_2d);
+	  C_multi_2d->SetTitle(nameMppc_2d);	
+	  TLegend *legend_2d = new TLegend(0.7,0.75,0.893,0.89,"");
+          legend_2d->SetFillStyle(0);
+	  
+	  
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
@@ -1220,6 +1307,18 @@ int main (int argc, char** argv)
 		legend->AddEntry(CurrentCrystal->GetFloodMap3D(),CurrentCrystal->GetFloodMap3D()->GetName(),"f");
 		CurrentCrystal->GetFloodMap3D()->Draw("same");
 		legend->Draw();
+// 		counter++;
+		
+		//same as above, but the 2D maxPeak 
+		C_multi_2d->cd();
+		CurrentCrystal->GetFloodMap2D()->SetMarkerColor(counter);
+		CurrentCrystal->GetFloodMap2D()->SetFillColor(counter);
+		legend_2d->AddEntry(CurrentCrystal->GetFloodMap2D(),CurrentCrystal->GetFloodMap2D()->GetName(),"f");
+		if(counter == 1)
+		  CurrentCrystal->GetFloodMap2D()->Draw();
+		else
+		  CurrentCrystal->GetFloodMap2D()->Draw("same");
+		legend_2d->Draw();
 		counter++;
 		
 // 		C_global->cd();
@@ -1315,6 +1414,14 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+		//density histo
+		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
+		C_spectrum->cd();
+		CurrentCrystal->GetDensityHisto()->Draw();
+		C_spectrum->Write();
+		delete C_spectrum;
+		
 		
 		if(usingRealSimData)
 		{
@@ -1349,12 +1456,12 @@ int main (int argc, char** argv)
 // 	  C_multi->SetTitle(name);
 // 	  C_multi->Update();
 	  C_multi->Write();
-	  
+	  C_multi_2d->Write();
 	  
 // 	  C_multi_2->Write();
 // 	  C_graph->Write();
 // 	  delete C_graph;
-	  
+	  delete C_multi_2d;
 	  delete C_multi;
 	}
       }

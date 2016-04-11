@@ -266,6 +266,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     fchain->SetBranchAddress("RealX", &RealX, &bRealX);
     fchain->SetBranchAddress("RealY", &RealY, &bRealY);
     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
+    fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
+    fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
   }
   for(int i=0; i<adcChannels; i++)
   {
@@ -300,6 +302,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     ftree->Branch("RealX",&TreeRealX,"RealX/F"); 
     ftree->Branch("RealY",&TreeRealY,"RealY/F"); 
     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F"); 
+    ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S"); 
+    ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S"); 
   }
 }
 
@@ -570,6 +574,8 @@ void InputFile::FillTree()
       TreeRealX = RealX;
       TreeRealY = RealY;
       TreeRealZ = RealZ;
+      TreeCrystalsHit = CrystalsHit;
+      TreeNumbOfInteractions = NumbOfInteractions;
     }
     
     if(TreeExtendedTimeTag >= nclock)
