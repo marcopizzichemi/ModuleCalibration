@@ -63,6 +63,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   crystaly                    = config.read<double>("crystaly",1.5);
   crystalz                    = config.read<double>("crystalz",15);
   esrThickness                = config.read<double>("esrThickness",0.07);
+  usingAllChannels            = config.read<bool>("usingAllChannels",1);
   
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -105,6 +106,20 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
+  
+  for(int i = 0 ; i < digitizer.size() ; i++)
+  {
+    detector_t det;
+    det.digitizerChannel = digitizer[i];
+    det.label            = mppc_label[i];
+    det.saturation       = saturation[i];
+    det.plotPosition     = plotPositions[i];
+    det.xPosition        = xPositions[i];
+    det.yPosition        = yPositions[i];
+    det.OnForDOI         = 0;
+    detector.push_back(det);
+  }
+  
   //read string for doi analysis channels
   digitizerDoi_s = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
   config.split( digitizerDoi_f, digitizerDoi_s, "," );
@@ -113,14 +128,16 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     config.trim(digitizerDoi_f[i]);
     digitizerDoi.push_back(atoi(digitizerDoi_f[i].c_str()));
   }
+  for(int i = 0 ; i < digitizerDoi.size() ; i++)
+  {
+    detector[digitizerDoi[i]].OnForDOI = 1;
+  }
   
   
   
-  //read strings that describes crystals
-  //a string for input for each crystal
-  crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
-  for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
-  //crystal on
+  
+  
+  
   crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
   {
@@ -130,95 +147,64 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
       crystalIsOn[i][j] = false;
     }
   }
+  
+  //FIXME from here to the ---- it's now useless
+  //read strings that describes crystals
+  //a string for input for each crystal
+//   crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
+//   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
+  //crystal on
+  
   //a float vector for each crystal
-  crystaldata = new float**[ncrystalsx*nmppcx*nmodulex];
-  for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
-  {
-    crystaldata[i] = new float*[ncrystalsy*nmppcy*nmoduley];
-    for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++) 
-    { 
-      crystaldata[i][j] = new float[5];
-      for (int k = 0 ; k < 5 ; k++)
-      {
-	crystaldata[i][j][k] = 0;
-      }
-    }
-  }
+//   crystaldata = new float**[ncrystalsx*nmppcx*nmodulex];
+//   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
+//   {
+//     crystaldata[i] = new float*[ncrystalsy*nmppcy*nmoduley];
+//     for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++) 
+//     { 
+//       crystaldata[i][j] = new float[5];
+//       for (int k = 0 ; k < 5 ; k++)
+//       {
+// 	crystaldata[i][j][k] = 0;
+//       }
+//     }
+//   }
+//   int crystalCounter = 0;
+//   for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
+//   {
+//     std::stringstream crystalstring;
+//     crystalstring << "crystal" << crystalCounter;
+//     std::string tempString;
+//     std::vector<std::string> tempStringVector;
+//     tempString = config.read<std::string>(crystalstring.str().c_str(),"0,0,0,0,0,0,0"); //FIXME i and j here are not the i and j set on the crystals!!! actually, in the loop for the crystals, below, it's wrong as well, as we don't consider the multiple modules case!! it will work for one module, it has to be fixed for multiple ones.
+//     
+// //     std::cout << crystalCounter << " " << crystalstring.str() << " " << tempString /*<< std::endl*/;
+//     
+//     config.split( tempStringVector, tempString, "," );
+//     for(int i = 0 ; i < tempStringVector.size() ; i++)
+//     {
+//       config.trim(tempStringVector[i]);
+//       // 	crystaldata.push_back(atof(crystal_f[i].c_str()));
+//     }
+//     int CryIDi = atoi(tempStringVector[0].c_str());
+//     int CryIDj = atoi(tempStringVector[1].c_str());
+//     
+//     if(tempString != "0,0,0,0,0,0,0")
+//     {
+//       crystalIsOn[CryIDi][CryIDj] = true;
+//       for(int i = 0 ; i < 5 ; i++)
+//       {
+//         crystaldata[CryIDi][CryIDj][i] = atof(tempStringVector[i+2].c_str());
+//       }
+//     }
+//     crystalCounter++;
+//   }
+  //----------------------------------------------------------
   
-  int crystalCounter = 0;
-  for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
-  {
-    std::stringstream crystalstring;
-    crystalstring << "crystal" << crystalCounter;
-    std::string tempString;
-    std::vector<std::string> tempStringVector;
-    tempString = config.read<std::string>(crystalstring.str().c_str(),"0,0,0,0,0,0,0"); //FIXME i and j here are not the i and j set on the crystals!!! actually, in the loop for the crystals, below, it's wrong as well, as we don't consider the multiple modules case!! it will work for one module, it has to be fixed for multiple ones.
-    
-//     std::cout << crystalCounter << " " << crystalstring.str() << " " << tempString /*<< std::endl*/;
-    
-    config.split( tempStringVector, tempString, "," );
-    for(int i = 0 ; i < tempStringVector.size() ; i++)
-    {
-      config.trim(tempStringVector[i]);
-      // 	crystaldata.push_back(atof(crystal_f[i].c_str()));
-    }
-    int CryIDi = atoi(tempStringVector[0].c_str());
-    int CryIDj = atoi(tempStringVector[1].c_str());
-    
-    if(tempString != "0,0,0,0,0,0,0")
-    {
-      crystalIsOn[CryIDi][CryIDj] = true;
-      for(int i = 0 ; i < 5 ; i++)
-      {
-        crystaldata[CryIDi][CryIDj][i] = atof(tempStringVector[i+2].c_str());
-      }
-    }
-    crystalCounter++;
-  }
-  
-  //   crystalu_s              = config.read<std::string>("crystalu");
-  //   crystalv_s              = config.read<std::string>("crystalv");
-  //   crystalwu_s             = config.read<std::string>("crystalwu");
-  //   crystalwv_s             = config.read<std::string>("crystalwv");
-  //   crystalt_s              = config.read<std::string>("crystalt");
-  //   config.split( crystalu_f, crystalu_s, "," );
-  //   config.split( crystalv_f, crystalv_s, "," );
-  //   config.split( crystalwu_f, crystalwu_s, "," );
-  //   config.split( crystalwv_f, crystalwv_s, "," );
-  //   config.split( crystalt_f, crystalt_s, "," );
-  //   for(int i = 0 ; i < crystalu_f.size() ; i++)
-  //   {
-  //     config.trim(crystalu_f[i]);
-  //     crystalu.push_back(atof(crystalu_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalv_f.size() ; i++)
-  //   {
-  //     config.trim(crystalv_f[i]);
-  //     crystalv.push_back(atof(crystalv_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalwu_f.size() ; i++)
-  //   {
-  //     config.trim(crystalwu_f[i]);
-  //     crystalwu.push_back(atof(crystalwu_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalwv_f.size() ; i++)
-  //   {
-  //     config.trim(crystalwv_f[i]);
-  //     crystalwv.push_back(atof(crystalwv_f[i].c_str()));
-  //   }
-  //   for(int i = 0 ; i < crystalt_f.size() ; i++)
-  //   {
-  //     config.trim(crystalt_f[i]);
-  //     crystalt.push_back(atof(crystalt_f[i].c_str()));
-  //   }
-  
-  
-  
-  
-  if(digitizer.size() > 16) 
-  {
-    std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
-  }
+//   if(digitizer.size() > 16) //FIXME is this necessary?
+//   {
+//     std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
+//   }
   //feedback to the user
   std::cout << std::endl;
   std::cout << "------------------------" << std::endl;
@@ -228,7 +214,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   for(int i = 0 ; i < digitizer.size() ; i++)
   {
-    std::cout << "Channel[" << digitizer[i] << "] = \t" <<  mppc_label[i] << "\t" << plotPositions[i] << "\t" << xPositions[i] << "\t" << yPositions[i] << std::endl;
+    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t" <<  detector[i].label << "\t" << detector[i].plotPosition << "\t" << detector[i].xPosition << "\t" << detector[i].yPosition << std::endl;
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
@@ -247,14 +233,14 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
   //------------------------------------------------------------------------------------------//  
-  inputChannels = digitizer.size();
+  inputChannels       = detector.size();
   fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   ftree               = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
-  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC is always 32 ch for CAEN 
+  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC 
   DigitizerChannelOn  = new bool[adcChannels];
   bChainAdcChannel    = new TBranch* [adcChannels];
-  TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed instead can be up to 16
+  TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed 
   // fill the tchain with input files
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
@@ -280,6 +266,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     fchain->SetBranchAddress("RealX", &RealX, &bRealX);
     fchain->SetBranchAddress("RealY", &RealY, &bRealY);
     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
+    fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
+    fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
   }
   for(int i=0; i<adcChannels; i++)
   {
@@ -287,6 +275,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     sname << "ch" << i;
     fchain->SetBranchAddress(sname.str().c_str(), &ChainAdcChannel[i], &bChainAdcChannel[i]);
   }
+  
   //set branches also for the analysis ttree
   ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l"); 
   ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
@@ -295,8 +284,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   {
     //empty the stringstreams
     std::stringstream sname,stype;
-    sname << "ch" << i;
-    stype << "ch" << i << "/S";  
+    sname << "ch" << detector[i].digitizerChannel;
+    stype << "ch" << detector[i].digitizerChannel << "/S";  
     ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
   }
   if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/S");
@@ -313,12 +302,14 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     ftree->Branch("RealX",&TreeRealX,"RealX/F"); 
     ftree->Branch("RealY",&TreeRealY,"RealY/F"); 
     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F"); 
+    ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S"); 
+    ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S"); 
   }
 }
 
-// More than creating the TTree (which was created in fact in the constructor, it runs on the input TChain elements 
-// and fills the analysis TTree. Bad choice of method name! :P
-void InputFile::CreateTree()
+// Runs on the input TChain elements 
+// and fills the analysis TTree
+void InputFile::FillTree()
 {
   //creates the TTree from the input Tchain
   std::cout << "Filling the TTree for the analysis... " << std::endl;
@@ -338,18 +329,19 @@ void InputFile::CreateTree()
   }
   for(int i = 0; i < inputChannels; i++)
   {
-    DigitizerChannelOn[digitizer[i]] = true;
+    DigitizerChannelOn[detector[i].digitizerChannel] = true;
   }
   
-  translateCh = new int[inputChannels]; // the number of input channels is set by the user, then they are created in the analysis ttree as ch0, ch1... 
-  for(int i = 0; i < inputChannels; i++)
-  {
-    translateCh[i] = i;  // then they will always be in order, so first channel in digitizer array goes to ch0, second to ch1 etc..
-  }
+//   translateCh = new int[inputChannels]; // the number of input channels is set by the user, then they are created in the analysis ttree as ch0, ch1... 
+//   for(int i = 0; i < inputChannels; i++)
+//   {
+//     translateCh[i] = i;  // then they will always be in order, so first channel in digitizer array goes to ch0, second to ch1 etc..
+//   }
   
   
   
-  for (Int_t i=0;i<nevent;i++) 
+  for (Int_t i=0;i<nevent;i++)
+//   for(Int_t i=0;i<2;i++)
   { 
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
@@ -364,10 +356,12 @@ void InputFile::CreateTree()
     
     int TreeEntryCounter = 0;
     
-    for (int j = 0 ; j < adcChannels ; j++) //loop on input chain channels
+    //loop to fill the channel
+    for (int j = 0 ; j < adcChannels ; j++) 
     {
       if(DigitizerChannelOn[j])
       {
+// 	std::cout << ChainAdcChannel[j] << " " ;
 	// fill tree with data from the channels
 	// also correcting for saturation if it's set in the config file
 	if(correctingSaturation)
@@ -386,12 +380,8 @@ void InputFile::CreateTree()
 	if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
 	{
 	  maxCharge = TreeAdcChannel[TreeEntryCounter];
-	  TreeTriggerChannel = TreeEntryCounter;
-	}
-	//update total, row and columnsum
-	total += TreeAdcChannel[TreeEntryCounter];
-	rowsum += TreeAdcChannel[TreeEntryCounter]*xPositions[TreeEntryCounter];
-	columnsum += TreeAdcChannel[TreeEntryCounter]*yPositions[TreeEntryCounter];
+	  TreeTriggerChannel = digitizer[TreeEntryCounter];
+	}	
 	TreeEntryCounter++;
       }
       
@@ -399,12 +389,173 @@ void InputFile::CreateTree()
       {
 	if( j == taggingCrystalChannel)
 	{
-	  TreeTagging = ChainAdcChannel[j];
+	  TreeTagging = ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
 	  //this is the tagging crystal data
 	}
       }
     }
+//     std::cout << std::endl;
+    // terrible implementation to allow us of only neighbour channels...
+    //loop to find the neighbour channels of trigger (if needed)
+    //read position of the trigger channel
+    double xTrigger;
+    double yTrigger;
+    std::vector<float> allowedX,allowedY;
+    //std::vector <bool> isNeighbour; // channel is neighbour of trigger 
+    if(!usingAllChannels)
+    {
+      for(int iFill = 0; iFill < inputChannels; iFill++)
+      {
+	detector[iFill].isNeighbour = false;
+      }
+      
+      
+      std::vector<float> xCopyTemp;
+      std::vector<float> yCopyTemp;
+      
+      for(int iFill = 0; iFill < inputChannels; iFill++)
+      {
+	if(detector[iFill].digitizerChannel == TreeTriggerChannel)
+	{
+	  xTrigger = detector[iFill].xPosition;
+	  yTrigger = detector[iFill].yPosition;
+	}
+	xCopyTemp.push_back(detector[iFill].xPosition);
+	yCopyTemp.push_back(detector[iFill].yPosition);
+	
+      }
+//       xTrigger = xPositions[TreeTriggerChannel];
+//       yTrigger = yPositions[TreeTriggerChannel];	  
+//       std::vector<float> xCopyTemp = xPositions;
+//       std::vector<float> yCopyTemp = yPositions;
+      
+      //sort the position vectors
+      std::sort (xCopyTemp.begin(),xCopyTemp.end());
+      std::sort (yCopyTemp.begin(),yCopyTemp.end());
+      //filter repetitions
+      std::vector<float> xCopy;
+      std::vector<float> yCopy;
+      xCopy.push_back(xCopyTemp[0]);
+      yCopy.push_back(yCopyTemp[0]);
+      int xCounter = 0;
+      int yCounter = 0;
+      for (int j = 0 ; j < xCopyTemp.size() ; j++)
+      {
+	if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
+	{
+	  xCopy.push_back(xCopyTemp[j]);
+	  xCounter++;
+	}
+      }
+      for (int j = 0 ; j < yCopyTemp.size() ; j++)
+      {
+	if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
+	{
+	  yCopy.push_back(yCopyTemp[j]);
+	  yCounter++;
+	}
+      }
+      
+      // by default trigger row and column are allowed
+      allowedX.push_back(xTrigger);
+      allowedY.push_back(yTrigger);
+      
+      int TrigI,TrigJ;
+      //locate trigger in the new vectors
+      for(int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+      {
+	if(xCopy[xPos] == xTrigger) TrigI = xPos;
+      }
+      for(int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+      {
+	if(yCopy[yPos] == yTrigger) TrigJ = yPos;
+      }
+      
+      
+      // take x and y of neighbours
+      double xleft,xright,ytop,ybottom;
+      if(TrigI != 0)
+      {
+	allowedX.push_back(xCopy[TrigI-1]);
+      }
+      if(TrigI != nmppcx-1)
+      {
+	allowedX.push_back(xCopy[TrigI+1]);
+      }
+      if(TrigJ != 0)
+      {
+	allowedY.push_back(yCopy[TrigJ-1]);
+      }
+      if(TrigJ != nmppcy-1)
+      {
+	allowedY.push_back(yCopy[TrigJ+1]);
+      }
+      
+//       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
+//       {
+// 	std::cout << allowedX[xPos] << " ";
+//       }
+//       std::cout << std::endl;
+//       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
+//       {
+// 	std::cout << allowedY[xPos] << " ";
+//       }
+//       std::cout << std::endl;
+      
+      int counterNeighbour = 0;
+      for (int j = 0 ; j < adcChannels ; j++) 
+      {
+	if(DigitizerChannelOn[j])
+        {
+	  for(int iCheck = 0; iCheck < allowedX.size(); iCheck++)
+	  {
+	    if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
+	    {
+	      for(int jCheck = 0; jCheck < allowedY.size(); jCheck++)
+	      {
+		if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
+	        {
+		  detector[counterNeighbour].isNeighbour = true;
+		}
+	      }
+	    }
+	  }
+	  counterNeighbour++;
+	}
+      }
+    }
+  
+    //loop to calculate u,v
+    int counterFill = 0;
+    for (int j = 0 ; j < adcChannels ; j++) 
+    {
+      if(DigitizerChannelOn[j])
+      {
+        //two options to calculate FloodX_Y_Z
+	//First, use all the channels
+	//Second, use only the neighbours of the trigger channel
+	if(usingAllChannels)
+	{
+	  total     += TreeAdcChannel[counterFill];
+	  rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
+	  columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
+	}  
+	else
+	{
+	  if(detector[counterFill].isNeighbour)
+	  {
+	    total     += TreeAdcChannel[counterFill];
+	    rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
+	    columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
+	  }
+	}
+	counterFill++;
+      }
+      
+    }
     
+    
+    //compute u,v,w
     TreeFloodX = rowsum/total;
     TreeFloodY = columnsum/total;
     TreeFloodZ =  maxCharge/total;
@@ -423,6 +574,8 @@ void InputFile::CreateTree()
       TreeRealX = RealX;
       TreeRealY = RealY;
       TreeRealZ = RealZ;
+      TreeCrystalsHit = CrystalsHit;
+      TreeNumbOfInteractions = NumbOfInteractions;
     }
     
     if(TreeExtendedTimeTag >= nclock)
@@ -469,8 +622,6 @@ void InputFile::CreateTree()
 // takes the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..)
 void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 {
-  //temp
-  //int translateCh[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};//isn't this very wrong??
   
   // changing i and j, no more from top left and y x, but x y from bottom left
   std::stringstream sname;
@@ -522,7 +673,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetChildrenI(ncrystalsx);
 	  mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
 	  mppc[mppcI][mppcJ]->SetPosition(xPositions[posID],yPositions[posID],0);
-	  mppc[mppcI][mppcJ]->SetDigitizerChannel(translateCh[posID]);
+	  mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
 	  mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
 	  mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
 	  
@@ -561,16 +712,16 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      , yPositions[posID] + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)  
 	      ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
 	      crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
-	      double u  = crystaldata[cryI][cryJ][0];
-	      double v  = crystaldata[cryI][cryJ][1];
-	      double wu = crystaldata[cryI][cryJ][2];
-	      double wv = crystaldata[cryI][cryJ][3];
-	      double t  = crystaldata[cryI][cryJ][4];
-	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
+// 	      double u  = crystaldata[cryI][cryJ][0];
+// 	      double v  = crystaldata[cryI][cryJ][1];
+// 	      double wu = crystaldata[cryI][cryJ][2];
+// 	      double wv = crystaldata[cryI][cryJ][3];
+// 	      double t  = crystaldata[cryI][cryJ][4];
+// 	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
 // 	      std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
 // 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
-	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
-	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
+// 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
+// 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
 // 	      crystal[cryI][cryJ]->Print();
 	      
 	      mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
@@ -580,164 +731,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       }
     }
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-//   int moduleCounter = 0;
-//   
-//   // info for the modules
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       std::stringstream sname;
-//       sname << "Module " << iModule << "." << jModule;
-//       module[iModule][jModule] = new Module(); // creates a default module   
-//       module[iModule][jModule]->SetName(sname.str().c_str());          // assign a name
-//       module[iModule][jModule]->SetID(moduleCounter);                  // assign an ID number
-//       module[iModule][jModule]->SetI(iModule); 
-//       module[iModule][jModule]->SetJ(jModule);
-//       module[iModule][jModule]->SetChildrenI(nmppcx);
-//       module[iModule][jModule]->SetChildrenJ(nmppcy);
-//       moduleCounter++;
-//     }
-//   }
-//   
-//   //info for the mppcs
-//   int mppcCounter = 0;
-//   for(int iMppc = 0; iMppc < nmppcx*nmodulex ; iMppc++)
-//   {
-//     for(int jMppc = 0; jMppc < nmppcy*nmoduley ; jMppc++)
-//     {
-//       std::stringstream sname;
-//       sname << "Mppc " << mppc_label[mppcCounter];
-//       mppc[iMppc][jMppc] = new Mppc();
-//       mppc[iMppc][jMppc]->SetName(sname.str().c_str());   // assign a name
-//       mppc[iMppc][jMppc]->SetLabel(mppc_label[mppcCounter]);
-//       mppc[iMppc][jMppc]->SetID(mppcCounter);             // assign an ID
-//       mppc[iMppc][jMppc]->SetI(iMppc); 
-//       mppc[iMppc][jMppc]->SetJ();
-//       mppc[iMppc][jMppc]->SetChildrenI(ncrystalsx);
-//       mppc[iMppc][jMppc]->SetChildrenJ(ncrystalsy);
-//       mppc[iMppc][jMppc]->SetPosition(xPositions[mppcCounter],yPositions[mppcCounter],0);
-//       mppc[iMppc][jMppc]->SetDigitizerChannel(digitizer[mppcCounter]);
-//       mppc[iMppc][jMppc]->SetCanvasPosition(plotPositions[mppcCounter]);
-//       mppc[iMppc][jMppc]->SetParentName(module[iMppc/nmppcx][jMppc/nmppcy]->GetName());
-//       mppc[iMppc][jMppc]->Print();
-//       mppcCounter++;
-//     }
-//   }
-//   
-//   
-// //   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
-// //   {
-// //     for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
-// //     {
-// //       for (int zz = 0 ; zz < 5 ; zz++)
-// //       {
-// // 	std::cout << crystaldata[iCrystal][jCrystal][zz] << " ";
-// //       }
-// //       std::cout << std::endl;
-// //     }
-// //     
-// //   }
-//   
-//   //info for the crystals
-//   int crystalCounter = 0;
-//   for(int iCrystal = 0; iCrystal < ncrystalsx*nmppcx*nmodulex ; iCrystal++)
-//   {
-//     for(int jCrystal = 0; jCrystal < ncrystalsy*nmppcy*nmoduley ; jCrystal++)
-//     {
-//       std::stringstream stream;
-//       stream << "Crystal " << crystalCounter;
-//       crystal[iCrystal][jCrystal] = new Crystal();
-//       crystal[iCrystal][jCrystal]->SetName(stream.str().c_str());   // assign a name
-//       crystal[iCrystal][jCrystal]->SetID(crystalCounter);          // assign an ID
-//       crystal[iCrystal][jCrystal]->SetI(iCrystal); 
-//       crystal[iCrystal][jCrystal]->SetJ(jCrystal);
-//       crystal[iCrystal][jCrystal]->SetParentName(mppc[iCrystal/ncrystalsx][jCrystal/ncrystalsy]->GetName());
-//       crystal[iCrystal][jCrystal]->SetCrystalOn(crystalIsOn[iCrystal][jCrystal]);
-//       double u  = crystaldata[iCrystal][jCrystal][0];
-//       double v  = crystaldata[iCrystal][jCrystal][1];
-//       double wu = crystaldata[iCrystal][jCrystal][2];
-//       double wv = crystaldata[iCrystal][jCrystal][3];
-//       double t  = crystaldata[iCrystal][jCrystal][4];
-// //       std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
-//       crystal[iCrystal][jCrystal]->SetEllipses(u,v,wu,wv,t);
-//       TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
-//       crystal[iCrystal][jCrystal]->SetGraphicalCut(*ellipse);
-//       crystal[iCrystal][jCrystal]->Print();
-//       crystalCounter++;
-//     }
-//   }
-//   
-//   // set children names for modules and mppcs
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  module[iModule][jModule]->AddChild( mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->GetName() );
-// 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-// 	  {
-// 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-// 	    {
-// 	      mppc[iMppc][jMppc]->AddChild( crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->GetName() );
-// 	    }
-// 	  }
-// 	}
-//       }
-//     } 
-//   }
-//   
-//   //   std::cout << "--------------------------------------------" << std::endl;
-//   //   module[0][0]->Print();
-//   //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-//   //   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   //   {
-//   //     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//   //     {
-//   //       module[iModule][jModule]->Print();
-//   //       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//   //       {
-//   // 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-//   // 	{
-//   // 	  mppc[(iModule * nmppcx) + iMppc][(jModule * nmppcy) + jMppc]->Print();
-//   // 	  for(int iCrystal = 0; iCrystal < ncrystalsx ; iCrystal++)
-//   // 	  {
-//   // 	    for(int jCrystal = 0; jCrystal < ncrystalsy ; jCrystal++)
-//   // 	    {
-//   // 	      crystal[(iMppc * ncrystalsx) + iCrystal][(jMppc * ncrystalsy) + jCrystal]->Print();
-//   // 	    }
-//   // 	  }
-//   // 	}
-//   //       }
-//   //     }
-//   //   }
-//   // //   std::cout <<module[0][0]->GetMppcsNumber() << std::endl;
-//   // //   std::cout << "--------------------------------------------" << std::endl;
-//   // //   std::cout << std::endl;
-//   //   
-//   //   // draw a map
-//   //   
-//   //   // MPPC labels
-//   //   
-//   // 
-//   
-  
-  
-  
-  
   
   // summarize the situation to the user
   std::cout << std::endl;
@@ -790,62 +783,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     std::cout << std::endl;
   }  
   std::cout << std::endl;
-  
-  
-//   std::cout << std::endl;
-//   std::cout << "----------- MODULES ---------- ";
-//   std::cout << std::endl;
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       module[iModule][jModule]->Print();
-//     }
-//   }
-//   std::cout << std::endl;
-//   
-//   std::cout << std::endl;
-//   std::cout << "----------- MPPCS ---------- ";
-//   std::cout << std::endl;
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  int mppcI = (iModule*nmppcx)+iMppc;
-// 	  int mppcJ = (jModule*nmppcy)+jMppc;
-// 	  mppc[mppcI][mppcJ]->Print();
-// 	}
-//       }
-//     }
-//   }
-//   std::cout << std::endl;
-//   std::cout << "----------- CRYSTALS ---------- ";
-//   std::cout << std::endl;
-//   for(int iModule = 0; iModule < nmodulex ; iModule++)
-//   {
-//     for(int jModule = 0; jModule < nmoduley ; jModule++)
-//     {
-//       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
-//       {
-// 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
-// 	{
-// 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
-// 	  {
-// 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
-// 	    {
-// 	      int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
-// 	      int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
-// 	      crystal[cryI][cryJ]->Print();
-// 	    }
-// 	  }
-// 	}
-//       }
-//     }
-//   }
   
   
   

@@ -82,6 +82,7 @@ private:
   float                          taggingPosition;                    // tagging DOI bench position
   bool                           usingTaggingBench;                  // true if the input datasets uses the DOI tagging
   bool                           usingRealSimData;                   // true if the "real" gamma interaction point is used (of course valid only for simulation datasets)
+  bool                           usingAllChannels;
   int                            taggingCrystalChannel;              // channel of the tagging crystal, only for DOI bench data
   double                         nclock;                             // number of clock samples that will be ignored. clock is the digitizer clock (so 1 sample = 16ns for DT5740)
   int                            *translateCh;                       // translates adc channels to analysis channels
@@ -97,6 +98,8 @@ private:
   Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
+  Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
+  Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
   
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
@@ -105,6 +108,9 @@ private:
   TBranch      *bRealX;                                              // branches for above data
   TBranch      *bRealY;                                              // branches for above data
   TBranch      *bRealZ;                                              // branches for above data
+  TBranch      *bCrystalsHit;                                        // branches for above data
+  TBranch      *bNumbOfInteractions;                                 // branches for above data
+  
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
@@ -121,6 +127,23 @@ private:
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
+  Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
+  Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
+  
+  struct detector_t
+  {
+    int digitizerChannel;
+    std::string label;
+    float saturation;
+    int plotPosition;
+    float xPosition;
+    float yPosition;
+    int OnForDOI;
+    bool isNeighbour;
+//     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+  };
+  
+  std::vector<detector_t> detector;
 
 public:
   
@@ -131,7 +154,7 @@ public:
                                                                      
   TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
   TTree*        GetTree() const { return ftree; };                   // method to provide a pointer to the analysis TTree
-  void          CreateTree();                                        // method to run on the input and fill the analysis TTree
+  void          FillTree();                                        // method to run on the input and fill the analysis TTree
   void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
 };
 
