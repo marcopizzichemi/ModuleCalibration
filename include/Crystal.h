@@ -42,12 +42,17 @@ private:
   TF1*                 SimFit;
   TF1*                 Wfit;
   TF1*                 FitCorrected;
+  TF1*                 ThetaFit;
 //   TF1                  ProfileXFit;
   TF1*                 SlicesMeanFit;
   double               w_fwhm;               ///< width at half maximum for the w histogram
   double               w_rms;                ///< rms of w histogram
   double               w_width20perc;        ///< width at 20% maximum for the w histogram
   double               u,v,wu,wv,t;
+  double               wBegin;               ///< beginning of w histogram after fitting with theta function
+  double               wEnd;                 ///< end of w histogram after fitting with theta function
+//   double               mCal;                 ///< value of calculated m, after finding w begin and end with theta fitting
+//   double               qCal;                 ///< value of calculated q, after finding w begin and end with theta fitting
   
 public:
   Crystal();                                 ///< default constructor
@@ -79,7 +84,8 @@ public:
   float                GetPhotopeakPositionCorrected(){return peakPositionCorrected;};
   float                GetPhotopeakSigmaCorrected(){return peakSigmaCorrected;};
   float                GetPhotopeakEnergyResolutionCorrected(){return ((peakSigmaCorrected*2.355)/peakPositionCorrected);};
-  
+  double               GetWbegin(){return wBegin;};
+  double               GetWend(){return wEnd;};
   
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
@@ -95,6 +101,9 @@ public:
   TF1*                 GetFitCorrected(){return FitCorrected;};
   TCutG*               GetZXCut(){return cutg[0];};
   TCutG*               GetZYCut(){return cutg[1];};
+  TF1*                 GetThetaFit(){return ThetaFit;};
+  double               GetMcal(){return dz/(wBegin - wEnd);};
+  double               GetQcal(){return -(dz*wEnd)/(wBegin-wEnd);};
   
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -126,6 +135,9 @@ public:
 //   void                 SetProfileXFit(TF1 aFit){ProfileXFit = aFit;};
   void                 SetSlicesMeanFit(TF1* aFit){SlicesMeanFit = aFit;};
   void                 SetFitCorrected(TF1* aFit){FitCorrected = aFit;};
+  void                 SetWbegin(double a){wBegin = a;};
+  void                 SetWend(double a){wEnd = a;};
+  void                 SetThetaFit(TF1* aFit){ThetaFit = aFit;};
   void                 Analyze();
   
   void PrintGlobal();

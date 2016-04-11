@@ -99,7 +99,7 @@
 
 
 
-
+Double_t thetaFunction(Double_t *x, Double_t *par);
 
 int main (int argc, char** argv)
 {
@@ -234,6 +234,32 @@ int main (int argc, char** argv)
   input.FillElements(module,mppc,crystal);    
   //----------------------------------------------------------//
   
+  //----------------------------------------------------------//
+  //  Load electronic calibration values                      //
+  //----------------------------------------------------------//
+  std::string calibFileName = config.read<std::string>("doiComparison","0");
+  std::vector<Double_t> m_tag;
+  std::vector<Double_t> m_cal;
+  std::vector<Double_t> q_tag;
+  std::vector<Double_t> q_cal;
+  
+  if(calibFileName != "0")
+  {
+    std::ifstream inFile_calib;
+    inFile_calib.open(calibFileName.c_str(),std::ios::in);
+    while(!inFile_calib.eof())
+    {
+      Double_t foo, a, b, c, d;
+      inFile_calib >> foo >> a >> b >> c >> d;
+      m_cal.push_back(a);
+      q_cal.push_back(b);
+      m_tag.push_back(c);
+      q_tag.push_back(d);
+//       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
+//       i++;
+    }
+    inFile_calib.close();
+  }
   
   //----------------------------------------------------------//
   //  Plots and spectra                                       //
@@ -828,16 +854,38 @@ int main (int argc, char** argv)
 		var.str("");
 		sname.str("");
 		
-		//w histogram with energy cut on the corrected spectrum
+		//w histogram with energy cut on the corrected spectrum and fit the w histogram with the thetaFunction
 		sname << "W histogram Corrected - Crystal " << CurrentCrystal->GetID();
 		var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
 		TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),250,0,1);	  
 		tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
 		spectrumHistoWCorrected->GetXaxis()->SetTitle("W");
 		spectrumHistoWCorrected->GetYaxis()->SetTitle("N");
+		
+		TF1 *w_fit_func = new TF1("fa1",thetaFunction,0,1,3);
+		w_fit_func->SetParameter( 0, spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->FindFirstBinAbove(spectrumHistoWCorrected->GetMaximum()/5.0))); // on this w histo, the first bin above 20% max
+		w_fit_func->SetParameter( 1, spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->FindLastBinAbove(spectrumHistoWCorrected->GetMaximum()/5.0))); // on this w histo, the last bin above 20% max
+		w_fit_func->SetParameter( 2, spectrumHistoWCorrected->GetMaximum());
+		spectrumHistoWCorrected->Fit(w_fit_func,"QR");
+// 		crystal_limitFile  << CurrentCrystal->GetID() << " " << w_fit_func->GetParameter(0) << " " << w_fit_func->GetParameter(1) << std::endl;;
 		CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
+		CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
+		CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
+		CurrentCrystal->SetThetaFit(w_fit_func);
 		var.str("");
 		sname.str("");
+		
+		//histogram with the difference between the tag calibration and the analytical calibration
+// 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
+// 		var << "((ch" << channel << "/(" << SumChannels << "))*"<<m_cal[CurrentCrystal->GetID()]<<"+"<<q_cal[CurrentCrystal->GetID()]<<")-((ch" << channel << "/(" << SumChannels << "))*"<<m_tag[CurrentCrystal->GetID()]<<"+"<<q_tag[CurrentCrystal->GetID()]<<")>> " << sname.str();
+// 		TH1F* HistoCalibDiff = new TH1F(sname.str().c_str(),sname.str().c_str(),2500,-20,20);
+// 		tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
+// 		HistoCalibDiff->GetXaxis()->SetTitle("Delta Calibration");
+// 		HistoCalibDiff->GetYaxis()->SetTitle("N");
+// 		calib_accuracy_File<< CurrentCrystal->GetID() << " " << HistoCalibDiff->GetMean() << " " << HistoCalibDiff->GetRMS() << std::endl;;
+// 		CurrentCrystal->SetHistoCalibDiff(HistoCalibDiff);
+// 		var.str("");
+// 		sname.str("");
 		
 		
 		if(usingRealSimData) // only if this is a sim dataset
@@ -1411,6 +1459,7 @@ int main (int argc, char** argv)
 		C_spectrum->SetName(CurrentCrystal->GetHistoWCorrected()->GetName());
 		C_spectrum->cd();
 		CurrentCrystal->GetHistoWCorrected()->Draw();
+		CurrentCrystal->GetThetaFit()->Draw("same");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
@@ -1569,4 +1618,19 @@ int main (int argc, char** argv)
   delete module;
   
   return 0;
+}
+
+Double_t thetaFunction(Double_t *x, Double_t *par)
+{
+    Double_t f;
+    Float_t xx =x[0];
+    if (xx>par[0] && xx<par[1]) 
+    {
+        f = par[2];    
+    }
+    else
+    {
+        f = 0;    
+    }
+    return f;
 }
