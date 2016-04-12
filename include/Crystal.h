@@ -86,7 +86,7 @@ public:
   float                GetPhotopeakEnergyResolutionCorrected(){return ((peakSigmaCorrected*2.355)/peakPositionCorrected);};
   double               GetWbegin(){return wBegin;};
   double               GetWend(){return wEnd;};
-  double               GetDeltaW(){return deltaW;};
+  double               GetDeltaW(){return std::abs(deltaW);};
    
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
@@ -106,7 +106,7 @@ public:
   TF1*                 GetDeltaWfit(){return deltaWfit;};
   double               GetMcal(){return dz/(wBegin - wEnd);};
   double               GetQcal(){return -(dz*wEnd)/(wBegin-wEnd);};
-  double               GetDoiResolutionFWHM(){return 2.355 * std::abs((dz/(wBegin - wEnd))) * std::abs(deltaWfit->GetParameter(2));};
+  double               GetDoiResolutionFWHM(){return 2.355 * std::abs((dz/(wBegin - wEnd))) * std::abs(deltaW);};
   
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
