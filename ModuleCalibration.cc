@@ -239,9 +239,9 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   std::string calibFileName = config.read<std::string>("doiComparison","0");
   std::vector<Double_t> m_tag;
-  std::vector<Double_t> m_cal;
+//   std::vector<Double_t> m_cal;
   std::vector<Double_t> q_tag;
-  std::vector<Double_t> q_cal;
+//   std::vector<Double_t> q_cal;
   
   if(calibFileName != "0")
   {
@@ -250,9 +250,9 @@ int main (int argc, char** argv)
     while(!inFile_calib.eof())
     {
       Double_t foo, a, b, c, d;
-      inFile_calib >> foo >> a >> b >> c >> d;
-      m_cal.push_back(a);
-      q_cal.push_back(b);
+      inFile_calib >> foo >> a >> b;
+//       m_cal.push_back(a);
+//       q_cal.push_back(b);
       m_tag.push_back(c);
       q_tag.push_back(d);
 //       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
@@ -747,8 +747,8 @@ int main (int argc, char** argv)
 		  float par0_corr = CrystalPeaksY_corr[peakID_corr];
 		  float par1_corr = CrystalPeaks_corr[peakID_corr];
 		  float par2_corr = (CrystalPeaks_corr[peakID_corr]*energyResolution)/2.35;
-		  float fitmin_corr = par1_corr-1.5*par2_corr;
-		  float fitmax_corr = par1_corr+1.8*par2_corr;
+		  float fitmin_corr = par1_corr-1.2*par2_corr;
+		  float fitmax_corr = par1_corr+1.3*par2_corr;
 		  
 		  sname << "gauss_corr - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 		  TF1 *gauss_corr = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin_corr,fitmax_corr);
@@ -767,7 +767,7 @@ int main (int argc, char** argv)
 		  // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
 		  //Compute the energy Tcut
 		  std::stringstream streamEnergyCutCorrected;
-		  streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - 2.5*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + 4.0*std::abs(gauss_corr->GetParameter(2));
+		  streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - 2.5*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + 3.0*std::abs(gauss_corr->GetParameter(2));
 		  PhotopeakEnergyCutCorrected = streamEnergyCutCorrected.str().c_str();
 		  // 		CurrentCrystal->SetSpectrum(*spectrum);
 		  sname.str("");
@@ -866,15 +866,25 @@ int main (int argc, char** argv)
 		w_fit_func->SetParameter( 0, spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->FindFirstBinAbove(spectrumHistoWCorrected->GetMaximum()/5.0))); // on this w histo, the first bin above 20% max
 		w_fit_func->SetParameter( 1, spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->FindLastBinAbove(spectrumHistoWCorrected->GetMaximum()/5.0))); // on this w histo, the last bin above 20% max
 		w_fit_func->SetParameter( 2, spectrumHistoWCorrected->GetMaximum());
-		spectrumHistoWCorrected->Fit(w_fit_func,"QR");
+		spectrumHistoWCorrected->Fit(w_fit_func,"QNR");
 // 		crystal_limitFile  << CurrentCrystal->GetID() << " " << w_fit_func->GetParameter(0) << " " << w_fit_func->GetParameter(1) << std::endl;;
 		CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
 		CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
 		CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
 		CurrentCrystal->SetThetaFit(w_fit_func);
+		
+		//fit the left part of the w plot with a gaussian, to get delta w //FIXME this way it will work only for far irradiation
+		TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+		gaussDeltaW->SetParameter( spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->FindFirstBinAbove(spectrumHistoWCorrected->GetMaximum()/5.0)), spectrumHistoWCorrected->GetMaximum());
+		gaussDeltaW->FixParameter( 1, spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->GetMaximumBin()));
+		gaussDeltaW->SetParameter( 2, 0.05);
+// 		gaussDeltaW->SetParLimits( 2, 0,0.1);
+		gaussDeltaW->SetLineColor(3);
+		spectrumHistoWCorrected->Fit(gaussDeltaW,"QN","",0,spectrumHistoWCorrected->GetBinCenter(spectrumHistoWCorrected->GetMaximumBin()));
+		CurrentCrystal->SetDeltaW(gaussDeltaW->GetParameter(2));
+		CurrentCrystal->SetDeltaWfit(gaussDeltaW);
 		var.str("");
 		sname.str("");
-		
 		//histogram with the difference between the tag calibration and the analytical calibration
 // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
 // 		var << "((ch" << channel << "/(" << SumChannels << "))*"<<m_cal[CurrentCrystal->GetID()]<<"+"<<q_cal[CurrentCrystal->GetID()]<<")-((ch" << channel << "/(" << SumChannels << "))*"<<m_tag[CurrentCrystal->GetID()]<<"+"<<q_tag[CurrentCrystal->GetID()]<<")>> " << sname.str();
@@ -886,7 +896,6 @@ int main (int argc, char** argv)
 // 		CurrentCrystal->SetHistoCalibDiff(HistoCalibDiff);
 // 		var.str("");
 // 		sname.str("");
-		
 		
 		if(usingRealSimData) // only if this is a sim dataset
 		{
@@ -1070,6 +1079,8 @@ int main (int argc, char** argv)
   //2d histogram
   
   
+  
+  
   //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
   //histogram
@@ -1114,12 +1125,12 @@ int main (int argc, char** argv)
   Wwidth20percCentral->GetYaxis()->SetTitle("N");
   Wwidth20percCentral->SetStats(1);
   
-  TH1F *PeakPositionDistroCentral = new TH1F("Central LY","Distribution photopeak positions - Central Crystals",200,0,histo1Dmax);
+  TH1F *PeakPositionDistroCentral = new TH1F("Central Photopeak Position","Distribution photopeak positions - Central Crystals",200,0,histo1Dmax);
   PeakPositionDistroCentral->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistroCentral->GetYaxis()->SetTitle("N");
   PeakPositionDistroCentral->SetStats(1);
   
-  TH1F *PeakEnergyResolutionDistroCentral = new TH1F("Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",200,0,1);
+  TH1F *PeakEnergyResolutionDistroCentral = new TH1F("Central Energy Resolution","Distribution photopeak energy resolutions FWHM - Central Crystals",200,0,1);
   PeakEnergyResolutionDistroCentral->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistroCentral->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistroCentral->SetStats(1);
@@ -1156,6 +1167,15 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
   
+  TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  DoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  DoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
+  DoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  DoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,6);
+  
   TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ_corr->GetXaxis()->SetTitle("i (U axis)");
   EnergyResolutionVsIJ_corr->GetYaxis()->SetTitle("j (V axis)");
@@ -1176,8 +1196,8 @@ int main (int argc, char** argv)
   Wwidht20percVsIJ->GetZaxis()->SetTitle("W width at 20%");
   
   
-  //Distribution of DOI resolutions - not very nice since one parameter in the calculation is assumed (from the DOI bench results)
-  TH1F *WDoiDistro = new TH1F("Doi Res","Distribution of doi res",20,0,6);
+  //Distribution of DOI resolutions 
+  TH1F *WDoiDistro = new TH1F("Doi Res","Distribution of DOI res FWHM",25,0,6);
   WDoiDistro->GetXaxis()->SetTitle("doi");
   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
@@ -1326,9 +1346,14 @@ int main (int argc, char** argv)
 		  PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		}
 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
-		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // FIXME CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
+// 		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // FIXME CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
+		WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
 		EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
+		if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < 15 )
+		  DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
+		else
+		  DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
@@ -1460,6 +1485,7 @@ int main (int argc, char** argv)
 		C_spectrum->cd();
 		CurrentCrystal->GetHistoWCorrected()->Draw();
 		CurrentCrystal->GetThetaFit()->Draw("same");
+		CurrentCrystal->GetDeltaWfit()->Draw("same");
 		C_spectrum->Write();
 		delete C_spectrum;
 		
@@ -1520,36 +1546,20 @@ int main (int argc, char** argv)
 //       C_global->Write();
 //       delete C_global;
       //write the summary histos and canvases, that were filled during file saving
-      PeakPositionDistro->Write();
-      PeakEnergyResolutionDistro->Write();
-      if(correctingForDOI)
-      {
-	PeakEnergyResolutionDistro_corr->Write();
-      }
-      WfwhmDistro->Write();
-      WDoiDistro->Write();
-      WrmsDistro->Write();
-      Wwidth20perc->Write();
-      Wwidth20percCentral->Write();
-      PeakPositionDistroCentral->Write();
-      PeakEnergyResolutionDistroCentral->Write();
-      if(correctingForDOI)
-      {
-	PeakEnergyResolutionDistroCentral_corr->Write();
-      }
       
       
-      TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
-      C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
-      C_WfwhmVsIJ->cd();
-      WfwhmVsIJ->Draw("LEGO2");
-      C_WfwhmVsIJ->Write();
       
-      TCanvas *C_WrmsVsIJ = new TCanvas("C_WrmsVsIJ","C_WrmsVsIJ",800,800);
-      C_WrmsVsIJ->SetName(WrmsVsIJ->GetName());
-      C_WrmsVsIJ->cd();
-      WrmsVsIJ->Draw("LEGO2");
-      C_WrmsVsIJ->Write();
+//       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
+//       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
+//       C_WfwhmVsIJ->cd();
+//       WfwhmVsIJ->Draw("LEGO2");
+//       C_WfwhmVsIJ->Write();
+      
+//       TCanvas *C_WrmsVsIJ = new TCanvas("C_WrmsVsIJ","C_WrmsVsIJ",800,800);
+//       C_WrmsVsIJ->SetName(WrmsVsIJ->GetName());
+//       C_WrmsVsIJ->cd();
+//       WrmsVsIJ->Draw("LEGO2");
+//       C_WrmsVsIJ->Write();
       
       TCanvas *C_PeakPositionVsIJ = new TCanvas("C_PeakPositionVsIJ","C_PeakPositionVsIJ",800,800);
       C_PeakPositionVsIJ->SetName(PeakPositionVsIJ->GetName());
@@ -1557,13 +1567,6 @@ int main (int argc, char** argv)
       PeakPositionVsIJ->Draw("LEGO2");
       C_PeakPositionVsIJ->SetLeftMargin(0.15);
       C_PeakPositionVsIJ->Write();
-      
-      TCanvas *C_EnergyResolutionVsIJ = new TCanvas("C_EnergyResolutionVsIJ","C_EnergyResolutionVsIJ",800,800);
-      C_EnergyResolutionVsIJ->SetName(EnergyResolutionVsIJ->GetName());
-      C_EnergyResolutionVsIJ->cd();
-      EnergyResolutionVsIJ->Draw("LEGO2");
-      C_EnergyResolutionVsIJ->SetLeftMargin(0.15);
-      C_EnergyResolutionVsIJ->Write();
       
       if(correctingForDOI)
       {
@@ -1575,12 +1578,26 @@ int main (int argc, char** argv)
 	C_EnergyResolutionVsIJ_corr->Write();
       }
       
-      TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
-      C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
-      C_Wwidht20percVsIJ->cd();
-      Wwidht20percVsIJ->Draw("LEGO2");
-      C_Wwidht20percVsIJ->SetLeftMargin(0.15);
-      C_Wwidht20percVsIJ->Write();
+      TCanvas *C_EnergyResolutionVsIJ = new TCanvas("C_EnergyResolutionVsIJ","C_EnergyResolutionVsIJ",800,800);
+      C_EnergyResolutionVsIJ->SetName(EnergyResolutionVsIJ->GetName());
+      C_EnergyResolutionVsIJ->cd();
+      EnergyResolutionVsIJ->Draw("LEGO2");
+      C_EnergyResolutionVsIJ->SetLeftMargin(0.15);
+      C_EnergyResolutionVsIJ->Write();
+      
+      TCanvas *C_DoiResolutionVsIJ = new TCanvas("C_DoiResolutionVsIJ","C_DoiResolutionVsIJ",800,800);
+      C_DoiResolutionVsIJ->SetName(DoiResolutionVsIJ->GetName());
+      C_DoiResolutionVsIJ->cd();
+      DoiResolutionVsIJ->Draw("LEGO2");
+      C_DoiResolutionVsIJ->SetLeftMargin(0.15);
+      C_DoiResolutionVsIJ->Write();
+      
+//       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
+//       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
+//       C_Wwidht20percVsIJ->cd();
+//       Wwidht20percVsIJ->Draw("LEGO2");
+//       C_Wwidht20percVsIJ->SetLeftMargin(0.15);
+//       C_Wwidht20percVsIJ->Write();
       
       //       gStyle->SetOptStat(1);
       
@@ -1594,8 +1611,16 @@ int main (int argc, char** argv)
 	C_WtauFitVsIJ->Write();
       }
       
-      
-      
+      PeakPositionDistro->Write();
+      PeakPositionDistroCentral->Write();
+      if(correctingForDOI)
+      {
+	PeakEnergyResolutionDistro_corr->Write();
+	PeakEnergyResolutionDistroCentral_corr->Write();
+      }
+      PeakEnergyResolutionDistro->Write();
+      PeakEnergyResolutionDistroCentral->Write();
+      WDoiDistro->Write();
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
