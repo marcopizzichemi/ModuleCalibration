@@ -1197,10 +1197,17 @@ int main (int argc, char** argv)
   
   
   //Distribution of DOI resolutions 
-  TH1F *WDoiDistro = new TH1F("Doi Res","Distribution of DOI res FWHM",25,0,6);
-  WDoiDistro->GetXaxis()->SetTitle("doi");
-  WDoiDistro->GetYaxis()->SetTitle("N");
+  TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",25,0,6);
+  WDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+//   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
+  
+  //Distribution of DOI resolutions 
+  TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",25,0,6);
+//   WDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+  WDoiDistroCentral->GetYaxis()->SetTitle("N");
+  WDoiDistroCentral->SetStats(1);
+  
   
   //Distribution of fit exp tau for W plots
   TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
@@ -1367,6 +1374,7 @@ int main (int argc, char** argv)
 		  Wwidth20percCentral->Fill(CurrentCrystal->GetWwidth20perc());
 		  PeakPositionDistroCentral->Fill(CurrentCrystal->GetPhotopeakPosition());
 		  PeakEnergyResolutionDistroCentral->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
+		  WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		  if(correctingForDOI)
 		  {
 		    PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
@@ -1621,6 +1629,7 @@ int main (int argc, char** argv)
       PeakEnergyResolutionDistro->Write();
       PeakEnergyResolutionDistroCentral->Write();
       WDoiDistro->Write();
+      WDoiDistroCentral->Write();
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
