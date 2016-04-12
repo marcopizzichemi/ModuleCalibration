@@ -27,7 +27,8 @@ private:
   
   //histograms
   TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
-  TH1F*                  TriggerSpectrum;        ///< raw spectrum of all events seen by this mppc
+  TH1F*                  TriggerSpectrum;        ///< trigger spectrum of all events seen by this mppc
+  TH1F*                  TriggerSpectrumHighlighted;///< trigger spectrum of all events seen by this mppc, highlighting the broad energy cut
   TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
   TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
 //   TH1D*                  projection_x;           ///< 
@@ -97,6 +98,8 @@ public:
   void                   SetRawSpectrum(TH1F* aHisto){RawSpectrum = aHisto;};
   TH1F*                  GetTriggerSpectrum(){return TriggerSpectrum;};
   void                   SetTriggerSpectrum(TH1F* aHisto){TriggerSpectrum = aHisto;};
+  TH1F*                  GetTriggerSpectrumHighlighted(){return TriggerSpectrumHighlighted;};
+  void                   SetTriggerSpectrumHighlighted(TH1F* aHisto){TriggerSpectrumHighlighted = aHisto;};
   void                   SetIsOnForDoi(bool abool){IsOnForDoi = abool;};
   bool                   GetIsOnForDoi(){return IsOnForDoi;};
   std::vector<double>*   GetFit2DmeanX(){return &fit2DmeanX;};

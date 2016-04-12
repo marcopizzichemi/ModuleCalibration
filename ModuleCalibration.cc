@@ -175,6 +175,7 @@ int main (int argc, char** argv)
   float moduleLateralSideX      = config.read<float>("moduleLateralSideX",7.0); //
   float moduleLateralSideY      = config.read<float>("moduleLateralSideY",7.0); // 
   bool backgroundRun            = config.read<bool>("backgroundRun",0);                // whether this is a background run or not
+  float userBroadCut            = config.read<float>("userBroadCut",1750.0);              // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
 //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -441,7 +442,7 @@ int main (int argc, char** argv)
 	  cut << "TriggerChannel == " << channel  ;
 	  TCut CutTrigger = cut.str().c_str();
 	  cut.str("");
-	  //same as the global ones, but selecting on TriggerChannel
+	  // same as the global ones, but selecting on TriggerChannel
 	  // raw spectrum
 	  name = "Raw Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() + " - Module " + module[iModule][jModule]->GetName();
 // 	  channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
@@ -460,7 +461,48 @@ int main (int argc, char** argv)
 	  tree->Draw(var.str().c_str(),CutTrigger);
 	  spectrumTrigger->GetXaxis()->SetTitle("ADC Channels");
 	  spectrumTrigger->GetYaxis()->SetTitle("N");
+	  
+	  //set a very broad cut on the trigger spectrum (single channel, not sum) to get rid of low energy events
+	  std::stringstream broadCutstream;
+	  if(!backgroundRun)
+	  {
+	    TSpectrum *sTrigger;
+	    sTrigger = new TSpectrum(20);
+	    Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.5); 
+	    Float_t *TriggerCrystalPeaks  = sTrigger->GetPositionX();
+	    Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
+	    //delete s;
+	    float TriggermaxPeak = 0.0;
+	    int TriggerpeakID    = 0;
+	    for (int TriggerpeakCounter = 0 ; TriggerpeakCounter < TriggerCrystalPeaksN ; TriggerpeakCounter++ )
+	    {
+	      if(TriggerCrystalPeaks[TriggerpeakCounter] > TriggermaxPeak)
+	      {
+		TriggermaxPeak = TriggerCrystalPeaks[TriggerpeakCounter];
+		TriggerpeakID = TriggerpeakCounter;
+	      }
+	    }
+	    // now if 511KeV or 662KeV correspond to TriggerCrystalPeaks[TriggerpeakID], it means that a broad cut, energy > 200-250KeV is approximately that divided by 2.5 (assuming 0 is 0 and scale is linear) 
+	    
+	    broadCutstream << "ch" << channel << ">" << (TriggerCrystalPeaks[TriggerpeakID] / 2.5);
+	  }
+	  else
+	  {
+	    broadCutstream << "ch" << channel << ">" << userBroadCut;
+	  }
+	  TCut broadCut = broadCutstream.str().c_str();
+	  // to make things easier, we add this directly to the CutTrigger. FIXME Not clean solution but ehi...
+	  CutTrigger += broadCut;
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTriggerSpectrum(spectrumTrigger);
+	  var.str("");
+	  //prepare an highlighted plot to show the broad cut
+	  name = "Trigger Spectrum Hg - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+	  var << "ch" << channel << " >> " << name;
+	  TH1F* spectrumTriggerHighlighted = new TH1F(name,name,histo1Dbins,1,histo1Dmax);	  
+	  tree->Draw(var.str().c_str(),CutTrigger);
+	  spectrumTriggerHighlighted->GetXaxis()->SetTitle("ADC Channels");
+	  spectrumTriggerHighlighted->GetYaxis()->SetTitle("N");
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTriggerSpectrumHighlighted(spectrumTriggerHighlighted);
 	  var.str("");
 	  
 	  //standard 2d plot
@@ -1073,6 +1115,8 @@ int main (int argc, char** argv)
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw(); 
 	  TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrumHighlighted()->SetFillColor(3);
+	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrumHighlighted()->Draw("same");
 	  // 	  FloodHistoCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()); 
 	  // 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
 	  // 	  // 	  TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
