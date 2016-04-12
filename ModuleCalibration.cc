@@ -892,7 +892,7 @@ int main (int argc, char** argv)
 		Int_t  AverageBin        = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
 		// look for the first "peak" in w
 		spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average    
-		double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrected->GetMaximumBin());  // get the w where the first max is
+		double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
 		double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetMaximumBin();                                         // get value of max in this range
 // 		spectrumHistoWCorrected->GetXaxis()->SetRange(1,250); //reset the w plots limits
 		// fit w with theta function 
