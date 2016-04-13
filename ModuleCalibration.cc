@@ -263,18 +263,12 @@ int main (int argc, char** argv)
     inFile_calib.close();
   }
   
+  
   //----------------------------------------------------------//
   //  Plots and spectra                                       //
   //----------------------------------------------------------//
   // get the TTree, to plot the spectra
   TTree* tree = input.GetTree();     
-  // prepare spectra
-  //TH1F* spectrum;
-  //TH2F* spectrum2d;
-  //TH3I* spectrum3d;
-  //TGraph* graph; 
-//   TGraph2D* graph2D;
-//   TCanvas* C_graph;
   
   // doi bench specific part
   std::ofstream doiFile;
@@ -286,54 +280,33 @@ int main (int argc, char** argv)
     doiFile.open("doiData.txt", std::ofstream::out);
   }
   
-  // angles for separating crystals, translations for having a nice 2d plot  
-//   double lateralQ1;
-//   double lateralQ2;
-//   double lateralDeltaU;
-//   double lateralDeltaV;
-//   double lateralRescaleRL;
-//   double lateralRescaleTB;
-  //corners
-//   double cornerQ1;
-//   double cornerQ2;
-//   double cornerDeltaU;
-//   double cornerDeltaV;
-//   double cornerRescale;
-  
-//   TString name;
-  
+  // simulation dataset spectific part
   TCut SingleCrystalInteraction;
   TCut SingleEnergyDeposition;
-  
   if(usingRealSimData) // only if this is a sim dataset
   {
     SingleCrystalInteraction = "CrystalsHit == 1";
     SingleEnergyDeposition = "NumbOfInteractions == 1";
   }
+  
+  // MAIN LOOP
   // Loop on modules, mppcs and crystal
-  
-  
-  
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
+      //usegul string etc
       std::stringstream CutXYZstream;
       CutXYZstream << "FloodX > " << -moduleLateralSideX << " && FloodX < " << moduleLateralSideX  << "&& FloodY > " << -moduleLateralSideY <<   " && FloodY < " << moduleLateralSideY << "&& FloodZ > 0 && FloodZ < 1";
       TCut CutXYZ = CutXYZstream.str().c_str();
       std::cout << "Generating global spectra..." << std::endl;
-      
       TString nameModule;
       std::stringstream varModule;
-      
-//       TH3I* spectrum3dModule;
-      
+            
       // GLOBAL SPECTRA
       // Flood histogram
-      
       nameModule = "Flood Histogram 2D - " + module[iModule][jModule]->GetName();
       varModule << "FloodY:FloodX >> " << nameModule; 
-//       std::cout << nameModule << " ... ";
       TH2F *spectrum2dModule = new TH2F(nameModule,nameModule,histo2DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo2DglobalBins,-moduleLateralSideY,moduleLateralSideY);
       tree->Draw(varModule.str().c_str(),"","COLZ");
       spectrum2dModule->SetName(nameModule); 
@@ -342,13 +315,10 @@ int main (int argc, char** argv)
       spectrum2dModule->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2D(spectrum2dModule);
       varModule.str("");
-//       std::cout << " done" << std::endl;
-//       delete spectrum2dModule;
       
       //3D plot
       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
       varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
-//       std::cout << nameModule << " ... ";
       TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
       tree->Draw(varModule.str().c_str(),CutXYZ);
       spectrum3dModule->GetXaxis()->SetTitle("U");
@@ -356,8 +326,6 @@ int main (int argc, char** argv)
       spectrum3dModule->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
       varModule.str("");
-//       std::cout << " done" << std::endl;
-//       delete spectrum3dModule;
       
       if(usingTaggingBench)//trigger spectrum
       {
@@ -369,10 +337,8 @@ int main (int argc, char** argv)
 	TaggingCrystalSpectrum->GetYaxis()->SetTitle("Counts");
 	TaggingCrystalSpectrum->SetTitle("Spectrum of Tagging Crystal");
 	tree->Draw(varModule.str().c_str(),"");
-	
 	//restrict the region where to look for peaks. Fix for tspectrum...
 	TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingPeakMin,taggingPeakMax); 
-	
 	//find peak in the tagging crystal
 	TSpectrum *sTagCrystal;
 	sTagCrystal = new TSpectrum(1);
@@ -387,7 +353,6 @@ int main (int argc, char** argv)
 	std::stringstream tagString;
 	tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
 	triggerPhotopeakCut = tagString.str().c_str();
-	
 	//highlighted spectrum
 	TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",1200,0,12000);
 	varModule.str("");
@@ -423,20 +388,20 @@ int main (int argc, char** argv)
       
       //spectra for each mppc
       //and i can't parallelize it because ROOT coders live in the 80s...
-//       #pragma omp parallel for
+      //#pragma omp parallel for
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
 	for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
 	{
-	  //these loop will run in parallel, so some variables need to exist only inside the loop 
+	  //these loop are supposed to run in parallel, so some variables need to exist only inside the loop
+	  //in fact, i can't make them run in parallel because root is not thread safe
+	  
+	  // strings and stuff
 	  TString name;
 	  std::stringstream var,cut,sname; 
-// 	  TH1F* spectrum;
-          //TH2F* spectrum2d;
-//           TH3I* spectrum3d;
-          //TGraph* graph;
-	  //FIXME careful, at the moment it works only because there's one module
+	  //FIXME careful, at the moment it works only because there's one module. but honestly, at this stage it is supposed to work only on one module.
 	  // it should be fixed for more modules by using the same mppc[][] logic used for the crystals, below
+	  // did i already fix it? i guess i'll test once we have to deal with more tha 1 module
 	  int channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
 	  std::cout << "Generating spectra for MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " ..." << std::endl;
 	  cut << "TriggerChannel == " << channel  ;
@@ -445,7 +410,6 @@ int main (int argc, char** argv)
 	  // same as the global ones, but selecting on TriggerChannel
 	  // raw spectrum
 	  name = "Raw Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() + " - Module " + module[iModule][jModule]->GetName();
-// 	  channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
 	  var << "ch" << channel << " >> " << name;
 	  TH1F* spectrumRaw = new TH1F(name,name,histo1Dbins,1,histo1Dmax);
 	  tree->Draw(var.str().c_str(),"");
@@ -468,7 +432,7 @@ int main (int argc, char** argv)
 	  {
 	    TSpectrum *sTrigger;
 	    sTrigger = new TSpectrum(20);
-	    Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.5); 
+	    Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.2); 
 	    Float_t *TriggerCrystalPeaks  = sTrigger->GetPositionX();
 	    Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
 	    //delete s;
@@ -483,18 +447,18 @@ int main (int argc, char** argv)
 	      }
 	    }
 	    // now if 511KeV or 662KeV correspond to TriggerCrystalPeaks[TriggerpeakID], it means that a broad cut, energy > 200-250KeV is approximately that divided by 2.5 (assuming 0 is 0 and scale is linear) 
-	    
 	    broadCutstream << "ch" << channel << ">" << (TriggerCrystalPeaks[TriggerpeakID] / 2.5);
 	  }
-	  else
+	  else //otherwise, for backgroundRun set the broadcut to the value chosen by the user (or default to 1750 adc channels)
 	  {
 	    broadCutstream << "ch" << channel << ">" << userBroadCut;
 	  }
 	  TCut broadCut = broadCutstream.str().c_str();
-	  // to make things easier, we add this directly to the CutTrigger. FIXME Not clean solution but ehi...
+	  // to make things easier, we add this directly to the CutTrigger. FIXME Not a clean solution, but ehi...
 	  CutTrigger += broadCut;
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTriggerSpectrum(spectrumTrigger);
 	  var.str("");
+	  
 	  //prepare an highlighted plot to show the broad cut
 	  name = "Trigger Spectrum Hg - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  var << "ch" << channel << " >> " << name;
@@ -516,8 +480,7 @@ int main (int argc, char** argv)
 	  var.str("");
 	  
 	  // 3D spectrum for this mppc
-// 	  spectrum3d = new TH3I("spectrum3d","spectrum3d",histo3DchannelBin,-moduleLateralSideX,moduleLateralSideX,histo3DchannelBin,-moduleLateralSideY,moduleLateralSideY,histo3DchannelBin,0,1);
-	  //little trick to try and use less bins
+	  // little trick to try and use less bins
 	  // take the mean x and y and their sigma from previous 2dplot, define the limit of this 3dplot in x and y accordingly
 	  double minX3Dplot = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetMean(1) - 3.0*mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetRMS(1);
 	  double maxX3Dplot = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetMean(1) + 3.0*mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->GetRMS(1);
@@ -537,9 +500,8 @@ int main (int argc, char** argv)
 	  spectrum3dMPPC->GetZaxis()->SetTitle("W");
 	  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D(spectrum3dMPPC);
 	  var.str("");
-// 	  delete spectrum3d;
 	  // automatic crystal finder on the mppc
-	  // it runs always, unless the user has set onlyuserinput
+	  // it runs always, unless the user has set onlyuserinput //FIXME onlyuserinput is not used anymore!
 	  TCutG**** cutg; // prepare the graphical cuts
 	  //const int numbOfCrystals = 4;
 	  cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
@@ -569,17 +531,13 @@ int main (int argc, char** argv)
 	    }
 	  }
 	  
-	  
-	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
-	  
 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
 	      if(found)
 	      {
-		
 		// get a pointer to this crystal
 		Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 		CurrentCrystal->SetCrystalOn(true);
