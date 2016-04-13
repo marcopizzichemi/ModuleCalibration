@@ -1269,6 +1269,25 @@ int main (int argc, char** argv)
   mCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
   mCalVsIJ->GetZaxis()->SetRangeUser(0,300);
   
+  TH2F *RealmCalVsIJ = new TH2F("mCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  RealmCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  RealmCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  RealmCalVsIJ->GetZaxis()->SetTitle("mCal)");
+  RealmCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  RealmCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  RealmCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  RealmCalVsIJ->GetZaxis()->SetRangeUser(-200,200);
+  
+  TH2F *qCalVsIJ = new TH2F("qCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  qCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  qCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  qCalVsIJ->GetZaxis()->SetTitle("qCal)");
+  qCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  qCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  qCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  qCalVsIJ->GetZaxis()->SetRangeUser(0,100);
+  
+  
   TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ_corr->GetXaxis()->SetTitle("i (U axis)");
   EnergyResolutionVsIJ_corr->GetYaxis()->SetTitle("j (V axis)");
@@ -1463,7 +1482,8 @@ int main (int argc, char** argv)
 		
 		DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
 		mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
-		
+		RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
+		qCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetQcal());
 		
 // 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 // 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
@@ -1739,6 +1759,19 @@ int main (int argc, char** argv)
       C_mCalVsIJ->SetLeftMargin(0.15);
       C_mCalVsIJ->Write();
       
+      TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
+      C_qCalVsIJ->SetName(qCalVsIJ->GetName());
+      C_qCalVsIJ->cd();
+      qCalVsIJ->Draw("LEGO2");
+      C_qCalVsIJ->SetLeftMargin(0.15);
+      C_qCalVsIJ->Write();
+      
+      TCanvas *C_RealmCalVsIJ = new TCanvas("C_RealmCalVsIJ","C_RealmCalVsIJ",800,800);
+      C_RealmCalVsIJ->SetName(RealmCalVsIJ->GetName());
+      C_RealmCalVsIJ->cd();
+      RealmCalVsIJ->Draw("LEGO2");
+      C_RealmCalVsIJ->SetLeftMargin(0.15);
+      C_RealmCalVsIJ->Write();
       
 //       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
 //       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
