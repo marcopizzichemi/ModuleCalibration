@@ -176,6 +176,7 @@ int main (int argc, char** argv)
   float moduleLateralSideY      = config.read<float>("moduleLateralSideY",7.0); // 
   bool backgroundRun            = config.read<bool>("backgroundRun",0);                // whether this is a background run or not
   float userBroadCut            = config.read<float>("userBroadCut",1750.0);              // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
+  float thresholdKev            = config.read<float>("thresholdKev",300.0);
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
 //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -447,7 +448,8 @@ int main (int argc, char** argv)
 	      }
 	    }
 	    // now if 511KeV or 662KeV correspond to TriggerCrystalPeaks[TriggerpeakID], it means that a broad cut, energy > 200-250KeV is approximately that divided by 2.5 (assuming 0 is 0 and scale is linear) 
-	    broadCutstream << "ch" << channel << ">" << (TriggerCrystalPeaks[TriggerpeakID] / 2.5);
+	    
+	    broadCutstream << "ch" << channel << ">" << (TriggerCrystalPeaks[TriggerpeakID] / (511.0/thresholdKev) );
 	  }
 	  else //otherwise, for backgroundRun set the broadcut to the value chosen by the user (or default to 1750 adc channels)
 	  {
