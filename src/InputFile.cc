@@ -350,6 +350,7 @@ void InputFile::FillTree()
     float columnsum= 0;
     float rowsum= 0;
     float total=  0;
+    float totalForFloodZ = 0;
     TreeBadevent = false;
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
@@ -548,6 +549,7 @@ void InputFile::FillTree()
 	    rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
 	    columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
 	  }
+	  totalForFloodZ += TreeAdcChannel[counterFill];
 	}
 	counterFill++;
       }
@@ -558,7 +560,8 @@ void InputFile::FillTree()
     //compute u,v,w
     TreeFloodX = rowsum/total;
     TreeFloodY = columnsum/total;
-    TreeFloodZ =  maxCharge/total;
+//     TreeFloodZ =  maxCharge/total;
+    TreeFloodZ =  maxCharge/totalForFloodZ;  // w always calculated with all channels
     
     if(usingTaggingBench) TreeZPosition = taggingPosition;
     
