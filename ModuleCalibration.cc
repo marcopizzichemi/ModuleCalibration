@@ -939,12 +939,12 @@ int main (int argc, char** argv)
 		TH1F* spectrumHistoWCorrectedClone = (TH1F*) spectrumHistoWCorrected->Clone();
 		spectrumHistoWCorrectedClone->Smooth(10); //smooth the w histo
 		//relevant points in the w corrected plot, to be used later
-		double FirstWAbove20perc = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindFirstBinAbove(spectrumHistoWCorrectedClone->GetMaximum()/5.0)); // first w where histo is above 20% of max
-		Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(spectrumHistoWCorrectedClone->GetMaximum()/5.0);                                      // first bin where histo is above 20% of max
-		double LastWAbove20perc  = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindLastBinAbove(spectrumHistoWCorrectedClone->GetMaximum()/5.0));  // last w where histo is above 20% of max
-		Int_t  LastBinAbove20perc = spectrumHistoWCorrectedClone->FindLastBinAbove(spectrumHistoWCorrectedClone->GetMaximum()/5.0);                                        // last bin where histo is above 20% of max
-		double AverageW          = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
-		Int_t  AverageBin        = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
+		double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum())); // first w where histo is above 20% of max
+		Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());                                      // first bin where histo is above 20% of max
+		double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum()));  // last w where histo is above 20% of max
+		Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());                                        // last bin where histo is above 20% of max
+		double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
+		Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
 		// look for the first "peak" in w
 		spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average    
 		double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
