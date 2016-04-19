@@ -178,6 +178,7 @@ int main (int argc, char** argv)
   float userBroadCut            = config.read<float>("userBroadCut",1750.0);              // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
   float thresholdKev            = config.read<float>("thresholdKev",300.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                // Threshold for w plots limits
+  double crystalz               = config.read<double>("crystalz",15);
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
 //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -1520,7 +1521,7 @@ int main (int argc, char** argv)
 		  EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		}
 		
-		if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < 15 )
+		if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < crystalz )
 		  DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
 		else
 		  DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
