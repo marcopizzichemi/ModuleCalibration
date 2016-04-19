@@ -614,10 +614,13 @@ int main (int argc, char** argv)
 		sname.str("");
 		var.str("");
 		
-		//prepare the photopeak cuts
+		//prepare the photopeak cuts and stuff
 		TCut PhotopeakEnergyCutCorrected = "";
 		TCut PhotopeakEnergyCut  = ""; 
-		
+		double EnergyCutMin;
+		double EnergyCutMax;
+		int bin3,bin4,meanW20;
+		double wbin3,wbin4;
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		if(!backgroundRun)// do it only if this is NOT a background run
@@ -667,13 +670,15 @@ int main (int argc, char** argv)
 		  // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
 		  //Compute the energy Tcut
 		  std::stringstream streamEnergyCut;
-		  streamEnergyCut << SumChannels << " > " << gauss->GetParameter(1) - 2.0*std::abs(gauss->GetParameter(2)) << " && " << SumChannels << " < " << gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
+		  EnergyCutMin = gauss->GetParameter(1) - 2.0*std::abs(gauss->GetParameter(2));
+		  EnergyCutMax = gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
+		  streamEnergyCut << SumChannels << " > " << EnergyCutMin << " && " << SumChannels << " < " << EnergyCutMax;
 // 		  TCut PhotopeakEnergyCutCorrected;
 		  PhotopeakEnergyCut  = streamEnergyCut.str().c_str(); 
 		  sname.str("");
 		}
-		CurrentCrystal->SetSpectrum(spectrumCharge);
 		
+		CurrentCrystal->SetSpectrum(spectrumCharge);
 		
 		// then prepare the highlighted spectrum and store it in the crystal
 		if(!backgroundRun)// do it only if this is NOT a background run
@@ -701,12 +706,14 @@ int main (int argc, char** argv)
 		spectrumHistoW->GetYaxis()->SetTitle("N");
 // 		int bin1 = spectrumHistoW->FindFirstBinAbove(spectrumHistoW->GetMaximum()/2.0);
 // 		int bin2 = spectrumHistoW->FindLastBinAbove(spectrumHistoW->GetMaximum()/2.0);
-		int bin3 = spectrumHistoW->FindFirstBinAbove(wThreshold*spectrumHistoW->GetMaximum());
-		int bin4 = spectrumHistoW->FindLastBinAbove(wThreshold*spectrumHistoW->GetMaximum());
+		bin3 = spectrumHistoW->FindFirstBinAbove(wThreshold*spectrumHistoW->GetMaximum());
+		bin4 = spectrumHistoW->FindLastBinAbove(wThreshold*spectrumHistoW->GetMaximum());
+		wbin3 = spectrumHistoW->GetBinCenter(bin3);
+		wbin4 = spectrumHistoW->GetBinCenter(bin4);
 		std::stringstream ssCut20w;
 		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
-		double meanW20 = (spectrumHistoW->GetBinCenter(bin4) + spectrumHistoW->GetBinCenter(bin3)) / 2.0;
+		meanW20 = (spectrumHistoW->GetBinCenter(bin4) + spectrumHistoW->GetBinCenter(bin3)) / 2.0;
 		CurrentCrystal->SetW20percCut(w20percCut);
 // 		double width20perc =spectrumHistoW->GetBinCenter(bin4) - spectrumHistoW->GetBinCenter(bin3);
 // 		double fwhm = spectrumHistoW->GetBinCenter(bin2) - spectrumHistoW->GetBinCenter(bin1);
@@ -740,7 +747,7 @@ int main (int argc, char** argv)
 		  //long long int nPoints;
 		  sname << "ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
 		  var << SumChannels << ":FloodZ >> " << sname.str();
-		  TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,1,histo1Dbins,0,histo1Dmax);
+		  TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,1,histo1Dbins,0,histo1Dmax);
 		  tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+w20percCut,"COLZ");
 		  spectrum2dADCversusW->GetXaxis()->SetTitle("W");
 		  spectrum2dADCversusW->GetYaxis()->SetTitle("ADC channels");
@@ -751,15 +758,19 @@ int main (int argc, char** argv)
 		  if(correctingForDOI)
 		  {
 		    //mayhem
-		    //i.e. use FitSlicesX to get the gaussian fit of each slices of the TH2F. Sliced in x (bin by bin)
-		    spectrum2dADCversusW->FitSlicesY(0, 0, -1, 0, "QNR");
+		    //i.e. use FitSlicesY to get the gaussian fit of each slices of the TH2F. Sliced in x (bin by bin)
+		    // first define the gaussian function
+		    TF1 *gaussFitSlice = new TF1("gaussFitSlice","[0]*exp(-0.5*((x-[1])/[2])**2)",EnergyCutMin,EnergyCutMax);
+		    gaussFitSlice->SetParameter(1,(EnergyCutMin+EnergyCutMax)/2.0);
+		    gaussFitSlice->SetParameter(2,0.15*(EnergyCutMin+EnergyCutMax)/2.0);
+// 		    gaussFitSlice->SetRange();
+		    spectrum2dADCversusW->FitSlicesY(0, bin3, bin4, 0, "QNR");
 		    sname << spectrum2dADCversusW->GetName() << "_1";
 		    TH1D *spectrum2d_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the mean values
 		    
-		    
 		    sname << "linearCrystal - Crystal " << CurrentCrystal->GetID();
-		    TF1 *linearCrystal = new TF1(sname.str().c_str(),  "[0]*x + [1]",0,1);
-		    spectrum2d_1->Fit(sname.str().c_str(),"Q");
+		    TF1 *linearCrystal = new TF1(sname.str().c_str(),  "[0]*x + [1]",wbin3,wbin4);
+		    spectrum2d_1->Fit(sname.str().c_str(),"QR");
 		    
 		    parM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
 		    // 		  double parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
