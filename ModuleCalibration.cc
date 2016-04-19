@@ -474,10 +474,20 @@ int main (int argc, char** argv)
 	  TCutG**** cutg; // prepare the graphical cuts
 	  //const int numbOfCrystals = 4;
 	  cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
+          int right_ncrystalsx;
+          if(usingTaggingBench){
+              right_ncrystalsx =1;
+          }
+          else{
+              right_ncrystalsx =ncrystalsx;
+          }
+        
+
+
 	  for(int iCut =0 ; iCut < 2 ; iCut++)
 	  {
-	    cutg[iCut] = new TCutG**[ncrystalsx];
-	    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+	    cutg[iCut] = new TCutG**[right_ncrystalsx];
+	    for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
 	    {
 	      cutg[iCut][iCry] = new TCutG*[ncrystalsy];
 	    }
@@ -489,13 +499,13 @@ int main (int argc, char** argv)
 	    {
 	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	      {
-		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision);
+		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,1,ncrystalsy);
 		// 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	      }
 	    }
 	    else
 	    {
-	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision);
+	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,ncrystalsx,ncrystalsy);
 	    // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	    }
 	  }
@@ -504,7 +514,7 @@ int main (int argc, char** argv)
 	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
 	  
-	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+	  for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
