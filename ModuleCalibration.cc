@@ -619,8 +619,8 @@ int main (int argc, char** argv)
 		TCut PhotopeakEnergyCut  = ""; 
 		double EnergyCutMin;
 		double EnergyCutMax;
-		int bin3,bin4,meanW20;
-		double wbin3,wbin4;
+		int bin3,bin4;
+		double wbin3,wbin4,meanW20;
 		//automatically look for the 511Kev peak to find the photopeak energy cut
 		//find peaks in each crystal spectrum, with TSpectrum
 		if(!backgroundRun)// do it only if this is NOT a background run
@@ -676,13 +676,13 @@ int main (int argc, char** argv)
 // 		  TCut PhotopeakEnergyCutCorrected;
 		  PhotopeakEnergyCut  = streamEnergyCut.str().c_str(); 
 		  sname.str("");
-		}
-		
-		CurrentCrystal->SetSpectrum(spectrumCharge);
-		
-		// then prepare the highlighted spectrum and store it in the crystal
-		if(!backgroundRun)// do it only if this is NOT a background run
-		{
+// 		}
+// 		
+// 		
+// 		
+// 		// then prepare the highlighted spectrum and store it in the crystal
+// 		if(!backgroundRun)// do it only if this is NOT a background run
+// 		{
 		  sname << "Hg Charge Spectrum - Crystal " << CurrentCrystal->GetID();
 		  var << SumChannels << " >> " << sname.str();
 		  TH1F* spectrumChargeHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);	  
@@ -694,7 +694,7 @@ int main (int argc, char** argv)
 		  sname.str("");
 		}
 		//-----------------------------------------------------------------------
-		
+		CurrentCrystal->SetSpectrum(spectrumCharge);
 		
 		//w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
 		//if it's a background run, it won't cut on photopeak (since there will be none and the string will be empty)
@@ -714,6 +714,10 @@ int main (int argc, char** argv)
 		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
 		meanW20 = (spectrumHistoW->GetBinCenter(bin4) + spectrumHistoW->GetBinCenter(bin3)) / 2.0;
+		
+// 		//DEBUG
+// 		std::cout << bin3 << " " << bin4 << " " << spectrumHistoW->GetBinCenter(bin3) << " " << spectrumHistoW->GetBinCenter(bin4) << " " << meanW20 << std::endl;
+		
 		CurrentCrystal->SetW20percCut(w20percCut);
 // 		double width20perc =spectrumHistoW->GetBinCenter(bin4) - spectrumHistoW->GetBinCenter(bin3);
 // 		double fwhm = spectrumHistoW->GetBinCenter(bin2) - spectrumHistoW->GetBinCenter(bin1);
@@ -722,6 +726,9 @@ int main (int argc, char** argv)
 // 		CurrentCrystal->SetHistoWfwhm(fwhm);
 // 		CurrentCrystal->SetHistoWrms(rms);
 // 		CurrentCrystal->SetHistoWwidth20perc(width20perc);
+		var.str("");
+		sname.str("");
+		
 		if(usingTaggingBench)
 		{
 		  sname << "gaussW histogram - Crystal " << CurrentCrystal->GetID();
@@ -735,9 +742,9 @@ int main (int argc, char** argv)
 		  spectrumHistoW->Fit(sname.str().c_str(),"QR");
 		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"  "<<TMath::Sqrt(nentries)<< std::endl;;
 		  CurrentCrystal->SetHistoWfit(gaussW);
+		  sname.str("");
 		}
-		var.str("");
-		sname.str("");
+		
 		
 		
 		if(!backgroundRun)
@@ -760,9 +767,9 @@ int main (int argc, char** argv)
 		    //mayhem
 		    //i.e. use FitSlicesY to get the gaussian fit of each slices of the TH2F. Sliced in x (bin by bin)
 		    // first define the gaussian function
-		    TF1 *gaussFitSlice = new TF1("gaussFitSlice","[0]*exp(-0.5*((x-[1])/[2])**2)",EnergyCutMin,EnergyCutMax);
-		    gaussFitSlice->SetParameter(1,(EnergyCutMin+EnergyCutMax)/2.0);
-		    gaussFitSlice->SetParameter(2,0.15*(EnergyCutMin+EnergyCutMax)/2.0);
+		    //TF1 *gaussFitSlice = new TF1("gaussFitSlice","[0]*exp(-0.5*((x-[1])/[2])**2)",EnergyCutMin,EnergyCutMax);
+		    //gaussFitSlice->SetParameter(1,(EnergyCutMin+EnergyCutMax)/2.0);
+		    //gaussFitSlice->SetParameter(2,0.15*(EnergyCutMin+EnergyCutMax)/2.0);
 // 		    gaussFitSlice->SetRange();
 		    spectrum2dADCversusW->FitSlicesY(0, bin3, bin4, 0, "QNR");
 		    sname << spectrum2dADCversusW->GetName() << "_1";
@@ -787,7 +794,10 @@ int main (int argc, char** argv)
 		    //spectrum corrected for DOI
 		    sname << "Charge Spectrum Corrected - Crystal " << CurrentCrystal->GetID();
 		    std::stringstream baseVar;
+		    
 		    baseVar << "(("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ))";
+// 		    std::cout << std::endl;
+// 		    std::cout << bin3 << " " << bin4 << " "  << baseVar.str() << std::endl;
 		    var << baseVar.str() << " >> " << sname.str();
 		    TH1F* spectrumChargeCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);		  
 		    tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
