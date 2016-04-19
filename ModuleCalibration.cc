@@ -177,6 +177,7 @@ int main (int argc, char** argv)
   bool backgroundRun            = config.read<bool>("backgroundRun",0);                // whether this is a background run or not
   float userBroadCut            = config.read<float>("userBroadCut",1750.0);              // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
   float thresholdKev            = config.read<float>("thresholdKev",300.0);
+  float wThreshold              = config.read<float>("wThreshold",0.1);                // Threshold for w plots limits
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
 //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -646,10 +647,10 @@ int main (int argc, char** argv)
 		tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+triggerPhotopeakCut);
 		spectrumHistoW->GetXaxis()->SetTitle("W");
 		spectrumHistoW->GetYaxis()->SetTitle("N");
-		int bin1 = spectrumHistoW->FindFirstBinAbove(spectrumHistoW->GetMaximum()/2.0);
-		int bin2 = spectrumHistoW->FindLastBinAbove(spectrumHistoW->GetMaximum()/2.0);
-		int bin3 = spectrumHistoW->FindFirstBinAbove(spectrumHistoW->GetMaximum()/5.0);
-		int bin4 = spectrumHistoW->FindLastBinAbove(spectrumHistoW->GetMaximum()/5.0);
+// 		int bin1 = spectrumHistoW->FindFirstBinAbove(spectrumHistoW->GetMaximum()/2.0);
+// 		int bin2 = spectrumHistoW->FindLastBinAbove(spectrumHistoW->GetMaximum()/2.0);
+		int bin3 = spectrumHistoW->FindFirstBinAbove(wThreshold*spectrumHistoW->GetMaximum());
+		int bin4 = spectrumHistoW->FindLastBinAbove(wThreshold*spectrumHistoW->GetMaximum());
 		std::stringstream ssCut20w;
 		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
@@ -681,7 +682,6 @@ int main (int argc, char** argv)
 		
 		if(!backgroundRun)
 		{
-		  
 		  //histogram of w versus adc channels
 		  //it will be useful fot doi correction
 		  //long long int nPoints;
