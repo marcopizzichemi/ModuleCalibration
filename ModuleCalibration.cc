@@ -319,15 +319,30 @@ int main (int argc, char** argv)
       varModule.str("");
       
       //3D plot
-      nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
-      varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
-      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
-      tree->Draw(varModule.str().c_str(),CutXYZ);
-      spectrum3dModule->GetXaxis()->SetTitle("U");
-      spectrum3dModule->GetYaxis()->SetTitle("V");
-      spectrum3dModule->GetZaxis()->SetTitle("W");
-      module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
-      varModule.str("");
+// <<<<<<< HEAD
+//       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
+//       varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
+//       TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
+//       tree->Draw(varModule.str().c_str(),CutXYZ);
+//       spectrum3dModule->GetXaxis()->SetTitle("U");
+//       spectrum3dModule->GetYaxis()->SetTitle("V");
+//       spectrum3dModule->GetZaxis()->SetTitle("W");
+//       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
+//       varModule.str("");
+// =======
+//      nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
+//      varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
+//       std::cout << nameModule << " ... ";
+//      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
+//      tree->Draw(varModule.str().c_str(),CutXYZ);
+//      spectrum3dModule->GetXaxis()->SetTitle("U");
+//      spectrum3dModule->GetYaxis()->SetTitle("V");
+//      spectrum3dModule->GetZaxis()->SetTitle("W");
+//      module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
+//      varModule.str("");
+//       std::cout << " done" << std::endl;
+//       delete spectrum3dModule;
+// >>>>>>> doiTag
       
       if(usingTaggingBench)//trigger spectrum
       {
@@ -367,7 +382,25 @@ int main (int argc, char** argv)
 // 	delete sTagCrystal;
 	delete gaussTag;
 // 	std::cout << " done" << std::endl;
+	
       }
+
+      nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
+      varModule << "FloodZ:FloodY:FloodX >> " << nameModule; 
+//       std::cout << nameModule << " ... ";
+      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
+      if(usingTaggingBench)
+      {
+      tree->Draw(varModule.str().c_str(),CutXYZ+triggerPhotopeakCut);
+      }
+      else{
+      tree->Draw(varModule.str().c_str(),CutXYZ);
+      }
+      spectrum3dModule->GetXaxis()->SetTitle("U");
+      spectrum3dModule->GetYaxis()->SetTitle("V");
+      spectrum3dModule->GetZaxis()->SetTitle("W");
+      module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
+      varModule.str("");
       
       if(usingRealSimData)
       {
@@ -497,7 +530,12 @@ int main (int argc, char** argv)
 	  name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	  var << "FloodZ:FloodY:FloodX >> " << name; 
 	  TH3I* spectrum3dMPPC = new TH3I(name,name,histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
+	  if(usingTaggingBench){
+	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+triggerPhotopeakCut);
+	  }
+	  else{
 	  tree->Draw(var.str().c_str(),CutXYZ+CutTrigger);
+	  }
 	  spectrum3dMPPC->GetXaxis()->SetTitle("U");
 	  spectrum3dMPPC->GetYaxis()->SetTitle("V");
 	  spectrum3dMPPC->GetZaxis()->SetTitle("W");
@@ -508,10 +546,18 @@ int main (int argc, char** argv)
 	  TCutG**** cutg; // prepare the graphical cuts
 	  //const int numbOfCrystals = 4;
 	  cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
+          int right_ncrystalsx;
+          if(usingTaggingBench){
+             right_ncrystalsx =1;
+          }
+          else{
+             right_ncrystalsx =ncrystalsx;
+          }
+
 	  for(int iCut =0 ; iCut < 2 ; iCut++)
 	  {
-	    cutg[iCut] = new TCutG**[ncrystalsx];
-	    for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+	    cutg[iCut] = new TCutG**[right_ncrystalsx];
+	    for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
 	    {
 	      cutg[iCut][iCry] = new TCutG*[ncrystalsy];
 	    }
@@ -523,19 +569,24 @@ int main (int argc, char** argv)
 	    {
 	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	      {
-		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision);
+		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,1,ncrystalsy);
 		// 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	      }
 	    }
 	    else
 	    {
-	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision);
+	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,ncrystalsx,ncrystalsy);
 	    // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	    }
 	  }
 	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
-	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+// <<<<<<< HEAD
+// 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+// =======
+	  
+	  for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
+// >>>>>>> doiTag
 	  {
 	    for(int jCry = 0; jCry < ncrystalsy ; jCry++)
 	    {
@@ -669,11 +720,12 @@ int main (int argc, char** argv)
 		  TF1 *gaussW = new TF1(sname.str().c_str(),  "gaus",0,1);
 		  int binmax = spectrumHistoW->GetMaximumBin();
 		  double maximum = spectrumHistoW->GetXaxis()->GetBinCenter(binmax);
+		  int nentries= spectrumHistoW->GetEntries();
 		  gaussW->SetParameter(0,maximum);
 		  gaussW->SetParameter(1,spectrumHistoW->GetMean());
 		  gaussW->SetParameter(2,spectrumHistoW->GetRMS());
 		  spectrumHistoW->Fit(sname.str().c_str(),"QR");
-		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2) << std::endl;;
+		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"  "<<TMath::Sqrt(nentries)<< std::endl;;
 		  CurrentCrystal->SetHistoWfit(gaussW);
 		}
 		var.str("");
@@ -986,6 +1038,7 @@ int main (int argc, char** argv)
   }
   //----------------------------------------------------------//
   
+
   
   
   TCanvas* C_spectrum;
@@ -993,7 +1046,7 @@ int main (int argc, char** argv)
   TCanvas* C_multi_2d;
   TCanvas* C_global;
   TCanvas* C_multi_2;
-  
+    
   
   //----------------------------------------------------------//
   // Produce some Canvases                                    //
@@ -1014,6 +1067,11 @@ int main (int argc, char** argv)
   TCanvas* GlobalFlood2D = new TCanvas("Flood Histogram 2D","Flood Histogram 2D",800,800);
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
+// <<<<<<< HEAD
+// =======
+ // TCanvas* GlobalFlood3DSeparation = new TCanvas("GlobalFlood3DSeparation","GlobalFlood3DSeparation",800,800);
+  
+// >>>>>>> doiTag
   TCanvas* BigSpectraCanvas = new TCanvas("BigSpectra","",800,800);
   BigSpectraCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
   int canvascounter = 1;
@@ -1024,6 +1082,7 @@ int main (int argc, char** argv)
       BigSpectraCanvas->cd(canvascounter);
       if(crystal[iCrystal][jCrystal]->CrystalIsOn())
       {
+// <<<<<<< HEAD
 	if(backgroundRun)
 	{
 	  crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
@@ -1032,10 +1091,32 @@ int main (int argc, char** argv)
 	}
 	else
 	{
-          crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
-          crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
-          crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
+	  if(correctingForDOI)
+	  {
+            crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
+            crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
+            crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
+          }
+          else
+	  {
+            crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
+            crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
+            crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
+          }
 	}
+// =======
+//        if(correctingForDOI){
+//         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
+//         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
+//         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
+//        }
+// 
+//        else{
+// 	crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
+//         crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
+//         crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
+//       }
+// >>>>>>> doiTag
       }
       canvascounter++;
       //std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
@@ -1061,6 +1142,9 @@ int main (int argc, char** argv)
       module[iModule][jModule]->GetFloodMap2D()->Draw("COLZ");
       GlobalFlood3D->cd();
       module[iModule][jModule]->GetFloodMap3D()->Draw();
+//      GlobalFlood3DSeparation->cd();
+//      module[iModule][jModule]->GetFloodMap3DSeparation()->Draw();
+
       //       GlobalSpherical->cd();
       //       module[iModule][jModule]->GetSphericalMap()->Draw("COLZ");
       //       GlobalCylindricalX->cd();
@@ -1294,7 +1378,7 @@ int main (int argc, char** argv)
   WtauFitVsIJ->GetZaxis()->SetTitle("tau");
   
   
-  
+
   
   //----------------------------------------------------------//
   
@@ -1347,6 +1431,8 @@ int main (int argc, char** argv)
 	TaggingCrystalSpectrum->Draw();
 	TriggerSpectrumHighlight->Draw("same");
 	C_TaggingCrystalSpectrum->Write();
+       // GlobalFlood3DSeparation->Write();
+
       }
 
       RawCanvas->Write();
@@ -1558,6 +1644,7 @@ int main (int argc, char** argv)
 		C_spectrum->Write();
 		delete C_spectrum;
 		
+// <<<<<<< HEAD
 		if(!backgroundRun)
 		{
 		  if(correctingForDOI)
@@ -1598,7 +1685,41 @@ int main (int argc, char** argv)
 		gaussDraw->Draw("same");
 		C_spectrum->Write();
 		delete C_spectrum;
-		
+// =======
+// 		
+// 		
+// 		if(correctingForDOI)
+// 		{
+// 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		  C_spectrum->SetName(CurrentCrystal->GetSlicesMean()->GetName());
+// 		  C_spectrum->cd();
+// 		  CurrentCrystal->GetSlicesMean()->Draw();
+// 		  CurrentCrystal->GetSlicesMeanFit()->Draw("same");
+// 		  C_spectrum->Write();
+// 		  delete C_spectrum;
+// 		  
+// 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		  C_spectrum->SetName(CurrentCrystal->GetCorrectedSpectrum()->GetName());
+// 		  C_spectrum->cd();
+// 		  CurrentCrystal->GetCorrectedSpectrum()->Draw();
+// 		  CurrentCrystal->GetHighlightedSpectrumCorrected()->SetFillColor(3);
+// 		  CurrentCrystal->GetHighlightedSpectrumCorrected()->Draw("same");
+// 		  CurrentCrystal->GetFitCorrected()->Draw("same");
+// 		  C_spectrum->Write();
+// 		  delete C_spectrum;
+// 		
+// 
+// 		
+// 		  //w histo corrected
+// 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		  C_spectrum->SetName(CurrentCrystal->GetHistoWCorrected()->GetName());
+// 		  C_spectrum->cd();
+// 		  CurrentCrystal->GetHistoWCorrected()->Draw();
+// 		  C_spectrum->Write();
+// 		  delete C_spectrum;
+// 
+// 		}
+// >>>>>>> doiTag
 		//density histo
 		C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
