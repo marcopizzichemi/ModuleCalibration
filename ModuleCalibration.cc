@@ -609,6 +609,19 @@ int main (int argc, char** argv)
 		CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
 		std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
 		
+		
+		//DEBUG
+// 		if(CurrentCrystal->GetID() == 27)
+// 		{
+// // 		  CurrentCrystal->GetZXCut()->Print();
+// 		  TFile *tempFilout = new TFile("cuts.root","RECREATE");
+// 		  tempFilout->cd();
+// 		  CutXYZ.Write();
+// 		  CutTrigger.Write();
+// 		  CurrentCrystal->GetZXCut()->Write();
+// 		  CurrentCrystal->GetZYCut()->Write();
+// 		  tempFilout->Close();
+// 		}
 		//-------------------------------------------------------------------------
 		//standard sum spectrum with cut on crystal events, xyz and trigger channel
 		//------------------------------------------------------------------------
@@ -716,12 +729,19 @@ int main (int argc, char** argv)
 // 		int bin2 = spectrumHistoW->FindLastBinAbove(spectrumHistoW->GetMaximum()/2.0);
 		bin3 = spectrumHistoW->FindFirstBinAbove(wThreshold*spectrumHistoW->GetMaximum());
 		bin4 = spectrumHistoW->FindLastBinAbove(wThreshold*spectrumHistoW->GetMaximum());
-		wbin3 = spectrumHistoW->GetBinCenter(bin3);
-		wbin4 = spectrumHistoW->GetBinCenter(bin4);
+		// for the linear fit, let's try to stay in the really linear part of the crystal (in terms of ADCch vs w)
+		// so the fit rang will not be between these two points but closer to the center,
+		// for the moment let's say the central 50% of the w width
+		double wmin = spectrumHistoW->GetBinCenter(bin3);
+		double wmax = spectrumHistoW->GetBinCenter(bin4);
+		meanW20 = (wmax + wmin) / 2.0;
+		double WhalfWidth  = (wmax-wmin)/2.0;
+		wbin3 = meanW20 - (WhalfWidth/2.0);
+		wbin4 = meanW20 + (WhalfWidth/2.0);
 		std::stringstream ssCut20w;
 		ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
-		meanW20 = (spectrumHistoW->GetBinCenter(bin4) + spectrumHistoW->GetBinCenter(bin3)) / 2.0;
+		
 		
 // 		//DEBUG
 // 		std::cout << bin3 << " " << bin4 << " " << spectrumHistoW->GetBinCenter(bin3) << " " << spectrumHistoW->GetBinCenter(bin4) << " " << meanW20 << std::endl;
@@ -748,7 +768,7 @@ int main (int argc, char** argv)
 		  gaussW->SetParameter(1,spectrumHistoW->GetMean());
 		  gaussW->SetParameter(2,spectrumHistoW->GetRMS());
 		  spectrumHistoW->Fit(sname.str().c_str(),"QR");
-		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"  "<<TMath::Sqrt(nentries)<< std::endl;;
+		  doiFile << CurrentCrystal->GetX() << " " << CurrentCrystal->GetY() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"  "<<TMath::Sqrt(nentries)<< std::endl;
 		  CurrentCrystal->SetHistoWfit(gaussW);
 		  sname.str("");
 		}
@@ -783,7 +803,7 @@ int main (int argc, char** argv)
 		    spectrum2dADCversusW->FitSlicesY(0, bin3, bin4, 0, "QNR");
 		    sname << spectrum2dADCversusW->GetName() << "_1";
 		    TH1D *spectrum2d_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the mean values
-		    
+		    sname.str("");
 		    sname << "linearCrystal - Crystal " << CurrentCrystal->GetID();
 		    TF1 *linearCrystal = new TF1(sname.str().c_str(),  "[0]*x + [1]",wbin3,wbin4);
 		    spectrum2d_1->Fit(sname.str().c_str(),"QR");
