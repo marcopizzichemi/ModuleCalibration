@@ -169,16 +169,24 @@ int main (int argc, char** argv)
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
   bool correctingSaturation     = config.read<bool>("correctingSaturation");        // true if saturation correction is applied, false if it's not
-  bool correctingForDOI         = config.read<bool>("correctingForDOI",0);            // true if the energy correction using DOI info is computed    
-  float energyResolution        = config.read<float>("expectedEnergyResolution",0); // energy resolution input by the user, if any, otherwise 0
+  bool correctingForDOI         = config.read<bool>("correctingForDOI",0);              // true if the energy correction using DOI info is computed    
+  float energyResolution        = config.read<float>("expectedEnergyResolution",0);     // energy resolution input by the user, if any, otherwise 0
   bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
-  float moduleLateralSideX      = config.read<float>("moduleLateralSideX",7.0); //
-  float moduleLateralSideY      = config.read<float>("moduleLateralSideY",7.0); // 
-  bool backgroundRun            = config.read<bool>("backgroundRun",0);                // whether this is a background run or not
-  float userBroadCut            = config.read<float>("userBroadCut",1750.0);              // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
+  float moduleLateralSideX      = config.read<float>("moduleLateralSideX",7.0);         //
+  float moduleLateralSideY      = config.read<float>("moduleLateralSideY",7.0);         // 
+  bool backgroundRun            = config.read<bool>("backgroundRun",0);                 // whether this is a background run or not
+  float userBroadCut            = config.read<float>("userBroadCut",1750.0);            // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
   float thresholdKev            = config.read<float>("thresholdKev",300.0);
-  float wThreshold              = config.read<float>("wThreshold",0.1);                // Threshold for w plots limits
+  float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
   double crystalz               = config.read<double>("crystalz",15);
+  double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
+  double RealmCalVsIJmin        = config.read<double>("RealmCalVsIJmin",-400);          // min of the 2d mCal values plot 
+  double RealmCalVsIJmax        = config.read<double>("RealmCalVsIJmax",400);           // max of the 2d mCal values plot 
+  double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
+  double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
+  double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0) 
+  double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
+  
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
 //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -759,6 +767,7 @@ int main (int argc, char** argv)
 		  spectrum2dADCversusW->GetXaxis()->SetTitle("W");
 		  spectrum2dADCversusW->GetYaxis()->SetTitle("ADC channels");
 		  double parM;
+		  double parQ;
 		  var.str("");
 		  sname.str("");
 		  
@@ -780,7 +789,7 @@ int main (int argc, char** argv)
 		    spectrum2d_1->Fit(sname.str().c_str(),"QR");
 		    
 		    parM = linearCrystal->GetParameter(0); // m parameter for the linear fit to correct energy res for DOI
-		    // 		  double parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
+		    parQ = linearCrystal->GetParameter(1); // q parameter for the linear fit to correct energy res for DOI
 		    CurrentCrystal->SetSlicesMean(spectrum2d_1);
 		    CurrentCrystal->SetSlicesMeanFit(linearCrystal);
 		    sname.str("");
@@ -795,7 +804,11 @@ int main (int argc, char** argv)
 		    sname << "Charge Spectrum Corrected - Crystal " << CurrentCrystal->GetID();
 		    std::stringstream baseVar;
 		    
-		    baseVar << "(("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ))";
+// 		    baseVar << "(("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ))";
+		    //calculate ADC(w0), it's always the same. w0=meanw20
+// 		    double adcw0 = parM * meanW20 + parQ;
+		    
+		    baseVar << "(("  <<  SumChannels<< " ) * ( (" << parM * meanW20 + parQ << ") / (" << parM << "* FloodZ + "<< parQ << " )))";
 // 		    std::cout << std::endl;
 // 		    std::cout << bin3 << " " << bin4 << " "  << baseVar.str() << std::endl;
 		    var << baseVar.str() << " >> " << sname.str();
@@ -1297,7 +1310,7 @@ int main (int argc, char** argv)
   PeakPositionVsIJ->GetXaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,12000);
+  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,PeakPositionVsIJmax);
   //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1306,7 +1319,7 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,0.3);
+  EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,EnergyResolutionVsIJmax);
   
   TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1315,7 +1328,7 @@ int main (int argc, char** argv)
   DoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
   DoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,6);
+  DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
   
   TH2F *DeltaWvsIJ = new TH2F("Delta W vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   DeltaWvsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1333,7 +1346,7 @@ int main (int argc, char** argv)
   mCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
   mCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
   mCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  mCalVsIJ->GetZaxis()->SetRangeUser(0,300);
+  mCalVsIJ->GetZaxis()->SetRangeUser(0,mCalVsIJmax);
   
   TH2F *RealmCalVsIJ = new TH2F("mCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   RealmCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1342,7 +1355,7 @@ int main (int argc, char** argv)
   RealmCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
   RealmCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
   RealmCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  RealmCalVsIJ->GetZaxis()->SetRangeUser(-200,200);
+  RealmCalVsIJ->GetZaxis()->SetRangeUser(RealmCalVsIJmin,RealmCalVsIJmax);
   
   TH2F *qCalVsIJ = new TH2F("qCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   qCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1351,7 +1364,7 @@ int main (int argc, char** argv)
   qCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
   qCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
   qCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  qCalVsIJ->GetZaxis()->SetRangeUser(0,100);
+  qCalVsIJ->GetZaxis()->SetRangeUser(0,qCalVsIJmax);
   
   
   TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
@@ -1375,13 +1388,13 @@ int main (int argc, char** argv)
   
   
   //Distribution of DOI resolutions 
-  TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",25,0,6);
+  TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",50,0,10);
   WDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
 //   WDoiDistro->GetYaxis()->SetTitle("N");
   WDoiDistro->SetStats(1);
   
   //Distribution of DOI resolutions 
-  TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",25,0,6);
+  TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",50,0,10);
 //   WDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
   WDoiDistroCentral->GetYaxis()->SetTitle("N");
   WDoiDistroCentral->SetStats(1);

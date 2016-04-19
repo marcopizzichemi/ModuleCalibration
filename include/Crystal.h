@@ -122,7 +122,7 @@ public:
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
   void                 SetHistoWfit(TF1* aFit){Wfit = aFit;};
-  void                 SetEllipses(std::string varX,std::string varY);
+//   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};
