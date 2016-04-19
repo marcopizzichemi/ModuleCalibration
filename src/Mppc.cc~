@@ -440,7 +440,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 
 
 
-bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int div,int ncrystalsx,int ncrystalsy)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int div)
 {
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
      Takes as input:
@@ -450,8 +450,8 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
      div = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
   */
     
-//  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
-//  int ncrystalsy = jChildren;
+  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
+  int ncrystalsy = jChildren;
   
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;

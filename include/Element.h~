@@ -130,8 +130,7 @@ public:
 //   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
 //   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
 //   void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};           
-  void                 SetFloodMap3D(TH3I* aHisto)                {FloodMap3D = aHisto;};
-  void                 SetFloodMap3DSeparation(TH3I* aHisto)                {FloodMap3DSeparation = aHisto;};                
+  void                 SetFloodMap3D(TH3I* aHisto)                {FloodMap3D = aHisto;};                
 //   void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};                
 //   void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};                 
 //   void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};                
