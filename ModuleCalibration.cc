@@ -148,7 +148,79 @@ int main (int argc, char** argv)
   }
   ConfigFile config(ConfigFileName); // create a ConfigFile object
   InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
-  input.FillTree();                // create the TTree that will be used in analysis
+  
+  //decide whether to load the ttree from file or produce it, and whether to save it or not to file
+  std::string loadAnalysisTreeName         = config.read<std::string>("loadAnalysisTreeName","0");       // look for input analysis ttree in config file. if no input, it will produced by this program
+  std::string saveAnalysisTreeName         = config.read<std::string>("saveAnalysisTreeName","0");       // look for filename to save analysis ttree in config file. if no filename, analysis tree won't be saved
+  
+  bool loadAnalysisTree;
+  bool saveAnalysisTree          = config.read<bool>("saveAnalysisTree",0);            // choice to save or not the analysis TTree, in a file (name chosen above)
+  
+  if(loadAnalysisTreeName.compare("0") == 0) // no file provided to load ttree
+    loadAnalysisTree = false;
+  else  // file provided
+    loadAnalysisTree = true;
+  
+//   else // analysis tree is produced by the analysis, not loaded
+//   {
+    if(!saveAnalysisTree) // user didn't set to save ttree
+    {
+      if(saveAnalysisTreeName.compare("0") != 0) // but gave a name to save the ttree
+      {
+	saveAnalysisTree = true;  // then set the ttree to be saved
+      }
+    }
+    else //user set the flag to save ttree
+    {
+      if(saveAnalysisTreeName.compare("0") == 0) // but didn't give a name to save the ttree
+      {
+	 saveAnalysisTreeName = "temp.root"; // then set the ttree to be saved into temp.root file
+      }
+    }
+//   }
+  
+  if(loadAnalysisTree) // anyway there's no point saving the analysis tree if it's not produced by this analysis but just loaded from file
+  {
+    saveAnalysisTree = false;
+  }
+//     std::cout << "***** Analysis TTree is input by the user, it won't be overwritten or saved to another file *****" << std::endl;
+//   }
+//   else
+//   {
+//     std::cout << "Analysis TTree will be produced by this program" << std::endl;
+//   }
+  
+  //check
+    
+  std::cout<<"\n"<<std::endl;
+  std::cout<<"###########################################################"<<std::endl;  
+  std::cout<<"#                                                         #"<<std::endl;
+  if(loadAnalysisTree) 
+    std::cout << "# Analysis TTree loaded from file " << loadAnalysisTreeName.c_str() << std::endl;
+  else                 
+    std::cout << "# Analysis TTree produced by this program " << std::endl;
+  if(saveAnalysisTree) 
+    std::cout << "# Analysis TTree will be saved to file " << saveAnalysisTreeName.c_str() << std::endl;
+  else
+    std::cout << "# No analysis TTree file will be saved " << std::endl;
+  std::cout<<"#                                                         #"<<std::endl;
+  std::cout<<"###########################################################"<<std::endl;  
+  std::cout<<"\n"<<std::endl;
+  
+  
+  if(!loadAnalysisTree)
+  {
+    input.ImportTChain(argc,argv);
+    input.PrepareTTree();
+    input.FillTree();                        // create the TTree that will be used in analysis
+  }
+  else    // otherwise load it from the indicated file
+  {
+    TFile *fTemp = new TFile(loadAnalysisTreeName.c_str());
+    TTree *TempTree =  (TTree*) fTemp->Get("adc");
+    input.SetTree(TempTree);
+  }
+  
   int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
   int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
@@ -164,7 +236,7 @@ int main (int argc, char** argv)
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
-  bool saveAnalysisTree         = config.read<bool>("saveAnalysisTree");            // choice to save or not the analysis TTree, in a file temp.root
+  
   float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm 
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
@@ -279,6 +351,8 @@ int main (int argc, char** argv)
   //  Plots and spectra                                       //
   //----------------------------------------------------------//
   // get the TTree, to plot the spectra
+  
+  
   TTree* tree = input.GetTree();     
   
   // doi bench specific part
@@ -572,22 +646,22 @@ int main (int argc, char** argv)
 	    }
 	  }
 	  bool found = false;
-	  if(!onlyuserinput)
+	  // 	  if(!onlyuserinput)
+	  // 	  {
+	  if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
 	  {
-	    if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
+	    if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	    {
-	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
-	      {
-		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,1,ncrystalsy);
-		// 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
-	      }
-	    }
-	    else
-	    {
-	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,ncrystalsx,ncrystalsy);
-	    // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
+	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,1,ncrystalsy);
+	      // 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	    }
 	  }
+	  else
+	  {
+	    found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,ncrystalsx,ncrystalsy);
+	    // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
+	  }
+	  // 	  }
 	  
 	  // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
 // <<<<<<< HEAD
@@ -1947,8 +2021,8 @@ int main (int argc, char** argv)
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
   {
-    std::cout << "Saving analysis TTree to a file temp.root" << std::endl;
-    TFile* fFile = new TFile("temp.root","recreate");
+    std::cout << "Saving analysis TTree to file " <<  saveAnalysisTreeName.c_str() << std::endl;
+    TFile* fFile = new TFile(saveAnalysisTreeName.c_str(),"recreate");
     fFile->cd();
     tree->Write();
     fFile->Close();

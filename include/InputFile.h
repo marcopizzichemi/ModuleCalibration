@@ -153,7 +153,10 @@ public:
   static InputFile*  fInstance;                                      // not useful right now
                                                                      
   TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
-  TTree*        GetTree() const { return ftree; };                   // method to provide a pointer to the analysis TTree
+  TTree*        GetTree()  const { return ftree; };                   // method to provide a pointer to the analysis TTree
+  void          SetTree(TTree *aTree){ftree = aTree;};
+  void          ImportTChain(int argc, char** argv);
+  void          PrepareTTree();
   void          FillTree();                                        // method to run on the input and fill the analysis TTree
   void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
 };

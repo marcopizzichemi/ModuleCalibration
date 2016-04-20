@@ -226,10 +226,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //     for(int j = 0; j < nmoduley*nmppcy*ncrystalsy; j++)
   //       crystalIsOn = false;
   
-  
-  
-  
-  
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
   //------------------------------------------------------------------------------------------//  
@@ -241,6 +237,13 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   DigitizerChannelOn  = new bool[adcChannels];
   bChainAdcChannel    = new TBranch* [adcChannels];
   TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed 
+}
+  
+  
+  
+void InputFile::ImportTChain(int argc, char** argv)
+{
+  
   // fill the tchain with input files
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
@@ -275,7 +278,10 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     sname << "ch" << i;
     fchain->SetBranchAddress(sname.str().c_str(), &ChainAdcChannel[i], &bChainAdcChannel[i]);
   }
-  
+}
+
+void InputFile::PrepareTTree() 
+{
   //set branches also for the analysis ttree
   ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l"); 
   ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
