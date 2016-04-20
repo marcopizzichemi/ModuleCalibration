@@ -21,9 +21,12 @@ private:
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
   TH1F*                HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
   TH1F*                HighlightedSpectrumCorrected; ///<
+  TH1F*                HistoWCorrectedSmooth;
   TH1F*                HistoW;               ///< histogram of w values for this crystal
   TH1F*                HistoWCorrected;
   TH1F*                DensityHisto;         ///< histogram of the entries per voxel in the crystal volume after separation
+  TH1F*                pdfW;
+  TH1F*                cumulativeW;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
@@ -37,6 +40,7 @@ private:
   float                peakSigma;            ///< sigma (after fitting) for the photopeak
   float                peakPositionCorrected;         ///< position of mean (after fitting) for the photopeak, corrected by DOI
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
+  TGraph*              calibrationGraph;
   
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
   TF1*                 SimFit;
@@ -44,6 +48,7 @@ private:
   TF1*                 FitCorrected;
   TF1*                 ThetaFit;
   TF1*                 deltaWfit;
+  TF1*                 deltaWfit_2;
 //   TF1                  ProfileXFit;
   TF1*                 SlicesMeanFit;
   double               w_fwhm;               ///< width at half maximum for the w histogram
@@ -67,7 +72,11 @@ public:
   TH1F*                GetHighlightedSpectrumCorrected(){return HighlightedSpectrumCorrected;};
   TH1F*                GetHistoW(){return HistoW;};
   TH1F*                GetHistoWCorrected(){return HistoWCorrected;};
+  TH1F*                GetHistoWCorrectedSmooth(){return HistoWCorrectedSmooth;};
   TH1F*                GetDensityHisto(){return DensityHisto;};
+  TH1F*                GetPdfW(){return pdfW;};
+  TH1F*                GetCumulativeW(){return cumulativeW;};
+  TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
@@ -104,9 +113,11 @@ public:
   TCutG*               GetZYCut(){return cutg[1];};
   TF1*                 GetThetaFit(){return ThetaFit;};
   TF1*                 GetDeltaWfit(){return deltaWfit;};
+  TF1*                 GetDeltaWfit_2(){return deltaWfit_2;};
   double               GetMcal(){return dz/(wBegin - wEnd);};
   double               GetQcal(){return -(dz*wEnd)/(wBegin-wEnd);};
   double               GetDoiResolutionFWHM(){return 2.355 * std::abs((dz/(wBegin - wEnd))) * std::abs(deltaW);};
+  
   
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -116,12 +127,16 @@ public:
   void                 SetHighlightedSpectrumCorrected(TH1F* aHisto){HighlightedSpectrumCorrected = aHisto;};
   void                 SetHistoW(TH1F* aHisto){HistoW = aHisto;};
   void                 SetHistoWCorrected(TH1F* aHisto){HistoWCorrected = aHisto;};
+  void                 SetHistoWCorrectedSmooth(TH1F* aHisto){HistoWCorrectedSmooth = aHisto;};
   void                 SetDensityHisto(TH1F* aHisto){DensityHisto = aHisto;};
   void                 SetFit(TF1* aFit){Fit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
   void                 SetHistoWfit(TF1* aFit){Wfit = aFit;};
+  void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
+  void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
+  void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
 //   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
@@ -143,7 +158,7 @@ public:
   void                 SetThetaFit(TF1* aFit){ThetaFit = aFit;};
   void                 SetDeltaW(double a){deltaW = a;};
   void                 SetDeltaWfit(TF1* aFit){deltaWfit = aFit;};
-  
+  void                 SetDeltaWfit_2(TF1* aFit){deltaWfit_2 = aFit;};
   
   void                 Analyze();
   

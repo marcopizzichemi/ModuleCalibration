@@ -258,7 +258,7 @@ int main (int argc, char** argv)
   double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0) 
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
-  
+  int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -689,19 +689,6 @@ int main (int argc, char** argv)
 		    CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
 		    std::cout << "Generating spectra for crystal " << CurrentCrystal->GetID() << " ..." << std::endl;
 		    
-		    
-		    //DEBUG
-		    // 		if(CurrentCrystal->GetID() == 27)
-		    // 		{
-		    // // 		  CurrentCrystal->GetZXCut()->Print();
-		    // 		  TFile *tempFilout = new TFile("cuts.root","RECREATE");
-		    // 		  tempFilout->cd();
-		    // 		  CutXYZ.Write();
-		    // 		  CutTrigger.Write();
-		    // 		  CurrentCrystal->GetZXCut()->Write();
-		    // 		  CurrentCrystal->GetZYCut()->Write();
-		    // 		  tempFilout->Close();
-		    // 		}
 		    //-------------------------------------------------------------------------
 		    //standard sum spectrum with cut on crystal events, xyz and trigger channel
 		    //------------------------------------------------------------------------
@@ -801,7 +788,7 @@ int main (int argc, char** argv)
 		    //if it's a background run, it won't cut on photopeak (since there will be none and the string will be empty)
 		    sname << "W histogram - Crystal " << CurrentCrystal->GetID();
 		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
-		    TH1F* spectrumHistoW = new TH1F(sname.str().c_str(),sname.str().c_str(),250,0,1);	  
+		    TH1F* spectrumHistoW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);	  
 		    tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+triggerPhotopeakCut);
 		    spectrumHistoW->GetXaxis()->SetTitle("W");
 		    spectrumHistoW->GetYaxis()->SetTitle("N");
@@ -862,7 +849,7 @@ int main (int argc, char** argv)
 		      //long long int nPoints;
 		      sname << "ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
 		      var << SumChannels << ":FloodZ >> " << sname.str();
-		      TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,1,histo1Dbins,0,histo1Dmax);
+		      TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1,histo1Dbins,0,histo1Dmax);
 		      tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+w20percCut,"COLZ");
 		      spectrum2dADCversusW->GetXaxis()->SetTitle("W");
 		      spectrum2dADCversusW->GetYaxis()->SetTitle("ADC channels");
@@ -1064,25 +1051,32 @@ int main (int argc, char** argv)
 		    // no cut on the photopeak will be applied if it's a background run (since there will be no photopeak)
 		    sname << "W histogram Corrected - Crystal " << CurrentCrystal->GetID();
 		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
-		    TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),250,0,1);  
+		    TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
 		    tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
 		    spectrumHistoWCorrected->GetXaxis()->SetTitle("W");
 		    spectrumHistoWCorrected->GetYaxis()->SetTitle("N");
 		    
 		    //clone this histogram, to smooth and find consistent relevant points. fitting will be performed on the non-smoothed version 
 		    TH1F* spectrumHistoWCorrectedClone = (TH1F*) spectrumHistoWCorrected->Clone();
+		    spectrumHistoWCorrectedClone->SetName("Smooth W corrected");
 		    spectrumHistoWCorrectedClone->Smooth(10); //smooth the w histo
 		    //relevant points in the w corrected plot, to be used later
-		    double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum())); // first w where histo is above 20% of max
-		    Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());                                      // first bin where histo is above 20% of max
-		    double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum()));  // last w where histo is above 20% of max
-		    Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());                                        // last bin where histo is above 20% of max
+		    
+		    Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
+		    Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum()); 
+		    double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(FirstBinAbove20perc);
+		    double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(LastBinAbove20perc);
+		    
 		    double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
 		    Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
 		    // look for the first "peak" in w
 		    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average    
 		    double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
-		    double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetMaximumBin();                                         // get value of max in this range
+		    double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
+		    
+		    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin,LastBinAbove20perc);   
+		    double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
+		    double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());        
 		    // 		spectrumHistoWCorrected->GetXaxis()->SetRange(1,250); //reset the w plots limits
 		    // fit w with theta function 
 		    TF1 *w_fit_func = new TF1("fa1",thetaFunction,0,1,3);
@@ -1094,6 +1088,8 @@ int main (int argc, char** argv)
 		    CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
 		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
 		    CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
+		    
+		    
 		    CurrentCrystal->SetThetaFit(w_fit_func);
 		    //fit the left part of the w plot with a gaussian, to get delta w //
 		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWAbove20perc,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
@@ -1102,10 +1098,73 @@ int main (int argc, char** argv)
 		    gaussDeltaW->SetParameter( 2, 0.02);
 		    gaussDeltaW->SetLineColor(3);
 		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
+		    
+		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWpeak,LastWAbove20perc); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
+		    gaussDeltaW_2->FixParameter( 1, LastWpeak);  // fix center to the peak value
+		    gaussDeltaW_2->SetParameter( 2, 0.02);
+		    gaussDeltaW_2->SetLineColor(3);
+		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
+		    
+		    
 		    CurrentCrystal->SetDeltaW(gaussDeltaW->GetParameter(2));
 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
+		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
+		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
+		    
+		    //DEBUG
+// 		    std::ofstream wfile;
+// 		    wfile.open("wfile.dat", std::ofstream::out | std::ofstream::app);
+// 		    wfile <<  wThreshold << "\t" << FirstWAbove20perc << "\t" << LastWAbove20perc <<"\t"<< gaussDeltaW->GetParameter(1) - gaussDeltaW->GetParameter(2) * TMath::Sqrt(2.0*TMath::Log(2)) << "\t"<< gaussDeltaW_2->GetParameter(1) + gaussDeltaW_2->GetParameter(2) * TMath::Sqrt(2.0*TMath::Log(2)) << "\t" << w_fit_func->GetParameter(0) << "\t" << w_fit_func->GetParameter(1) << "\t" << gaussDeltaW->GetParameter(0) << "\t" << gaussDeltaW->GetParameter(1) << "\t" << gaussDeltaW->GetParameter(2) << std::endl;
+// 		    wfile.close();
+		    
 		    var.str("");
 		    sname.str("");
+		    
+		    //cumulative function
+		    //first, take the w corrected and normalize to integral -> get the PDF
+		    TH1F *pdfW = (TH1F*) spectrumHistoWCorrected->Clone();
+		    sname << "PDF W histogram Corrected - Crystal " << CurrentCrystal->GetID();
+		    pdfW->SetName(sname.str().c_str());
+		    pdfW->SetTitle(sname.str().c_str());
+		    double integral = pdfW->Integral();
+		    pdfW->Scale(1.0/integral);
+		    CurrentCrystal->SetPdfW(pdfW);
+		    sname.str("");
+		    // then do the comulative histo
+		    //and the calibration Graph
+		      
+		    sname << "Cumulative W histogram Corrected - Crystal " << CurrentCrystal->GetID();
+// 		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
+		    TH1F* cumulativeW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
+		    cumulativeW->GetXaxis()->SetTitle("W");
+		    double sumPdf = 0;
+// 		    std::ofstream wfile;
+// 		    wfile.open("cumulative2_2.dat", std::ofstream::out);
+		    std::vector<double> calibrationW;
+		    std::vector<double> calibrationZ;
+		    
+		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+		    {
+		      sumPdf += pdfW->GetBinContent(iPdfHisto+1);
+		      calibrationW.push_back(cumulativeW->GetBinCenter(iPdfHisto+1));
+		      calibrationZ.push_back(-(sumPdf*crystalz) + crystalz);
+// 		      wfile << cumulativeW->GetBinCenter(iPdfHisto+1) << " " << -(sumPdf*15) + 15.0 << std::endl;
+		      cumulativeW->Fill(cumulativeW->GetBinCenter(iPdfHisto+1),sumPdf);
+		    }
+		    
+		    TGraph *calibrationGraph = new TGraph(calibrationW.size(),&calibrationW[0],&calibrationZ[0]);
+		    sname.str("");
+		    sname << "Calibration Plot - Crystal " << CurrentCrystal->GetID();
+		    calibrationGraph->SetTitle(sname.str().c_str());
+		    calibrationGraph->SetName(sname.str().c_str());
+		    calibrationGraph->GetXaxis()->SetTitle("W");
+		    calibrationGraph->GetYaxis()->SetTitle("Z [mm]");
+		    sname.str("");
+// 		    wfile.close();
+		    CurrentCrystal->SetCalibrationGraph(calibrationGraph);
+		    CurrentCrystal->SetCumulativeW(cumulativeW);
+		    
 		    
 		    //histogram with the difference between the tag calibration and the analytical calibration
 		    // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
@@ -1830,8 +1889,47 @@ int main (int argc, char** argv)
 		    gaussDraw->SetLineColor(3);
 		    // 		CurrentCrystal->GetDeltaWfit()->Draw("same");
 		    gaussDraw->Draw("same");
+		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
+		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
+		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
+		    gaussDraw_2->SetLineColor(5);
+		    gaussDraw_2->Draw("same");
 		    C_spectrum->Write();
 		    delete C_spectrum;
+		    
+		    //w histo corrected smooth
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetHistoWCorrectedSmooth()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetHistoWCorrectedSmooth()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
+		    //w histo corrected smooth
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetPdfW()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetPdfW()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
+		    //w histo corrected smooth
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetCumulativeW()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetCumulativeW()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
+		    //calibration graph
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetCalibrationGraph()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetCalibrationGraph()->Draw("AL");
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
 		    // =======
 		    // 		
 		    // 		
