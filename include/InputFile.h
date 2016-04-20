@@ -48,6 +48,12 @@ private:
   std::string                    xPositions_s;                       // input string of the xPositions key from config file 
   std::string                    yPositions_s;                       // input string of the yPositions key from config file 
   std::string                    saturation_s;                       // input string of the saturation key from config file 
+  std::string                    mppcOFF_s;
+  std::vector <std::string>      mppcOFF_f;
+  std::vector <std::string>      mppcOFF;
+  std::string                    crystalOFF_s;
+  std::vector <std::string>      crystalOFF_f;
+  std::vector <int>              crystalOFF;
   std::vector <std::string>      digitizer_f;                        // tokenization of above strings 
   std::vector <std::string>      mppc_f;                             // tokenization of above strings 
   std::vector <std::string>      plotPositions_f;                    // tokenization of above strings 
@@ -140,6 +146,7 @@ private:
     float yPosition;
     int OnForDOI;
     bool isNeighbour;
+    bool OnForModular;
 //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
   

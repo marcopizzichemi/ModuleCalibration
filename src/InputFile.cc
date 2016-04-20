@@ -117,6 +117,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     det.xPosition        = xPositions[i];
     det.yPosition        = yPositions[i];
     det.OnForDOI         = 0;
+    det.OnForModular     = true; //never set otherwise anywhere - not used
     detector.push_back(det);
   }
   
@@ -133,9 +134,21 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     detector[digitizerDoi[i]].OnForDOI = 1;
   }
   
-  
-  
-  
+  //on or off for modular analysis
+  mppcOFF_s                      = config.read<std::string>("mppcOFF","");
+  config.split( mppcOFF_f, mppcOFF_s, "," );
+  for(int i = 0 ; i < mppcOFF_f.size() ; i++)
+  {
+    config.trim(mppcOFF_f[i]);
+    mppcOFF.push_back(mppcOFF_f[i]);
+  }
+  crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
+  config.split( crystalOFF_f, crystalOFF_s, "," );
+  for(int i = 0 ; i < crystalOFF_f.size() ; i++)
+  {
+    config.trim(crystalOFF_f[i]);
+    crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
+  }
   
   
   crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
@@ -668,6 +681,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	    if(plotPositions[arrayCounter] == pos) posID = arrayCounter;
 	  }
  	  
+ 	  
 	  sname << "MPPC " << mppcI << "." << mppcJ;
 	  
 	  mppc[mppcI][mppcJ] = new Mppc();
@@ -675,6 +689,13 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  mppc[mppcI][mppcJ]->SetLabel( mppc_label[posID] ); // ----
 	  sname.str("");
 	  sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc;
+	  
+	  mppc[mppcI][mppcJ]->SetIsOnForModular(true);
+	  for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
+	  {
+	    if(mppcOFF[modCounter].compare(mppc_label[posID]) == 0) mppc[mppcI][mppcJ]->SetIsOnForModular(false);
+	  }
+	  
 	  mppc[mppcI][mppcJ]->SetExtendedID(sname.str().c_str());
 	  mppc[mppcI][mppcJ]->SetID(posID);                  // ----
 	  mppc[mppcI][mppcJ]->SetI(mppcI);
@@ -712,6 +733,13 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	      crystal[cryI][cryJ]->SetExtendedID(sname.str().c_str());
 	      sname.str("");
 	      crystal[cryI][cryJ]->SetID(cryI*ncrystalsx*nmppcx + cryJ);          // assign an ID  //----
+	      
+	      crystal[cryI][cryJ]->SetIsOnForModular(true);
+	      for(int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
+	      {
+		if(crystalOFF[modCounter] == (cryI*ncrystalsx*nmppcx + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
+	      }
+	      
 	      crystal[cryI][cryJ]->SetI(cryI); 
 	      crystal[cryI][cryJ]->SetJ(cryJ);
 	      crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());

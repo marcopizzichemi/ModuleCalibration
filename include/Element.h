@@ -47,7 +47,7 @@ protected:
   float                dz;                ///< z dimensions of the element [mm]                                            
   int                  iChildren;         ///< number of children on "i"                                                   
   int                  jChildren;         ///< number of children on "j"                                                   
-  
+  bool                 isOnForModular;
   //2d histos
 //   TH2F                 TempMap2D;
   TH2F*                FloodMap2D;          ///< u,v map for this element
@@ -108,6 +108,7 @@ public:
   TH3I*                GetFloodMap3DSeparation()                           {return FloodMap3DSeparation;};                
   std::string          GetXvariable()                            {return variableX;};                   
   std::string          GetYvariable()                            {return variableY;};    
+  bool                 GetIsOnForModular()                       {return isOnForModular;};
 //   TGraph*              GetGraphFlood2D()                         {return &GraphFlood2D;};    
 //   TGraph2D*            GetGraphFlood3D()                         {return &GraphFlood3D;}; 
   
@@ -125,7 +126,8 @@ public:
   void                 SetFloodMap2D(TH2F* aHisto)                {FloodMap2D = aHisto;};  
   void                 SetFloodMap2DSingleCrystalHit(TH2F* aHisto)  {FloodMap2DSingleCrystalHit = aHisto;};  
   void                 SetADCversusW(TH2F* aHisto)                {ADCversusW = aHisto;};   
-  void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};   
+  void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};  
+  void                 SetIsOnForModular(bool aBool)              {isOnForModular = aBool;};
 //   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};       
 //   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};              
 //   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};           
