@@ -1079,18 +1079,18 @@ int main (int argc, char** argv)
 		    double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());        
 		    // 		spectrumHistoWCorrected->GetXaxis()->SetRange(1,250); //reset the w plots limits
 		    // fit w with theta function 
-		    TF1 *w_fit_func = new TF1("fa1",thetaFunction,0,1,3);
-		    w_fit_func->SetParameter( 0, FirstWAbove20perc); // on this w histo, the first bin above 20% max
-		    w_fit_func->SetParameter( 1, LastWAbove20perc);  // on this w histo, the last bin above 20% max
-		    w_fit_func->SetParameter( 2, FirstWpeakValue);
-		    spectrumHistoWCorrected->Fit(w_fit_func,"QNR");
+// 		    TF1 *w_fit_func = new TF1("fa1",thetaFunction,0,1,3);
+// 		    w_fit_func->SetParameter( 0, FirstWAbove20perc); // on this w histo, the first bin above 20% max
+// 		    w_fit_func->SetParameter( 1, LastWAbove20perc);  // on this w histo, the last bin above 20% max
+// 		    w_fit_func->SetParameter( 2, FirstWpeakValue);
+// 		    spectrumHistoWCorrected->Fit(w_fit_func,"QNR");
 		    //save the spectrum, fit and values in the crystal
 		    CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
-		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
-		    CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
+// 		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
+// 		    CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
 		    
 		    
-		    CurrentCrystal->SetThetaFit(w_fit_func);
+// 		    CurrentCrystal->SetThetaFit(w_fit_func);
 		    //fit the left part of the w plot with a gaussian, to get delta w //
 		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWAbove20perc,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
 		    gaussDeltaW->SetParameter( 0, FirstWpeakValue);  // starting point as the maximum value 
@@ -1099,17 +1099,17 @@ int main (int argc, char** argv)
 		    gaussDeltaW->SetLineColor(3);
 		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
 		    
-		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWpeak,LastWAbove20perc); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
-		    gaussDeltaW_2->FixParameter( 1, LastWpeak);  // fix center to the peak value
-		    gaussDeltaW_2->SetParameter( 2, 0.02);
-		    gaussDeltaW_2->SetLineColor(3);
-		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
+// 		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWpeak,LastWAbove20perc); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+// 		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
+// 		    gaussDeltaW_2->FixParameter( 1, LastWpeak);  // fix center to the peak value
+// 		    gaussDeltaW_2->SetParameter( 2, 0.02);
+// 		    gaussDeltaW_2->SetLineColor(3);
+// 		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
 		    
 		    
 		    CurrentCrystal->SetDeltaW(gaussDeltaW->GetParameter(2));
 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
-		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
+// 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
 		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 		    
 		    //DEBUG
@@ -1880,7 +1880,7 @@ int main (int argc, char** argv)
 		    C_spectrum->SetName(CurrentCrystal->GetHistoWCorrected()->GetName());
 		    C_spectrum->cd();
 		    CurrentCrystal->GetHistoWCorrected()->Draw();
-		    CurrentCrystal->GetThetaFit()->Draw("same");
+// 		    CurrentCrystal->GetThetaFit()->Draw("same");
 		    //instead of drawing the real fitted function, draw another gaussian function with same parameters but in the 0-1 range
 		    TF1 *gaussDraw = new TF1("gaussDraw","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
 		    gaussDraw->SetParameter(0,CurrentCrystal->GetDeltaWfit()->GetParameter(0));
@@ -1889,32 +1889,32 @@ int main (int argc, char** argv)
 		    gaussDraw->SetLineColor(3);
 		    // 		CurrentCrystal->GetDeltaWfit()->Draw("same");
 		    gaussDraw->Draw("same");
-		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
-		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
-		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
-		    gaussDraw_2->SetLineColor(5);
-		    gaussDraw_2->Draw("same");
+// 		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+// 		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
+// 		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
+// 		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
+// 		    gaussDraw_2->SetLineColor(5);
+// 		    gaussDraw_2->Draw("same");
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
 		    //w histo corrected smooth
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetHistoWCorrectedSmooth()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetHistoWCorrectedSmooth()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetHistoWCorrectedSmooth()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetHistoWCorrectedSmooth()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
-		    //w histo corrected smooth
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetPdfW()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetPdfW()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+		    //pdf
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetPdfW()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetPdfW()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
-		    //w histo corrected smooth
+		    //cumulative
 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		    C_spectrum->SetName(CurrentCrystal->GetCumulativeW()->GetName());
 		    C_spectrum->cd();
@@ -1966,12 +1966,12 @@ int main (int argc, char** argv)
 		    // 		}
 		    // >>>>>>> doiTag
 		    //density histo
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetDensityHisto()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetDensityHisto()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
 		    
 		    if(usingRealSimData)
