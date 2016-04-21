@@ -824,7 +824,7 @@ int main (int argc, char** argv)
 		    var.str("");
 		    sname.str("");
 		    
-		    if(usingTaggingBench)
+		    if(usingTaggingBench) //done on the standard W because there's no ADCvsW correction in tagging bench
 		    {
 		      sname << "gaussW histogram - Crystal " << CurrentCrystal->GetID();
 		      TF1 *gaussW = new TF1(sname.str().c_str(),  "gaus",0,1);
@@ -835,7 +835,7 @@ int main (int argc, char** argv)
 		      gaussW->SetParameter(1,spectrumHistoW->GetMean());
 		      gaussW->SetParameter(2,spectrumHistoW->GetRMS());
 		      spectrumHistoW->Fit(sname.str().c_str(),"QR");
-		      doiFile << CurrentCrystal->GetI() << " " << CurrentCrystal->GetJ() << " " << gaussW->GetParameter(1) << " " <<  gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"  "<<TMath::Sqrt(nentries)<< std::endl;
+		      doiFile << CurrentCrystal->GetI() << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
 		      CurrentCrystal->SetHistoWfit(gaussW);
 		      sname.str("");
 		    }
