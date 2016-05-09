@@ -965,7 +965,8 @@ int main (int argc, char** argv)
 			
 			//then prepare the highlighted spectrum and store it in the crystal
 			sname << "Hg Charge Spectrum Correctd - Crystal " << CurrentCrystal->GetID();
-			var << "("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ) >> " << sname.str();
+// 			var << "("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ) >> " << sname.str();
+			var << baseVar.str() << " >> " << sname.str();
 			TH1F* spectrumChargeCorrectedHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);	  
 			tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected);
 			spectrumChargeCorrectedHighlighted->GetXaxis()->SetTitle("ADC Channels");
