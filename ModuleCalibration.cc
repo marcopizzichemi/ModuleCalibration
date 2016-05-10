@@ -1145,12 +1145,22 @@ int main (int argc, char** argv)
 // 		    wfile.open("cumulative2_2.dat", std::ofstream::out);
 		    std::vector<double> calibrationW;
 		    std::vector<double> calibrationZ;
+		    double lambda511 = 12.195; //everything in mm 
 		    
 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
 		    {
 		      sumPdf += (pdfW->GetBinContent(iPdfHisto+1))/wHistogramsBins;
 		      calibrationW.push_back(cumulativeW->GetBinCenter(iPdfHisto+1));
-		      calibrationZ.push_back(-(sumPdf*crystalz) + crystalz);
+		      if(backgroundRun)
+			calibrationZ.push_back(-(sumPdf*crystalz) + crystalz); // if it's a background run, interaction probability is constant everywhere, so z is just a rescale of the cumulative
+		      else
+			// if it's a far source run, interaction probability is exponential, and relation between z and w is give by
+			// z = L + l * ln( 1 - (1 - exp(-L/l))*integral_0^w(PDF(w)dw) )
+			// where 
+			// L = crystal length
+			// l = interaction length of 511 gammas in lyso (from literature, 12.195 mm)
+			// integral_0^w(PDF(w)dw) = the cumulative of PDF(w) from 0 to w
+			calibrationZ.push_back( crystalz +  lambda511 * TMath::Log( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* sumPdf )  );                        
 // 		      wfile << cumulativeW->GetBinCenter(iPdfHisto+1) << " " << -(sumPdf*15) + 15.0 << std::endl;
 		      cumulativeW->Fill(cumulativeW->GetBinCenter(iPdfHisto+1),sumPdf);
 		    }
@@ -1177,7 +1187,10 @@ int main (int argc, char** argv)
 		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
 		    {
-		      derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
+		      if(backgroundRun)		      
+			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
+		      else
+			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),TMath::Abs(sigmaWdistro*( ( lambda511 * pdfW->GetBinContent(iPdfHisto+1) * (TMath::Exp( -(crystalz/lambda511) ) -1 ) ) / ( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* cumulativeW->GetBinContent(iPdfHisto+1) ) ) ));
 		    }
 		    CurrentCrystal->SetDerivativeDoiResolution(derivativeDoiResolution);
 		    sname.str("");
