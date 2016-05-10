@@ -1625,6 +1625,18 @@ int main (int argc, char** argv)
   WDoiDistroCentral->GetYaxis()->SetTitle("N");
   WDoiDistroCentral->SetStats(1);
   
+  //Distribution of AVERAGE DOI resolutions
+  TH1F *AverageDoiDistro = new TH1F("Average Doi Res FWHM","Average distribution of DOI res FWHM",50,0,10);
+  AverageDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+  //   WDoiDistro->GetYaxis()->SetTitle("N");
+  AverageDoiDistro->SetStats(1);
+  
+  //Distribution of AVERAGE DOI resolutions -CENTRAL  
+  TH1F *AverageDoiDistroCentral = new TH1F("Central - Average Doi Res FWHM","Central - Average distribution of DOI res FWHM",50,0,10);
+  AverageDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+  //   WDoiDistro->GetYaxis()->SetTitle("N");
+  AverageDoiDistroCentral->SetStats(1);
+  
   
   //Distribution of fit exp tau for W plots
   TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
@@ -1792,8 +1804,10 @@ int main (int argc, char** argv)
 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		    WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		    
+		    
 // 		    if(CurrentCrystal->GetAverageDoiResolution() > 0 && CurrentCrystal->GetAverageDoiResolution() < crystalz )
-		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
+		    AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
+		    AverageDoiDistro->Fill(CurrentCrystal->GetAverageDoiResolution());
 // 		    else
 // 		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		    
@@ -1822,6 +1836,7 @@ int main (int argc, char** argv)
 			  PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 			}
 		      }
+		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
 		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		      
 		    }
@@ -2225,6 +2240,8 @@ int main (int argc, char** argv)
 	PeakEnergyResolutionDistroCentral->Write();
 	
       }
+      AverageDoiDistro->Write();
+      AverageDoiDistroCentral->Write();
       WDoiDistro->Write();
       WDoiDistroCentral->Write();
     }
