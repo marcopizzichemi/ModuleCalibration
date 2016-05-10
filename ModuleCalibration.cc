@@ -1212,15 +1212,15 @@ int main (int argc, char** argv)
 		    sname.str("");
 		    
 		    //histo of resolutions
-		    sname << "Doi Res. All - " << CurrentCrystal->GetID();
-		    TH1F* resolutions = new TH1F(sname.str().c_str(),sname.str().c_str(),100,0,crystalz);  
-		    resolutions->GetXaxis()->SetTitle("Doi Res FWHM [mm]");
-		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-		    {
-		      resolutions->Fill(2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
-		    }
-		    CurrentCrystal->SetDoiResolutions(resolutions);
-		    //now a bit dummy, sample the curve and find an average
+// 		    sname << "Doi Res. All - " << CurrentCrystal->GetID();
+// 		    TH1F* resolutions = new TH1F(sname.str().c_str(),sname.str().c_str(),100,0,crystalz);  
+// 		    resolutions->GetXaxis()->SetTitle("Doi Res FWHM [mm]");
+// 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+// 		    {
+// 		      resolutions->Fill(2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
+// 		    }
+// 		    CurrentCrystal->SetDoiResolutions(resolutions);
+// 		    //now a bit dummy, sample the curve and find an average
 		    int samplingNumb = 20;
 		    double sumResolutions = 0;
 		    for(int iSample = 0 ; iSample < samplingNumb; iSample++)
@@ -1551,14 +1551,14 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,EnergyResolutionVsIJmax);
   
-  TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  DoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  DoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
-  DoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  DoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
+//   TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   DoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   DoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
+//   DoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   DoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
   
   TH2F *DeltaWvsIJ = new TH2F("Delta W vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   DeltaWvsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1569,32 +1569,32 @@ int main (int argc, char** argv)
   DeltaWvsIJ->GetZaxis()->SetTitleOffset(2.2);
   DeltaWvsIJ->GetZaxis()->SetRangeUser(0,0.05);
   
-  TH2F *mCalVsIJ = new TH2F("Abs(mCal) vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  mCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  mCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  mCalVsIJ->GetZaxis()->SetTitle("abs(mCal)");
-  mCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  mCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  mCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  mCalVsIJ->GetZaxis()->SetRangeUser(0,mCalVsIJmax);
+//   TH2F *mCalVsIJ = new TH2F("Abs(mCal) vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   mCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   mCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   mCalVsIJ->GetZaxis()->SetTitle("abs(mCal)");
+//   mCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   mCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   mCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   mCalVsIJ->GetZaxis()->SetRangeUser(0,mCalVsIJmax);
   
-  TH2F *RealmCalVsIJ = new TH2F("mCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  RealmCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  RealmCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  RealmCalVsIJ->GetZaxis()->SetTitle("mCal)");
-  RealmCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  RealmCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  RealmCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  RealmCalVsIJ->GetZaxis()->SetRangeUser(RealmCalVsIJmin,RealmCalVsIJmax);
+//   TH2F *RealmCalVsIJ = new TH2F("mCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   RealmCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   RealmCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   RealmCalVsIJ->GetZaxis()->SetTitle("mCal)");
+//   RealmCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   RealmCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   RealmCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   RealmCalVsIJ->GetZaxis()->SetRangeUser(RealmCalVsIJmin,RealmCalVsIJmax);
   
-  TH2F *qCalVsIJ = new TH2F("qCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  qCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  qCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  qCalVsIJ->GetZaxis()->SetTitle("qCal)");
-  qCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  qCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  qCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  qCalVsIJ->GetZaxis()->SetRangeUser(0,qCalVsIJmax);
+//   TH2F *qCalVsIJ = new TH2F("qCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   qCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   qCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   qCalVsIJ->GetZaxis()->SetTitle("qCal)");
+//   qCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   qCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   qCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   qCalVsIJ->GetZaxis()->SetRangeUser(0,qCalVsIJmax);
   
   
   TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
@@ -1627,16 +1627,16 @@ int main (int argc, char** argv)
   
   
   //Distribution of DOI resolutions 
-  TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",50,0,10);
-  WDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  //   WDoiDistro->GetYaxis()->SetTitle("N");
-  WDoiDistro->SetStats(1);
+//   TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",50,0,10);
+//   WDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+//   //   WDoiDistro->GetYaxis()->SetTitle("N");
+//   WDoiDistro->SetStats(1);
   
   //Distribution of DOI resolutions 
-  TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",50,0,10);
-  //   WDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  WDoiDistroCentral->GetYaxis()->SetTitle("N");
-  WDoiDistroCentral->SetStats(1);
+//   TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",50,0,10);
+//   //   WDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+//   WDoiDistroCentral->GetYaxis()->SetTitle("N");
+//   WDoiDistroCentral->SetStats(1);
   
   //Distribution of AVERAGE DOI resolutions
   TH1F *AverageDoiDistro = new TH1F("Average Doi Res FWHM","Average distribution of DOI res FWHM",50,0,10);
@@ -1811,11 +1811,11 @@ int main (int argc, char** argv)
 		      EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 		    }
 		    
-		    if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < crystalz )
-		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
-		    else
-		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
-		    WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
+// 		    if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < crystalz )
+// 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
+// 		    else
+// 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
+// 		    WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		    
 		    
 // 		    if(CurrentCrystal->GetAverageDoiResolution() > 0 && CurrentCrystal->GetAverageDoiResolution() < crystalz )
@@ -1825,9 +1825,9 @@ int main (int argc, char** argv)
 // 		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		    
 		    DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
-		    mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
-		    RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
-		    qCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetQcal());
+// 		    mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
+// 		    RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
+// 		    qCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetQcal());
 		    
 		    // 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
 		    // 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
@@ -1850,7 +1850,7 @@ int main (int argc, char** argv)
 			}
 		      }
 		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
-		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
+// 		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		      
 		    }
 		    
@@ -1896,17 +1896,17 @@ int main (int argc, char** argv)
 		    delete C_spectrum;
 		    
 		    // spectrum without highligth
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    TString title = "mod_";
-		    title += CurrentCrystal->GetSpectrum()->GetName() ;
-		    C_spectrum->SetName(title);
-		    C_spectrum->SetTitle("");
-		    C_spectrum->cd();
-		    CurrentCrystal->GetSpectrum()->SetFillStyle(3001);
-		    CurrentCrystal->GetSpectrum()->SetFillColor(kBlue);
-		    CurrentCrystal->GetSpectrum()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    TString title = "mod_";
+// 		    title += CurrentCrystal->GetSpectrum()->GetName() ;
+// 		    C_spectrum->SetName(title);
+// 		    C_spectrum->SetTitle("");
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetSpectrum()->SetFillStyle(3001);
+// 		    CurrentCrystal->GetSpectrum()->SetFillColor(kBlue);
+// 		    CurrentCrystal->GetSpectrum()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
 		    //w histo
 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -2037,12 +2037,12 @@ int main (int argc, char** argv)
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetDoiResolutions()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetDoiResolutions()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetDoiResolutions()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetDoiResolutions()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    // =======
 		    // 		
 		    // 		
@@ -2178,12 +2178,12 @@ int main (int argc, char** argv)
 	C_EnergyResolutionVsIJ->Write();
       }
       
-      TCanvas *C_DoiResolutionVsIJ = new TCanvas("C_DoiResolutionVsIJ","C_DoiResolutionVsIJ",800,800);
-      C_DoiResolutionVsIJ->SetName(DoiResolutionVsIJ->GetName());
-      C_DoiResolutionVsIJ->cd();
-      DoiResolutionVsIJ->Draw("LEGO2");
-      C_DoiResolutionVsIJ->SetLeftMargin(0.15);
-      C_DoiResolutionVsIJ->Write();
+//       TCanvas *C_DoiResolutionVsIJ = new TCanvas("C_DoiResolutionVsIJ","C_DoiResolutionVsIJ",800,800);
+//       C_DoiResolutionVsIJ->SetName(DoiResolutionVsIJ->GetName());
+//       C_DoiResolutionVsIJ->cd();
+//       DoiResolutionVsIJ->Draw("LEGO2");
+//       C_DoiResolutionVsIJ->SetLeftMargin(0.15);
+//       C_DoiResolutionVsIJ->Write();
       
       TCanvas *C_DeltaWvsIJ = new TCanvas("C_DeltaWvsIJ","C_DeltaWvsIJ",800,800);
       C_DeltaWvsIJ->SetName(DeltaWvsIJ->GetName());
@@ -2192,12 +2192,12 @@ int main (int argc, char** argv)
       C_DeltaWvsIJ->SetLeftMargin(0.15);
       C_DeltaWvsIJ->Write();
       
-      TCanvas *C_mCalVsIJ = new TCanvas("C_mCalVsIJ","C_mCalVsIJ",800,800);
-      C_mCalVsIJ->SetName(mCalVsIJ->GetName());
-      C_mCalVsIJ->cd();
-      mCalVsIJ->Draw("LEGO2");
-      C_mCalVsIJ->SetLeftMargin(0.15);
-      C_mCalVsIJ->Write();
+//       TCanvas *C_mCalVsIJ = new TCanvas("C_mCalVsIJ","C_mCalVsIJ",800,800);
+//       C_mCalVsIJ->SetName(mCalVsIJ->GetName());
+//       C_mCalVsIJ->cd();
+//       mCalVsIJ->Draw("LEGO2");
+//       C_mCalVsIJ->SetLeftMargin(0.15);
+//       C_mCalVsIJ->Write();
       
       TCanvas *C_AverageDoiResolutionVsIJ = new TCanvas("C_AverageDoiResolutionVsIJ","C_AverageDoiResolutionVsIJ",800,800);
       C_AverageDoiResolutionVsIJ->SetName(AverageDoiResolutionVsIJ->GetName());
@@ -2207,19 +2207,19 @@ int main (int argc, char** argv)
       C_AverageDoiResolutionVsIJ->Write();
       
       
-      TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
-      C_qCalVsIJ->SetName(qCalVsIJ->GetName());
-      C_qCalVsIJ->cd();
-      qCalVsIJ->Draw("LEGO2");
-      C_qCalVsIJ->SetLeftMargin(0.15);
-      C_qCalVsIJ->Write();
+//       TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
+//       C_qCalVsIJ->SetName(qCalVsIJ->GetName());
+//       C_qCalVsIJ->cd();
+//       qCalVsIJ->Draw("LEGO2");
+//       C_qCalVsIJ->SetLeftMargin(0.15);
+//       C_qCalVsIJ->Write();
       
-      TCanvas *C_RealmCalVsIJ = new TCanvas("C_RealmCalVsIJ","C_RealmCalVsIJ",800,800);
-      C_RealmCalVsIJ->SetName(RealmCalVsIJ->GetName());
-      C_RealmCalVsIJ->cd();
-      RealmCalVsIJ->Draw("LEGO2");
-      C_RealmCalVsIJ->SetLeftMargin(0.15);
-      C_RealmCalVsIJ->Write();
+//       TCanvas *C_RealmCalVsIJ = new TCanvas("C_RealmCalVsIJ","C_RealmCalVsIJ",800,800);
+//       C_RealmCalVsIJ->SetName(RealmCalVsIJ->GetName());
+//       C_RealmCalVsIJ->cd();
+//       RealmCalVsIJ->Draw("LEGO2");
+//       C_RealmCalVsIJ->SetLeftMargin(0.15);
+//       C_RealmCalVsIJ->Write();
       
       //       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
       //       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
@@ -2255,8 +2255,8 @@ int main (int argc, char** argv)
       }
       AverageDoiDistro->Write();
       AverageDoiDistroCentral->Write();
-      WDoiDistro->Write();
-      WDoiDistroCentral->Write();
+//       WDoiDistro->Write();
+//       WDoiDistroCentral->Write();
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
