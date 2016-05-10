@@ -259,6 +259,7 @@ int main (int argc, char** argv)
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0) 
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
+  double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -1129,7 +1130,7 @@ int main (int argc, char** argv)
 		    pdfW->SetName(sname.str().c_str());
 		    pdfW->SetTitle(sname.str().c_str());
 		    double integral = pdfW->Integral();
-		    pdfW->Scale(1.0/integral);
+		    pdfW->Scale(wHistogramsBins*(1.0/integral));
 		    CurrentCrystal->SetPdfW(pdfW);
 		    sname.str("");
 		    // then do the comulative histo
@@ -1147,7 +1148,7 @@ int main (int argc, char** argv)
 		    
 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
 		    {
-		      sumPdf += pdfW->GetBinContent(iPdfHisto+1);
+		      sumPdf += (pdfW->GetBinContent(iPdfHisto+1))/wHistogramsBins;
 		      calibrationW.push_back(cumulativeW->GetBinCenter(iPdfHisto+1));
 		      calibrationZ.push_back(-(sumPdf*crystalz) + crystalz);
 // 		      wfile << cumulativeW->GetBinCenter(iPdfHisto+1) << " " << -(sumPdf*15) + 15.0 << std::endl;
@@ -1166,6 +1167,55 @@ int main (int argc, char** argv)
 		    CurrentCrystal->SetCalibrationGraph(calibrationGraph);
 		    CurrentCrystal->SetCumulativeW(cumulativeW);
 		    
+		    //histogram of doi resolution
+		    double sigmaWdistro = userSigmaW; 
+		    if(userSigmaW == -1)
+		    {
+		      sigmaWdistro = CurrentCrystal->GetDeltaW();
+		    }  
+		    sname << "Doi Resolution Histogram - Crystal " << CurrentCrystal->GetID();
+		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
+		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+		    {
+		      derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
+		    }
+		    CurrentCrystal->SetDerivativeDoiResolution(derivativeDoiResolution);
+		    sname.str("");
+		    
+		    //graph of doi res as a function of z
+		    sname << "Doi Res. vs. Z - Crystal " << CurrentCrystal->GetID();
+		    TGraph* doiResZ = new TGraph();
+		    int pCounter = 0;
+		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+		    {
+		      doiResZ->SetPoint(pCounter,calibrationGraph->Eval(pdfW->GetBinCenter(iPdfHisto+1)),2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
+		      pCounter++;
+		    }
+		    doiResZ->SetTitle(sname.str().c_str());
+		    doiResZ->SetName(sname.str().c_str());
+		    doiResZ->GetXaxis()->SetTitle("Z [mm]");
+		    doiResZ->GetYaxis()->SetTitle("DoiRes FWHM [mm]");
+		    CurrentCrystal->SetDoiResZ(doiResZ);
+		    sname.str("");
+		    
+		    //histo of resolutions
+		    sname << "Doi Res. All - " << CurrentCrystal->GetID();
+		    TH1F* resolutions = new TH1F(sname.str().c_str(),sname.str().c_str(),100,0,crystalz);  
+		    resolutions->GetXaxis()->SetTitle("Doi Res FWHM [mm]");
+		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+		    {
+		      resolutions->Fill(2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
+		    }
+		    CurrentCrystal->SetDoiResolutions(resolutions);
+		    //now a bit dummy, sample the curve and find an average
+		    int samplingNumb = 20;
+		    double sumResolutions = 0;
+		    for(int iSample = 0 ; iSample < samplingNumb; iSample++)
+		    {
+		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
+		    }
+		    
+		    CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
 		    
 		    //histogram with the difference between the tag calibration and the analytical calibration
 		    // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
@@ -1544,6 +1594,15 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,0.3);
   
   
+  TH2F *AverageDoiResolutionVsIJ = new TH2F("Average DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  AverageDoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  AverageDoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  AverageDoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
+  AverageDoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  AverageDoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  AverageDoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  AverageDoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
+  
   //   TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   //   Wwidht20percVsIJ->GetXaxis()->SetTitle("i (U axis)");
   //   Wwidht20percVsIJ->GetYaxis()->SetTitle("i (V axis)");
@@ -1733,6 +1792,11 @@ int main (int argc, char** argv)
 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		    WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		    
+// 		    if(CurrentCrystal->GetAverageDoiResolution() > 0 && CurrentCrystal->GetAverageDoiResolution() < crystalz )
+		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
+// 		    else
+// 		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
+		    
 		    DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
 		    mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
 		    RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
@@ -1908,12 +1972,12 @@ int main (int argc, char** argv)
 // 		    delete C_spectrum;
 		    
 		    //pdf
-// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-// 		    C_spectrum->SetName(CurrentCrystal->GetPdfW()->GetName());
-// 		    C_spectrum->cd();
-// 		    CurrentCrystal->GetPdfW()->Draw();
-// 		    C_spectrum->Write();
-// 		    delete C_spectrum;
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetPdfW()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetPdfW()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
 		    
 		    //cumulative
 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -1931,6 +1995,26 @@ int main (int argc, char** argv)
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetDerivativeDoiResolution()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetDerivativeDoiResolution()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetDoiResZ()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetDoiResZ()->Draw("AL");
+		    C_spectrum->Write();
+		    delete C_spectrum;
+		    
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetDoiResolutions()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetDoiResolutions()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
 		    // =======
 		    // 		
 		    // 		
@@ -2086,6 +2170,14 @@ int main (int argc, char** argv)
       mCalVsIJ->Draw("LEGO2");
       C_mCalVsIJ->SetLeftMargin(0.15);
       C_mCalVsIJ->Write();
+      
+      TCanvas *C_AverageDoiResolutionVsIJ = new TCanvas("C_AverageDoiResolutionVsIJ","C_AverageDoiResolutionVsIJ",800,800);
+      C_AverageDoiResolutionVsIJ->SetName(AverageDoiResolutionVsIJ->GetName());
+      C_AverageDoiResolutionVsIJ->cd();
+      AverageDoiResolutionVsIJ->Draw("LEGO2");
+      C_AverageDoiResolutionVsIJ->SetLeftMargin(0.15);
+      C_AverageDoiResolutionVsIJ->Write();
+      
       
       TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
       C_qCalVsIJ->SetName(qCalVsIJ->GetName());

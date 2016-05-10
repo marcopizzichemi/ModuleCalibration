@@ -6,6 +6,7 @@ Crystal::Crystal()
 {
   //default contructor
   name = "Default Crystal";
+  averageDoiResolution = 0;
 }
 
 Crystal::Crystal(const Crystal &obj) 

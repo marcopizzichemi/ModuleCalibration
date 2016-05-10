@@ -26,7 +26,9 @@ private:
   TH1F*                HistoWCorrected;
   TH1F*                DensityHisto;         ///< histogram of the entries per voxel in the crystal volume after separation
   TH1F*                pdfW;
+  TH1F*                DerivativeDoiResolution;
   TH1F*                cumulativeW;
+  TH1F*                resolutions;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
@@ -41,7 +43,7 @@ private:
   float                peakPositionCorrected;         ///< position of mean (after fitting) for the photopeak, corrected by DOI
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
   TGraph*              calibrationGraph;
-  
+  TGraph*              doiResZ;
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
   TF1*                 SimFit;
   TF1*                 Wfit;
@@ -58,6 +60,7 @@ private:
   double               wBegin;               ///< beginning of w histogram after fitting with theta function
   double               wEnd;                 ///< end of w histogram after fitting with theta function
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
+  double               averageDoiResolution;
   
 public:
   Crystal();                                 ///< default constructor
@@ -76,7 +79,10 @@ public:
   TH1F*                GetDensityHisto(){return DensityHisto;};
   TH1F*                GetPdfW(){return pdfW;};
   TH1F*                GetCumulativeW(){return cumulativeW;};
+  TH1F*                GetDerivativeDoiResolution(){return DerivativeDoiResolution;};
+  TH1F*                GetDoiResolutions(){return resolutions;};
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
+  TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
@@ -117,7 +123,7 @@ public:
   double               GetMcal(){return dz/(wBegin - wEnd);};
   double               GetQcal(){return -(dz*wEnd)/(wBegin-wEnd);};
   double               GetDoiResolutionFWHM(){return 2.355 * std::abs((dz/(wBegin - wEnd))) * std::abs(deltaW);};
-  
+  double               GetAverageDoiResolution(){return averageDoiResolution;};
   
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -128,6 +134,8 @@ public:
   void                 SetHistoW(TH1F* aHisto){HistoW = aHisto;};
   void                 SetHistoWCorrected(TH1F* aHisto){HistoWCorrected = aHisto;};
   void                 SetHistoWCorrectedSmooth(TH1F* aHisto){HistoWCorrectedSmooth = aHisto;};
+  void                 SetDerivativeDoiResolution(TH1F* aHisto){DerivativeDoiResolution = aHisto;};
+  void                 SetDoiResolutions(TH1F* aHisto){resolutions = aHisto;};
   void                 SetDensityHisto(TH1F* aHisto){DensityHisto = aHisto;};
   void                 SetFit(TF1* aFit){Fit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
@@ -159,6 +167,8 @@ public:
   void                 SetDeltaW(double a){deltaW = a;};
   void                 SetDeltaWfit(TF1* aFit){deltaWfit = aFit;};
   void                 SetDeltaWfit_2(TF1* aFit){deltaWfit_2 = aFit;};
+  void                 SetDoiResZ(TGraph* aGraph){doiResZ = aGraph;};
+  void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
   
   void                 Analyze();
   
