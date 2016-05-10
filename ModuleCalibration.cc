@@ -1214,7 +1214,7 @@ int main (int argc, char** argv)
 		    {
 		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
 		    }
-		    
+		    sname.str("");
 		    CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
 		    
 		    //histogram with the difference between the tag calibration and the analytical calibration
