@@ -262,6 +262,8 @@ int main (int argc, char** argv)
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
   double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
   int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
+  double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting 
+  double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -804,10 +806,14 @@ int main (int argc, char** argv)
 		    // for the moment let's say the central 50% of the w width
 		    double wmin = spectrumHistoW->GetBinCenter(bin3);
 		    double wmax = spectrumHistoW->GetBinCenter(bin4);
+		    //DEBUG
+// 		    std::cout << bin3 << " " << bin4 << " " << wmin << " " << wmax << std::endl;
 		    meanW20 = (wmax + wmin) / 2.0;
-		    double WhalfWidth  = (wmax-wmin)/2.0;
-		    wbin3 = meanW20 - (WhalfWidth/2.0);
-		    wbin4 = meanW20 + (WhalfWidth/2.0);
+// 		    double WhalfWidth  = (wmax-wmin)/2.0;
+		    wbin3 = wmin + (wmax-wmin)*energyCorrectionMin;
+		    wbin4 = wmin + (wmax-wmin)*energyCorrectionMax;
+// 		    wbin3 = meanW20 - energyCorrectionMin*WhalfWidth;
+// 		    wbin4 = meanW20 + 0.25*WhalfWidth;
 		    std::stringstream ssCut20w;
 		    ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		    TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
