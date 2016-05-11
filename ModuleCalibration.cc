@@ -247,6 +247,7 @@ int main (int argc, char** argv)
   float moduleLateralSideX      = config.read<float>("moduleLateralSideX",7.0);         //
   float moduleLateralSideY      = config.read<float>("moduleLateralSideY",7.0);         // 
   bool backgroundRun            = config.read<bool>("backgroundRun",0);                 // whether this is a background run or not
+  bool lateralRun               = config.read<bool>("lateralRun",0);                    // whether this is a lateral irradiation run or not
   float userBroadCut            = config.read<float>("userBroadCut",1750.0);            // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
   float thresholdKev            = config.read<float>("thresholdKev",300.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
@@ -1155,7 +1156,7 @@ int main (int argc, char** argv)
 		    {
 		      sumPdf += (pdfW->GetBinContent(iPdfHisto+1))/wHistogramsBins;
 		      calibrationW.push_back(cumulativeW->GetBinCenter(iPdfHisto+1));
-		      if(backgroundRun)
+		      if(backgroundRun | lateralRun)
 			calibrationZ.push_back(-(sumPdf*crystalz) + crystalz); // if it's a background run, interaction probability is constant everywhere, so z is just a rescale of the cumulative
 		      else
 			// if it's a far source run, interaction probability is exponential, and relation between z and w is give by
@@ -1191,7 +1192,7 @@ int main (int argc, char** argv)
 		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
 		    {
-		      if(backgroundRun)		      
+		      if(backgroundRun | lateralRun)		      
 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
 		      else
 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),TMath::Abs(sigmaWdistro*( ( lambda511 * pdfW->GetBinContent(iPdfHisto+1) * (TMath::Exp( -(crystalz/lambda511) ) -1 ) ) / ( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* cumulativeW->GetBinContent(iPdfHisto+1) ) ) ));
