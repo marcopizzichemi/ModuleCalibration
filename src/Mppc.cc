@@ -443,11 +443,24 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int div,int ncrystalsx,int ncrystalsy)
 {
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
-     Takes as input:
-     cutg_external = the pointer to the matrix of cutg that will be used in the main program to select the crystals
-     histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice. 
+   * It works like this:
+   * it finds the voxel with maximum amount of events in the 3D map of this mppc
+   * sets a threshold equal to the numbers of events in that voxel divided by div 
+   * starting by that voxel, checks the 26 voxel around to see if the number of events in them is above the threshold
+   * for the ones above threshold, checks in the same way the 26 voxel around (skipping of course the ones already checked)
+   * goes on until there's no voxel above threshold left. the collection of voxels above threshold found are the first crystal volume
+   * then it excludes the voxel of first crystal, find the new maximum, and repeat the procedure keeping the same value of threshold.
+   * the procedure goes on until ncrystalsx by ncrystalsy volumes are found. If less volumes are found, the threshold is increased and the entire
+   * procedure is started over
+   * 
+   * Takes as input:
+   * cutg_external     = the pointer to the matrix of cutg that will be used in the main program to select the crystals
+   * histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice. 
                          The parameter is set in the config file (default to 100)
-     div = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
+   * div               = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
+   * ncrystalsx        = number of crystal "columns" to look for. It's the number of columns of crystals connected to this mppc, if this is a standard acq. If it's a DOI tagging run, insstead, only 1 column is considered and
+                         therefore this number is fixed to 1 when the function is called
+   * ncrystalsy        = number of crystal "rows" to look for
   */
     
 //  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself

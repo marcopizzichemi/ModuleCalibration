@@ -260,6 +260,7 @@ int main (int argc, char** argv)
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
   double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
+  int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -836,7 +837,7 @@ int main (int argc, char** argv)
 		      gaussW->SetParameter(1,spectrumHistoW->GetMean());
 		      gaussW->SetParameter(2,spectrumHistoW->GetRMS());
 		      spectrumHistoW->Fit(sname.str().c_str(),"QR");
-		      doiFile << CurrentCrystal->GetI() << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
+		      doiFile << CurrentCrystal->GetI() + doiColumnOffset << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
 		      CurrentCrystal->SetHistoWfit(gaussW);
 		      sname.str("");
 		    }
@@ -1076,7 +1077,8 @@ int main (int argc, char** argv)
 		    double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
 		    double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
 		    
-		    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin,LastBinAbove20perc);   
+		    //FIXME quick fix for second peak, i.e. take the mx in a much shorter w range
+		    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin +  ((int) (0.7*(LastBinAbove20perc - AverageBin))),LastBinAbove20perc);   
 		    double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
 		    double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());        
 		    // 		spectrumHistoWCorrected->GetXaxis()->SetRange(1,250); //reset the w plots limits
@@ -1094,24 +1096,26 @@ int main (int argc, char** argv)
 		    
 // 		    CurrentCrystal->SetThetaFit(w_fit_func);
 		    //fit the left part of the w plot with a gaussian, to get delta w //
-		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWAbove20perc,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",0,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
 		    gaussDeltaW->SetParameter( 0, FirstWpeakValue);  // starting point as the maximum value 
-		    gaussDeltaW->FixParameter( 1, FirstWpeak);  // fix center to the peak value
-		    gaussDeltaW->SetParameter( 2, 0.02);
+		    gaussDeltaW->SetParameter( 1, FirstWpeak);  // fix center to the peak value
+// 		    gaussDeltaW->FixParameter( 1, FirstWpeak);  // fix center to the peak value
+		    gaussDeltaW->SetParameter( 2, 0.015);
 		    gaussDeltaW->SetLineColor(3);
 		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
 		    
-// 		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",FirstWpeak,LastWAbove20perc); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-// 		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
-// 		    gaussDeltaW_2->FixParameter( 1, LastWpeak);  // fix center to the peak value
-// 		    gaussDeltaW_2->SetParameter( 2, 0.02);
-// 		    gaussDeltaW_2->SetLineColor(3);
-// 		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
+		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",LastWpeak,1); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
+		    gaussDeltaW_2->SetParameter( 1, LastWpeak);  // fix center to the peak value
+		    gaussDeltaW_2->SetParameter( 2, 0.015);
+		    gaussDeltaW_2->SetLineColor(4);
+		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
 		    
 		    
-		    CurrentCrystal->SetDeltaW(gaussDeltaW->GetParameter(2));
+		    
 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
-// 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
+		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
+		    CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 );
 		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 		    
 		    //DEBUG
@@ -1982,12 +1986,12 @@ int main (int argc, char** argv)
 		    gaussDraw->SetLineColor(3);
 		    // 		CurrentCrystal->GetDeltaWfit()->Draw("same");
 		    gaussDraw->Draw("same");
-// 		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-// 		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
-// 		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
-// 		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
-// 		    gaussDraw_2->SetLineColor(5);
-// 		    gaussDraw_2->Draw("same");
+		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
+		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
+		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
+		    gaussDraw_2->SetLineColor(2);
+		    gaussDraw_2->Draw("same");
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
