@@ -1239,7 +1239,10 @@ int main (int argc, char** argv)
 		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
 		    }
 		    sname.str("");
-		    CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
+		    if( sumResolutions/samplingNumb > 0 && sumResolutions/samplingNumb < crystalz )
+		      CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
+		    else
+		      CurrentCrystal->SetAverageDoiResolution(crystalz);
 		    
 		    //histogram with the difference between the tag calibration and the analytical calibration
 		    // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
