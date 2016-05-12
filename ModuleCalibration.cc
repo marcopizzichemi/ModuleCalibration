@@ -522,7 +522,7 @@ int main (int argc, char** argv)
 	  //go on only if the MPPC is on for modular analysis
 	  if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForModular())
 	  {
-	    mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->PrintSpecific();
+// 	    mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->PrintSpecific();
 	    // strings and stuff
 	    TString name;
 	    std::stringstream var,cut,sname; 
