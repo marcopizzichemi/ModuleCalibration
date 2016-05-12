@@ -950,8 +950,8 @@ int main (int argc, char** argv)
 			float par0_corr = CrystalPeaksY_corr[peakID_corr];
 			float par1_corr = CrystalPeaks_corr[peakID_corr];
 			float par2_corr = (CrystalPeaks_corr[peakID_corr]*energyResolution)/2.35;
-			float fitmin_corr = par1_corr-1.2*par2_corr;
-			float fitmax_corr = par1_corr+1.3*par2_corr;
+			float fitmin_corr = par1_corr-1.4*par2_corr;
+			float fitmax_corr = par1_corr+1.5*par2_corr;
 			
 			sname << "gauss_corr - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 			TF1 *gauss_corr = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin_corr,fitmax_corr);
