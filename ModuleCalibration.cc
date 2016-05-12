@@ -231,7 +231,7 @@ int main (int argc, char** argv)
   int histo1Dbins               = config.read<int>("histo1Dbins");                  // number of bins of the 1D charge histograms
   int histo2DchannelBin         = config.read<int>("histo2DchannelBin");            // number of bins of the 2D flood histograms, for single channels
   int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
-  int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
+//   int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins");            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
@@ -522,6 +522,7 @@ int main (int argc, char** argv)
 	  //go on only if the MPPC is on for modular analysis
 	  if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForModular())
 	  {
+	    mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->PrintSpecific();
 	    // strings and stuff
 	    TString name;
 	    std::stringstream var,cut,sname; 
@@ -620,6 +621,8 @@ int main (int argc, char** argv)
 	    // 	  std::cout << "----------------- " << std::endl;
 	    name = "Flood Histogram 3D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 	    var << "FloodZ:FloodY:FloodX >> " << name; 
+	    
+	    int histo3DchannelBin =  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetHisto3DchannelBin();
 	    TH3I* spectrum3dMPPC = new TH3I(name,name,histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
 	    if(usingTaggingBench){
 	      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+triggerPhotopeakCut);
@@ -660,13 +663,13 @@ int main (int argc, char** argv)
 	    {
 	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	      {
-		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,1,ncrystalsy);
+		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,1,ncrystalsy);
 		// 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	      }
 	    }
 	    else
 	    {
-	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,histo3DchannelBin,clusterLevelPrecision,ncrystalsx,ncrystalsy);
+	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,ncrystalsx,ncrystalsy);
 	      // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	    }
 	    // 	  }
@@ -989,6 +992,7 @@ int main (int argc, char** argv)
 		    // a 3d historgram for this crystal, mainly to check the 3d cut
 		    sname << "Flood Histogram 3D - Crystal " << CurrentCrystal->GetID();
 		    var << "FloodZ:FloodY:FloodX >> " << sname.str();
+		    // NB histo3DchannelBin is taken from the MPPC element earlier in the code
 		    TH3I* spectrum3dCrystal = new TH3I(sname.str().c_str(),sname.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
 		    tree->Draw(var.str().c_str(),CutXYZ + CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
 		    spectrum3dCrystal->GetXaxis()->SetTitle("U");
@@ -1122,7 +1126,11 @@ int main (int argc, char** argv)
 		    
 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
-		    CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 );
+		    
+		    //FIXME which oe do we choose?
+		    //CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 );
+		    CurrentCrystal->SetDeltaW( gaussDeltaW->GetParameter(2) );
+		    
 		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 		    
 		    //DEBUG

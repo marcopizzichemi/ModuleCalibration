@@ -440,7 +440,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 
 
 
-bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int div,int ncrystalsx,int ncrystalsy)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int div*/,int ncrystalsx,int ncrystalsy)
 {
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
    * It works like this:
@@ -476,6 +476,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   
   TH3I *histogram_original = this->FloodMap3D; // get the 3D map of this channel
   
+  
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
   int NbinY = histogram_original->GetYaxis()->GetNbins();
@@ -485,6 +486,25 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
   double maxX3Dplot = histogram_original->GetXaxis()->GetBinCenter(NbinX) + 0.5*histogram_original->GetXaxis()->GetBinWidth(NbinX);
   double minY3Dplot = histogram_original->GetYaxis()->GetBinCenter(1) - 0.5*histogram_original->GetYaxis()->GetBinWidth(1);
   double maxY3Dplot = histogram_original->GetYaxis()->GetBinCenter(NbinY) + 0.5*histogram_original->GetYaxis()->GetBinWidth(NbinY);
+  
+  // find the number of non-empty bins
+  long int nonEmpty = 0;
+  for(int iBin = 0; iBin < NbinX ; iBin++)
+  {
+    for(int jBin = 0; jBin < NbinY ; jBin++)
+    {
+      for(int kBin = 0; kBin < NbinZ ; kBin++)
+      {
+	if( histogram_original->GetBinContent(iBin+1,jBin+1,kBin+1) > 0 ) nonEmpty++;
+      }
+    }
+  }
+  // get the total number of entries. We will check that the number of events in each volume found is not smaller than a given fraction of this number, to avoid converging to weird separations
+//   double totalEntries = histogram_original->GetEntries();
+//   double clusterVolumeCut = 0.001; //FIXME for the moment hardcoded
+  double volumeLimit = clusterVolumeCut*nonEmpty;
+//   std::cout << NbinX*NbinY*NbinZ << " " << nonEmpty << " " << volumeLimit /*<< " " << totalEntries*/ << std::endl;
+  
   
   std::stack<point> stack;   // prepare a stack of point type. point type defined in the header
   TH3I *done;
@@ -593,7 +613,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
       }
       
       
-      if(mask_pos[iMasks].nBinsXMask++ < 7) //check the mask, if it holds too few points, don't accept it //FIXME this is ridiculous...
+      if(mask_pos[iMasks].nBinsXMask < volumeLimit) //check the mask, if it holds too few points, don't accept it 
 	break;
       else
 	nMasks++; //otherwise count it as +1 good mask found
@@ -802,7 +822,10 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external, int histo3DchannelBin, int d
 
 void Mppc::PrintSpecific()
 {
-  std::cout << "Label \t\t = " << label << std::endl;
-  std::cout << "Digitizer Ch. \t = " << digitizerChannel << std::endl;
-  std::cout << "Staus for Doi \t = " << IsOnForDoi << std::endl;
+  std::cout << "Label \t\t\t = " << label << std::endl;
+  std::cout << "Digitizer Ch. \t\t = " << digitizerChannel << std::endl;
+  std::cout << "Staus for Doi \t\t = " << IsOnForDoi << std::endl;
+  std::cout << "histo3DchannelBin \t = " << histo3DchannelBin << std::endl;
+  std::cout << "div \t\t\t = " << div << std::endl;
+  std::cout << "clusterVolumeCut \t = " << clusterVolumeCut << std::endl;
 }

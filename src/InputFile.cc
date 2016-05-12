@@ -150,6 +150,42 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
   }
   
+  // global 3d plots variables for single mppcs
+  global_histo3DchannelBin = config.read<int>("histo3DchannelBin",100);
+  global_div               = config.read<int>("clusterLevelPrecision",10);
+  global_clusterVolumeCut  = config.read<double>("clusterVolumeCut",0.001);
+  
+  //specific variables for mppcs
+  specificMPPC_s          = config.read<std::string>("specificMPPCname","");
+  config.split( specificMPPC_f, specificMPPC_s, "," );
+  for(int i = 0 ; i < specificMPPC_f.size() ; i++)
+  {
+    config.trim(specificMPPC_f[i]);
+    specificMPPC.push_back(specificMPPC_f[i]);
+  }
+  specificBin_s          = config.read<std::string>("specificBin","");
+  config.split( specificBin_f, specificBin_s, "," );
+  for(int i = 0 ; i < specificBin_f.size() ; i++)
+  {
+    config.trim(specificBin_f[i]);
+    specificBin.push_back(atoi(specificBin_f[i].c_str()));
+  }
+  specificPrecision_s          = config.read<std::string>("specificPrecision","");
+  config.split( specificPrecision_f, specificPrecision_s, "," );
+  for(int i = 0 ; i < specificPrecision_f.size() ; i++)
+  {
+    config.trim(specificPrecision_f[i]);
+    specificPrecision.push_back(atoi(specificPrecision_f[i].c_str()));
+  }
+  specificCut_s          = config.read<std::string>("specificCut","");
+  config.split( specificCut_f, specificCut_s, "," );
+  for(int i = 0 ; i < specificCut_f.size() ; i++)
+  {
+    config.trim(specificCut_f[i]);
+    specificCut.push_back(atof(specificCut_f[i].c_str()));
+  }
+  
+  
   
   crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) 
@@ -160,6 +196,11 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
       crystalIsOn[i][j] = false;
     }
   }
+  
+  // specific MPPC strings
+  
+  
+  
   
   //FIXME from here to the ---- it's now useless
   //read strings that describes crystals
@@ -695,6 +736,22 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 	  {
 	    if(mppcOFF[modCounter].compare(mppc_label[posID]) == 0) mppc[mppcI][mppcJ]->SetIsOnForModular(false);
 	  }
+	  
+	  //set the global mppc variables for 3d plots, then override if specified
+	  mppc[mppcI][mppcJ]->SetHisto3DchannelBin(global_histo3DchannelBin);
+	  mppc[mppcI][mppcJ]->SetClusterLevelPrecision(global_div);
+	  mppc[mppcI][mppcJ]->SetClusterVolumeCut(global_clusterVolumeCut);
+	  //now override
+	  for(int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
+	  {
+	    if(specificMPPC[modCounter].compare(mppc_label[posID]) == 0)
+	    {
+	      mppc[mppcI][mppcJ]->SetHisto3DchannelBin(specificBin[modCounter]);
+	      mppc[mppcI][mppcJ]->SetClusterLevelPrecision(specificPrecision[modCounter]);
+	      mppc[mppcI][mppcJ]->SetClusterVolumeCut(specificCut[modCounter]);
+	    }
+	  }
+	  
 	  
 	  mppc[mppcI][mppcJ]->SetExtendedID(sname.str().c_str());
 	  mppc[mppcI][mppcJ]->SetID(posID);                  // ----

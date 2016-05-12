@@ -54,6 +54,23 @@ private:
   std::string                    crystalOFF_s;
   std::vector <std::string>      crystalOFF_f;
   std::vector <int>              crystalOFF;
+  
+  std::string                    specificMPPC_s;
+  std::vector <std::string>      specificMPPC_f;
+  std::vector <std::string>      specificMPPC;
+  
+  std::string                    specificBin_s;
+  std::vector <std::string>      specificBin_f;
+  std::vector <int>              specificBin;
+  
+  std::string                    specificPrecision_s;
+  std::vector <std::string>      specificPrecision_f;
+  std::vector <int>           specificPrecision;
+  
+  std::string                    specificCut_s;
+  std::vector <std::string>      specificCut_f;
+  std::vector <double>           specificCut;
+  
   std::vector <std::string>      digitizer_f;                        // tokenization of above strings 
   std::vector <std::string>      mppc_f;                             // tokenization of above strings 
   std::vector <std::string>      plotPositions_f;                    // tokenization of above strings 
@@ -96,6 +113,10 @@ private:
   double                         crystaly;                           // dimension of crystal in x [mm]
   double                         crystalz;                           // dimension of crystal in x [mm]
   double                         esrThickness;                       // thickness of esr separation foil [mm]
+  
+  int                            global_histo3DchannelBin;
+  int                            global_div;
+  double                         global_clusterVolumeCut;
   
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag

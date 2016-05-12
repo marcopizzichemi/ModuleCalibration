@@ -24,6 +24,13 @@ private:
   bool                   IsOnForDoi;             ///< if the mppc is on the DOI tagging line
   double                 ThetaWU;                ///< angle from w to u in radiants
   double                 ThetaWV;                ///< angle from w to v in radiants
+  double                 specificWthreshold;     ///< clusterLevelPrecision for this MPPC
+  
+  int                    histo3DchannelBin;
+  int                    div;
+  double                 clusterVolumeCut;
+  
+  
   
   //histograms
   TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
@@ -114,12 +121,20 @@ public:
   double                 GetThetaWU(){return ThetaWU;};
   double                 GetThetaWV(){return ThetaWV;};
   
+  int                    GetHisto3DchannelBin(){return histo3DchannelBin;};
+  int                    GetClusterLevelPrecision(){return div;};
+  double                 GetClusterVolumeCut(){return clusterVolumeCut;};
+  
+  void                   SetHisto3DchannelBin(int a){histo3DchannelBin = a;};
+  void                   SetClusterLevelPrecision(int a){div = a;};
+  void                   SetClusterVolumeCut(double a){clusterVolumeCut = a;};
+  
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
   
   void                   MakeRotatedFlood();
-  bool                   FindCrystalCuts(TCutG**** cutg,int histo3DchannelBin, int div,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
+  bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
   
 //   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
 //   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
