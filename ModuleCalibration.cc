@@ -1127,9 +1127,14 @@ int main (int argc, char** argv)
 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
 		    
-		    //FIXME which oe do we choose?
-		    //CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 );
-		    CurrentCrystal->SetDeltaW( gaussDeltaW->GetParameter(2) );
+		    //FIXME which one do we choose?
+		    //CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 ); // average
+// 		    CurrentCrystal->SetDeltaW( gaussDeltaW->GetParameter(2) ); // just left one
+		    
+		    // min among the two
+		    double minDeltaW = gaussDeltaW->GetParameter(2);
+		    if(gaussDeltaW_2->GetParameter(2) < minDeltaW) minDeltaW = gaussDeltaW_2->GetParameter(2);
+		    CurrentCrystal->SetDeltaW( minDeltaW ); // min among the two found
 		    
 		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 		    
