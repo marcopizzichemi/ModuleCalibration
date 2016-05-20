@@ -62,7 +62,7 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #ROOT_LIBRARIES := $(filter-out -lNew,$(ROOT_LIBRARIES))
 
 add_executable(ModuleCalibration ModuleCalibration.cc ${sources} ${headers})
-target_link_libraries(ModuleCalibration ${Geant4_LIBRARIES} ${ROOT_LIBRARIES} -lSpectrum -lMLP -lTreePlayer )
+target_link_libraries(ModuleCalibration ${Geant4_LIBRARIES} ${ROOT_LIBRARIES} -lSpectrum -lMLP -lTreePlayer)
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we

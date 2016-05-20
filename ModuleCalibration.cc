@@ -264,6 +264,7 @@ int main (int argc, char** argv)
   int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
   double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting 
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
+  double lambda511              = config.read<double>("lambda511",12.195); //everything in mm 
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -1169,7 +1170,7 @@ int main (int argc, char** argv)
 // 		    wfile.open("cumulative2_2.dat", std::ofstream::out);
 		    std::vector<double> calibrationW;
 		    std::vector<double> calibrationZ;
-		    double lambda511 = 12.195; //everything in mm 
+// 		    double lambda511 = 12.195; //everything in mm 
 		    
 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
 		    {
@@ -1234,6 +1235,8 @@ int main (int argc, char** argv)
 		    doiResZ->GetYaxis()->SetTitle("DoiRes FWHM [mm]");
 		    CurrentCrystal->SetDoiResZ(doiResZ);
 		    sname.str("");
+		    
+		    
 		    
 		    //histo of resolutions
 // 		    sname << "Doi Res. All - " << CurrentCrystal->GetID();
