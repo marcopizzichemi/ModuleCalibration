@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# run this from the DOI_scan folder
+
+runList='y0 y1 y2 y3 y4 y5 y6 y7'
+zlist='z1 z2 z3 z4'
+
+for i in $runList ; do for j in $zlist; do cp $i/$j/Run*/doiData.txt $i/$j/doiData.txt ; done; done
+
+for i in $runList 
+do
+  cd $i
+  doifit
+  cd ..
+done
+
+for i in $runList ; do cp $i/calibration_params.txt ./all/${i}calibration_params.txt ; cp $i/doi.txt ./all/${i}doi.txt; done
+
+#delete the old global files, create the new ones
+cd all
+rm calibration_params.txt
+rm doi.txt
+
+for i in $runList ; do  cat ${i}calibration_params.txt >> calibration_params.txt; done
+for i in $runList ; do  cat ${i}doi.txt >> doi.txt; done
+
+cd ..
