@@ -33,4 +33,4 @@ for i in y0 y1 y2 y3 y4 y5 y6 y7 ; do  cat ${i}calibration_params.txt >> calibra
 for i in y0 y1 y2 y3 y4 y5 y6 y7 ; do  cat ${i}doi.txt >> doi.txt; done
 
 
-THE SCRIPT startAnalysis.sh will do all this for you.
+THE SCRIPTs startAnalysis.sh and produceDatasets.sh will do all this for you.
