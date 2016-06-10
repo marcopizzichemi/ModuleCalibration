@@ -2,15 +2,15 @@
 
 # run this from the DOI_scan folder
 
-runList='y0 y1 y2 y3 y4 y5 y6 y7'
-zlist='z1 z2 z3 z4'
+runList='y3'
+zlist='z0 z1 z2 z3 z4 z5 z6 z7 z8 z9'
 
 for i in $runList ; do for j in $zlist; do cp $i/$j/Run*/doiData.txt $i/$j/doiData.txt ; done; done
 
 for i in $runList 
 do
   cd $i
-  doifit
+  doifit `echo $zlist`
   cd ..
 done
 
