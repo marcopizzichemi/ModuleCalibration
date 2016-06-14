@@ -64,6 +64,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   crystalz                    = config.read<double>("crystalz",15);
   esrThickness                = config.read<double>("esrThickness",0.07);
   usingAllChannels            = config.read<bool>("usingAllChannels",1);
+  wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -588,40 +589,55 @@ void InputFile::FillTree()
   
     //loop to calculate u,v
     int counterFill = 0;
-    for (int j = 0 ; j < adcChannels ; j++) 
+    for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
     {
-      if(DigitizerChannelOn[j])
+      if(DigitizerChannelOn[j])// first, is the digitizer ON?
       {
         //two options to calculate FloodX_Y_Z
 	//First, use all the channels
 	//Second, use only the neighbours of the trigger channel
-	if(usingAllChannels)
+	//both options for u,v and for z
+	//all combinations possible (user decides in config file)
+	//first, the u,v
+	if(usingAllChannels) //all channels for u and v
 	{
-	  total     += TreeAdcChannel[counterFill];
+// 	  total     += TreeAdcChannel[counterFill];
 	  rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
 	  columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
-	}  
-	else
+	}   
+	else //only neighbours...
 	{
-	  if(detector[counterFill].isNeighbour)
+	  if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
 	  {
-	    total     += TreeAdcChannel[counterFill];
+// 	    total     += TreeAdcChannel[counterFill];
 	    rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
 	    columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
 	  }
-	  totalForFloodZ += TreeAdcChannel[counterFill];
+// 	  totalForFloodZ += TreeAdcChannel[counterFill];
+	}
+	//then, the w coordinate
+	if(wAllChannels) //all channels for w
+	{
+	  total += TreeAdcChannel[counterFill];
+	}
+	else//only neighbours...
+	{
+	  if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+	  {
+	    total += TreeAdcChannel[counterFill];
+	  } 
 	}
 	counterFill++;
       }
-      
     }
     
     
     //compute u,v,w
+    // near channels vs. total channels depending on what decided before
     TreeFloodX = rowsum/total;
     TreeFloodY = columnsum/total;
-//     TreeFloodZ =  maxCharge/total;
-    TreeFloodZ =  maxCharge/totalForFloodZ;  // w always calculated with all channels
+    TreeFloodZ =  maxCharge/total; 
+//     TreeFloodZ =  maxCharge/totalForFloodZ;  
     
     if(usingTaggingBench) TreeZPosition = taggingPosition;
     

@@ -265,6 +265,7 @@ int main (int argc, char** argv)
   double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting 
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm 
+  bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -690,6 +691,7 @@ int main (int argc, char** argv)
 		  if(found)
 		  {
 		    
+		    
 		    // get a pointer to this crystal
 		    Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
 		    CurrentCrystal->SetCrystalOn(true);
@@ -773,13 +775,8 @@ int main (int argc, char** argv)
 		      // 		  TCut PhotopeakEnergyCutCorrected;
 		      PhotopeakEnergyCut  = streamEnergyCut.str().c_str(); 
 		      sname.str("");
-		      // 		}
-		      // 		
-		      // 		
-		      // 		
-		      // 		// then prepare the highlighted spectrum and store it in the crystal
-		      // 		if(!backgroundRun)// do it only if this is NOT a background run
-		      // 		{
+
+		      // then prepare the highlighted spectrum and store it in the crystal
 		      sname << "Hg Charge Spectrum - Crystal " << CurrentCrystal->GetID();
 		      var << SumChannels << " >> " << sname.str();
 		      TH1F* spectrumChargeHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);	  
@@ -796,7 +793,8 @@ int main (int argc, char** argv)
 		    //w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
 		    //if it's a background run, it won't cut on photopeak (since there will be none and the string will be empty)
 		    sname << "W histogram - Crystal " << CurrentCrystal->GetID();
-		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
+		    //var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
+		    var << "FloodZ >> " << sname.str();
 		    TH1F* spectrumHistoW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);	  
 		    tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+triggerPhotopeakCut);
 		    spectrumHistoW->GetXaxis()->SetTitle("W");
@@ -819,7 +817,7 @@ int main (int argc, char** argv)
 // 		    wbin3 = meanW20 - energyCorrectionMin*WhalfWidth;
 // 		    wbin4 = meanW20 + 0.25*WhalfWidth;
 		    std::stringstream ssCut20w;
-		    ssCut20w << "(ch" << channel << "/(" << SumChannels << ")) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(ch" << channel << "/(" << SumChannels << ")) < "<<  spectrumHistoW->GetBinCenter(bin4);
+		    ssCut20w << "(FloodZ) > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(FloodZ) < "<<  spectrumHistoW->GetBinCenter(bin4);
 		    TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
 		    
 		    
@@ -1015,27 +1013,27 @@ int main (int argc, char** argv)
 		    var.str("");
 		    
 		    //density histogram - 1d histo of entries per bin in the cutg volume
-		    sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
-		    Int_t u,v,w;  
-		    spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
-		    //get ax bin content
-		    TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w)-1,1,spectrum3dCrystal->GetBinContent(u,v,w));
-		    densityHisto->GetXaxis()->SetTitle("Numb of Entries");
-		    int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
-		    int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
-		    int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
-		    for(int iContent = 1 ; iContent < NbinX+1 ; iContent++) 
-		    {
-		      for(int jContent = 1 ; jContent < NbinY+1 ; jContent++) 
-		      {
-			for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
-			{
-			  densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
-			}
-		      }
-		    }
-		    CurrentCrystal->SetDensityHisto(densityHisto);
-		    sname.str("");
+// 		    sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
+// 		    Int_t u,v,w;  
+// 		    spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
+// 		    //get ax bin content
+// 		    TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w)-1,1,spectrum3dCrystal->GetBinContent(u,v,w));
+// 		    densityHisto->GetXaxis()->SetTitle("Numb of Entries");
+// 		    int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
+// 		    int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
+// 		    int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
+// 		    for(int iContent = 1 ; iContent < NbinX+1 ; iContent++) 
+// 		    {
+// 		      for(int jContent = 1 ; jContent < NbinY+1 ; jContent++) 
+// 		      {
+// 			for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
+// 			{
+// 			  densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
+// 			}
+// 		      }
+// 		    }
+// 		    CurrentCrystal->SetDensityHisto(densityHisto);
+// 		    sname.str("");
 		    
 		    // Histogram 2d of time evolution
 		    sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
@@ -1065,7 +1063,7 @@ int main (int argc, char** argv)
 		    // fit on the rise of w function with gaussian -> sigma w 
 		    // no cut on the photopeak will be applied if it's a background run (since there will be no photopeak)
 		    sname << "W histogram Corrected - Crystal " << CurrentCrystal->GetID();
-		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
+		    var << "(FloodZ) >> " << sname.str();
 		    TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
 		    tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
 		    spectrumHistoWCorrected->GetXaxis()->SetTitle("W");
