@@ -440,7 +440,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 
 
 
-bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int div*/,int ncrystalsx,int ncrystalsy)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int div*/,int ncrystalsx,int ncrystalsy,double fixedThreshold)
 {
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
    * It works like this:
@@ -515,6 +515,10 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   double step = max/((double) div); // calculated the step of the separation search
   
   double threshold = step;
+  
+  //modification to allow external globally fixed threshold. Mainly for testing of influence of 3d cut on resolutions/accuracy
+  if(fixedThreshold !=0)
+    threshold = fixedThreshold;
   
   bool found = false;
   std::vector<masks_t> mask_pos;
@@ -621,11 +625,12 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
     if(nMasks == numbOfCrystals) // now, check if you found NxN masks
     {
       found = true; // if you did, set found as true and the while cycle will end here
-//       std::cout << "Found threshold at " << threshold << " - Max = " << max << std::endl;
+      std::cout << "Found threshold at " << threshold << " - Max = " << max << std::endl;
       delete histogram;
     } 
     else 
     {
+      std::cout << "Tried threshold at " << threshold << " - Volumes found " << nMasks << std::endl;
       threshold += step;  // increase the threshold for next search
       for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
       {

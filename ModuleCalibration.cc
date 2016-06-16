@@ -266,6 +266,7 @@ int main (int argc, char** argv)
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm 
   bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
+  double fixedThreshold         = config.read<double>("fixedThreshold",0);
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -626,12 +627,15 @@ int main (int argc, char** argv)
 	    
 	    int histo3DchannelBin =  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetHisto3DchannelBin();
 	    TH3I* spectrum3dMPPC = new TH3I(name,name,histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
+	    
 	    if(usingTaggingBench){
 	      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+triggerPhotopeakCut);
 	    }
 	    else{
 	      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger);
 	    }
+	    //DEBUG
+	    std::cout << "Integral MPPC 3d histo "<< spectrum3dMPPC->Integral() << std::endl;
 	    spectrum3dMPPC->GetXaxis()->SetTitle("U");
 	    spectrum3dMPPC->GetYaxis()->SetTitle("V");
 	    spectrum3dMPPC->GetZaxis()->SetTitle("W");
@@ -665,13 +669,13 @@ int main (int argc, char** argv)
 	    {
 	      if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
 	      {
-		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,1,ncrystalsy);
+		found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,1,ncrystalsy,fixedThreshold);
 		// 		mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	      }
 	    }
 	    else
 	    {
-	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,ncrystalsx,ncrystalsy);
+	      found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,ncrystalsx,ncrystalsy,fixedThreshold);
 	      // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
 	    }
 	    // 	  }
@@ -1012,28 +1016,30 @@ int main (int argc, char** argv)
 		    sname.str("");
 		    var.str("");
 		    
-		    //density histogram - 1d histo of entries per bin in the cutg volume
-// 		    sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
-// 		    Int_t u,v,w;  
-// 		    spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
-// 		    //get ax bin content
-// 		    TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w)-1,1,spectrum3dCrystal->GetBinContent(u,v,w));
-// 		    densityHisto->GetXaxis()->SetTitle("Numb of Entries");
-// 		    int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
-// 		    int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
-// 		    int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
-// 		    for(int iContent = 1 ; iContent < NbinX+1 ; iContent++) 
-// 		    {
-// 		      for(int jContent = 1 ; jContent < NbinY+1 ; jContent++) 
-// 		      {
-// 			for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
-// 			{
-// 			  densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
-// 			}
-// 		      }
-// 		    }
-// 		    CurrentCrystal->SetDensityHisto(densityHisto);
-// 		    sname.str("");
+// 		    density histogram - 1d histo of entries per bin in the cutg volume
+		    sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
+		    Int_t u,v,w;  
+		    spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
+// 		    std::cout << "Max Bin = " << u << "," << v << "," << w << " bin content = "<< spectrum3dCrystal->GetBinContent(u,v,w) << " " << spectrum3dCrystal->Integral() << std::endl;
+		    //get ax bin content
+		    TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w),0,spectrum3dCrystal->GetBinContent(u,v,w));
+		    densityHisto->GetXaxis()->SetTitle("Numb of Entries");
+		    int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
+		    int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
+		    int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
+		    for(int iContent = 1 ; iContent < NbinX+1 ; iContent++) 
+		    {
+		      for(int jContent = 1 ; jContent < NbinY+1 ; jContent++) 
+		      {
+			for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
+			{
+			  densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
+// 			  std::cout << spectrum3dCrystal->GetBinContent(iContent,jContent,kContent) << std::endl;
+			}
+		      }
+		    }
+		    CurrentCrystal->SetDensityHisto(densityHisto);
+		    sname.str("");
 		    
 		    // Histogram 2d of time evolution
 		    sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
@@ -2106,13 +2112,13 @@ int main (int argc, char** argv)
 		    // 
 		    // 		}
 		    // >>>>>>> doiTag
-		    //density histo
-// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-// 		    C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
-// 		    C_spectrum->cd();
-// 		    CurrentCrystal->GetDensityHisto()->Draw();
-// 		    C_spectrum->Write();
-// 		    delete C_spectrum;
+// 		    density histo
+		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		    C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
+		    C_spectrum->cd();
+		    CurrentCrystal->GetDensityHisto()->Draw();
+		    C_spectrum->Write();
+		    delete C_spectrum;
 		    
 		    
 		    if(usingRealSimData)

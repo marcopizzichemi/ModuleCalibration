@@ -134,7 +134,7 @@ public:
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
   
   void                   MakeRotatedFlood();
-  bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
+  bool FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int div*/,int ncrystalsx,int ncrystalsy,double fixedThreshold);///< Finds the density volumes that represents the crystals
   
 //   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
 //   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
