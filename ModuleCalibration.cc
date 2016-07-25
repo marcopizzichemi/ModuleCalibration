@@ -845,8 +845,9 @@ int main (int argc, char** argv)
 		      gaussW->SetParameter(0,maximum);
 		      gaussW->SetParameter(1,spectrumHistoW->GetMean());
 		      gaussW->SetParameter(2,spectrumHistoW->GetRMS());
-		      spectrumHistoW->Fit(sname.str().c_str(),"QR");
-		      doiFile << CurrentCrystal->GetI() + doiColumnOffset << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
+		      Int_t fitStatus = spectrumHistoW->Fit(sname.str().c_str(),"QR");
+		      if(!fitStatus)
+		        doiFile << CurrentCrystal->GetI() + doiColumnOffset << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
 		      CurrentCrystal->SetHistoWfit(gaussW);
 		      sname.str("");
 		    }
