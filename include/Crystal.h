@@ -10,6 +10,7 @@
 #include "TEllipse.h"
 #include "TF1.h"
 #include "TGraph.h"
+#include "TGraphErrors.h"
 
 class Crystal : public Element
 {
@@ -30,6 +31,8 @@ private:
   TH1F*                cumulativeW;
   TH1F*                resolutions;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
+//   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
+//   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
   TGraph*              SimGraph;             
@@ -44,6 +47,8 @@ private:
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
   TGraph*              calibrationGraph;
   TGraph*              doiResZ;
+  TH1F*                simSigmaW;            ///< distribution of sigma W (sigma of gaussian fit of w histogram) for a simulation
+  TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
   TF1*                 SimFit;
   TF1*                 Wfit;
@@ -106,6 +111,8 @@ public:
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
   TH2F*                GetSimDOIplot(){return SimDOIplot;};
+//   TH1D*                GetFitSlicesSimDOIplot(){return FitSlicesSimDOIplot;};
+//   TH1D*                GetFitSlicesSimDOIplotSigma(){return FitSlicesSimDOIplotSigma;};
   TGraph*              GetSimGraph(){return SimGraph;};
   double               GetU(){return u;};
   double               GetV(){return v;};
@@ -124,6 +131,8 @@ public:
   double               GetQcal(){return -(dz*wEnd)/(wBegin-wEnd);};
   double               GetDoiResolutionFWHM(){return 2.355 * std::abs((dz/(wBegin - wEnd))) * std::abs(deltaW);};
   double               GetAverageDoiResolution(){return averageDoiResolution;};
+  TH1F*                GetSimSigmaW(){return simSigmaW;};
+  TGraphErrors*        GetSimZvsW(){return simZvsW;};
   
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -153,6 +162,10 @@ public:
   void                 SetPhotopeakCorrected(float a, float b){peakPositionCorrected = a;peakSigmaCorrected = b;};
   void                 SetVersusTime(TH2F* aHisto){VersusTime = aHisto;};
   void                 SetSimDOIplot(TH2F* aHisto){SimDOIplot = aHisto;};
+//   void                 SetFitSlicesSimDOIplot(TH1D* aHisto){FitSlicesSimDOIplot = aHisto;};
+//   void                 SetFitSlicesSimDOIplotSigma(TH1D* aHisto){FitSlicesSimDOIplotSigma = aHisto;};
+  void                 SetSimZvsW(TGraphErrors* aGraph){simZvsW = aGraph;};
+  void                 SetSimSigmaW(TH1F* aHisto){simSigmaW = aHisto;};
   void                 SetSimGraph(TGraph* aGraph){SimGraph = aGraph;};
   void                 SetSimFit(TF1* aFit){SimFit = aFit;};
   void                 SetW20percCut(TCut aCut){w20percCut = aCut;};

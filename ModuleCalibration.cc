@@ -65,6 +65,7 @@
 #include "TEllipse.h"
 #include "TFormula.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 #include "TCutG.h"
 #include "TGaxis.h"
 #include "TPaveStats.h"
@@ -249,7 +250,7 @@ int main (int argc, char** argv)
   bool backgroundRun            = config.read<bool>("backgroundRun",0);                 // whether this is a background run or not
   bool lateralRun               = config.read<bool>("lateralRun",0);                    // whether this is a lateral irradiation run or not
   float userBroadCut            = config.read<float>("userBroadCut",1750.0);            // if in backgroundRun, cut to get rid of low energy events is not done on photopeak search but by user input (default 1750ch)
-  float thresholdKev            = config.read<float>("thresholdKev",300.0);
+  float thresholdKev            = config.read<float>("thresholdKev",1.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
   double crystalz               = config.read<double>("crystalz",15);
   double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
@@ -870,6 +871,7 @@ int main (int argc, char** argv)
 		      var.str("");
 		      sname.str("");
 		      
+                      
 		      if(correctingForDOI)
 		      {
 			//mayhem
@@ -1107,34 +1109,34 @@ int main (int argc, char** argv)
 		    
 // 		    CurrentCrystal->SetThetaFit(w_fit_func);
 		    //fit the left part of the w plot with a gaussian, to get delta w //
-		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",0,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-		    gaussDeltaW->SetParameter( 0, FirstWpeakValue);  // starting point as the maximum value 
-		    gaussDeltaW->SetParameter( 1, FirstWpeak);  // fix center to the peak value
-// 		    gaussDeltaW->FixParameter( 1, FirstWpeak);  // fix center to the peak value
-		    gaussDeltaW->SetParameter( 2, 0.015);
-		    gaussDeltaW->SetLineColor(3);
-		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
+// 		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",0,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+// 		    gaussDeltaW->SetParameter( 0, FirstWpeakValue);  // starting point as the maximum value 
+// 		    gaussDeltaW->SetParameter( 1, FirstWpeak);  // fix center to the peak value
+// // 		    gaussDeltaW->FixParameter( 1, FirstWpeak);  // fix center to the peak value
+// 		    gaussDeltaW->SetParameter( 2, 0.015);
+// 		    gaussDeltaW->SetLineColor(3);
+// 		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
 		    
-		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",LastWpeak,1); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
-		    gaussDeltaW_2->SetParameter( 1, LastWpeak);  // fix center to the peak value
-		    gaussDeltaW_2->SetParameter( 2, 0.015);
-		    gaussDeltaW_2->SetLineColor(4);
-		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
+// 		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",LastWpeak,1); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
+// 		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value 
+// 		    gaussDeltaW_2->SetParameter( 1, LastWpeak);  // fix center to the peak value
+// 		    gaussDeltaW_2->SetParameter( 2, 0.015);
+// 		    gaussDeltaW_2->SetLineColor(4);
+// 		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
 		    
 		    
 		    
-		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
-		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
+// 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
+// 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
 		    
 		    //FIXME which one do we choose?
 		    //CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 ); // average
 // 		    CurrentCrystal->SetDeltaW( gaussDeltaW->GetParameter(2) ); // just left one
 		    
 		    // min among the two
-		    double minDeltaW = gaussDeltaW->GetParameter(2);
-		    if(gaussDeltaW_2->GetParameter(2) < minDeltaW) minDeltaW = gaussDeltaW_2->GetParameter(2);
-		    CurrentCrystal->SetDeltaW( minDeltaW ); // min among the two found
+// 		    double minDeltaW = gaussDeltaW->GetParameter(2);
+// 		    if(gaussDeltaW_2->GetParameter(2) < minDeltaW) minDeltaW = gaussDeltaW_2->GetParameter(2);
+// 		    CurrentCrystal->SetDeltaW( minDeltaW ); // min among the two found
 		    
 		    CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 		    
@@ -1202,38 +1204,38 @@ int main (int argc, char** argv)
 		    CurrentCrystal->SetCumulativeW(cumulativeW);
 		    
 		    //histogram of doi resolution
-		    double sigmaWdistro = userSigmaW; 
-		    if(userSigmaW == -1)
-		    {
-		      sigmaWdistro = CurrentCrystal->GetDeltaW();
-		    }  
-		    sname << "Doi Resolution Histogram - Crystal " << CurrentCrystal->GetID();
-		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
-		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-		    {
-		      if(backgroundRun | lateralRun)		      
-			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
-		      else
-			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),TMath::Abs(sigmaWdistro*( ( lambda511 * pdfW->GetBinContent(iPdfHisto+1) * (TMath::Exp( -(crystalz/lambda511) ) -1 ) ) / ( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* cumulativeW->GetBinContent(iPdfHisto+1) ) ) ));
-		    }
-		    CurrentCrystal->SetDerivativeDoiResolution(derivativeDoiResolution);
-		    sname.str("");
+// 		    double sigmaWdistro = userSigmaW; 
+// 		    if(userSigmaW == -1)
+// 		    {
+// 		      sigmaWdistro = CurrentCrystal->GetDeltaW();
+// 		    }  
+// 		    sname << "Doi Resolution Histogram - Crystal " << CurrentCrystal->GetID();
+// 		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);  
+// 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+// 		    {
+// 		      if(backgroundRun | lateralRun)		      
+// 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
+// 		      else
+// 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),TMath::Abs(sigmaWdistro*( ( lambda511 * pdfW->GetBinContent(iPdfHisto+1) * (TMath::Exp( -(crystalz/lambda511) ) -1 ) ) / ( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* cumulativeW->GetBinContent(iPdfHisto+1) ) ) ));
+// 		    }
+// 		    CurrentCrystal->SetDerivativeDoiResolution(derivativeDoiResolution);
+// 		    sname.str("");
 		    
 		    //graph of doi res as a function of z
-		    sname << "Doi Res. vs. Z - Crystal " << CurrentCrystal->GetID();
-		    TGraph* doiResZ = new TGraph();
-		    int pCounter = 0;
-		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-		    {
-		      doiResZ->SetPoint(pCounter,calibrationGraph->Eval(pdfW->GetBinCenter(iPdfHisto+1)),2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
-		      pCounter++;
-		    }
-		    doiResZ->SetTitle(sname.str().c_str());
-		    doiResZ->SetName(sname.str().c_str());
-		    doiResZ->GetXaxis()->SetTitle("Z [mm]");
-		    doiResZ->GetYaxis()->SetTitle("DoiRes FWHM [mm]");
-		    CurrentCrystal->SetDoiResZ(doiResZ);
-		    sname.str("");
+// 		    sname << "Doi Res. vs. Z - Crystal " << CurrentCrystal->GetID();
+// 		    TGraph* doiResZ = new TGraph();
+// 		    int pCounter = 0;
+// 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
+// 		    {
+// 		      doiResZ->SetPoint(pCounter,calibrationGraph->Eval(pdfW->GetBinCenter(iPdfHisto+1)),2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
+// 		      pCounter++;
+// 		    }
+// 		    doiResZ->SetTitle(sname.str().c_str());
+// 		    doiResZ->SetName(sname.str().c_str());
+// 		    doiResZ->GetXaxis()->SetTitle("Z [mm]");
+// 		    doiResZ->GetYaxis()->SetTitle("DoiRes FWHM [mm]");
+// 		    CurrentCrystal->SetDoiResZ(doiResZ);
+// 		    sname.str("");
 		    
 		    
 		    
@@ -1247,17 +1249,17 @@ int main (int argc, char** argv)
 // 		    }
 // 		    CurrentCrystal->SetDoiResolutions(resolutions);
 // 		    //now a bit dummy, sample the curve and find an average
-		    int samplingNumb = 20;
-		    double sumResolutions = 0;
-		    for(int iSample = 0 ; iSample < samplingNumb; iSample++)
-		    {
-		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
-		    }
-		    sname.str("");
-		    if( sumResolutions/samplingNumb > 0 && sumResolutions/samplingNumb < crystalz )
-		      CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
-		    else
-		      CurrentCrystal->SetAverageDoiResolution(crystalz);
+// 		    int samplingNumb = 20;
+// 		    double sumResolutions = 0;
+// 		    for(int iSample = 0 ; iSample < samplingNumb; iSample++)
+// 		    {
+// 		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
+// 		    }
+// 		    sname.str("");
+// 		    if( sumResolutions/samplingNumb > 0 && sumResolutions/samplingNumb < crystalz )
+// 		      CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
+// 		    else
+// 		      CurrentCrystal->SetAverageDoiResolution(crystalz);
 		    
 		    //histogram with the difference between the tag calibration and the analytical calibration
 		    // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
@@ -1278,14 +1280,44 @@ int main (int argc, char** argv)
 		      if(correctingForDOI)
 			PhotopeakEnergyCut = PhotopeakEnergyCutCorrected;
 		      
+                      int RealZBins = 100;
+                      
 		      sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
 		      var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> " << sname.str(); 
-		      TH2F* spectrum2dSimDOIplot = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,1,100,0,CurrentCrystal->GetDimensionZ());
-		      nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut,"COLZ"); 
+		      TH2F* spectrum2dSimDOIplot = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1,RealZBins,0,CurrentCrystal->GetDimensionZ());
+		      nPoints = tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut ,"COLZ"); 
 		      spectrum2dSimDOIplot->GetXaxis()->SetTitle("W");
 		      spectrum2dSimDOIplot->GetYaxis()->SetTitle("Z");
 		      CurrentCrystal->SetSimDOIplot(spectrum2dSimDOIplot);
 		      sname.str("");
+                      var.str("");
+                      // FitSlicesX so we can plot it together with the calibration graph
+                      spectrum2dSimDOIplot->FitSlicesX(0, 1, RealZBins, 0, "QNRG5S");
+                      sname << spectrum2dSimDOIplot->GetName() << "_1";
+                      TH1D *spectrum2dSimDOIplot_1 = (TH1D*)gDirectory->Get(sname.str().c_str());
+                      sname.str("");
+                      sname << spectrum2dSimDOIplot->GetName() << "_2";
+                      TH1D *spectrum2dSimDOIplot_2 = (TH1D*)gDirectory->Get(sname.str().c_str());
+                      sname.str("");
+                      //run on the two histograms and store the results in a TGraphErrors and in a TH1F
+                      
+                      sname << "Sigma W from SIM - Crystal " << CurrentCrystal->GetID();
+                      TH1F *sigmaSim = new TH1F(sname.str().c_str(),sname.str().c_str(),50,0,0.05);
+                      std::vector<double> ySim,xSim,exSim,eySim;
+                      for(int iSim = 1 ; iSim < spectrum2dSimDOIplot_1->GetNbinsX()  ; iSim++)
+                      {
+                          ySim.push_back(spectrum2dSimDOIplot_1->GetBinCenter(iSim));
+                          xSim.push_back(spectrum2dSimDOIplot_1->GetBinContent(iSim));
+                          eySim.push_back(0);
+                          exSim.push_back(spectrum2dSimDOIplot_2->GetBinContent(iSim));
+                          sigmaSim->Fill(spectrum2dSimDOIplot_2->GetBinContent(iSim));
+                      }
+                      TGraphErrors *gTot = new TGraphErrors(xSim.size(),&xSim[0],&ySim[0],&exSim[0],&eySim[0]);
+                      sname.str("");
+                      CurrentCrystal->SetSimZvsW(gTot);
+                      CurrentCrystal->SetSimSigmaW(sigmaSim);
+                      
+                      
 		      // same plot but with a TGraph, to allow fitting
 		      sname << "Graph Z vs. W - Crystal " << CurrentCrystal->GetID();
 		      TGraph* graph = new TGraph(nPoints,tree->GetV2(),tree->GetV1()); // same but TGraph (so it can be fitted in 1D)
@@ -1296,18 +1328,21 @@ int main (int argc, char** argv)
 		      graph->Draw("ap");
 		      sname.str("");
 		      // 		  TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-		      sname << "expfit - Crystal " << CurrentCrystal->GetID();
-		      TF1 *expfit = new TF1(sname.str().c_str(),  "[0]*exp(-x/[1])",0,1);
-		      // 		  linear->SetParameter(0,-100);
-		      // 		  linear->SetParameter(1,50);
-		      expfit->SetParameter(0,50);
-		      expfit->SetParameter(1,0.1);
-		      // 		  graph->SetStats(1);
-		      graph->Fit(sname.str().c_str(),"Q","",0.1,0.7);
-		      CurrentCrystal->SetSimFit(expfit);
+// 		      sname << "expfit - Crystal " << CurrentCrystal->GetID();
+// 		      TF1 *expfit = new TF1(sname.str().c_str(),  "[0]*exp(-x/[1])",0,1);
+// 		      // 		  linear->SetParameter(0,-100);
+// 		      // 		  linear->SetParameter(1,50);
+// 		      expfit->SetParameter(0,50);
+// 		      expfit->SetParameter(1,0.1);
+// 		      // 		  graph->SetStats(1);
+// 		      graph->Fit(sname.str().c_str(),"Q","",0.1,0.7);
+// 		      CurrentCrystal->SetSimFit(expfit);
 		      CurrentCrystal->SetSimGraph(graph);
 		      sname.str("");
 		      var.str("");
+                      
+                      
+                      
 		    }
 		  }
 		  else
@@ -1589,14 +1624,14 @@ int main (int argc, char** argv)
 //   DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
 //   DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
   
-  TH2F *DeltaWvsIJ = new TH2F("Delta W vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  DeltaWvsIJ->GetXaxis()->SetTitle("i (U axis)");
-  DeltaWvsIJ->GetYaxis()->SetTitle("j (V axis)");
-  DeltaWvsIJ->GetZaxis()->SetTitle("Delta W");
-  DeltaWvsIJ->GetXaxis()->SetTitleOffset(1.8);
-  DeltaWvsIJ->GetYaxis()->SetTitleOffset(1.8);
-  DeltaWvsIJ->GetZaxis()->SetTitleOffset(2.2);
-  DeltaWvsIJ->GetZaxis()->SetRangeUser(0,0.05);
+//   TH2F *DeltaWvsIJ = new TH2F("Delta W vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   DeltaWvsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   DeltaWvsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   DeltaWvsIJ->GetZaxis()->SetTitle("Delta W");
+//   DeltaWvsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   DeltaWvsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   DeltaWvsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   DeltaWvsIJ->GetZaxis()->SetRangeUser(0,0.05);
   
 //   TH2F *mCalVsIJ = new TH2F("Abs(mCal) vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
 //   mCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1636,14 +1671,14 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,0.3);
   
   
-  TH2F *AverageDoiResolutionVsIJ = new TH2F("Average DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  AverageDoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  AverageDoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  AverageDoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
-  AverageDoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  AverageDoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  AverageDoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  AverageDoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
+//   TH2F *AverageDoiResolutionVsIJ = new TH2F("Average DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   AverageDoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
+//   AverageDoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
+//   AverageDoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
+//   AverageDoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
+//   AverageDoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
+//   AverageDoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
+//   AverageDoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
   
   //   TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   //   Wwidht20percVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -1668,29 +1703,29 @@ int main (int argc, char** argv)
 //   WDoiDistroCentral->SetStats(1);
   
   //Distribution of AVERAGE DOI resolutions
-  TH1F *AverageDoiDistro = new TH1F("Average Doi Res FWHM","Average distribution of DOI res FWHM",50,0,10);
-  AverageDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+//   TH1F *AverageDoiDistro = new TH1F("Average Doi Res FWHM","Average distribution of DOI res FWHM",50,0,10);
+//   AverageDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
   //   WDoiDistro->GetYaxis()->SetTitle("N");
-  AverageDoiDistro->SetStats(1);
+//   AverageDoiDistro->SetStats(1);
   
   //Distribution of AVERAGE DOI resolutions -CENTRAL  
-  TH1F *AverageDoiDistroCentral = new TH1F("Central - Average Doi Res FWHM","Central - Average distribution of DOI res FWHM",50,0,10);
-  AverageDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
+//   TH1F *AverageDoiDistroCentral = new TH1F("Central - Average Doi Res FWHM","Central - Average distribution of DOI res FWHM",50,0,10);
+//   AverageDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
   //   WDoiDistro->GetYaxis()->SetTitle("N");
-  AverageDoiDistroCentral->SetStats(1);
+//   AverageDoiDistroCentral->SetStats(1);
   
   
   //Distribution of fit exp tau for W plots
-  TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
-  WtauFit->GetXaxis()->SetTitle("Tau");
-  WtauFit->GetYaxis()->SetTitle("N");
-  WtauFit->SetStats(1);
+//   TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
+//   WtauFit->GetXaxis()->SetTitle("Tau");
+//   WtauFit->GetYaxis()->SetTitle("N");
+//   WtauFit->SetStats(1);
   
   
-  TH2F *WtauFitVsIJ = new TH2F("Exp slopes W vs. i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  WtauFitVsIJ->GetXaxis()->SetTitle("i");
-  WtauFitVsIJ->GetYaxis()->SetTitle("i");
-  WtauFitVsIJ->GetZaxis()->SetTitle("tau");
+//   TH2F *WtauFitVsIJ = new TH2F("Exp slopes W vs. i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+//   WtauFitVsIJ->GetXaxis()->SetTitle("i");
+//   WtauFitVsIJ->GetYaxis()->SetTitle("i");
+//   WtauFitVsIJ->GetZaxis()->SetTitle("tau");
   
   
   
@@ -1848,12 +1883,12 @@ int main (int argc, char** argv)
 		    
 		    
 // 		    if(CurrentCrystal->GetAverageDoiResolution() > 0 && CurrentCrystal->GetAverageDoiResolution() < crystalz )
-		    AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
-		    AverageDoiDistro->Fill(CurrentCrystal->GetAverageDoiResolution());
+// 		    AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
+// 		    AverageDoiDistro->Fill(CurrentCrystal->GetAverageDoiResolution());
 // 		    else
 // 		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
 		    
-		    DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
+// 		    DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
 // 		    mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
 // 		    RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
 // 		    qCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetQcal());
@@ -1878,7 +1913,7 @@ int main (int argc, char** argv)
 			  PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
 			}
 		      }
-		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
+// 		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
 // 		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 		      
 		    }
@@ -1978,8 +2013,11 @@ int main (int argc, char** argv)
 		      if(correctingForDOI)
 		      {
 			C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-			C_spectrum->SetName(CurrentCrystal->GetSlicesMean()->GetName());
-			C_spectrum->cd();
+// 			C_spectrum->SetName(CurrentCrystal->GetSlicesMean()->GetName());
+                        std::stringstream sname;
+                        sname << "Energy vs. W Correction - Crystal " <<  CurrentCrystal->GetID();
+			C_spectrum->SetName(sname.str().c_str());
+                        C_spectrum->cd();
 			CurrentCrystal->GetSlicesMean()->Draw();
 			CurrentCrystal->GetSlicesMeanFit()->Draw("same");
 			C_spectrum->Write();
@@ -2004,19 +2042,19 @@ int main (int argc, char** argv)
 		    CurrentCrystal->GetHistoWCorrected()->Draw();
 // 		    CurrentCrystal->GetThetaFit()->Draw("same");
 		    //instead of drawing the real fitted function, draw another gaussian function with same parameters but in the 0-1 range
-		    TF1 *gaussDraw = new TF1("gaussDraw","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-		    gaussDraw->SetParameter(0,CurrentCrystal->GetDeltaWfit()->GetParameter(0));
-		    gaussDraw->SetParameter(1,CurrentCrystal->GetDeltaWfit()->GetParameter(1));
-		    gaussDraw->SetParameter(2,CurrentCrystal->GetDeltaWfit()->GetParameter(2));
-		    gaussDraw->SetLineColor(3);
+// 		    TF1 *gaussDraw = new TF1("gaussDraw","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+// 		    gaussDraw->SetParameter(0,CurrentCrystal->GetDeltaWfit()->GetParameter(0));
+// 		    gaussDraw->SetParameter(1,CurrentCrystal->GetDeltaWfit()->GetParameter(1));
+// 		    gaussDraw->SetParameter(2,CurrentCrystal->GetDeltaWfit()->GetParameter(2));
+// 		    gaussDraw->SetLineColor(3);
 		    // 		CurrentCrystal->GetDeltaWfit()->Draw("same");
-		    gaussDraw->Draw("same");
-		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
-		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
-		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
-		    gaussDraw_2->SetLineColor(2);
-		    gaussDraw_2->Draw("same");
+// 		    gaussDraw->Draw("same");
+// 		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
+// 		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
+// 		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
+// 		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
+// 		    gaussDraw_2->SetLineColor(2);
+// 		    gaussDraw_2->Draw("same");
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
@@ -2052,19 +2090,19 @@ int main (int argc, char** argv)
 		    C_spectrum->Write();
 		    delete C_spectrum;
 		    
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetDerivativeDoiResolution()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetDerivativeDoiResolution()->Draw();
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetDerivativeDoiResolution()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetDerivativeDoiResolution()->Draw();
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
-		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-		    C_spectrum->SetName(CurrentCrystal->GetDoiResZ()->GetName());
-		    C_spectrum->cd();
-		    CurrentCrystal->GetDoiResZ()->Draw("AL");
-		    C_spectrum->Write();
-		    delete C_spectrum;
+// 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+// 		    C_spectrum->SetName(CurrentCrystal->GetDoiResZ()->GetName());
+// 		    C_spectrum->cd();
+// 		    CurrentCrystal->GetDoiResZ()->Draw("AL");
+// 		    C_spectrum->Write();
+// 		    delete C_spectrum;
 		    
 // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 // 		    C_spectrum->SetName(CurrentCrystal->GetDoiResolutions()->GetName());
@@ -2118,8 +2156,8 @@ int main (int argc, char** argv)
 		    
 		    if(usingRealSimData)
 		    {
-		      WtauFit->Fill(CurrentCrystal->GetSimFit()->GetParameter(1));
-		      WtauFitVsIJ->Fill(CurrentCrystal->GetI() ,CurrentCrystal->GetJ() , CurrentCrystal->GetSimFit()->GetParameter(1));
+// 		      WtauFit->Fill(CurrentCrystal->GetSimFit()->GetParameter(1));
+// 		      WtauFitVsIJ->Fill(CurrentCrystal->GetI() ,CurrentCrystal->GetJ() , CurrentCrystal->GetSimFit()->GetParameter(1));
 		      
 		      C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
 		      C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
@@ -2128,11 +2166,40 @@ int main (int argc, char** argv)
 		      C_spectrum->Write();
 		      delete C_spectrum;
 		      
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+		      std::stringstream sname;
+                      sname << "Sim vs. Calibration - Crystal " <<  CurrentCrystal->GetID();
+                      C_spectrum->SetName(sname.str().c_str());
+                      C_spectrum->cd();
+                      TLegend *legend_sim = new TLegend(0.6,0.75,0.893,0.89,"");
+	              legend_sim->SetFillStyle(0);
+                      CurrentCrystal->GetSimZvsW()->SetTitle(sname.str().c_str());
+                      legend_sim->AddEntry(CurrentCrystal->GetSimZvsW(),"Real Z","l");
+                      legend_sim->AddEntry(CurrentCrystal->GetCalibrationGraph(),"Calibration from W","l");
+                      TMultiGraph* mg = new TMultiGraph();
+                      CurrentCrystal->GetCalibrationGraph()->SetLineColor(kRed);
+                      mg->Add(CurrentCrystal->GetSimZvsW(),"p");
+                      mg->Add(CurrentCrystal->GetCalibrationGraph(),"l");
+//                       CurrentCrystal->GetSimZvsW()->Draw();
+//                       CurrentCrystal->GetCalibrationGraph()->Draw("same");
+                      mg->Draw("a");
+                      legend_sim->Draw();
+		      C_spectrum->Write();
+		      delete C_spectrum;
+                      
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+		      C_spectrum->SetName(CurrentCrystal->GetSimSigmaW()->GetName());
+		      C_spectrum->cd();
+		      CurrentCrystal->GetSimSigmaW()->GetXaxis()->SetTitle("W");
+                      CurrentCrystal->GetSimSigmaW()->Draw();
+		      C_spectrum->Write();
+		      delete C_spectrum;
+                      
 		      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
 		      C_spectrum->SetName(CurrentCrystal->GetSimGraph()->GetName());
 		      C_spectrum->cd();
 		      CurrentCrystal->GetSimGraph()->Draw("ap");
-		      CurrentCrystal->GetSimFit()->Draw("same");
+// 		      CurrentCrystal->GetSimFit()->Draw("same");
 		      C_spectrum->Write();		
 		      delete C_spectrum;
 		    }
@@ -2214,12 +2281,12 @@ int main (int argc, char** argv)
 //       C_DoiResolutionVsIJ->SetLeftMargin(0.15);
 //       C_DoiResolutionVsIJ->Write();
       
-      TCanvas *C_DeltaWvsIJ = new TCanvas("C_DeltaWvsIJ","C_DeltaWvsIJ",800,800);
-      C_DeltaWvsIJ->SetName(DeltaWvsIJ->GetName());
-      C_DeltaWvsIJ->cd();
-      DeltaWvsIJ->Draw("LEGO2");
-      C_DeltaWvsIJ->SetLeftMargin(0.15);
-      C_DeltaWvsIJ->Write();
+//       TCanvas *C_DeltaWvsIJ = new TCanvas("C_DeltaWvsIJ","C_DeltaWvsIJ",800,800);
+//       C_DeltaWvsIJ->SetName(DeltaWvsIJ->GetName());
+//       C_DeltaWvsIJ->cd();
+//       DeltaWvsIJ->Draw("LEGO2");
+//       C_DeltaWvsIJ->SetLeftMargin(0.15);
+//       C_DeltaWvsIJ->Write();
       
 //       TCanvas *C_mCalVsIJ = new TCanvas("C_mCalVsIJ","C_mCalVsIJ",800,800);
 //       C_mCalVsIJ->SetName(mCalVsIJ->GetName());
@@ -2228,12 +2295,12 @@ int main (int argc, char** argv)
 //       C_mCalVsIJ->SetLeftMargin(0.15);
 //       C_mCalVsIJ->Write();
       
-      TCanvas *C_AverageDoiResolutionVsIJ = new TCanvas("C_AverageDoiResolutionVsIJ","C_AverageDoiResolutionVsIJ",800,800);
-      C_AverageDoiResolutionVsIJ->SetName(AverageDoiResolutionVsIJ->GetName());
-      C_AverageDoiResolutionVsIJ->cd();
-      AverageDoiResolutionVsIJ->Draw("LEGO2");
-      C_AverageDoiResolutionVsIJ->SetLeftMargin(0.15);
-      C_AverageDoiResolutionVsIJ->Write();
+//       TCanvas *C_AverageDoiResolutionVsIJ = new TCanvas("C_AverageDoiResolutionVsIJ","C_AverageDoiResolutionVsIJ",800,800);
+//       C_AverageDoiResolutionVsIJ->SetName(AverageDoiResolutionVsIJ->GetName());
+//       C_AverageDoiResolutionVsIJ->cd();
+//       AverageDoiResolutionVsIJ->Draw("LEGO2");
+//       C_AverageDoiResolutionVsIJ->SetLeftMargin(0.15);
+//       C_AverageDoiResolutionVsIJ->Write();
       
       
 //       TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
@@ -2259,15 +2326,15 @@ int main (int argc, char** argv)
       
       //       gStyle->SetOptStat(1);
       
-      if(usingRealSimData)
-      {
-	WtauFit->Write();
-	TCanvas *C_WtauFitVsIJ = new TCanvas("C_WtauFitVsIJ","C_WtauFitVsIJ",800,800);
-	C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
-	C_WtauFitVsIJ->cd();
-	WtauFitVsIJ->Draw("LEGO2");
-	C_WtauFitVsIJ->Write();
-      }
+//       if(usingRealSimData)
+//       {
+// 	WtauFit->Write();
+// 	TCanvas *C_WtauFitVsIJ = new TCanvas("C_WtauFitVsIJ","C_WtauFitVsIJ",800,800);
+// 	C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
+// 	C_WtauFitVsIJ->cd();
+// 	WtauFitVsIJ->Draw("LEGO2");
+// 	C_WtauFitVsIJ->Write();
+//       }
       
       if(!backgroundRun)
       {
@@ -2282,8 +2349,8 @@ int main (int argc, char** argv)
 	PeakEnergyResolutionDistroCentral->Write();
 	
       }
-      AverageDoiDistro->Write();
-      AverageDoiDistroCentral->Write();
+//       AverageDoiDistro->Write();
+//       AverageDoiDistroCentral->Write();
 //       WDoiDistro->Write();
 //       WDoiDistroCentral->Write();
     }
