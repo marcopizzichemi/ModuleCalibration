@@ -881,7 +881,7 @@ int main (int argc, char** argv)
 			//gaussFitSlice->SetParameter(1,(EnergyCutMin+EnergyCutMax)/2.0);
 			//gaussFitSlice->SetParameter(2,0.15*(EnergyCutMin+EnergyCutMax)/2.0);
 			// 		    gaussFitSlice->SetRange();
-			spectrum2dADCversusW->FitSlicesY(0, bin3, bin4, 0, "QNR");
+			spectrum2dADCversusW->FitSlicesY(0, bin3, bin4, 0, "QNRG5S");
 			sname << spectrum2dADCversusW->GetName() << "_1";
 			TH1D *spectrum2d_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the mean values
 			sname.str("");
