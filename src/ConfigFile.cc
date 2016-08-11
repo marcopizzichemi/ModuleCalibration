@@ -5,7 +5,7 @@
 using std::string;
 
 ConfigFile::ConfigFile( string filename, string delimiter,
-			string comment, string sentry )
+                        string comment, string sentry )
 : myDelimiter(delimiter), myComment(comment), mySentry(sentry)
 {
   // Construct a ConfigFile, getting keys and values from given file
@@ -58,8 +58,8 @@ std::ostream& operator<<( std::ostream& os, const ConfigFile& cf )
       p != cf.myContents.end();
   ++p )
       {
-	os << p->first << " " << cf.myDelimiter << " ";
-	os << p->second << std::endl;
+        os << p->first << " " << cf.myDelimiter << " ";
+        os << p->second << std::endl;
       }
       return os;
 }
@@ -111,24 +111,24 @@ std::istream& operator>>( std::istream& is, ConfigFile& cf )
       bool terminate = false;
       while( !terminate && is )
       {
-	std::getline( is, nextline );
-	terminate = true;
-	
-	string nlcopy = nextline;
-	ConfigFile::trim(nlcopy);
-	if( nlcopy == "" ) continue;
-	
-	nextline = nextline.substr( 0, nextline.find(comm) );
-	if( nextline.find(delim) != string::npos )
-	  continue;
-	if( sentry != "" && nextline.find(sentry) != string::npos )
-	  continue;
-	
-	nlcopy = nextline;
-	ConfigFile::trim(nlcopy);
-	if( nlcopy != "" ) line += "\n";
-	line += nextline;
-	terminate = false;
+        std::getline( is, nextline );
+        terminate = true;
+        
+        string nlcopy = nextline;
+        ConfigFile::trim(nlcopy);
+        if( nlcopy == "" ) continue;
+        
+        nextline = nextline.substr( 0, nextline.find(comm) );
+        if( nextline.find(delim) != string::npos )
+          continue;
+        if( sentry != "" && nextline.find(sentry) != string::npos )
+          continue;
+        
+        nlcopy = nextline;
+        ConfigFile::trim(nlcopy);
+        if( nlcopy != "" ) line += "\n";
+        line += nextline;
+        terminate = false;
       }
       
       // Store key and value

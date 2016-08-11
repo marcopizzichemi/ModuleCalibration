@@ -11,7 +11,7 @@ class Module : public Element
 {
 private: 
   std::vector<Element*>  vMppc; 
-
+  
 public:
   Module(); // default constructor
   Module(const Module &obj); // copy constructor

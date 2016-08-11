@@ -38,8 +38,8 @@ private:
   TH1F*                  TriggerSpectrumHighlighted;///< trigger spectrum of all events seen by this mppc, highlighting the broad energy cut
   TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
   TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
-//   TH1D*                  projection_x;           ///< 
-//   TH1D*                  projection_y;           ///<
+  //   TH1D*                  projection_x;           ///< 
+  //   TH1D*                  projection_y;           ///<
   TProfile*              profileX;               ///< Profile of w,u histogram (for each bin in w, mean u and sigma are plotted)
   TProfile*              profileY;               ///< Profile of w,v histogram (for each bin in w, mean v and sigma are plotted)
   TF1*                   lineX;                  ///< Line to fit the profileX plot -> u(w) = m*w + c
@@ -66,7 +66,7 @@ private:
     int maskI;
     int maskJ;
     long int nBinsXMask;
-//     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+    //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
   
   
@@ -77,7 +77,7 @@ private:
       return lhs.meanx < rhs.meanx;
     }
   };
-
+  
   struct compare_by_y
   {
     bool operator()(const masks_t& lhs, const masks_t& rhs) const
@@ -136,8 +136,8 @@ public:
   void                   MakeRotatedFlood();
   bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
   
-//   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
-//   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
+  //   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
+  //   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
   
   
   

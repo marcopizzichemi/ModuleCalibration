@@ -6,15 +6,15 @@
 Element::Element()
 {
   /**Default constructor
-     Set a standard name ("Defaut Element") 
-     Set id = i = j = 0
-     Set x = y = z = 0
-  */
+   *    Set a standard name ("Defaut Element") 
+   *    Set id = i = j = 0
+   *    Set x = y = z = 0
+   */
   name = "Default Element";
   id = i = j = 0;
   x = y = z = 0;
-//   GlobalTag = "x.x-x.x-x.x";
-//   parentID = 0;
+  //   GlobalTag = "x.x-x.x-x.x";
+  //   parentID = 0;
   
 }
 
@@ -54,7 +54,7 @@ void Element::PrintGlobal()
   std::cout << "i = \t\t = "      << i << std::endl;
   std::cout << "j = \t\t = "      << j << std::endl;
   std::cout << "Position \t = (" << x << "," << y << "," << z << ")" << std::endl;
-//   std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
+  //   std::cout << "GlobalTag \t = " << GlobalTag << std::endl;
   std::cout << "Parent \t\t = " << parentName << std::endl;
   for(int k = 0; k < childrenName.size() ; k++)
   {
@@ -67,5 +67,5 @@ void Element::PrintSpecific()
   /**Prints Element info to terminal
    * Variables printed here are specific to this type of element
    */
-//   std::cout << "Abstract Element, nothing specific to print" << std::endl;
+  //   std::cout << "Abstract Element, nothing specific to print" << std::endl;
 }

@@ -67,9 +67,9 @@ protected:
   // Methods
 public:
   ConfigFile( string filename,
-	      string delimiter = "=",
-	      string comment = "#",
-	      string sentry = "EndConfigFile" );
+              string delimiter = "=",
+              string comment = "#",
+              string sentry = "EndConfigFile" );
   ConfigFile();
   
   // Search for key and read value or optional default value
@@ -106,7 +106,7 @@ public:
   };
   
   template <typename Container>
-Container& split(Container& result,const typename Container::value_type& s,const typename Container::value_type& delimiters,split_t::empties_t empties /*= split_t::empties_ok*/);
+  Container& split(Container& result,const typename Container::value_type& s,const typename Container::value_type& delimiters,split_t::empties_t empties /*= split_t::empties_ok*/);
   
   
   static void trim( string& s );
@@ -126,8 +126,8 @@ public:
       string key;
       key_not_found( const string& key_ = string() )
       : key(key_) {} };
-  
-  
+      
+      
 };
 
 

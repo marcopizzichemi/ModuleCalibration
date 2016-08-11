@@ -26,7 +26,7 @@
  * 
  *  @author M. Pizzichemi
  *  @date Nov 2015
-*/
+ */
 
 class InputFile
 {
@@ -41,7 +41,7 @@ private:
   bool                           *DigitizerChannelOn;                // for each channel, if it's on or not. Meaning if it is specified in the config file "digitizer" key
   //variables read from the config file 
   std::string                    ConfigFileName;                     // name of the config file
-//   std::string                    chainName; 
+  //   std::string                    chainName; 
   std::string                    digitizer_s;                        // input string of the digitizer key from config file 
   std::string                    mppc_s;                             // input string of the mppc key from config file 
   std::string                    plotPositions_s;                    // input string of the plotPositions key from config file 
@@ -169,18 +169,18 @@ private:
     int OnForDOI;
     bool isNeighbour;
     bool OnForModular;
-//     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+    //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
   
   std::vector<detector_t> detector;
-
+  
 public:
   
   InputFile(int argc, char** argv, ConfigFile& config);              //ctor
   
   static InputFile*  Instance() { return fInstance; };               // not useful right now
   static InputFile*  fInstance;                                      // not useful right now
-                                                                     
+  
   TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
   TTree*        GetTree()  const { return ftree; };                   // method to provide a pointer to the analysis TTree
   void          SetTree(TTree *aTree){ftree = aTree;};

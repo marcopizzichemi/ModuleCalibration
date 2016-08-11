@@ -31,8 +31,8 @@ private:
   TH1F*                cumulativeW;
   TH1F*                resolutions;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
-//   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
-//   TH1D*                FitSlicesSimDOIplotSigma;
+  //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
+  //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
   TGraph*              SimGraph;             
@@ -56,7 +56,7 @@ private:
   TF1*                 ThetaFit;
   TF1*                 deltaWfit;
   TF1*                 deltaWfit_2;
-//   TF1                  ProfileXFit;
+  //   TF1                  ProfileXFit;
   TF1*                 SlicesMeanFit;
   double               w_fwhm;               ///< width at half maximum for the w histogram
   double               w_rms;                ///< rms of w histogram
@@ -91,7 +91,7 @@ public:
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
-//   TF1*                 GetProfileXFit(){return &ProfileXFit;};
+  //   TF1*                 GetProfileXFit(){return &ProfileXFit;};
   TF1*                 GetSlicesMeanFit(){return SlicesMeanFit;};
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
@@ -107,12 +107,12 @@ public:
   double               GetWbegin(){return wBegin;};
   double               GetWend(){return wEnd;};
   double               GetDeltaW(){return std::abs(deltaW);};
-   
+  
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
   TH2F*                GetSimDOIplot(){return SimDOIplot;};
-//   TH1D*                GetFitSlicesSimDOIplot(){return FitSlicesSimDOIplot;};
-//   TH1D*                GetFitSlicesSimDOIplotSigma(){return FitSlicesSimDOIplotSigma;};
+  //   TH1D*                GetFitSlicesSimDOIplot(){return FitSlicesSimDOIplot;};
+  //   TH1D*                GetFitSlicesSimDOIplotSigma(){return FitSlicesSimDOIplotSigma;};
   TGraph*              GetSimGraph(){return SimGraph;};
   double               GetU(){return u;};
   double               GetV(){return v;};
@@ -154,7 +154,7 @@ public:
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
-//   void                 SetEllipses(std::string varX,std::string varY);
+  //   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};
@@ -162,8 +162,8 @@ public:
   void                 SetPhotopeakCorrected(float a, float b){peakPositionCorrected = a;peakSigmaCorrected = b;};
   void                 SetVersusTime(TH2F* aHisto){VersusTime = aHisto;};
   void                 SetSimDOIplot(TH2F* aHisto){SimDOIplot = aHisto;};
-//   void                 SetFitSlicesSimDOIplot(TH1D* aHisto){FitSlicesSimDOIplot = aHisto;};
-//   void                 SetFitSlicesSimDOIplotSigma(TH1D* aHisto){FitSlicesSimDOIplotSigma = aHisto;};
+  //   void                 SetFitSlicesSimDOIplot(TH1D* aHisto){FitSlicesSimDOIplot = aHisto;};
+  //   void                 SetFitSlicesSimDOIplotSigma(TH1D* aHisto){FitSlicesSimDOIplotSigma = aHisto;};
   void                 SetSimZvsW(TGraphErrors* aGraph){simZvsW = aGraph;};
   void                 SetSimSigmaW(TH1F* aHisto){simSigmaW = aHisto;};
   void                 SetSimGraph(TGraph* aGraph){SimGraph = aGraph;};
@@ -171,7 +171,7 @@ public:
   void                 SetW20percCut(TCut aCut){w20percCut = aCut;};
   void                 SetSlicesMean(TH1D* aHisto){SlicesMean = aHisto;};
   void                 SetCorrectedSpectrum(TH1F* aHisto){CorrectedSpectrum = aHisto;};
-//   void                 SetProfileXFit(TF1 aFit){ProfileXFit = aFit;};
+  //   void                 SetProfileXFit(TF1 aFit){ProfileXFit = aFit;};
   void                 SetSlicesMeanFit(TF1* aFit){SlicesMeanFit = aFit;};
   void                 SetFitCorrected(TF1* aFit){FitCorrected = aFit;};
   void                 SetWbegin(double a){wBegin = a;};

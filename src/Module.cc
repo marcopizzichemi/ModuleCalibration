@@ -15,7 +15,7 @@ Module::Module(const Module &obj)
 
 Module::~Module()
 {
-   std::cout << "destructing module " << name << std::endl;
+  std::cout << "destructing module " << name << std::endl;
 }
 
 void Module::PrintSpecific()
