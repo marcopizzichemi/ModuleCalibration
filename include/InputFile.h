@@ -128,7 +128,8 @@ private:
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
   Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
   Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
-  
+  std::vector <float>* TotalCryEnergy; 
+
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
@@ -138,7 +139,8 @@ private:
   TBranch      *bRealZ;                                              // branches for above data
   TBranch      *bCrystalsHit;                                        // branches for above data
   TBranch      *bNumbOfInteractions;                                 // branches for above data
-  
+  TBranch      *bTotalCryEnergy;                                     //
+
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
@@ -157,7 +159,9 @@ private:
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
   Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
   Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
-  
+  std::vector <float> TreeTotalCryEnergy; 
+  std::vector <float>* pTreeTotalCryEnergy; 
+
   struct detector_t
   {
     int digitizerChannel;
