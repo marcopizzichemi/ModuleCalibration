@@ -17,6 +17,7 @@
 #include <fstream>
 #include "TError.h"
 #include "TEllipse.h"
+#include "TROOT.h"
 
 struct Point // definition fo a point (it is used in the binary output)
 {
@@ -298,6 +299,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   
 void InputFile::ImportTChain(int argc, char** argv)
 {
+  gROOT->ProcessLine("#include <vector>");
   
   // fill the tchain with input files
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
@@ -326,6 +328,8 @@ void InputFile::ImportTChain(int argc, char** argv)
     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
     fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
     fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
+    fchain->SetBranchAddress("TotalCryEnergy",&TotalCryEnergy, &bTotalCryEnergy);
+
   }
   for(int i=0; i<adcChannels; i++)
   {
@@ -340,6 +344,7 @@ void InputFile::PrepareTTree()
   //set branches also for the analysis ttree
   ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l"); 
   ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
+
   //branches of the 32 channels data
   for (int i = 0 ; i < inputChannels ; i++)
   {
@@ -360,11 +365,16 @@ void InputFile::PrepareTTree()
   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O"); 
   if(usingRealSimData)
   {
+    pTreeTotalCryEnergy = &TreeTotalCryEnergy;
+
     ftree->Branch("RealX",&TreeRealX,"RealX/F"); 
     ftree->Branch("RealY",&TreeRealY,"RealY/F"); 
     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F"); 
     ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S"); 
-    ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S"); 
+    ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S");
+    ftree->Branch("TotalCryEnergy","std::vector<float>",&pTreeTotalCryEnergy);
+
+ 
   }
 }
 
@@ -417,13 +427,12 @@ void InputFile::FillTree()
     TreeDeltaTimeTag = ChainDeltaTimeTag;
     
     int TreeEntryCounter = 0;
-    
     //loop to fill the channel
     for (int j = 0 ; j < adcChannels ; j++) 
     {
       if(DigitizerChannelOn[j])
       {
-// 	std::cout << ChainAdcChannel[j] << " " ;
+ 	//std::cout << ChainAdcChannel[j] << " " ;
 	// fill tree with data from the channels
 	// also correcting for saturation if it's set in the config file
 	if(correctingSaturation)
@@ -460,6 +469,7 @@ void InputFile::FillTree()
     // terrible implementation to allow us of only neighbour channels...
     //loop to find the neighbour channels of trigger (if needed)
     //read position of the trigger channel
+
     double xTrigger;
     double yTrigger;
     std::vector<float> allowedX,allowedY;
@@ -586,7 +596,7 @@ void InputFile::FillTree()
 	}
       }
     }
-  
+
     //loop to calculate u,v
     int counterFill = 0;
     for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
@@ -631,7 +641,7 @@ void InputFile::FillTree()
       }
     }
     
-    
+
     //compute u,v,w
     // near channels vs. total channels depending on what decided before
     TreeFloodX = rowsum/total;
@@ -655,6 +665,10 @@ void InputFile::FillTree()
       TreeRealZ = RealZ;
       TreeCrystalsHit = CrystalsHit;
       TreeNumbOfInteractions = NumbOfInteractions;
+      for(int k=0; k<(TotalCryEnergy->size()); k++)
+        //std::cout<< TotalCryEnergy->at(k) <<std::endl;
+        TreeTotalCryEnergy.push_back(TotalCryEnergy->at(k));
+
     }
     
     if(TreeExtendedTimeTag >= nclock)
@@ -662,6 +676,7 @@ void InputFile::FillTree()
       if(!TreeBadevent)
       {
 	ftree->Fill();
+
 	GoodCounter++;
       }
       else
@@ -674,6 +689,7 @@ void InputFile::FillTree()
     
     //counter to give a feedback to the user
     counter++;
+    TreeTotalCryEnergy.clear();
     
     int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
     if( (perc % 10) == 0 )
@@ -695,6 +711,7 @@ void InputFile::FillTree()
     output_file.close();
   //   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
   //std::cout << "Bad events = \t" << badEvents << std::endl;
+
 }
 
 
