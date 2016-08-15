@@ -19,6 +19,9 @@ private:
   Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
   TH1F*                Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
+  TH1F*                TotalCryEnergy;       ///< charge deposited for this crystal
+  TH2F*                CryVsTotEnergy;       ///< charge deposited for this crystal vs total charge deposited in the module
+  TH1F*                DiffTotCryEnergy;     ///< charge dep in the module minus charge dep in this crystal, used to find sigma when diff=0
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
   TH1F*                HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
   TH1F*                HighlightedSpectrumCorrected; ///<
@@ -75,6 +78,9 @@ public:
   // methods to get and set the private variables. Names should be self explanatory
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};
   TH1F*                GetSpectrum(){return Spectrum;};
+  TH1F*                GetTotalCryEnergy(){return TotalCryEnergy;};
+  TH2F*                GetCryVsTotEnergy(){return CryVsTotEnergy;};
+  TH1F*                GetDiffTotCryEnergy(){return DiffTotCryEnergy;};
   TH1F*                GetCorrectedSpectrum(){return CorrectedSpectrum;};
   TH1F*                GetHighlightedSpectrum(){return HighlightedSpectrum;};
   TH1F*                GetHighlightedSpectrumCorrected(){return HighlightedSpectrumCorrected;};
@@ -138,6 +144,9 @@ public:
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
+  void                 SetTotalCryEnergy(TH1F* aHisto){TotalCryEnergy = aHisto;};
+  void                 SetCryVsTotEnergy(TH2F* aHisto){CryVsTotEnergy = aHisto;};
+  void                 SetDiffTotCryEnergy(TH1F* aHisto){DiffTotCryEnergy = aHisto;};
   void                 SetHighlightedSpectrum(TH1F* aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHighlightedSpectrumCorrected(TH1F* aHisto){HighlightedSpectrumCorrected = aHisto;};
   void                 SetHistoW(TH1F* aHisto){HistoW = aHisto;};

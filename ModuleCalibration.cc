@@ -56,7 +56,6 @@
 #include "TGraph.h"
 #include "TSpectrum.h"
 #include "TSpectrum2.h"
-#include "TTreeFormula.h"
 #include "TMath.h"
 #include "TChain.h"
 #include "TCut.h"
@@ -72,6 +71,7 @@
 #include "TProfile.h"
 #include "TH1D.h"
 #include "TPaveText.h"
+#include "TTreeFormula.h"
 
 #include <iostream>
 #include <fstream>
@@ -387,6 +387,8 @@ int main (int argc, char** argv)
   
   // MAIN LOOP
   // Loop on modules, mppcs and crystal
+  int counterCut=0;
+
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
     for(int jModule = 0; jModule < nmoduley ; jModule++)
@@ -411,7 +413,12 @@ int main (int argc, char** argv)
       spectrum2dModule->GetYaxis()->SetTitle("V");
       module[iModule][jModule]->SetFloodMap2D(spectrum2dModule);
       varModule.str("");
+
       
+      
+
+
+     
       //3D plot
       // <<<<<<< HEAD
       //       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
@@ -495,6 +502,8 @@ int main (int argc, char** argv)
       spectrum3dModule->GetZaxis()->SetTitle("W");
       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
       varModule.str("");
+
+
       
       if(usingRealSimData)
       {
@@ -512,7 +521,23 @@ int main (int argc, char** argv)
         module[iModule][jModule]->SetFloodMap2DSingleCrystalHit(spectrum2dModuleSingleCrystalHit);
         varModule.str("");
         
-        
+
+
+        //module total charge, to then cut at 0.5 MeV
+        nameModule = "Total Charge no Cuts " + module[iModule][jModule]->GetName();
+        varModule << "(";
+        for(int k=0; k<ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1; k++)
+        {
+          varModule << "TotalCryEnergy[" << k << "]+";
+        }
+        varModule << "TotalCryEnergy[" << ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1 << "])" << ">>" << nameModule;
+        TH1F *TotalNoCuts = new TH1F(nameModule, nameModule, histo1Dbins, 0, 1);
+        tree->Draw(varModule.str().c_str());
+        TotalNoCuts->GetXaxis()->SetTitle("Charge Deposited [MeV]");
+        TotalNoCuts->GetYaxis()->SetTitle("N");
+        std::cout << "Total n of events with sum of all TotalCryEnergy is >0.5 MeV - no cuts: \t" <<  TotalNoCuts->Integral(TotalNoCuts->GetXaxis()->FindBin(0.5), histo1Dbins) << std::endl;
+        module[iModule][jModule]->SetTotalNoCuts(TotalNoCuts);
+        varModule.str("");    
       }
       
       //spectra for each mppc
@@ -716,7 +741,16 @@ int main (int argc, char** argv)
                     spectrumCharge->GetYaxis()->SetTitle("N");
                     sname.str("");
                     var.str("");
+
+
                     
+                    
+
+
+
+              
+
+
                     //prepare the photopeak cuts and stuff
                     TCut PhotopeakEnergyCutCorrected = "";
                     TCut PhotopeakEnergyCut  = ""; 
@@ -793,7 +827,7 @@ int main (int argc, char** argv)
                     }
                     //-----------------------------------------------------------------------
                     CurrentCrystal->SetSpectrum(spectrumCharge);
-                    
+
                     //w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
                     //if it's a background run, it won't cut on photopeak (since there will be none and the string will be empty)
                     sname << "W histogram - Crystal " << CurrentCrystal->GetID();
@@ -1004,6 +1038,8 @@ int main (int argc, char** argv)
                     spectrum3dCrystal->GetYaxis()->SetTitle("V");
                     spectrum3dCrystal->GetZaxis()->SetTitle("W");
                     CurrentCrystal->SetFloodMap3D(spectrum3dCrystal);
+
+
                     sname.str("");
                     var.str("");
                     
@@ -1040,7 +1076,35 @@ int main (int argc, char** argv)
                     // 		    }
                     // 		    CurrentCrystal->SetDensityHisto(densityHisto);
                     // 		    sname.str("");
-                    
+
+
+                    //draw total charge deposited -(minus) charge deposited per crystal, using PhotopeakEnergyCutCorrected
+                    //then fit gaussian centered in 0, to find sigma
+                    sname << "Total Charge Deposited - Charge Deposited in Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                    var << "(";
+                    for(int k=0; k<ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1; k++)
+                    {
+                      var << "TotalCryEnergy[" << k << "]+";
+                    }
+                    var << "TotalCryEnergy[" << ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1 << "])";
+                    var << "- TotalCryEnergy[" << CurrentCrystal->GetID() << "]" << ">>" << sname.str();
+                    TH1F* DiffTotCryEnergy = new TH1F(sname.str().c_str(),sname.str().c_str(),200,0,0.15);    
+                    tree->Draw(var.str().c_str(),PhotopeakEnergyCutCorrected+CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                    DiffTotCryEnergy->GetXaxis()->SetTitle("(Total-Crystal) Charge Deposited [MeV]");
+                    DiffTotCryEnergy->GetYaxis()->SetTitle("N");
+                    sname.str("");
+                    var.str("");
+                    CurrentCrystal->SetDiffTotCryEnergy(DiffTotCryEnergy); 
+                    //fit gaussian
+                    sname << "gaussDiff histogram - Crystal " << CurrentCrystal->GetID();
+                    TF1 *gaussDiff = new TF1(sname.str().c_str(),  "gaus",0,0.15);
+                    //fix mean at 0
+                    gaussDiff->FixParameter(1,0);
+                    Int_t fitStatus = DiffTotCryEnergy->Fit(sname.str().c_str(),"Q", 0,0.15);
+                    //double DiffErr = gaussDiff->GetParameter(2);
+                    //std::cout << "gauss RMS for crystal " << CurrentCrystal->GetID() << ":\t" << DiffErr << std::endl;
+
+                                       
                     // Histogram 2d of time evolution
                     sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
                     var << SumChannels << ":ExtendedTimeTag >> " << sname.str();
@@ -1074,7 +1138,9 @@ int main (int argc, char** argv)
                     tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
                     spectrumHistoWCorrected->GetXaxis()->SetTitle("W");
                     spectrumHistoWCorrected->GetYaxis()->SetTitle("N");
-                    
+                    //add the number of events with volume and photopeak cuts (for each crystal)
+                    counterCut = counterCut + spectrumHistoWCorrected->Integral();
+                   
                     //clone this histogram, to smooth and find consistent relevant points. fitting will be performed on the non-smoothed version 
                     TH1F* spectrumHistoWCorrectedClone = (TH1F*) spectrumHistoWCorrected->Clone();
                     spectrumHistoWCorrectedClone->SetName("Smooth W corrected");
@@ -1343,8 +1409,80 @@ int main (int argc, char** argv)
                       CurrentCrystal->SetSimGraph(graph);
                       sname.str("");
                       var.str("");
+
+
+
+                      //draw charge deposited per crystal 
+                      sname << "Charge Deposited - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                      var << "TotalCryEnergy[" << CurrentCrystal->GetID() << "]" << ">>" << sname.str();
+                      TH1F* TotalCryEnergy = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,1);    
+                      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                      TotalCryEnergy->GetXaxis()->SetTitle("Charge Deposited [MeV]");
+                      TotalCryEnergy->GetYaxis()->SetTitle("N");
+                      sname.str("");
+                      var.str("");
+                      CurrentCrystal->SetTotalCryEnergy(TotalCryEnergy);
+
+
+       
+
+                      //draw charge deposited per crystal vs total charge deposited in module
+                      sname << "Charge Deposited Crystal " << CurrentCrystal->GetID() << " vs. Total Charge Deposited - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                      std::stringstream varX, varY;
+                      varY << "(";
+                      for(int k=0; k<ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1; k++)
+                      {
+                        varY << "TotalCryEnergy[" << k << "]+";
+                      }
+                      varY << "TotalCryEnergy[" << ncrystalsy*ncrystalsx*nmppcy*nmppcx*nmodulex*nmoduley-1 << "])";
+                      varX << "TotalCryEnergy[" << CurrentCrystal->GetID() << "]";
+                      var << varY.str().c_str() << ":" << varX.str().c_str() << ">>" << sname.str();
+                      //std::cout << var.str().c_str() << std::endl;
+
+                      TH2F* CryVsTotEnergy = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,0.6,100,0,0.6);    
+                      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(), "COLZ");
                       
+                      /*
+                      //cut above the bisector: SEGMENTATION VIOLATION
+                      std::stringstream testCut;
+                      testCut << (varY.str().c_str()) << ">" << (varX.str().c_str()) << "+ 0";
+
+                      //segmentation violation 
+                      //TCut testingCut = testCut.str().c_str(); 
+                      //TTreeFormula* treeformula = new TTreeFormula("formula", testingCut+CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(), tree);
                       
+                      for (int ient=0; ient<tree->GetEntries(); ient++)
+                      {
+                        
+                        std::vector <float>* TotalCryEnergy; 
+                        //std::vector <float>* TotalCryEnergy;
+                        TBranch      *bTotalCryEnergy;                                     //
+
+                        tree->SetBranchAddress("TotalCryEnergy",&TotalCryEnergy, &bTotalCryEnergy);
+                        tree->GetEntry(ient);
+                        //std::cout << ient << std::endl;
+                        if(treeformula->EvalInstance())
+                        {
+                          //std::cout << ient << std::endl;
+                          for(int jent=0; jent<64; jent++){
+                            std::cout << TotalCryEnergy->at(jent) << "\t" << jent << std::endl;
+                          }
+                        }
+                      
+                      }
+                      
+                      //std::cout << "n: " << CurrentCrystal->GetID() << " ----- charge: " << TotalCryEnergy[CurrentCrystal->GetID()] << "\n" << std::endl;
+                      */
+
+                      CryVsTotEnergy->GetXaxis()->SetTitle("Charge Deposited in Crystal [MeV]");
+                      CryVsTotEnergy->GetYaxis()->SetTitle("Total Charge Deposited [MeV]");
+                      sname.str("");
+                      var.str("");
+                      varX.str("");
+                      varY.str("");
+                      CurrentCrystal->SetCryVsTotEnergy(CryVsTotEnergy);
+                        
+                        
                       
                     }
                   }
@@ -1362,8 +1500,11 @@ int main (int argc, char** argv)
       
     }
   }
+
+  //total number of events in volume and photopeak cuts
+  std::cout << "Total n of events with volume and photopeak cuts: \t" << counterCut << std::endl;
   //----------------------------------------------------------//
-  
+
   
   
   
@@ -1775,6 +1916,13 @@ int main (int argc, char** argv)
         module[iModule][jModule]->GetFloodMap2DSingleCrystalHit()->Draw("COLZ");
         C_spectrum->Write();
         delete C_spectrum;
+
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetTotalNoCuts()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetTotalNoCuts()->Draw();
+        C_spectrum->Write();
+        delete C_spectrum;
         
       }
       
@@ -1817,6 +1965,8 @@ int main (int argc, char** argv)
             mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D()->Draw("COLZ");
             C_spectrum->Write();
             delete C_spectrum;
+
+
             
             // 3d flood map
             C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
@@ -1962,6 +2112,7 @@ int main (int argc, char** argv)
                     C_spectrum->Write();
                     delete C_spectrum;
                     
+
                     // spectrum without highligth
                     // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                     // 		    TString title = "mod_";
@@ -2161,7 +2312,33 @@ int main (int argc, char** argv)
                     {
                       // 		      WtauFit->Fill(CurrentCrystal->GetSimFit()->GetParameter(1));
                       // 		      WtauFitVsIJ->Fill(CurrentCrystal->GetI() ,CurrentCrystal->GetJ() , CurrentCrystal->GetSimFit()->GetParameter(1));
-                      
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetTotalCryEnergy()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetTotalCryEnergy()->Draw();
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+
+                      //
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                      C_spectrum->SetName(CurrentCrystal->GetCryVsTotEnergy()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetCryVsTotEnergy()->Draw("COLZ");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+
+                      //
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetDiffTotCryEnergy()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetDiffTotCryEnergy()->Draw();
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+
+                      //
                       C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
                       C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
                       C_spectrum->cd();
@@ -2169,6 +2346,8 @@ int main (int argc, char** argv)
                       C_spectrum->Write();
                       delete C_spectrum;
                       
+
+
                       C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                       std::stringstream sname;
                       sname << "Sim vs. Calibration - Crystal " <<  CurrentCrystal->GetID();

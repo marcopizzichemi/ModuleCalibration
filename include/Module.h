@@ -10,7 +10,7 @@
 class Module : public Element
 {
 private: 
-  std::vector<Element*>  vMppc; 
+  std::vector<Element*>  vMppc;
   
 public:
   Module(); // default constructor
@@ -20,6 +20,10 @@ public:
   void                   SetMppc(Mppc *pMppc);
   int                    GetMppcsNumber(){return vMppc.size();};
   Mppc*                  GetMppc(int pi, int pj);  
+
+  
+ 
+
   
   void PrintGlobal();
   void PrintSpecific();
