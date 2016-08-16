@@ -94,4 +94,6 @@ endforeach()
 # Install the executable to 'bin' directory under CMAKE_INSTALL_PREFIX
 #
 install(TARGETS ModuleCalibration DESTINATION bin)
-
+set(CMAKE_BUILD_TYPE Release)
+# set (CMAKE_CXX_FLAGS "-Wvla -Wsign-compare")
+set (CMAKE_CXX_FLAGS "-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wno-variadic-macros -pipe -std=c++98")
