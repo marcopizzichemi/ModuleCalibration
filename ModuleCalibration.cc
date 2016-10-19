@@ -77,6 +77,7 @@
 #include "TProfile.h"
 #include "TH1D.h"
 #include "TPaveText.h"
+#include "TGraphDelaunay.h"
 
 #include <iostream>
 #include <fstream>
@@ -275,6 +276,7 @@ int main (int argc, char** argv)
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm
   bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
+  bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false 
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -1211,7 +1213,94 @@ int main (int argc, char** argv)
                     CurrentCrystal->SetCalibrationGraph(calibrationGraph);
                     CurrentCrystal->SetCumulativeW(cumulativeW);
 
-                    //histogram of doi resolution
+                    //Compton calibration plots
+                    //TEST on single. MPPC is now C2, crystal 28. We want to see just MPPC C3
+                    //the p_C3(E,w)
+                    // create a 3x3 matrix of TGraph2D*
+                    if(comptonAnalysis)
+                    {
+                      TGraph2D***  ComptonCalibation;
+                      ComptonCalibation = new TGraph2D** [4];
+                      for(int iCal = 0; iCal < 4 ; iCal++) ComptonCalibation[iCal] = new TGraph2D*[4];
+
+                      TGraphDelaunay*** interpolationGraph;
+                      interpolationGraph = new TGraphDelaunay** [4];
+                      for(int iCal = 0; iCal < 4 ; iCal++) interpolationGraph[iCal] = new TGraphDelaunay*[4];
+
+                      //then fill only the existing ones
+                      for(int iNeighbour = -1 ; iNeighbour < 2 ; iNeighbour++)
+                      {
+                        for(int jNeighbour = -1 ; jNeighbour < 2 ; jNeighbour++)
+                        {
+                          if( (iMppc + iNeighbour >= 0) && (iMppc + iNeighbour <= nmppcx) )
+                          {
+                            if( (jMppc + jNeighbour >= 0) && (jMppc + jNeighbour <= nmppcy) )
+                            {
+                              sname.str("");
+                              var.str("");
+                              sname << "Pi(E,w)[" << iMppc + iNeighbour <<  "][" << jMppc + jNeighbour <<  "]_" << CurrentCrystal->GetID();
+                              int tempChannel = mppc[iMppc + iNeighbour][jMppc + jNeighbour]->GetDigitizerChannel();
+                              var << "(ch"<< tempChannel << "):(" << SumChannels << "):(FloodZ)" << " >> " << sname.str();
+                              tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour] = new TGraph2D(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1());
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]->SetTitle(sname.str().c_str());
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]->SetName(sname.str().c_str());
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]->GetXaxis()->SetTitle("W");
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
+                              ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]->GetZaxis()->SetTitle("pi [ADC ch]");
+                              // CurrentCrystal->SetComptonCalibration(testGraph);
+                              var.str("");
+                              sname.str("");
+
+                              //interpolation
+                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour] = new TGraphDelaunay(ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]);
+                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetMaxIter(100000);
+                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetMarginBinsContent(0);
+                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->ComputeZ(0,0);
+                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->FindAllTriangles();
+
+
+                            }
+                          }
+                        }
+                      }
+                      CurrentCrystal->SetComptonCalibration(ComptonCalibation);
+                    }
+                    // CurrentCrystal->SetInterpolationGraph(interpolationGraph);
+                    // if(CurrentCrystal->GetID() == 28)
+                    // {
+                    //   // TGraph2D *testGraph = new TGraph2D();
+                    //   // TH3F *testPi = new TH3F("testPi","testPi",100,0,1,100,0,15000,100,0,6000);
+                    //   sname << "Pi for channel 10 - Scint in Crystal " << CurrentCrystal->GetID();
+                    //   var.str("");
+                    //   int tempChannel = 10;
+                    //   // int channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+                    //   var << "(ch"<< tempChannel << "):(" << SumChannels << "):(FloodZ)" << " >> " << sname.str();
+                    //   tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                    //   TGraph2D *testGraph = new TGraph2D(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1());
+                    //   testGraph->SetTitle(sname.str().c_str());
+                    //   testGraph->SetName(sname.str().c_str());
+                    //   testGraph->GetXaxis()->SetTitle("W");
+                    //   testGraph->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
+                    //   testGraph->GetZaxis()->SetTitle("pi [ADC ch]");
+                    //   CurrentCrystal->SetComptonCalibration(testGraph);
+                    //   var.str("");
+                    //   sname.str("");
+                    // }
+                    // TH3F *Max_Energy_W = new TH3F("Max_Energy_W","Max_Energy_W",100,0,1,100,0,15000,100,0,6000);
+                    // sname << "Compton Calibration Plot - Crystal " << CurrentCrystal->GetID();
+                    // Max_Energy_W->SetTitle(sname.str().c_str());
+                    // Max_Energy_W->SetName(sname.str().c_str());
+                    // Max_Energy_W->GetXaxis()->SetTitle("W");
+                    // Max_Energy_W->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
+                    // Max_Energy_W->GetZaxis()->SetTitle("Max Charge [ADC ch]");
+                    // var.str("");
+                    // var << "(ch"<< channel << "):(" << SumChannels << "):(FloodZ)" << " >> " << sname.str();
+                    // tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                    // CurrentCrystal->SetComptonCalibration(Max_Energy_W);
+                    // var.str("");
+                    // sname.str("");
+                    // //histogram of doi resolution
                     // 		    double sigmaWdistro = userSigmaW;
                     // 		    if(userSigmaW == -1)
                     // 		    {
@@ -2100,6 +2189,38 @@ int main (int argc, char** argv)
 
                     CurrentCrystal->GetZYCut()->Write();
                     CurrentCrystal->GetZXCut()->Write();
+
+                    // compton calibration
+                    if(comptonAnalysis)
+                    {
+                      for(int iNeighbour = -1 ; iNeighbour < 2 ; iNeighbour++)
+                      {
+                        for(int jNeighbour = -1 ; jNeighbour < 2 ; jNeighbour++)
+                        {
+                          if( (iMppc + iNeighbour >= 0) && (iMppc + iNeighbour <= nmppcx) )
+                          {
+                            if( (jMppc + jNeighbour >= 0) && (jMppc + jNeighbour <= nmppcy) )
+                            {
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                              TGraph2D ***tempGraph = CurrentCrystal->GetComptonCalibration();
+                              C_spectrum->SetName(tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->GetName());
+                              C_spectrum->cd();
+                              tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->Draw("AP");
+                              C_spectrum->Write();
+                              delete C_spectrum;
+                            }
+                          }
+                        }
+                      }
+                    }
+                    // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                    // C_spectrum->SetName(CurrentCrystal->GetComptonCalibration()->GetName());
+                    // C_spectrum->cd();
+                    // CurrentCrystal->GetComptonCalibration()->Draw("AP");
+                    // C_spectrum->Write();
+                    // delete C_spectrum;
+
+
 
                     // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                     // 		    C_spectrum->SetName(CurrentCrystal->GetDerivativeDoiResolution()->GetName());

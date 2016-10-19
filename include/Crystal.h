@@ -11,10 +11,12 @@
 #include "TF1.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TGraphDelaunay.h"
+
 
 class Crystal : public Element
 {
-  
+
 private:
   Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
@@ -35,13 +37,15 @@ private:
   //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
-  TGraph*              SimGraph;             
+  TGraph2D***          ComptonCalibation;
+  TGraphDelaunay***    interpolationGraph;
+  TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
   TCutG               *cutg[2];
   bool                 isOn;                 ///< if the crystal is on/off
   TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
-  float                peakPosition;         ///< position of mean (after fitting) for the photopeak 
+  float                peakPosition;         ///< position of mean (after fitting) for the photopeak
   float                peakSigma;            ///< sigma (after fitting) for the photopeak
   float                peakPositionCorrected;         ///< position of mean (after fitting) for the photopeak, corrected by DOI
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
@@ -66,12 +70,12 @@ private:
   double               wEnd;                 ///< end of w histogram after fitting with theta function
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
   double               averageDoiResolution;
-  
+
 public:
   Crystal();                                 ///< default constructor
   Crystal(const Crystal &obj);               ///< copy constructor
   ~Crystal();                                ///< destructor
-  
+
   // methods to get and set the private variables. Names should be self explanatory
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};
   TH1F*                GetSpectrum(){return Spectrum;};
@@ -91,6 +95,8 @@ public:
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
+  TGraph2D***          GetComptonCalibration(){return ComptonCalibation;};
+  TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
   //   TF1*                 GetProfileXFit(){return &ProfileXFit;};
   TF1*                 GetSlicesMeanFit(){return SlicesMeanFit;};
   double               GetWfwhm(){return w_fwhm;};
@@ -107,7 +113,7 @@ public:
   double               GetWbegin(){return wBegin;};
   double               GetWend(){return wEnd;};
   double               GetDeltaW(){return std::abs(deltaW);};
-  
+
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
   TH2F*                GetSimDOIplot(){return SimDOIplot;};
@@ -133,7 +139,7 @@ public:
   double               GetAverageDoiResolution(){return averageDoiResolution;};
   TH1F*                GetSimSigmaW(){return simSigmaW;};
   TGraphErrors*        GetSimZvsW(){return simZvsW;};
-  
+
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
   void                 SetMppc(Mppc *amppc);
@@ -154,6 +160,8 @@ public:
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
+  void                 SetComptonCalibration(TGraph2D*** aGraph){ComptonCalibation = aGraph;};
+  void                 SetInterpolationGraph(TGraphDelaunay*** aGraph){interpolationGraph = aGraph;};
   //   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
@@ -182,9 +190,9 @@ public:
   void                 SetDeltaWfit_2(TF1* aFit){deltaWfit_2 = aFit;};
   void                 SetDoiResZ(TGraph* aGraph){doiResZ = aGraph;};
   void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
-  
+
   void                 Analyze();
-  
+
   void PrintGlobal();
   void PrintSpecific();
 };
