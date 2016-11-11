@@ -60,8 +60,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   saturation_s                = config.read<std::string>("saturation");
   adcChannels                 = config.read<int>("digitizerTotalCh");
   nclock                      = config.read<double>("nclock",0);
-  crystalx                    = config.read<double>("crystalx",1.5);
-  crystaly                    = config.read<double>("crystaly",1.5);
+  crystalx                    = config.read<double>("crystalx",1.53);
+  crystaly                    = config.read<double>("crystaly",1.53);
   crystalz                    = config.read<double>("crystalz",15);
   esrThickness                = config.read<double>("esrThickness",0.07);
   usingAllChannels            = config.read<bool>("usingAllChannels",1);
@@ -745,7 +745,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           // compute the position of this mppc element from the plotPositions taken from config file
           //
           //  	  int pos = (mppcI*nmppcx + mppcJ) +1 ; // +1 is because of root multicanvas starting from 1...
-          int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((4-mppcI));
+          int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((nmppcy-mppcI));
           // 	  std::cout << mppcI << "." << mppcJ << " " << pos << std::endl;
           int posID;
           for(int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...

@@ -12,6 +12,7 @@
 #include "TGraph.h"
 #include "TGraphErrors.h"
 #include "TGraphDelaunay.h"
+#include "TGraph2DErrors.h"
 
 
 class Crystal : public Element
@@ -37,8 +38,11 @@ private:
   //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
-  TGraph2D***          ComptonCalibation;
+  TGraph2DErrors***    ComptonCalibation;
   TGraphDelaunay***    interpolationGraph;
+  TH3I***              ComptonCalibationHistogram;
+  std::vector<TH3I*>   ListOfComptonHisto;
+  TH3I*                oneHisto;
   TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
@@ -51,6 +55,7 @@ private:
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
   TGraph*              calibrationGraph;
   TGraph*              doiResZ;
+  TGraph*              wzgraph;
   TH1F*                simSigmaW;            ///< distribution of sigma W (sigma of gaussian fit of w histogram) for a simulation
   TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
@@ -95,8 +100,11 @@ public:
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
-  TGraph2D***          GetComptonCalibration(){return ComptonCalibation;};
+  TGraph2DErrors***    GetComptonCalibration(){return ComptonCalibation;};
   TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
+  TH3I***              GetComptonCalibrationHistogram(){return ComptonCalibationHistogram;};
+  TH3I*                GetOneHisto(){return oneHisto;};
+  TGraph*              GetWZgraph(){return wzgraph;};
   //   TF1*                 GetProfileXFit(){return &ProfileXFit;};
   TF1*                 GetSlicesMeanFit(){return SlicesMeanFit;};
   double               GetWfwhm(){return w_fwhm;};
@@ -139,6 +147,8 @@ public:
   double               GetAverageDoiResolution(){return averageDoiResolution;};
   TH1F*                GetSimSigmaW(){return simSigmaW;};
   TGraphErrors*        GetSimZvsW(){return simZvsW;};
+  TH3I*                GetComptonHistogram(int i){return ListOfComptonHisto[i];};
+  int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
 
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -160,8 +170,11 @@ public:
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
-  void                 SetComptonCalibration(TGraph2D*** aGraph){ComptonCalibation = aGraph;};
+  void                 SetComptonCalibration(TGraph2DErrors*** aGraph){ComptonCalibation = aGraph;};
   void                 SetInterpolationGraph(TGraphDelaunay*** aGraph){interpolationGraph = aGraph;};
+  void                 SetComptonCalibrationHistogram(TH3I*** aHisto){ComptonCalibationHistogram = aHisto;};
+  void                 SetOne(TH3I* aHisto){oneHisto = aHisto;};
+  void                 SetWZgraph(TGraph* aGraph){wzgraph = aGraph;};
   //   void                 SetEllipses(std::string varX,std::string varY);
   void                 SetCrystalOn(bool abool){isOn = abool;};
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
@@ -190,7 +203,7 @@ public:
   void                 SetDeltaWfit_2(TF1* aFit){deltaWfit_2 = aFit;};
   void                 SetDoiResZ(TGraph* aGraph){doiResZ = aGraph;};
   void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
-
+  void                 SetComptonHistogram(TH3I* aHisto){ListOfComptonHisto.push_back(aHisto);};
   void                 Analyze();
 
   void PrintGlobal();
