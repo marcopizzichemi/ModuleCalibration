@@ -30,7 +30,6 @@ ${ROOT_LIBRARY_DIR}
 
 #set (CMAKE_CXX_FLAGS "-Wshadow -Wvla -Wsign-compare")
 
-
 #----------------------------------------------------------------------------
 # Find Geant4 package, activating all available UI and Vis drivers by default
 # You can set WITH_GEANT4_UIVIS to OFF via the command line or ccmake/cmake-gui
@@ -95,3 +94,5 @@ endforeach()
 #
 install(TARGETS ModuleCalibration DESTINATION bin)
 
+set(CMAKE_BUILD_TYPE Release)
+set (CMAKE_CXX_FLAGS "-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wno-variadic-macros -pipe -std=c++98")
