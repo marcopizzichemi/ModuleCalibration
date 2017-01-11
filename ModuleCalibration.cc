@@ -1379,14 +1379,14 @@ int main (int argc, char** argv)
                                 tempGraph2d->GetZmin(),
                                 tempGraph2d->GetZmax());
 
-                                std::cout << sname.str().c_str()    << " "
-                                          << tempGraph2d->GetXmin() << " "
-                                          << tempGraph2d->GetXmax() << " "
-                                          << tempGraph2d->GetYmin() << " "
-                                          << tempGraph2d->GetYmax() << " "
-                                          << tempGraph2d->GetZmin() << " "
-                                          << tempGraph2d->GetZmax() << std::endl;
-                                var.str("");
+                                // std::cout << sname.str().c_str()    << " "
+                                          // << tempGraph2d->GetXmin() << " "
+                                          // << tempGraph2d->GetXmax() << " "
+                                          // << tempGraph2d->GetYmin() << " "
+                                          // << tempGraph2d->GetYmax() << " "
+                                          // << tempGraph2d->GetZmin() << " "
+                                          // << tempGraph2d->GetZmax() << std::endl;
+                              var.str("");
 
                               // ComptonCalibrationHistogram->SetTitle(sname.str().c_str());
                               // ComptonCalibrationHistogram->SetName(sname.str().c_str());
@@ -1399,7 +1399,7 @@ int main (int argc, char** argv)
                               // std::cout << ComptonCalibrationHistogram->GetEntries() << std::endl;
                               CurrentCrystal->SetComptonHistogram(ComptonCalibrationHistogram);
                               sname.str("");
-                              sname << "Graph_Pi(E,w)[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
+                              sname << "Graph_Pi(q,w)[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
                               std::vector<double> ex,ey,ez;
                               for(int iError = 0; iError < tree->GetSelectedRows(); iError++)
                               {
