@@ -38,7 +38,8 @@ private:
   //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
-  TGraph2DErrors***    ComptonCalibation;
+  TGraph2D***          ComptonCalibation;
+  TGraph2D***          ConvertedComptonCalibation;
   TGraphDelaunay***    interpolationGraph;
   TH3I***              ComptonCalibationHistogram;
   std::vector<TH3I*>   ListOfComptonHisto;
@@ -100,9 +101,11 @@ public:
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
-  TGraph2DErrors***    GetComptonCalibration(){return ComptonCalibation;};
+  TGraph2D***          GetComptonCalibration(){return ComptonCalibation;};
+  TGraph2D***          GetConvertedComptonCalibration(){return ConvertedComptonCalibation;};
   TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
   TH3I***              GetComptonCalibrationHistogram(){return ComptonCalibationHistogram;};
+
   TH3I*                GetOneHisto(){return oneHisto;};
   TGraph*              GetWZgraph(){return wzgraph;};
   //   TF1*                 GetProfileXFit(){return &ProfileXFit;};
@@ -170,7 +173,8 @@ public:
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
-  void                 SetComptonCalibration(TGraph2DErrors*** aGraph){ComptonCalibation = aGraph;};
+  void                 SetComptonCalibration(TGraph2D*** aGraph){ComptonCalibation = aGraph;};
+  void                 SetConvertedComptonCalibration(TGraph2D*** aGraph){ConvertedComptonCalibation = aGraph;};
   void                 SetInterpolationGraph(TGraphDelaunay*** aGraph){interpolationGraph = aGraph;};
   void                 SetComptonCalibrationHistogram(TH3I*** aHisto){ComptonCalibationHistogram = aHisto;};
   void                 SetOne(TH3I* aHisto){oneHisto = aHisto;};

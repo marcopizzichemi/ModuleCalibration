@@ -1235,13 +1235,17 @@ int main (int argc, char** argv)
                     // create a 3x3 matrix of TGraph2D*
                     if(comptonAnalysis)
                     {
-                      TGraph2DErrors***  ComptonCalibation;
-                      ComptonCalibation = new TGraph2DErrors** [nmppcx];
-                      for(int iCal = 0; iCal < nmppcx ; iCal++) ComptonCalibation[iCal] = new TGraph2DErrors*[nmppcy];
+                      TGraph2D***  ComptonCalibation;
+                      ComptonCalibation = new TGraph2D** [nmppcx];
+                      for(int iCal = 0; iCal < nmppcx ; iCal++) ComptonCalibation[iCal] = new TGraph2D*[nmppcy];
 
-                      TGraphDelaunay*** interpolationGraph;
-                      interpolationGraph = new TGraphDelaunay** [nmppcx];
-                      for(int iCal = 0; iCal < nmppcx ; iCal++) interpolationGraph[iCal] = new TGraphDelaunay*[nmppcx];
+                      TGraph2D***  ConvertedComptonCalibration;
+                      ConvertedComptonCalibration = new TGraph2D** [nmppcx];
+                      for(int iCal = 0; iCal < nmppcx ; iCal++) ConvertedComptonCalibration[iCal] = new TGraph2D*[nmppcy];
+
+                      // TGraphDelaunay*** interpolationGraph;
+                      // interpolationGraph = new TGraphDelaunay** [nmppcx];
+                      // for(int iCal = 0; iCal < nmppcx ; iCal++) interpolationGraph[iCal] = new TGraphDelaunay*[nmppcx];
 
                       // TH3I***  ComptonCalibationHistogram;
                       // ComptonCalibationHistogram = new TH3I** [4];
@@ -1407,7 +1411,7 @@ int main (int argc, char** argv)
                                 ey.push_back(20.0);
                                 ez.push_back(20.0);
                               }
-                              ComptonCalibation[iComptMppc][jComptMppc] = new TGraph2DErrors(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1(),&ex[0],&ey[0],&ez[0]);
+                              ComptonCalibation[iComptMppc][jComptMppc] = new TGraph2D(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1());
                               ComptonCalibation[iComptMppc][jComptMppc]->SetTitle(sname.str().c_str());
                               ComptonCalibation[iComptMppc][jComptMppc]->SetName(sname.str().c_str());
                               ComptonCalibation[iComptMppc][jComptMppc]->GetXaxis()->SetTitle("W");
@@ -1416,6 +1420,43 @@ int main (int argc, char** argv)
                               // CurrentCrystal->SetComptonCalibration(testGraph);
                               var.str("");
                               sname.str("");
+
+
+                              //produce
+
+                              // TGraph2D* graph2d = (TGraph2D*) canv-> GetPrimitive(sstream.str().c_str()); //get the 3d graph
+                              //
+                              // // int Npoints = graph2d->GetN();
+                              //
+                              sname << "Pi(z,p_tot)[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc] = new TGraph2D();
+                              Double_t *x = ComptonCalibation[iComptMppc][jComptMppc]->GetX();
+                              Double_t *y = ComptonCalibation[iComptMppc][jComptMppc]->GetY();
+                              Double_t *z = ComptonCalibation[iComptMppc][jComptMppc]->GetZ();
+                              for(int i = 0 ; i < ComptonCalibation[iComptMppc][jComptMppc]->GetN() ; i++){
+                                ConvertedComptonCalibration[iComptMppc][jComptMppc]->SetPoint(i,calibrationGraph->Eval(x[i]),y[i],z[i]);
+                                // ConvertedComptonCalibration[iComptMppc][jComptMppc]->SetPointError(i,2.0,sqrt(y[i]),sqrt(z[i]));
+                              }
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc]->SetTitle(sname.str().c_str());
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc]->SetName(sname.str().c_str());
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc]->GetXaxis()->SetTitle("W");
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc]->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
+                              ConvertedComptonCalibration[iComptMppc][jComptMppc]->GetZaxis()->SetTitle("pi [ADC ch]");
+                              sname.str("");
+
+                              // sname << "quadFit[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
+                              // std::cout << std::endl;
+                              // std::cout << sname.str().c_str() << std::endl;
+                              // TF2 *quadFit = new TF2(sname.str().c_str(),"[0] + [1]*x + [2]*y + [3]*x*x + [4]*x*y + [5]*y*y",0,15,0,6000);
+                              // quadFit->SetParameter(0,2311);
+                              // quadFit->SetParameter(1,-136.7);
+                              // quadFit->SetParameter(2,854);
+                              // quadFit->SetParameter(3,-34.1);
+                              // quadFit->SetParameter(4,-43.3);
+                              // quadFit->SetParameter(5,1.061);
+                              // ConvertedComptonCalibration[iComptMppc][jComptMppc]->Fit(quadFit);
+                              // sname.str("");
+                              // std::cout << std::endl;
 
                               // interpolation
                               // std::cout << "Running on detector " << iMppc + iNeighbour << "," << jMppc + jNeighbour << std::endl;
@@ -1437,6 +1478,7 @@ int main (int argc, char** argv)
                       //   }
                       // }
                       CurrentCrystal->SetComptonCalibration(ComptonCalibation);
+                      CurrentCrystal->SetConvertedComptonCalibration(ConvertedComptonCalibration);
                       // CurrentCrystal->SetComptonCalibrationHistogram(ComptonCalibationHistogram);
                       // CurrentCrystal->SetInterpolationGraph(interpolationGraph);
                     }
@@ -2390,7 +2432,7 @@ int main (int argc, char** argv)
                       //       if( (jMppc + jNeighbour >= 0) && (jMppc + jNeighbour <= nmppcy) )
                       //       {
                               // C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-                              TGraph2DErrors ***tempGraph = CurrentCrystal->GetComptonCalibration();
+                              TGraph2D ***tempGraph = CurrentCrystal->GetComptonCalibration();
                               // C_spectrum->SetName(tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->GetName());
                               // C_spectrum->cd();
                               // tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->Draw("AP");
@@ -2400,6 +2442,8 @@ int main (int argc, char** argv)
 
                               // TGraphDelaunay ***tempDelaunay = CurrentCrystal->GetInterpolationGraph();
                               // tempDelaunay[iMppc + iNeighbour][jMppc + jNeighbour]->Write();
+                              TGraph2D ***tempCorrGraph = CurrentCrystal->GetConvertedComptonCalibration();
+                              tempCorrGraph[iComptMppc][jComptMppc]->Write();
 
 
                               // tempHisto[iMppc + iNeighbour][jMppc + jNeighbour]->Write();
