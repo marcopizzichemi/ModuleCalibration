@@ -22,6 +22,7 @@ private:
   Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
   TH1F*                Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
+  TH1F*                LYSpectrum;
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
   TH1F*                HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
   TH1F*                HighlightedSpectrumCorrected; ///<
@@ -52,6 +53,8 @@ private:
   TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         ///< position of mean (after fitting) for the photopeak
   float                peakSigma;            ///< sigma (after fitting) for the photopeak
+  float                LY;
+  float                LYSigma;
   float                peakPositionCorrected;         ///< position of mean (after fitting) for the photopeak, corrected by DOI
   float                peakSigmaCorrected;            ///< sigma (after fitting) for the photopeak, corrected by DOI
   TGraph*              calibrationGraph;
@@ -60,6 +63,8 @@ private:
   TH1F*                simSigmaW;            ///< distribution of sigma W (sigma of gaussian fit of w histogram) for a simulation
   TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
+  TF1*                 LYFit;                  ///< fit function (it's a gaussian)
+
   TF1*                 SimFit;
   TF1*                 Wfit;
   TF1*                 FitCorrected;
@@ -85,6 +90,7 @@ public:
   // methods to get and set the private variables. Names should be self explanatory
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};
   TH1F*                GetSpectrum(){return Spectrum;};
+  TH1F*                GetLYSpectrum(){return LYSpectrum;};
   TH1F*                GetCorrectedSpectrum(){return CorrectedSpectrum;};
   TH1F*                GetHighlightedSpectrum(){return HighlightedSpectrum;};
   TH1F*                GetHighlightedSpectrumCorrected(){return HighlightedSpectrumCorrected;};
@@ -99,6 +105,7 @@ public:
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
+  TF1*                 GetLYFit(){return LYFit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
   TGraph2D***          GetComptonCalibration(){return ComptonCalibation;};
@@ -117,6 +124,8 @@ public:
   TEllipse*            GetGraphicalCut(){return &GraphicalCut;};
   float                GetPhotopeakPosition(){return peakPosition;};
   float                GetPhotopeakSigma(){return peakSigma;};
+  float                GetLY(){return LY;};
+  float                GetLYSigma(){return LYSigma;};
   float                GetPhotopeakEnergyResolution(){return ((peakSigma*2.355)/peakPosition);};
   float                GetPhotopeakPositionCorrected(){return peakPositionCorrected;};
   float                GetPhotopeakSigmaCorrected(){return peakSigmaCorrected;};
@@ -157,6 +166,7 @@ public:
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
+  void                 SetLYSpectrum(TH1F* aHisto){LYSpectrum = aHisto;};
   void                 SetHighlightedSpectrum(TH1F* aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHighlightedSpectrumCorrected(TH1F* aHisto){HighlightedSpectrumCorrected = aHisto;};
   void                 SetHistoW(TH1F* aHisto){HistoW = aHisto;};
@@ -166,6 +176,7 @@ public:
   void                 SetDoiResolutions(TH1F* aHisto){resolutions = aHisto;};
   void                 SetDensityHisto(TH1F* aHisto){DensityHisto = aHisto;};
   void                 SetFit(TF1* aFit){Fit = aFit;};
+  void                 SetLYFit(TF1* aFit){LYFit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
@@ -184,6 +195,7 @@ public:
   void                 SetCrystalData(double au,double av,double awu ,double awv, double at){u = au; v = av; wu = awu ; wv = awv ; t = at;};
   void                 SetGraphicalCut(TEllipse aEllipse){GraphicalCut = aEllipse;};
   void                 SetPhotopeak(float a, float b){peakPosition = a;peakSigma = b;};
+  void                 SetLY(float a, float b){LY = a;LYSigma = b;};
   void                 SetPhotopeakCorrected(float a, float b){peakPositionCorrected = a;peakSigmaCorrected = b;};
   void                 SetVersusTime(TH2F* aHisto){VersusTime = aHisto;};
   void                 SetSimDOIplot(TH2F* aHisto){SimDOIplot = aHisto;};

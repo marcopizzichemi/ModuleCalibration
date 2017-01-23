@@ -240,6 +240,12 @@ int main (int argc, char** argv)
   int nmoduley                  = config.read<int>("nmoduley",1);                   // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
   int histo1Dmax                = config.read<int>("histo1Dmax");                   // max of the 1D charge histograms (in ADC channels)
   int histo1Dbins               = config.read<int>("histo1Dbins");                  // number of bins of the 1D charge histograms
+  int histoLYmax                = config.read<int>("histoLYmax",20000);                   // max of the 1D charge histograms (in ADC channels)
+  int histoLYbins               = config.read<int>("histoLYbins",500);                  // number of bins of the 1D charge histograms
+  double qe                     = config.read<double>("qe",0.35);                   // mppc QE
+  double gainMPPC               = config.read<double>("gainMPPC",1.25e6);           // mppc gain
+  double chargeBinningADC       = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
+  double sourceMeV              = config.read<double>("sourceMeV",0.511);           // gamma peak in MeV
   int histo2DchannelBin         = config.read<int>("histo2DchannelBin");            // number of bins of the 2D flood histograms, for single channels
   int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
   //   int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
@@ -269,6 +275,7 @@ int main (int argc, char** argv)
   double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
   double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0)
+  double LYvsIJmax              = config.read<double>("LYvsIJmax",40000); 
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
   double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
@@ -278,6 +285,7 @@ int main (int argc, char** argv)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm
   bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false
+  bool lightYieldComputation    = config.read<bool>("lightYieldComputation",0);         //wheter to perform or not the light yield calculation. Default to false
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -724,6 +732,63 @@ int main (int argc, char** argv)
                     spectrumCharge->GetYaxis()->SetTitle("N");
                     sname.str("");
                     var.str("");
+                    if(lightYieldComputation)
+                    {
+                      //SumSpectrum in Ph/MeV -- CAREFUL this is not as accurate as measuring LY on PMTs
+                      sname << "Light Yield @ "<< sourceMeV <<  " MeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                      var << "(" << SumChannels << ")* " << chargeBinningADC << "/(" << gainMPPC <<"*1.6e-19* " << qe << "*"<<  sourceMeV << ") >> " << sname.str();
+                      TH1F* spectrumLY = new TH1F(sname.str().c_str(),sname.str().c_str(),histoLYbins,1,histoLYmax);
+                      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                      spectrumLY->GetXaxis()->SetTitle("[Ph/MeV]");
+                      spectrumLY->GetYaxis()->SetTitle("N");
+                      CurrentCrystal->SetLYSpectrum(spectrumLY);
+                      sname.str("");
+                      var.str("");
+
+                      TSpectrum *s;
+                      s = new TSpectrum(20);
+                      // 		Input[i].SumSpectraCanvas->cd(j+1);
+                      Int_t CrystalPeaksN = s->Search(spectrumLY,2,"goff",0.5);
+                      Float_t *CrystalPeaks = s->GetPositionX();
+                      Float_t *CrystalPeaksY = s->GetPositionY();
+                      //delete s;
+                      float maxPeak = 0.0;
+                      int peakID = 0;
+                      for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
+                      {
+                        if(CrystalPeaks[peakCounter] > maxPeak)
+                        {
+                          maxPeak = CrystalPeaks[peakCounter];
+                          peakID = peakCounter;
+                        }
+                      }
+                      //fit the spectra - TODO use the gaussian plus fermi?
+                      if (energyResolution == 0)
+                      {
+                        if (correctingSaturation)
+                          energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
+                        else
+                          energyResolution = ENERGY_RESOLUTION;
+                      }
+                      float par0 = CrystalPeaksY[peakID];
+                      float par1 = CrystalPeaks[peakID];
+                      float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
+                      float fitmin = par1-1.5*par2;
+                      float fitmax = par1+1.8*par2;
+                      sname << "gaussLY - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                      TF1 *gauss = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
+                      gauss->SetParameter(0,par0);
+                      gauss->SetParameter(1,par1);
+                      gauss->SetParameter(2,par2);
+                      spectrumLY->Fit(sname.str().c_str(),"Q","",fitmin,fitmax);
+                      //store the mean and sigma in the crystal
+                      if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
+                        CurrentCrystal->SetLY(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
+                      CurrentCrystal->SetLYFit(gauss);
+
+
+                    }
+                    //photons*1.25e6*1.6e-19/156e-15
 
                     //prepare the photopeak cuts and stuff
                     TCut PhotopeakEnergyCutCorrected = "";
@@ -1711,7 +1776,9 @@ int main (int argc, char** argv)
 
   // >>>>>>> doiTag
   TCanvas* BigSpectraCanvas = new TCanvas("BigSpectra","",800,800);
+  TCanvas* BigLYCanvas = new TCanvas("BigLY","",800,800);
   BigSpectraCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
+  BigLYCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
   int canvascounter = 1;
   for(int jCrystal = ncrystalsy*nmppcy*nmoduley -1 ; jCrystal >=0  ; jCrystal--)
   {
@@ -1722,7 +1789,6 @@ int main (int argc, char** argv)
       {
         if(crystal[iCrystal][jCrystal]->CrystalIsOn())
         {
-          // <<<<<<< HEAD
           if(backgroundRun)
           {
             crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
@@ -1744,25 +1810,17 @@ int main (int argc, char** argv)
               crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
             }
           }
-          // =======
-          //        if(correctingForDOI){
-          //         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
-          //         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
-          //         crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
-          //        }
-          //
-          //        else{
-          // 	crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
-          //         crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
-          //         crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
-          //       }
-          // >>>>>>> doiTag
         }
       }
+      BigLYCanvas->cd(canvascounter);
+      if(lightYieldComputation)
+      {
+        crystal[iCrystal][jCrystal]->GetLYSpectrum()->SetFillStyle(3001);
+        crystal[iCrystal][jCrystal]->GetLYSpectrum()->SetFillColor(kBlue);
+        crystal[iCrystal][jCrystal]->GetLYSpectrum()->Draw();
+      }
       canvascounter++;
-      //std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
     }
-    //std::cout << std::endl;
   }
 
   //   TCanvas* GlobalSpherical = new TCanvas("Spherical Plot","Spherical Plot",1200,800);
@@ -1842,7 +1900,15 @@ int main (int argc, char** argv)
   //2d histogram
 
 
+  TH1F *LYDistro = new TH1F("Light Yield position","Light Yield Distribution - All Crystals",250,0,40000);
+  LYDistro->GetXaxis()->SetTitle("[Ph/MeV]");
+  LYDistro->GetYaxis()->SetTitle("N");
+  LYDistro->SetStats(1);
 
+  TH1F *LYDistroCentral = new TH1F("Light Yield position - Central","Light Yield Distribution - Central Crystals",250,0,40000);
+  LYDistroCentral->GetXaxis()->SetTitle("[Ph/MeV]");
+  LYDistroCentral->GetYaxis()->SetTitle("N");
+  LYDistroCentral->SetStats(1);
 
   //   PeakPositionVsIJ->SetStats(1);
   //--Distribution of energy resolutions FHWM
@@ -1929,6 +1995,16 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,EnergyResolutionVsIJmax);
+
+  //LYVsIJ
+  TH2F *LYVsIJ = new TH2F("Light Yield vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
+  LYVsIJ->GetXaxis()->SetTitle("i (U axis)");
+  LYVsIJ->GetYaxis()->SetTitle("j (V axis)");
+  LYVsIJ->GetZaxis()->SetTitle("Light Yield [Ph/MeV]");
+  LYVsIJ->GetXaxis()->SetTitleOffset(1.8);
+  LYVsIJ->GetYaxis()->SetTitleOffset(1.8);
+  LYVsIJ->GetZaxis()->SetTitleOffset(2.2);
+  LYVsIJ->GetZaxis()->SetRangeUser(0,LYvsIJmax);
 
   //   TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   //   DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -2103,6 +2179,8 @@ int main (int argc, char** argv)
       RawCanvas->Write();
       TriggerCanvas->Write();
       BigSpectraCanvas->Write();
+      if(lightYieldComputation) BigLYCanvas->Write();
+
 
       //       C_global = new TCanvas("C_global","C_global",800,800);
       //       name = "3D Cuts - " + ModuleDirStream.str();
@@ -2190,6 +2268,12 @@ int main (int argc, char** argv)
                       EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                     }
 
+                    if(lightYieldComputation)
+                    {
+                      LYDistro->Fill(CurrentCrystal->GetLY());
+                      LYVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetLY());
+                    }
+
                     // 		    if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < crystalz )
                     // 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
                     // 		    else
@@ -2228,6 +2312,12 @@ int main (int argc, char** argv)
                           PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                         }
                       }
+                      if(lightYieldComputation)
+                      {
+                        LYDistroCentral->Fill(CurrentCrystal->GetLY());
+                      }
+
+
                       // 		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
                       // 		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
 
@@ -2273,6 +2363,18 @@ int main (int argc, char** argv)
                     }
                     C_spectrum->Write();
                     delete C_spectrum;
+
+                    if(lightYieldComputation)
+                    {
+                      //LY spectrum
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetLYSpectrum()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetLYSpectrum()->Draw();
+                      CurrentCrystal->GetLYFit()->Draw("same");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+                    }
 
                     // spectrum without highligth
                     // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -2668,6 +2770,16 @@ int main (int argc, char** argv)
         C_EnergyResolutionVsIJ->Write();
       }
 
+      if(lightYieldComputation)
+      {
+        TCanvas *C_LYVsIJ = new TCanvas("C_LYVsIJ","C_LYVsIJ",800,800);
+        C_LYVsIJ->SetName(LYVsIJ->GetName());
+        C_LYVsIJ->cd();
+        LYVsIJ->Draw("LEGO2");
+        C_LYVsIJ->SetLeftMargin(0.15);
+        C_LYVsIJ->Write();
+      }
+
       //       TCanvas *C_DoiResolutionVsIJ = new TCanvas("C_DoiResolutionVsIJ","C_DoiResolutionVsIJ",800,800);
       //       C_DoiResolutionVsIJ->SetName(DoiResolutionVsIJ->GetName());
       //       C_DoiResolutionVsIJ->cd();
@@ -2742,6 +2854,12 @@ int main (int argc, char** argv)
         PeakEnergyResolutionDistro->Write();
         PeakEnergyResolutionDistroCentral->Write();
 
+      }
+
+      if(lightYieldComputation)
+      {
+        LYDistro->Write();
+        LYDistroCentral->Write();
       }
       //       AverageDoiDistro->Write();
       //       AverageDoiDistroCentral->Write();
