@@ -164,14 +164,10 @@ int main (int argc, char** argv)
 
   bool loadAnalysisTree;
   bool saveAnalysisTree          = config.read<bool>("saveAnalysisTree",0);            // choice to save or not the analysis TTree, in a file (name chosen above)
-
   if(loadAnalysisTreeName.compare("0") == 0) // no file provided to load ttree
     loadAnalysisTree = false;
   else  // file provided
     loadAnalysisTree = true;
-
-  //   else // analysis tree is produced by the analysis, not loaded
-  //   {
   if(!saveAnalysisTree) // user didn't set to save ttree
   {
     if(saveAnalysisTreeName.compare("0") != 0) // but gave a name to save the ttree
@@ -186,32 +182,20 @@ int main (int argc, char** argv)
       saveAnalysisTreeName = "temp.root"; // then set the ttree to be saved into temp.root file
     }
   }
-  //   }
 
   if(loadAnalysisTree) // anyway there's no point saving the analysis tree if it's not produced by this analysis but just loaded from file
   {
     saveAnalysisTree = false;
   }
-  //     std::cout << "***** Analysis TTree is input by the user, it won't be overwritten or saved to another file *****" << std::endl;
-  //   }
-  //   else
-  //   {
-  //     std::cout << "Analysis TTree will be produced by this program" << std::endl;
-  //   }
 
   //check
-
   std::cout<<"\n"<<std::endl;
   std::cout<<"###########################################################"<<std::endl;
   std::cout<<"#                                                         #"<<std::endl;
-  if(loadAnalysisTree)
-    std::cout << "# Analysis TTree loaded from file " << loadAnalysisTreeName.c_str() << std::endl;
-  else
-    std::cout << "# Analysis TTree produced by this program " << std::endl;
-  if(saveAnalysisTree)
-    std::cout << "# Analysis TTree will be saved to file " << saveAnalysisTreeName.c_str() << std::endl;
-  else
-    std::cout << "# No analysis TTree file will be saved " << std::endl;
+  if(loadAnalysisTree) std::cout << "# Analysis TTree loaded from file " << loadAnalysisTreeName.c_str() << std::endl;
+  else                 std::cout << "# Analysis TTree produced by this program " << std::endl;
+  if(saveAnalysisTree) std::cout << "# Analysis TTree will be saved to file " << saveAnalysisTreeName.c_str() << std::endl;
+  else                 std::cout << "# No analysis TTree file will be saved " << std::endl;
   std::cout<<"#                                                         #"<<std::endl;
   std::cout<<"###########################################################"<<std::endl;
   std::cout<<"\n"<<std::endl;
@@ -232,32 +216,29 @@ int main (int argc, char** argv)
     input.SetTree(TempTree);
   }
 
-  int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
-  int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
+  int ncrystalsx                = config.read<int>("ncrystalsx",2);             // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
+  int ncrystalsy                = config.read<int>("ncrystalsy",2);             // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
   int nmppcy                    = config.read<int>("nmppcy",2);                     // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
   int nmodulex                  = config.read<int>("nmodulex",1);                   // number of modules in x direction per mppc - default to 1 if the key is not found in the config file
   int nmoduley                  = config.read<int>("nmoduley",1);                   // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
-  int histo1Dmax                = config.read<int>("histo1Dmax");                   // max of the 1D charge histograms (in ADC channels)
-  int histo1Dbins               = config.read<int>("histo1Dbins");                  // number of bins of the 1D charge histograms
+  int histo1Dmax                = config.read<int>("histo1Dmax",25000);                   // max of the 1D charge histograms (in ADC channels)
+  int histo1Dbins               = config.read<int>("histo1Dbins",250);                  // number of bins of the 1D charge histograms
   int histoLYmax                = config.read<int>("histoLYmax",20000);                   // max of the 1D charge histograms (in ADC channels)
   int histoLYbins               = config.read<int>("histoLYbins",500);                  // number of bins of the 1D charge histograms
   double qe                     = config.read<double>("qe",0.35);                   // mppc QE
   double gainMPPC               = config.read<double>("gainMPPC",1.25e6);           // mppc gain
   double chargeBinningADC       = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
   double sourceMeV              = config.read<double>("sourceMeV",0.511);           // gamma peak in MeV
-  int histo2DchannelBin         = config.read<int>("histo2DchannelBin");            // number of bins of the 2D flood histograms, for single channels
-  int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
-  //   int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
-  int histo3DglobalBins         = config.read<int>("histo3DglobalBins");            // number of bins of the 3D flood histograms, for entire module
+  int histo2DchannelBin         = config.read<int>("histo2DchannelBin",250);            // number of bins of the 2D flood histograms, for single channels
+  int histo2DglobalBins         = config.read<int>("histo2DglobalBins",1000);            // number of bins of the 2D flood histograms, for entire module
+  int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
-  int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
-
-  float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm
-  bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
-  int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
-  bool correctingSaturation     = config.read<bool>("correctingSaturation");        // true if saturation correction is applied, false if it's not
+  float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm - default to 0
+  bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not. default to false
+  bool correctingSaturation     = config.read<bool>("correctingSaturation",0);        // true (=1) if saturation correction is applied, false if it's not, default to 0
+  std::string saturation_s      = config.read<std::string>("saturation","0");
   bool correctingForDOI         = config.read<bool>("correctingForDOI",0);              // true if the energy correction using DOI info is computed
   float energyResolution        = config.read<float>("expectedEnergyResolution",0);     // energy resolution input by the user, if any, otherwise 0
   bool usingRealSimData         = config.read<bool>("usingRealSimData",0);
@@ -269,57 +250,40 @@ int main (int argc, char** argv)
   float thresholdKev            = config.read<float>("thresholdKev",1.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
   double crystalz               = config.read<double>("crystalz",15);
-  double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
-  double RealmCalVsIJmin        = config.read<double>("RealmCalVsIJmin",-400);          // min of the 2d mCal values plot
-  double RealmCalVsIJmax        = config.read<double>("RealmCalVsIJmax",400);           // max of the 2d mCal values plot
-  double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
-  double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0)
-  double LYvsIJmax              = config.read<double>("LYvsIJmax",40000); 
+  double LYvsIJmax              = config.read<double>("LYvsIJmax",40000);
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
-  double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
   int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
   double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm
-  bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false
   bool lightYieldComputation    = config.read<bool>("lightYieldComputation",0);         //wheter to perform or not the light yield calculation. Default to false
-  // --- paramenters for roto-translations to separate the nXn peaks
-  // lateral, not corners
-  //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
-  //   double base_lateralQ2         = config.read<double>("lateralQ2",1.1);             // top and bottom
-  //   double base_lateralDeltaU     = config.read<double>("lateralDeltaU",1);           // used for right and left
-  //   double base_lateralDeltaV     = config.read<double>("lateralDeltaV",1);           // used for top and bottom
-  //   double base_lateralRescaleRL  = config.read<double>("lateralRescaleRL",1.5);      // used for right and left
-  //   double base_lateralRescaleTB  = config.read<double>("lateralRescaleTB",2);        // used for top and bottom
-  // corners
-  //   double base_cornerQ1          = config.read<double>("cornerQ1",0.675);            // rotation around Z
-  //   double base_cornerQ2          = config.read<double>("cornerQ2",1.41);             // rotation around X
-  //   double base_cornerDeltaU      = config.read<double>("cornerDeltaU",3);            // translations
-  //   double base_cornerDeltaV      = config.read<double>("cornerDeltaV",2.1);          // translations
-  //   double base_cornerRescale     = config.read<double>("cornerRescale",4);           // rescale factor
-  bool   onlyuserinput          = config.read<double>("onlyuserinput",0);           // ignore 2d automatic fitting
   // set output file name
-  std::string outputFileName = config.read<std::string>("output");
+  std::string outputFileName = config.read<std::string>("output","genericOutput");
   outputFileName += ".root";
   // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
   // first get the input digitizer channels
-  std::string digitizer_s   = config.read<std::string>("digitizer");
+  std::string digitizer_s   = config.read<std::string>("digitizer");   //MANDATORY, so no default
   std::vector<std::string> digitizer_f;
   config.split( digitizer_f, digitizer_s, "," );
   std::vector<int> digitizer;
-  for(int i = 0 ; i < digitizer_f.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
   {
     config.trim(digitizer_f[i]);
     digitizer.push_back(atoi(digitizer_f[i].c_str()));
   }
+  if(saturation_s.compare(std::string("0")) != 0)
+  {
+    correctingSaturation = true;
+  }
+
   // create the string
   std::stringstream sSumChannels;
   std::string SumChannels;
   sSumChannels << "ch" <<  digitizer[0];
-  for(int i = 1 ; i < digitizer.size() ; i++)
+  for(unsigned int i = 1 ; i < digitizer.size() ; i++)
     sSumChannels << "+ch" << digitizer[i];
   SumChannels = sSumChannels.str();
   //   std::cout << SumChannels << std::endl;
@@ -363,12 +327,8 @@ int main (int argc, char** argv)
     {
       Double_t foo, a, b, c, d;
       inFile_calib >> foo >> a >> b;
-      //       m_cal.push_back(a);
-      //       q_cal.push_back(b);
       m_tag.push_back(c);
       q_tag.push_back(d);
-      //       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
-      //       i++;
     }
     inFile_calib.close();
   }
@@ -378,10 +338,7 @@ int main (int argc, char** argv)
   //  Plots and spectra                                       //
   //----------------------------------------------------------//
   // get the TTree, to plot the spectra
-
-
   TTree* tree = input.GetTree();
-
   // doi bench specific part
   std::ofstream doiFile;
   TCut triggerPhotopeakCut = "" ;
@@ -391,7 +348,6 @@ int main (int argc, char** argv)
   {
     doiFile.open("doiData.txt", std::ofstream::out);
   }
-
   // simulation dataset spectific part
   TCut SingleCrystalInteraction;
   TCut SingleEnergyDeposition;
@@ -401,7 +357,12 @@ int main (int argc, char** argv)
     SingleEnergyDeposition = "NumbOfInteractions == 1";
   }
 
-  // MAIN LOOP
+
+  //----------------------------------------------------------//
+  //                                                          //
+  //                         MAIN LOOP                        //
+  //                                                          //
+  //----------------------------------------------------------//
   // Loop on modules, mppcs and crystal
   for(int iModule = 0; iModule < nmodulex ; iModule++)
   {
@@ -428,32 +389,6 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetFloodMap2D(spectrum2dModule);
       varModule.str("");
 
-      //3D plot
-      // <<<<<<< HEAD
-      //       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
-      //       varModule << "FloodZ:FloodY:FloodX >> " << nameModule;
-      //       TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
-      //       tree->Draw(varModule.str().c_str(),CutXYZ);
-      //       spectrum3dModule->GetXaxis()->SetTitle("U");
-      //       spectrum3dModule->GetYaxis()->SetTitle("V");
-      //       spectrum3dModule->GetZaxis()->SetTitle("W");
-      //       module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
-      //       varModule.str("");
-      // =======
-      //      nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
-      //      varModule << "FloodZ:FloodY:FloodX >> " << nameModule;
-      //       std::cout << nameModule << " ... ";
-      //      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
-      //      tree->Draw(varModule.str().c_str(),CutXYZ);
-      //      spectrum3dModule->GetXaxis()->SetTitle("U");
-      //      spectrum3dModule->GetYaxis()->SetTitle("V");
-      //      spectrum3dModule->GetZaxis()->SetTitle("W");
-      //      module[iModule][jModule]->SetFloodMap3D(spectrum3dModule);
-      //      varModule.str("");
-      //       std::cout << " done" << std::endl;
-      //       delete spectrum3dModule;
-      // >>>>>>> doiTag
-
       if(usingTaggingBench)//trigger spectrum
       {
         TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,0,12000);
@@ -469,7 +404,7 @@ int main (int argc, char** argv)
         //find peak in the tagging crystal
         TSpectrum *sTagCrystal;
         sTagCrystal = new TSpectrum(1);
-        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
+        sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
         Float_t *TagCrystalPeaks = sTagCrystal->GetPositionX();
         TF1 *gaussTag = new TF1("gaussTag", "gaus");
         TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[0] - 0.075*TagCrystalPeaks[0],TagCrystalPeaks[0] + 0.075*TagCrystalPeaks[0]);
@@ -583,7 +518,7 @@ int main (int argc, char** argv)
               sTrigger = new TSpectrum(20);
               Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.2);
               Float_t *TriggerCrystalPeaks  = sTrigger->GetPositionX();
-              Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
+              // Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
               //delete s;
               float TriggermaxPeak = 0.0;
               int TriggerpeakID    = 0;
@@ -679,8 +614,6 @@ int main (int argc, char** argv)
               }
             }
             bool found = false;
-            // 	  if(!onlyuserinput)
-            // 	  {
             if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
             {
               if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
@@ -694,15 +627,9 @@ int main (int argc, char** argv)
               found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg/*,histo3DchannelBin,clusterLevelPrecision*/,ncrystalsx,ncrystalsy);
               // 	      mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->Find2Dpeaks(ncrystalsx*ncrystalsy,mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap2D());
             }
-            // 	  }
 
             // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
-            // <<<<<<< HEAD
-            // 	  for(int iCry = 0; iCry < ncrystalsx ; iCry++)
-            // =======
-
             for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
-              // >>>>>>> doiTag
             {
               for(int jCry = 0; jCry < ncrystalsy ; jCry++)
               {
@@ -710,8 +637,6 @@ int main (int argc, char** argv)
                 {
                   if(found)
                   {
-
-
                     // get a pointer to this crystal
                     Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
                     CurrentCrystal->SetCrystalOn(true);
@@ -1091,29 +1016,6 @@ int main (int argc, char** argv)
                     sname.str("");
                     var.str("");
 
-                    //density histogram - 1d histo of entries per bin in the cutg volume
-                    // 		    sname << "Density Histogram - Crystal " << CurrentCrystal->GetID();
-                    // 		    Int_t u,v,w;
-                    // 		    spectrum3dCrystal->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
-                    // 		    //get ax bin content
-                    // 		    TH1F* densityHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),spectrum3dCrystal->GetBinContent(u,v,w)-1,1,spectrum3dCrystal->GetBinContent(u,v,w));
-                    // 		    densityHisto->GetXaxis()->SetTitle("Numb of Entries");
-                    // 		    int NbinX = spectrum3dCrystal->GetXaxis()->GetNbins();
-                    // 		    int NbinY = spectrum3dCrystal->GetYaxis()->GetNbins();
-                    // 		    int NbinZ = spectrum3dCrystal->GetZaxis()->GetNbins();
-                    // 		    for(int iContent = 1 ; iContent < NbinX+1 ; iContent++)
-                    // 		    {
-                    // 		      for(int jContent = 1 ; jContent < NbinY+1 ; jContent++)
-                    // 		      {
-                    // 			for(int kContent = 1 ; kContent < NbinZ+1 ; kContent++)
-                    // 			{
-                    // 			  densityHisto->Fill(spectrum3dCrystal->GetBinContent(iContent,jContent,kContent));
-                    // 			}
-                    // 		      }
-                    // 		    }
-                    // 		    CurrentCrystal->SetDensityHisto(densityHisto);
-                    // 		    sname.str("");
-
                     // Histogram 2d of time evolution
                     sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
                     var << SumChannels << ":ExtendedTimeTag >> " << sname.str();
@@ -1153,74 +1055,18 @@ int main (int argc, char** argv)
                     spectrumHistoWCorrectedClone->SetName("Smooth W corrected");
                     spectrumHistoWCorrectedClone->Smooth(10); //smooth the w histo
                     //relevant points in the w corrected plot, to be used later
-
                     Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
                     Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
-                    double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(FirstBinAbove20perc);
-                    double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(LastBinAbove20perc);
-
-                    double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
-                    Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
+                    Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;              // average bin between first 20% and last 20%
                     // look for the first "peak" in w
-                    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average
-                    double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
-                    double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
-
+                    spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);              // restric the range where to look for the max to
                     //FIXME quick fix for second peak, i.e. take the mx in a much shorter w range
                     spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin +  ((int) (0.7*(LastBinAbove20perc - AverageBin))),LastBinAbove20perc);
-                    double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
-                    double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());
-                    // 		spectrumHistoWCorrected->GetXaxis()->SetRange(1,250); //reset the w plots limits
-                    // fit w with theta function
-                    // 		    TF1 *w_fit_func = new TF1("fa1",thetaFunction,0,1,3);
-                    // 		    w_fit_func->SetParameter( 0, FirstWAbove20perc); // on this w histo, the first bin above 20% max
-                    // 		    w_fit_func->SetParameter( 1, LastWAbove20perc);  // on this w histo, the last bin above 20% max
-                    // 		    w_fit_func->SetParameter( 2, FirstWpeakValue);
-                    // 		    spectrumHistoWCorrected->Fit(w_fit_func,"QNR");
-                    //save the spectrum, fit and values in the crystal
                     CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
-                    // 		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
-                    // 		    CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
 
-
-                    // 		    CurrentCrystal->SetThetaFit(w_fit_func);
-                    //fit the left part of the w plot with a gaussian, to get delta w //
-                    // 		    TF1 *gaussDeltaW = new TF1("gaussDeltaW","[0]*exp(-0.5*((x-[1])/[2])**2)",0,FirstWpeak); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-                    // 		    gaussDeltaW->SetParameter( 0, FirstWpeakValue);  // starting point as the maximum value
-                    // 		    gaussDeltaW->SetParameter( 1, FirstWpeak);  // fix center to the peak value
-                    // // 		    gaussDeltaW->FixParameter( 1, FirstWpeak);  // fix center to the peak value
-                    // 		    gaussDeltaW->SetParameter( 2, 0.015);
-                    // 		    gaussDeltaW->SetLineColor(3);
-                    // 		    spectrumHistoWCorrected->Fit(gaussDeltaW,"QNR");
-
-                    // 		    TF1 *gaussDeltaW_2 = new TF1("gaussDeltaW_2","[0]*exp(-0.5*((x-[1])/[2])**2)",LastWpeak,1); //fitting function defined only in the fitting range (otherwise somehow i cannot make it work)
-                    // 		    gaussDeltaW_2->SetParameter( 0, LastWpeakValue);  // starting point as the maximum value
-                    // 		    gaussDeltaW_2->SetParameter( 1, LastWpeak);  // fix center to the peak value
-                    // 		    gaussDeltaW_2->SetParameter( 2, 0.015);
-                    // 		    gaussDeltaW_2->SetLineColor(4);
-                    // 		    spectrumHistoWCorrected->Fit(gaussDeltaW_2,"QNR");
-
-
-
-                    // 		    CurrentCrystal->SetDeltaWfit(gaussDeltaW);
-                    // 		    CurrentCrystal->SetDeltaWfit_2(gaussDeltaW_2);
-
-                    //FIXME which one do we choose?
-                    //CurrentCrystal->SetDeltaW( (gaussDeltaW->GetParameter(2) + gaussDeltaW_2->GetParameter(2))/2.0 ); // average
-                    // 		    CurrentCrystal->SetDeltaW( gaussDeltaW->GetParameter(2) ); // just left one
-
-                    // min among the two
-                    // 		    double minDeltaW = gaussDeltaW->GetParameter(2);
-                    // 		    if(gaussDeltaW_2->GetParameter(2) < minDeltaW) minDeltaW = gaussDeltaW_2->GetParameter(2);
-                    // 		    CurrentCrystal->SetDeltaW( minDeltaW ); // min among the two found
 
                     CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
 
-                    //DEBUG
-                    // 		    std::ofstream wfile;
-                    // 		    wfile.open("wfile.dat", std::ofstream::out | std::ofstream::app);
-                    // 		    wfile <<  wThreshold << "\t" << FirstWAbove20perc << "\t" << LastWAbove20perc <<"\t"<< gaussDeltaW->GetParameter(1) - gaussDeltaW->GetParameter(2) * TMath::Sqrt(2.0*TMath::Log(2)) << "\t"<< gaussDeltaW_2->GetParameter(1) + gaussDeltaW_2->GetParameter(2) * TMath::Sqrt(2.0*TMath::Log(2)) << "\t" << w_fit_func->GetParameter(0) << "\t" << w_fit_func->GetParameter(1) << "\t" << gaussDeltaW->GetParameter(0) << "\t" << gaussDeltaW->GetParameter(1) << "\t" << gaussDeltaW->GetParameter(2) << std::endl;
-                    // 		    wfile.close();
 
                     var.str("");
                     sname.str("");
@@ -1308,130 +1154,18 @@ int main (int argc, char** argv)
                       ConvertedComptonCalibration = new TGraph2D** [nmppcx];
                       for(int iCal = 0; iCal < nmppcx ; iCal++) ConvertedComptonCalibration[iCal] = new TGraph2D*[nmppcy];
 
-                      // TGraphDelaunay*** interpolationGraph;
-                      // interpolationGraph = new TGraphDelaunay** [nmppcx];
-                      // for(int iCal = 0; iCal < nmppcx ; iCal++) interpolationGraph[iCal] = new TGraphDelaunay*[nmppcx];
 
-                      // TH3I***  ComptonCalibationHistogram;
-                      // ComptonCalibationHistogram = new TH3I** [4];
-                      // for(int iCal = 0; iCal < 4 ; iCal++) ComptonCalibationHistogram[iCal] = new TH3I*[4];
-
-
-
-                      //DEBUG
-                      // just one
-                      // TH3I* oneHisto = new TH3I(
-                      //   "one",
-                      //   "one",
-                      //   wHistogramsBins,
-                      //   0,
-                      //   1,
-                      //   histo1Dbins,
-                      //   0,
-                      //   histo1Dmax,
-                      //   histo1Dbins,
-                      //   0,
-                      //   histo1Dmax
-                      //   );
-                      //
-                      // var << "(ch" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel() << "):(" << SumChannels << "):(FloodZ)" << " >> one" ;
-                      // tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
-                      // var.str("");
-                      // CurrentCrystal->SetOne(oneHisto);
-
-
-                      // fill all the TGraphDelaunay
-                      // for(int iNeighbour = -1 ; iNeighbour < 2 ; iNeighbour++)
-                      // {
-                      //   for(int jNeighbour = -1 ; jNeighbour < 2 ; jNeighbour++)
-                      //   {
-                      //     if( (iMppc + iNeighbour >= 0) && (iMppc + iNeighbour <= nmppcx) )
-                      //     {
-                      //       if( (jMppc + jNeighbour >= 0) && (jMppc + jNeighbour <= nmppcy) )
-                      //       {
                       for(int iComptMppc = 0; iComptMppc < nmppcx ; iComptMppc++)
                       {
                         for(int jComptMppc = 0; jComptMppc < nmppcy ; jComptMppc++)
                         {
                               sname.str("");
                               var.str("");
-                              //FIXME temporary BAD BAD BAD!!!
-                              //TODO find a way to fix the max values
-                              // double maxZhisto = histo1Dmax;
-                              // if(iNeighbour == -1 | iNeighbour == 1){
-                              //   if(jNeighbour == -1 | jNeighbour == 1){
-                              //      maxZhisto = histo1Dmax / 20.0;
-                              //   }
-                              //   else{
-                              //     maxZhisto = histo1Dmax / 6.0;
-                              //   }
-                              // }
-                              // else{
-                              //   if(jNeighbour == -1 | jNeighbour == 1) maxZhisto = histo1Dmax / 6.0;
-                              // }
-                              // if(iNeighbour == 0) && (jNeighbour ==0) maxZhisto = histo1Dmax;
-                              // if(iNeighbour == -1) && (jNeighbour ==0) maxZhisto = histo1Dmax;
-                              // if(CurrentCrystal->GetID() == 28)
-                              // {
-                              // if( (iNeighbour == 0) && (jNeighbour ==0) )
-                              //   maxZhisto = histo1Dmax;
-                              // if( (iNeighbour == 0) && (jNeighbour == -1) )
-                              //   maxZhisto = 800.0;
-                              // if( (iNeighbour == 0) && (jNeighbour == 1) )
-                              //   maxZhisto = 200.0;
-                              // if( (iNeighbour == -1) && (jNeighbour ==0) )
-                              //   maxZhisto = 150.0;
-                              // if( (iNeighbour == -1) && (jNeighbour == -1) )
-                              //   maxZhisto = 100.0;
-                              // if( (iNeighbour == -1) && (jNeighbour == 1) )
-                              //   maxZhisto = 100.0;
-                              // if( (iNeighbour == 1) && (jNeighbour ==0) )
-                              //   maxZhisto = 600.0;
-                              // if( (iNeighbour == 1) && (jNeighbour == -1) )
-                              //   maxZhisto = 300.0;
-                              // if( (iNeighbour == 1) && (jNeighbour == 1) )
-                              //   maxZhisto = 100.0;
-                              // }
-                              // if(CurrentCrystal->GetID() == 29)
-                              // {
-                              // if( (iNeighbour == 0) && (jNeighbour ==0) )
-                              //   maxZhisto = histo1Dmax;
-                              // if( (iNeighbour == 0) && (jNeighbour == -1) )
-                              //   maxZhisto = 200.0;
-                              // if( (iNeighbour == 0) && (jNeighbour == 1) )
-                              //   maxZhisto = 800.0;
-                              // if( (iNeighbour == -1) && (jNeighbour ==0) )
-                              //   maxZhisto = 150.0;
-                              // if( (iNeighbour == -1) && (jNeighbour == -1) )
-                              //   maxZhisto = 100.0;
-                              // if( (iNeighbour == -1) && (jNeighbour == 1) )
-                              //   maxZhisto = 100.0;
-                              // if( (iNeighbour == 1) && (jNeighbour ==0) )
-                              //   maxZhisto = 600.0;
-                              // if( (iNeighbour == 1) && (jNeighbour == -1) )
-                              //   maxZhisto = 100.0;
-                              // if( (iNeighbour == 1) && (jNeighbour == 1) )
-                              //   maxZhisto = 300.0;
-                              // }
+
                               int tempChannel = mppc[iComptMppc][jComptMppc]->GetDigitizerChannel();
                               var << "(ch"<< tempChannel << "):(" << SumChannels << "):(FloodZ)" ;
                               tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
                               TGraph2D* tempGraph2d = new TGraph2D(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1());
-
-
-
-                              //let's get random...
-                              // TH3I* temp3dHisto = new TH3I("temp3dHisto","temp3dHisto",
-                              // 20,
-                              // tempGraph2d->GetXmin(),
-                              // tempGraph2d->GetXmax(),
-                              // 20,
-                              // tempGraph2d->GetYmin(),
-                              // tempGraph2d->GetYmax(),
-                              // 100,
-                              // tempGraph2d->GetZmin(),
-                              // tempGraph2d->GetZmax());
-
 
                               // sname << "Histo_Pi(E,w)[" << iMppc + iNeighbour <<  "][" << jMppc + jNeighbour <<  "]_" << CurrentCrystal->GetID();
                               sname << "Pi_[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
@@ -1448,13 +1182,7 @@ int main (int argc, char** argv)
                                 tempGraph2d->GetZmin(),
                                 tempGraph2d->GetZmax());
 
-                                // std::cout << sname.str().c_str()    << " "
-                                          // << tempGraph2d->GetXmin() << " "
-                                          // << tempGraph2d->GetXmax() << " "
-                                          // << tempGraph2d->GetYmin() << " "
-                                          // << tempGraph2d->GetYmax() << " "
-                                          // << tempGraph2d->GetZmin() << " "
-                                          // << tempGraph2d->GetZmax() << std::endl;
+
                               var.str("");
 
                               // ComptonCalibrationHistogram->SetTitle(sname.str().c_str());
@@ -1509,31 +1237,6 @@ int main (int argc, char** argv)
                               ConvertedComptonCalibration[iComptMppc][jComptMppc]->GetZaxis()->SetTitle("pi [ADC ch]");
                               sname.str("");
 
-                              // sname << "quadFit[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID();
-                              // std::cout << std::endl;
-                              // std::cout << sname.str().c_str() << std::endl;
-                              // TF2 *quadFit = new TF2(sname.str().c_str(),"[0] + [1]*x + [2]*y + [3]*x*x + [4]*x*y + [5]*y*y",0,15,0,6000);
-                              // quadFit->SetParameter(0,2311);
-                              // quadFit->SetParameter(1,-136.7);
-                              // quadFit->SetParameter(2,854);
-                              // quadFit->SetParameter(3,-34.1);
-                              // quadFit->SetParameter(4,-43.3);
-                              // quadFit->SetParameter(5,1.061);
-                              // ConvertedComptonCalibration[iComptMppc][jComptMppc]->Fit(quadFit);
-                              // sname.str("");
-                              // std::cout << std::endl;
-
-                              // interpolation
-                              // std::cout << "Running on detector " << iMppc + iNeighbour << "," << jMppc + jNeighbour << std::endl;
-                              // sname << "Interpolation["<< iMppc + iNeighbour <<  "][" << jMppc + jNeighbour <<  "]_" << CurrentCrystal->GetID();
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour] = new TGraphDelaunay(ComptonCalibation[iMppc + iNeighbour][jMppc + jNeighbour]);
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetTitle(sname.str().c_str());
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetName(sname.str().c_str());
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetMaxIter(100000);
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->SetMarginBinsContent(0);
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->ComputeZ(0,0);
-                              // interpolationGraph[iMppc + iNeighbour][jMppc + jNeighbour]->FindAllTriangles();
-                              // sname.str("");
                             }
                           }
 
@@ -1547,109 +1250,6 @@ int main (int argc, char** argv)
                       // CurrentCrystal->SetComptonCalibrationHistogram(ComptonCalibationHistogram);
                       // CurrentCrystal->SetInterpolationGraph(interpolationGraph);
                     }
-                    // CurrentCrystal->SetInterpolationGraph(interpolationGraph);
-                    // if(CurrentCrystal->GetID() == 28)
-                    // {
-                    //   // TGraph2D *testGraph = new TGraph2D();
-                    //   // TH3F *testPi = new TH3F("testPi","testPi",100,0,1,100,0,15000,100,0,6000);
-                    //   sname << "Pi for channel 10 - Scint in Crystal " << CurrentCrystal->GetID();
-                    //   var.str("");
-                    //   int tempChannel = 10;
-                    //   // int channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
-                    //   var << "(ch"<< tempChannel << "):(" << SumChannels << "):(FloodZ)" << " >> " << sname.str();
-                    //   tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
-                    //   TGraph2D *testGraph = new TGraph2D(tree->GetSelectedRows(),tree->GetV3(),tree->GetV2(), tree->GetV1());
-                    //   testGraph->SetTitle(sname.str().c_str());
-                    //   testGraph->SetName(sname.str().c_str());
-                    //   testGraph->GetXaxis()->SetTitle("W");
-                    //   testGraph->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
-                    //   testGraph->GetZaxis()->SetTitle("pi [ADC ch]");
-                    //   CurrentCrystal->SetComptonCalibration(testGraph);
-                    //   var.str("");
-                    //   sname.str("");
-                    // }
-                    // TH3F *Max_Energy_W = new TH3F("Max_Energy_W","Max_Energy_W",100,0,1,100,0,15000,100,0,6000);
-                    // sname << "Compton Calibration Plot - Crystal " << CurrentCrystal->GetID();
-                    // Max_Energy_W->SetTitle(sname.str().c_str());
-                    // Max_Energy_W->SetName(sname.str().c_str());
-                    // Max_Energy_W->GetXaxis()->SetTitle("W");
-                    // Max_Energy_W->GetYaxis()->SetTitle("Sum Charge [ADC ch]");
-                    // Max_Energy_W->GetZaxis()->SetTitle("Max Charge [ADC ch]");
-                    // var.str("");
-                    // var << "(ch"<< channel << "):(" << SumChannels << "):(FloodZ)" << " >> " << sname.str();
-                    // tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
-                    // CurrentCrystal->SetComptonCalibration(Max_Energy_W);
-                    // var.str("");
-                    // sname.str("");
-                    // //histogram of doi resolution
-                    // 		    double sigmaWdistro = userSigmaW;
-                    // 		    if(userSigmaW == -1)
-                    // 		    {
-                    // 		      sigmaWdistro = CurrentCrystal->GetDeltaW();
-                    // 		    }
-                    // 		    sname << "Doi Resolution Histogram - Crystal " << CurrentCrystal->GetID();
-                    // 		    TH1F* derivativeDoiResolution = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);
-                    // 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-                    // 		    {
-                    // 		      if(backgroundRun | lateralRun)
-                    // 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),sigmaWdistro*crystalz*pdfW->GetBinContent(iPdfHisto+1));
-                    // 		      else
-                    // 			derivativeDoiResolution->Fill(pdfW->GetBinCenter(iPdfHisto+1),TMath::Abs(sigmaWdistro*( ( lambda511 * pdfW->GetBinContent(iPdfHisto+1) * (TMath::Exp( -(crystalz/lambda511) ) -1 ) ) / ( 1.0 - (1.0 - TMath::Exp(-(crystalz/lambda511)) )* cumulativeW->GetBinContent(iPdfHisto+1) ) ) ));
-                    // 		    }
-                    // 		    CurrentCrystal->SetDerivativeDoiResolution(derivativeDoiResolution);
-                    // 		    sname.str("");
-
-                    //graph of doi res as a function of z
-                    // 		    sname << "Doi Res. vs. Z - Crystal " << CurrentCrystal->GetID();
-                    // 		    TGraph* doiResZ = new TGraph();
-                    // 		    int pCounter = 0;
-                    // 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-                    // 		    {
-                    // 		      doiResZ->SetPoint(pCounter,calibrationGraph->Eval(pdfW->GetBinCenter(iPdfHisto+1)),2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
-                    // 		      pCounter++;
-                    // 		    }
-                    // 		    doiResZ->SetTitle(sname.str().c_str());
-                    // 		    doiResZ->SetName(sname.str().c_str());
-                    // 		    doiResZ->GetXaxis()->SetTitle("Z [mm]");
-                    // 		    doiResZ->GetYaxis()->SetTitle("DoiRes FWHM [mm]");
-                    // 		    CurrentCrystal->SetDoiResZ(doiResZ);
-                    // 		    sname.str("");
-
-
-
-                    //histo of resolutions
-                    // 		    sname << "Doi Res. All - " << CurrentCrystal->GetID();
-                    // 		    TH1F* resolutions = new TH1F(sname.str().c_str(),sname.str().c_str(),100,0,crystalz);
-                    // 		    resolutions->GetXaxis()->SetTitle("Doi Res FWHM [mm]");
-                    // 		    for(int iPdfHisto = 0 ; iPdfHisto < wHistogramsBins; iPdfHisto++)
-                    // 		    {
-                    // 		      resolutions->Fill(2.355*derivativeDoiResolution->GetBinContent(iPdfHisto+1));
-                    // 		    }
-                    // 		    CurrentCrystal->SetDoiResolutions(resolutions);
-                    // 		    //now a bit dummy, sample the curve and find an average
-                    // 		    int samplingNumb = 20;
-                    // 		    double sumResolutions = 0;
-                    // 		    for(int iSample = 0 ; iSample < samplingNumb; iSample++)
-                    // 		    {
-                    // 		      sumResolutions += doiResZ->Eval(iSample*(crystalz/samplingNumb));
-                    // 		    }
-                    // 		    sname.str("");
-                    // 		    if( sumResolutions/samplingNumb > 0 && sumResolutions/samplingNumb < crystalz )
-                    // 		      CurrentCrystal->SetAverageDoiResolution(sumResolutions/samplingNumb);
-                    // 		    else
-                    // 		      CurrentCrystal->SetAverageDoiResolution(crystalz);
-
-                    //histogram with the difference between the tag calibration and the analytical calibration
-                    // 		sname << "Calibration Difference - Crystal " << CurrentCrystal->GetID();
-                    // 		var << "((ch" << channel << "/(" << SumChannels << "))*"<<m_cal[CurrentCrystal->GetID()]<<"+"<<q_cal[CurrentCrystal->GetID()]<<")-((ch" << channel << "/(" << SumChannels << "))*"<<m_tag[CurrentCrystal->GetID()]<<"+"<<q_tag[CurrentCrystal->GetID()]<<")>> " << sname.str();
-                    // 		TH1F* HistoCalibDiff = new TH1F(sname.str().c_str(),sname.str().c_str(),2500,-20,20);
-                    // 		tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected+triggerPhotopeakCut);
-                    // 		HistoCalibDiff->GetXaxis()->SetTitle("Delta Calibration");
-                    // 		HistoCalibDiff->GetYaxis()->SetTitle("N");
-                    // 		calib_accuracy_File<< CurrentCrystal->GetID() << " " << HistoCalibDiff->GetMean() << " " << HistoCalibDiff->GetRMS() << std::endl;;
-                    // 		CurrentCrystal->SetHistoCalibDiff(HistoCalibDiff);
-                    // 		var.str("");
-                    // 		sname.str("");
 
                     if(usingRealSimData) // only if this is a sim dataset
                     {
@@ -1679,16 +1279,7 @@ int main (int argc, char** argv)
                       graph->GetYaxis()->SetTitle("Z");
                       graph->Draw("ap");
                       sname.str("");
-                      // 		  TF1 *linear = new TF1("linear",  "[0]*x + [1]",0,1);
-                      // 		      sname << "expfit - Crystal " << CurrentCrystal->GetID();
-                      // 		      TF1 *expfit = new TF1(sname.str().c_str(),  "[0]*exp(-x/[1])",0,1);
-                      // 		      // 		  linear->SetParameter(0,-100);
-                      // 		      // 		  linear->SetParameter(1,50);
-                      // 		      expfit->SetParameter(0,50);
-                      // 		      expfit->SetParameter(1,0.1);
-                      // 		      // 		  graph->SetStats(1);
-                      // 		      graph->Fit(sname.str().c_str(),"Q","",0.1,0.7);
-                      // 		      CurrentCrystal->SetSimFit(expfit);
+
                       CurrentCrystal->SetSimGraph(graph);
                       sname.str("");
                       var.str("");
@@ -1747,8 +1338,8 @@ int main (int argc, char** argv)
   TCanvas* C_spectrum;
   TCanvas* C_multi;
   TCanvas* C_multi_2d;
-  TCanvas* C_global;
-  TCanvas* C_multi_2;
+  // TCanvas* C_global;
+  // TCanvas* C_multi_2;
 
 
   //----------------------------------------------------------//
@@ -1759,7 +1350,7 @@ int main (int argc, char** argv)
   TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
   TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
   TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
-  TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
+  // TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
   TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
   RawCanvas->Divide(nmppcx,nmppcy);
   TriggerCanvas->Divide(nmppcx,nmppcy);
@@ -1827,7 +1418,7 @@ int main (int argc, char** argv)
   //   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
   //   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
   //canvas for the tagging crystal
-  TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
+  // TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
   //draw canvases
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
   for(int iModule = 0; iModule < nmodulex ; iModule++)
@@ -1897,8 +1488,6 @@ int main (int argc, char** argv)
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   PeakPositionDistro->SetStats(1);
-  //2d histogram
-
 
   TH1F *LYDistro = new TH1F("Light Yield position","Light Yield Distribution - All Crystals",250,0,40000);
   LYDistro->GetXaxis()->SetTitle("[Ph/MeV]");
@@ -1918,42 +1507,6 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistro->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro->SetStats(1);
 
-  //   EnergyResolutionVsIJ->SetStats(1);
-  //Distribution of FWHM of W plots
-  //histogram of fwhm
-  //   TH1F *WfwhmDistro = new TH1F("w_fwhm","Distribution of FWHM in W plots",200,0,0.5);
-  //   WfwhmDistro->GetXaxis()->SetTitle("W");
-  //   WfwhmDistro->GetYaxis()->SetTitle("N");
-  //   WfwhmDistro->SetStats(1);
-  //2d histogram of fwhm
-  //   TH2F *WfwhmVsIJ = new TH2F("w_fwhm vs. i,j","Distribution of FWHM in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   WfwhmVsIJ->GetXaxis()->SetTitle("i");
-  //   WfwhmVsIJ->GetYaxis()->SetTitle("j");
-  //   WfwhmVsIJ->GetZaxis()->SetTitle("w FHWM");
-  //   WfwhmVsIJ->GetZaxis()->SetRangeUser(0,0.25);
-  //   WfwhmVsIJ->SetStats(1);
-  //histogram of rms
-  //   TH1F *WrmsDistro = new TH1F("w_rms","Distribution of RMS in W plots",200,0,0.5);
-  //   WrmsDistro->GetXaxis()->SetTitle("W");
-  //   WrmsDistro->GetYaxis()->SetTitle("N");
-  //   WrmsDistro->SetStats(1);
-  //2d histogram of rms
-  //   TH2F *WrmsVsIJ = new TH2F("w_rms vs. i,j","Distribution of RMS in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   WrmsVsIJ->GetXaxis()->SetTitle("i");
-  //   WrmsVsIJ->GetYaxis()->SetTitle("j");
-  //   WrmsVsIJ->GetZaxis()->SetTitle("w RMS");
-  //Distribution of FWHM of W plots
-  //   TH1F *Wwidth20perc = new TH1F("w20","Distribution of width at 20% in W plots",200,0,0.5);
-  //   Wwidth20perc->GetXaxis()->SetTitle("W");
-  //   Wwidth20perc->GetYaxis()->SetTitle("N");
-  //   Wwidth20perc->SetStats(1);
-
-  //same plot but just for the "not lateral" channels
-  //   TH1F *Wwidth20percCentral = new TH1F("Central w20 - Central Crystals","Distribution of width at 20% in W plots - Central Crystals",200,0,0.5);
-  //   Wwidth20percCentral->GetXaxis()->SetTitle("W");
-  //   Wwidth20percCentral->GetYaxis()->SetTitle("N");
-  //   Wwidth20percCentral->SetStats(1);
-
   TH1F *PeakPositionDistroCentral = new TH1F("Central Photopeak Position","Distribution photopeak positions - Central Crystals",200,0,histo1Dmax);
   PeakPositionDistroCentral->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistroCentral->GetYaxis()->SetTitle("N");
@@ -1964,18 +1517,15 @@ int main (int argc, char** argv)
   PeakEnergyResolutionDistroCentral->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistroCentral->SetStats(1);
 
-
   TH1F *PeakEnergyResolutionDistro_corr = new TH1F("Corrected Energy res FWHM","Distribution photopeak energy resolutions FWHM",200,0,1);
   PeakEnergyResolutionDistro_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistro_corr->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistro_corr->SetStats(1);
 
-
   TH1F *PeakEnergyResolutionDistroCentral_corr = new TH1F("Corrected Central En Res","Distribution photopeak energy resolutions FWHM - Central Crystals",200,0,1);
   PeakEnergyResolutionDistroCentral_corr->GetXaxis()->SetTitle("Energy Resolution FWHM");
   PeakEnergyResolutionDistroCentral_corr->GetYaxis()->SetTitle("N");
   PeakEnergyResolutionDistroCentral_corr->SetStats(1);
-
 
   //LEGO PLOTS RELEVANT
   TH2F *PeakPositionVsIJ = new TH2F("Photopeak positions vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
@@ -1995,7 +1545,6 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ->GetZaxis()->SetRangeUser(0,EnergyResolutionVsIJmax);
-
   //LYVsIJ
   TH2F *LYVsIJ = new TH2F("Light Yield vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   LYVsIJ->GetXaxis()->SetTitle("i (U axis)");
@@ -2006,52 +1555,6 @@ int main (int argc, char** argv)
   LYVsIJ->GetZaxis()->SetTitleOffset(2.2);
   LYVsIJ->GetZaxis()->SetRangeUser(0,LYvsIJmax);
 
-  //   TH2F *DoiResolutionVsIJ = new TH2F("DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   DoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   DoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   DoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
-  //   DoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   DoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   DoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   DoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
-
-  //   TH2F *DeltaWvsIJ = new TH2F("Delta W vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   DeltaWvsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   DeltaWvsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   DeltaWvsIJ->GetZaxis()->SetTitle("Delta W");
-  //   DeltaWvsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   DeltaWvsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   DeltaWvsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   DeltaWvsIJ->GetZaxis()->SetRangeUser(0,0.05);
-
-  //   TH2F *mCalVsIJ = new TH2F("Abs(mCal) vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   mCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   mCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   mCalVsIJ->GetZaxis()->SetTitle("abs(mCal)");
-  //   mCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   mCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   mCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   mCalVsIJ->GetZaxis()->SetRangeUser(0,mCalVsIJmax);
-
-  //   TH2F *RealmCalVsIJ = new TH2F("mCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   RealmCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   RealmCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   RealmCalVsIJ->GetZaxis()->SetTitle("mCal)");
-  //   RealmCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   RealmCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   RealmCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   RealmCalVsIJ->GetZaxis()->SetRangeUser(RealmCalVsIJmin,RealmCalVsIJmax);
-
-  //   TH2F *qCalVsIJ = new TH2F("qCal vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   qCalVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   qCalVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   qCalVsIJ->GetZaxis()->SetTitle("qCal)");
-  //   qCalVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   qCalVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   qCalVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   qCalVsIJ->GetZaxis()->SetRangeUser(0,qCalVsIJmax);
-
-
   TH2F *EnergyResolutionVsIJ_corr = new TH2F("Corrected Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ_corr->GetXaxis()->SetTitle("i (U axis)");
   EnergyResolutionVsIJ_corr->GetYaxis()->SetTitle("j (V axis)");
@@ -2060,67 +1563,6 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ_corr->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ_corr->GetZaxis()->SetTitleOffset(2.2);
   EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,0.3);
-
-
-  //   TH2F *AverageDoiResolutionVsIJ = new TH2F("Average DOI res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   AverageDoiResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   AverageDoiResolutionVsIJ->GetYaxis()->SetTitle("j (V axis)");
-  //   AverageDoiResolutionVsIJ->GetZaxis()->SetTitle("DOI Resolution FWHM [mm]");
-  //   AverageDoiResolutionVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   AverageDoiResolutionVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   AverageDoiResolutionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   AverageDoiResolutionVsIJ->GetZaxis()->SetRangeUser(0,DoiResolutionVsIJmax);
-
-  //   TH2F *Wwidht20percVsIJ = new TH2F("w20 vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   Wwidht20percVsIJ->GetXaxis()->SetTitle("i (U axis)");
-  //   Wwidht20percVsIJ->GetYaxis()->SetTitle("i (V axis)");
-  //   Wwidht20percVsIJ->GetZaxis()->SetRangeUser(0,0.25);
-  //   Wwidht20percVsIJ->GetXaxis()->SetTitleOffset(1.8);
-  //   Wwidht20percVsIJ->GetYaxis()->SetTitleOffset(1.8);
-  //   Wwidht20percVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  //   Wwidht20percVsIJ->GetZaxis()->SetTitle("W width at 20%");
-
-
-  //Distribution of DOI resolutions
-  //   TH1F *WDoiDistro = new TH1F("Doi Res FWHM","Distribution of DOI res FWHM",50,0,10);
-  //   WDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  //   //   WDoiDistro->GetYaxis()->SetTitle("N");
-  //   WDoiDistro->SetStats(1);
-
-  //Distribution of DOI resolutions
-  //   TH1F *WDoiDistroCentral = new TH1F("Central Doi Res FWHM","Central distribution of DOI res FWHM",50,0,10);
-  //   //   WDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  //   WDoiDistroCentral->GetYaxis()->SetTitle("N");
-  //   WDoiDistroCentral->SetStats(1);
-
-  //Distribution of AVERAGE DOI resolutions
-  //   TH1F *AverageDoiDistro = new TH1F("Average Doi Res FWHM","Average distribution of DOI res FWHM",50,0,10);
-  //   AverageDoiDistro->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  //   WDoiDistro->GetYaxis()->SetTitle("N");
-  //   AverageDoiDistro->SetStats(1);
-
-  //Distribution of AVERAGE DOI resolutions -CENTRAL
-  //   TH1F *AverageDoiDistroCentral = new TH1F("Central - Average Doi Res FWHM","Central - Average distribution of DOI res FWHM",50,0,10);
-  //   AverageDoiDistroCentral->GetXaxis()->SetTitle("DOI resolution FWHM [mm]");
-  //   WDoiDistro->GetYaxis()->SetTitle("N");
-  //   AverageDoiDistroCentral->SetStats(1);
-
-
-  //Distribution of fit exp tau for W plots
-  //   TH1F *WtauFit = new TH1F("Exp slope W","Distribution of exp slopes in W plots",1000,0,1);
-  //   WtauFit->GetXaxis()->SetTitle("Tau");
-  //   WtauFit->GetYaxis()->SetTitle("N");
-  //   WtauFit->SetStats(1);
-
-
-  //   TH2F *WtauFitVsIJ = new TH2F("Exp slopes W vs. i,j","Distribution of exp slopes in W plots VS. crystal position i,j",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
-  //   WtauFitVsIJ->GetXaxis()->SetTitle("i");
-  //   WtauFitVsIJ->GetYaxis()->SetTitle("i");
-  //   WtauFitVsIJ->GetZaxis()->SetTitle("tau");
-
-
-
-
   //----------------------------------------------------------//
 
 
@@ -2169,8 +1611,8 @@ int main (int argc, char** argv)
       if(usingTaggingBench)
       {
         C_TaggingCrystalSpectrum->cd();
-        TaggingCrystalSpectrum->Draw();
-        TriggerSpectrumHighlight->Draw("same");
+        if(TaggingCrystalSpectrum) TaggingCrystalSpectrum->Draw();
+        if(TriggerSpectrumHighlight) TriggerSpectrumHighlight->Draw("same");
         C_TaggingCrystalSpectrum->Write();
         // GlobalFlood3DSeparation->Write();
 
@@ -2181,12 +1623,6 @@ int main (int argc, char** argv)
       BigSpectraCanvas->Write();
       if(lightYieldComputation) BigLYCanvas->Write();
 
-
-      //       C_global = new TCanvas("C_global","C_global",800,800);
-      //       name = "3D Cuts - " + ModuleDirStream.str();
-      //       C_global->SetName(name);
-      //       C_global->SetTitle(name);
-      //       int colorcounter = 0;
 
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -2237,7 +1673,6 @@ int main (int argc, char** argv)
             {
               for(int jCry = 0; jCry < ncrystalsy ; jCry++)
               {
-
                 //directory
                 std::stringstream CrystalDirStream;
                 Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
@@ -2260,9 +1695,6 @@ int main (int argc, char** argv)
                       {
                         PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                       }
-                      // 		WfwhmDistro->Fill(CurrentCrystal->GetWfwhm());
-                      // 		WDoiDistro->Fill( (15.0/CurrentCrystal->GetWfwhm())*0.0158); // FIXME CAREFUL: here the 0.0158 value is hardcoded and taken from the sigma of W distros in DOI bench setup. 15.0 is the length of the crystals in mm.
-
                       PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
                       EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
                       EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
@@ -2273,31 +1705,6 @@ int main (int argc, char** argv)
                       LYDistro->Fill(CurrentCrystal->GetLY());
                       LYVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetLY());
                     }
-
-                    // 		    if(CurrentCrystal->GetDoiResolutionFWHM() > 0 && CurrentCrystal->GetDoiResolutionFWHM() < crystalz )
-                    // 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDoiResolutionFWHM());
-                    // 		    else
-                    // 		      DoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
-                    // 		    WDoiDistro->Fill(CurrentCrystal->GetDoiResolutionFWHM());
-
-
-                    // 		    if(CurrentCrystal->GetAverageDoiResolution() > 0 && CurrentCrystal->GetAverageDoiResolution() < crystalz )
-                    // 		    AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetAverageDoiResolution());
-                    // 		    AverageDoiDistro->Fill(CurrentCrystal->GetAverageDoiResolution());
-                    // 		    else
-                    // 		      AverageDoiResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),0);
-
-                    // 		    DeltaWvsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetDeltaW());
-                    // 		    mCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),std::abs(CurrentCrystal->GetMcal()));
-                    // 		    RealmCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetMcal());
-                    // 		    qCalVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetQcal());
-
-                    // 		WfwhmVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWfwhm());
-                    // 		WrmsDistro->Fill(CurrentCrystal->GetWrms());
-                    // 		WrmsVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWrms());
-                    // 		Wwidht20percVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetWwidth20perc());
-                    // 		Wwidth20perc->Fill(CurrentCrystal->GetWwidth20perc());
-
 
                     if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ))
                     {
@@ -2316,11 +1723,6 @@ int main (int argc, char** argv)
                       {
                         LYDistroCentral->Fill(CurrentCrystal->GetLY());
                       }
-
-
-                      // 		      AverageDoiDistroCentral->Fill(CurrentCrystal->GetAverageDoiResolution());
-                      // 		      WDoiDistroCentral->Fill(CurrentCrystal->GetDoiResolutionFWHM());
-
                     }
 
                     //draw also the 3d cuts in the common canvas of this mppc
@@ -2343,12 +1745,6 @@ int main (int argc, char** argv)
                       CurrentCrystal->GetFloodMap2D()->Draw("same");
                     legend_2d->Draw();
                     counter++;
-
-                    // 		C_global->cd();
-                    // 		CurrentCrystal->GetFloodMap3D()->SetMarkerColor(colorcounter);
-                    // 		CurrentCrystal->GetFloodMap3D()->SetFillColor(colorcounter);
-                    // 		CurrentCrystal->GetFloodMap3D()->Draw("same");
-                    // 		colorcounter++;
 
                     // spectrum
                     C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -2375,19 +1771,6 @@ int main (int argc, char** argv)
                       C_spectrum->Write();
                       delete C_spectrum;
                     }
-
-                    // spectrum without highligth
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    TString title = "mod_";
-                    // 		    title += CurrentCrystal->GetSpectrum()->GetName() ;
-                    // 		    C_spectrum->SetName(title);
-                    // 		    C_spectrum->SetTitle("");
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetSpectrum()->SetFillStyle(3001);
-                    // 		    CurrentCrystal->GetSpectrum()->SetFillColor(kBlue);
-                    // 		    CurrentCrystal->GetSpectrum()->Draw();
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
 
                     //w histo
                     C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -2457,31 +1840,8 @@ int main (int argc, char** argv)
                     C_spectrum->SetName(CurrentCrystal->GetHistoWCorrected()->GetName());
                     C_spectrum->cd();
                     CurrentCrystal->GetHistoWCorrected()->Draw();
-                    // 		    CurrentCrystal->GetThetaFit()->Draw("same");
-                    //instead of drawing the real fitted function, draw another gaussian function with same parameters but in the 0-1 range
-                    // 		    TF1 *gaussDraw = new TF1("gaussDraw","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-                    // 		    gaussDraw->SetParameter(0,CurrentCrystal->GetDeltaWfit()->GetParameter(0));
-                    // 		    gaussDraw->SetParameter(1,CurrentCrystal->GetDeltaWfit()->GetParameter(1));
-                    // 		    gaussDraw->SetParameter(2,CurrentCrystal->GetDeltaWfit()->GetParameter(2));
-                    // 		    gaussDraw->SetLineColor(3);
-                    // 		CurrentCrystal->GetDeltaWfit()->Draw("same");
-                    // 		    gaussDraw->Draw("same");
-                    // 		    TF1 *gaussDraw_2 = new TF1("gaussDraw_2","[0]*exp(-0.5*((x-[1])/[2])**2)",0,1);
-                    // 		    gaussDraw_2->SetParameter(0,CurrentCrystal->GetDeltaWfit_2()->GetParameter(0));
-                    // 		    gaussDraw_2->SetParameter(1,CurrentCrystal->GetDeltaWfit_2()->GetParameter(1));
-                    // 		    gaussDraw_2->SetParameter(2,CurrentCrystal->GetDeltaWfit_2()->GetParameter(2));
-                    // 		    gaussDraw_2->SetLineColor(2);
-                    // 		    gaussDraw_2->Draw("same");
                     C_spectrum->Write();
                     delete C_spectrum;
-
-                    //w histo corrected smooth
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    C_spectrum->SetName(CurrentCrystal->GetHistoWCorrectedSmooth()->GetName());
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetHistoWCorrectedSmooth()->Draw();
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
 
                     //pdf
                     C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -2525,46 +1885,13 @@ int main (int argc, char** argv)
                       {
                         for(int jComptMppc = 0; jComptMppc < nmppcy ; jComptMppc++)
                         {
-                      // for(int iNeighbour = -1 ; iNeighbour < 2 ; iNeighbour++)
-                      // {
-                      //   for(int jNeighbour = -1 ; jNeighbour < 2 ; jNeighbour++)
-                      //   {
-                      //     if( (iMppc + iNeighbour >= 0) && (iMppc + iNeighbour <= nmppcx) )
-                      //     {
-                      //       if( (jMppc + jNeighbour >= 0) && (jMppc + jNeighbour <= nmppcy) )
-                      //       {
-                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-                              TGraph2D ***tempGraph = CurrentCrystal->GetComptonCalibration();
-                              // C_spectrum->SetName(tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->GetName());
-                              // C_spectrum->cd();
-                              // tempGraph[iMppc + iNeighbour][jMppc + jNeighbour]->Draw("AP");
-                              tempGraph[iComptMppc][jComptMppc]->Write();
-                              // C_spectrum->Write();
-                              // delete C_spectrum;
 
-                              // TGraphDelaunay ***tempDelaunay = CurrentCrystal->GetInterpolationGraph();
-                              // tempDelaunay[iMppc + iNeighbour][jMppc + jNeighbour]->Write();
-                              TGraph2D ***tempCorrGraph = CurrentCrystal->GetConvertedComptonCalibration();
-                              tempCorrGraph[iComptMppc][jComptMppc]->Write();
-
-
-                              // tempHisto[iMppc + iNeighbour][jMppc + jNeighbour]->Write();
-
-
-                              // TH3I ***tempHisto = CurrentCrystal->GetComptonCalibrationHistogram();
-                              // // tempHisto[iMppc + iNeighbour][jMppc + jNeighbour]->Write();
-                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-                              // C_spectrum->SetName(tempHisto[iMppc + iNeighbour][jMppc + jNeighbour]->GetName());
-                              // C_spectrum->cd();
-                              // tempHisto[iMppc + iNeighbour][jMppc + jNeighbour]->Draw();
-                              // C_spectrum->Write();
-                              // delete C_spectrum;
-                            }
-                          }
-                      //       }
-                      //     }
-                      //   }
-                      // }
+                          TGraph2D ***tempGraph = CurrentCrystal->GetComptonCalibration();
+                          tempGraph[iComptMppc][jComptMppc]->Write();
+                          TGraph2D ***tempCorrGraph = CurrentCrystal->GetConvertedComptonCalibration();
+                          tempCorrGraph[iComptMppc][jComptMppc]->Write();
+                        }
+                      }
                       for(int iCompt = 0 ; iCompt < CurrentCrystal->GetNumOfComptonHisto(); iCompt++)
                       {
                         C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
@@ -2576,84 +1903,8 @@ int main (int argc, char** argv)
                       }
                     }
 
-
-                    // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // C_spectrum->SetName(CurrentCrystal->GetComptonCalibration()->GetName());
-                    // C_spectrum->cd();
-                    // CurrentCrystal->GetComptonCalibration()->Draw("AP");
-                    // C_spectrum->Write();
-                    // delete C_spectrum;
-
-
-
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    C_spectrum->SetName(CurrentCrystal->GetDerivativeDoiResolution()->GetName());
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetDerivativeDoiResolution()->Draw();
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
-
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    C_spectrum->SetName(CurrentCrystal->GetDoiResZ()->GetName());
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetDoiResZ()->Draw("AL");
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
-
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    C_spectrum->SetName(CurrentCrystal->GetDoiResolutions()->GetName());
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetDoiResolutions()->Draw();
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
-                    // =======
-                    //
-                    //
-                    // 		if(correctingForDOI)
-                    // 		{
-                    // 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		  C_spectrum->SetName(CurrentCrystal->GetSlicesMean()->GetName());
-                    // 		  C_spectrum->cd();
-                    // 		  CurrentCrystal->GetSlicesMean()->Draw();
-                    // 		  CurrentCrystal->GetSlicesMeanFit()->Draw("same");
-                    // 		  C_spectrum->Write();
-                    // 		  delete C_spectrum;
-                    //
-                    // 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		  C_spectrum->SetName(CurrentCrystal->GetCorrectedSpectrum()->GetName());
-                    // 		  C_spectrum->cd();
-                    // 		  CurrentCrystal->GetCorrectedSpectrum()->Draw();
-                    // 		  CurrentCrystal->GetHighlightedSpectrumCorrected()->SetFillColor(3);
-                    // 		  CurrentCrystal->GetHighlightedSpectrumCorrected()->Draw("same");
-                    // 		  CurrentCrystal->GetFitCorrected()->Draw("same");
-                    // 		  C_spectrum->Write();
-                    // 		  delete C_spectrum;
-                    //
-                    //
-                    //
-                    // 		  //w histo corrected
-                    // 		  C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		  C_spectrum->SetName(CurrentCrystal->GetHistoWCorrected()->GetName());
-                    // 		  C_spectrum->cd();
-                    // 		  CurrentCrystal->GetHistoWCorrected()->Draw();
-                    // 		  C_spectrum->Write();
-                    // 		  delete C_spectrum;
-                    //
-                    // 		}
-                    // >>>>>>> doiTag
-                    //density histo
-                    // 		    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    // 		    C_spectrum->SetName(CurrentCrystal->GetDensityHisto()->GetName());
-                    // 		    C_spectrum->cd();
-                    // 		    CurrentCrystal->GetDensityHisto()->Draw();
-                    // 		    C_spectrum->Write();
-                    // 		    delete C_spectrum;
-
-
                     if(usingRealSimData)
                     {
-                      // 		      WtauFit->Fill(CurrentCrystal->GetSimFit()->GetParameter(1));
-                      // 		      WtauFitVsIJ->Fill(CurrentCrystal->GetI() ,CurrentCrystal->GetJ() , CurrentCrystal->GetSimFit()->GetParameter(1));
 
                       C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
                       C_spectrum->SetName(CurrentCrystal->GetSimDOIplot()->GetName());
@@ -2706,17 +1957,8 @@ int main (int argc, char** argv)
             }
 
             directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
-            //   	  pt->Draw();
-            // 	  nameMppc = "3D Cuts - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-            // 	  C_multi->SetName(name);
-            // 	  C_multi->SetTitle(name);
-            // 	  C_multi->Update();
             C_multi->Write();
             C_multi_2d->Write();
-
-            // 	  C_multi_2->Write();
-            // 	  C_graph->Write();
-            // 	  delete C_graph;
             delete C_multi_2d;
             delete C_multi;
           }
@@ -2725,23 +1967,6 @@ int main (int argc, char** argv)
 
 
       directory[iModule+jModule][0][0]->cd(); // go back to main directory
-      //       C_global->Write();
-      //       delete C_global;
-      //write the summary histos and canvases, that were filled during file saving
-
-
-
-      //       TCanvas *C_WfwhmVsIJ = new TCanvas("C_WfwhmVsIJ","C_WfwhmVsIJ",800,800);
-      //       C_WfwhmVsIJ->SetName(WfwhmVsIJ->GetName());
-      //       C_WfwhmVsIJ->cd();
-      //       WfwhmVsIJ->Draw("LEGO2");
-      //       C_WfwhmVsIJ->Write();
-
-      //       TCanvas *C_WrmsVsIJ = new TCanvas("C_WrmsVsIJ","C_WrmsVsIJ",800,800);
-      //       C_WrmsVsIJ->SetName(WrmsVsIJ->GetName());
-      //       C_WrmsVsIJ->cd();
-      //       WrmsVsIJ->Draw("LEGO2");
-      //       C_WrmsVsIJ->Write();
 
       if(!backgroundRun)
       {
@@ -2780,67 +2005,6 @@ int main (int argc, char** argv)
         C_LYVsIJ->Write();
       }
 
-      //       TCanvas *C_DoiResolutionVsIJ = new TCanvas("C_DoiResolutionVsIJ","C_DoiResolutionVsIJ",800,800);
-      //       C_DoiResolutionVsIJ->SetName(DoiResolutionVsIJ->GetName());
-      //       C_DoiResolutionVsIJ->cd();
-      //       DoiResolutionVsIJ->Draw("LEGO2");
-      //       C_DoiResolutionVsIJ->SetLeftMargin(0.15);
-      //       C_DoiResolutionVsIJ->Write();
-
-      //       TCanvas *C_DeltaWvsIJ = new TCanvas("C_DeltaWvsIJ","C_DeltaWvsIJ",800,800);
-      //       C_DeltaWvsIJ->SetName(DeltaWvsIJ->GetName());
-      //       C_DeltaWvsIJ->cd();
-      //       DeltaWvsIJ->Draw("LEGO2");
-      //       C_DeltaWvsIJ->SetLeftMargin(0.15);
-      //       C_DeltaWvsIJ->Write();
-
-      //       TCanvas *C_mCalVsIJ = new TCanvas("C_mCalVsIJ","C_mCalVsIJ",800,800);
-      //       C_mCalVsIJ->SetName(mCalVsIJ->GetName());
-      //       C_mCalVsIJ->cd();
-      //       mCalVsIJ->Draw("LEGO2");
-      //       C_mCalVsIJ->SetLeftMargin(0.15);
-      //       C_mCalVsIJ->Write();
-
-      //       TCanvas *C_AverageDoiResolutionVsIJ = new TCanvas("C_AverageDoiResolutionVsIJ","C_AverageDoiResolutionVsIJ",800,800);
-      //       C_AverageDoiResolutionVsIJ->SetName(AverageDoiResolutionVsIJ->GetName());
-      //       C_AverageDoiResolutionVsIJ->cd();
-      //       AverageDoiResolutionVsIJ->Draw("LEGO2");
-      //       C_AverageDoiResolutionVsIJ->SetLeftMargin(0.15);
-      //       C_AverageDoiResolutionVsIJ->Write();
-
-
-      //       TCanvas *C_qCalVsIJ = new TCanvas("C_qCalVsIJ","C_qCalVsIJ",800,800);
-      //       C_qCalVsIJ->SetName(qCalVsIJ->GetName());
-      //       C_qCalVsIJ->cd();
-      //       qCalVsIJ->Draw("LEGO2");
-      //       C_qCalVsIJ->SetLeftMargin(0.15);
-      //       C_qCalVsIJ->Write();
-
-      //       TCanvas *C_RealmCalVsIJ = new TCanvas("C_RealmCalVsIJ","C_RealmCalVsIJ",800,800);
-      //       C_RealmCalVsIJ->SetName(RealmCalVsIJ->GetName());
-      //       C_RealmCalVsIJ->cd();
-      //       RealmCalVsIJ->Draw("LEGO2");
-      //       C_RealmCalVsIJ->SetLeftMargin(0.15);
-      //       C_RealmCalVsIJ->Write();
-
-      //       TCanvas *C_Wwidht20percVsIJ = new TCanvas("C_Wwidht20percVsIJ","C_Wwidht20percVsIJ",800,800);
-      //       C_Wwidht20percVsIJ->SetName(Wwidht20percVsIJ->GetName());
-      //       C_Wwidht20percVsIJ->cd();
-      //       Wwidht20percVsIJ->Draw("LEGO2");
-      //       C_Wwidht20percVsIJ->SetLeftMargin(0.15);
-      //       C_Wwidht20percVsIJ->Write();
-
-      //       gStyle->SetOptStat(1);
-
-      //       if(usingRealSimData)
-      //       {
-      // 	WtauFit->Write();
-      // 	TCanvas *C_WtauFitVsIJ = new TCanvas("C_WtauFitVsIJ","C_WtauFitVsIJ",800,800);
-      // 	C_WtauFitVsIJ->SetName(WtauFitVsIJ->GetName());
-      // 	C_WtauFitVsIJ->cd();
-      // 	WtauFitVsIJ->Draw("LEGO2");
-      // 	C_WtauFitVsIJ->Write();
-      //       }
 
       if(!backgroundRun)
       {
@@ -2861,10 +2025,6 @@ int main (int argc, char** argv)
         LYDistro->Write();
         LYDistroCentral->Write();
       }
-      //       AverageDoiDistro->Write();
-      //       AverageDoiDistroCentral->Write();
-      //       WDoiDistro->Write();
-      //       WDoiDistroCentral->Write();
     }
   }
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file

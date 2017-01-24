@@ -36,36 +36,36 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
   gErrorIgnoreLevel = kError;
   //read configuration file
-  fname                       = config.read<std::string>("chainName");
-  ncrystalsx                  = config.read<int>("ncrystalsx",2);
-  ncrystalsy                  = config.read<int>("ncrystalsy");
-  nmppcx                      = config.read<int>("nmppcx");
-  nmppcy                      = config.read<int>("nmppcy");
-  nmodulex                    = config.read<int>("nmodulex");
-  nmoduley                    = config.read<int>("nmoduley");
-  taggingPosition             = config.read<float>("taggingPosition");
-  usingTaggingBench           = config.read<bool>("usingTaggingBench");
-  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel");
-  usingRealSimData            = config.read<bool>("usingRealSimData");
-  binary                      = config.read<bool>("binary");
-  correctingSaturation        = config.read<bool>("correctingSaturation");
-  BinaryOutputFileName        = config.read<std::string>("output");
+  fname                       = config.read<std::string>("chainName","adc");
+  ncrystalsx                  = config.read<int>("ncrystalsx",1);
+  ncrystalsy                  = config.read<int>("ncrystalsy",1);
+  nmppcx                      = config.read<int>("nmppcx",1);
+  nmppcy                      = config.read<int>("nmppcy",1);
+  nmodulex                    = config.read<int>("nmodulex",1);
+  nmoduley                    = config.read<int>("nmoduley",1);
+  taggingPosition             = config.read<float>("taggingPosition",0);
+  usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
+  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
+  usingRealSimData            = config.read<bool>("usingRealSimData",0);
+  binary                      = config.read<bool>("binary",0);
+  correctingSaturation        = config.read<bool>("correctingSaturation",0);
+  BinaryOutputFileName        = config.read<std::string>("output","binOutput");
   BinaryOutputFileName       += ".bin";
   //read the strings that describe the input channels
-  digitizer_s                 = config.read<std::string>("digitizer");
-  mppc_s                      = config.read<std::string>("mppc");
-  plotPositions_s             = config.read<std::string>("plotPositions");
-  xPositions_s                = config.read<std::string>("xPositions");
-  yPositions_s                = config.read<std::string>("yPositions");
-  saturation_s                = config.read<std::string>("saturation");
-  adcChannels                 = config.read<int>("digitizerTotalCh");
+  digitizer_s                 = config.read<std::string>("digitizer");     //MANDATORY, so no default
+  mppc_s                      = config.read<std::string>("mppc");          //MANDATORY, so no default
+  plotPositions_s             = config.read<std::string>("plotPositions"); //MANDATORY, so no default
+  xPositions_s                = config.read<std::string>("xPositions");    //MANDATORY, so no default
+  yPositions_s                = config.read<std::string>("yPositions");    //MANDATORY, so no default
+  saturation_s                = config.read<std::string>("saturation","0");
+  adcChannels                 = config.read<int>("digitizerTotalCh",32);
   nclock                      = config.read<double>("nclock",0);
   crystalx                    = config.read<double>("crystalx",1.53);
   crystaly                    = config.read<double>("crystaly",1.53);
   crystalz                    = config.read<double>("crystalz",15);
   esrThickness                = config.read<double>("esrThickness",0.07);
-  usingAllChannels            = config.read<bool>("usingAllChannels",1);
-  wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
+  usingAllChannels            = config.read<bool>("usingAllChannels",0);   // whether to use the sum of all channels to compute u,v or just the neighbours. Deafult to false = 0.
+  wAllChannels                = config.read<bool>("wAllChannels",0);       // whether we use the sum of all channels to compute w ( of just the neighbours. Deafult to false = 0.
 
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -73,7 +73,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   config.split( plotPositions_f, plotPositions_s, "," );
   config.split( xPositions_f, xPositions_s, "," );
   config.split( yPositions_f, yPositions_s, "," );
-  config.split( saturation_f, saturation_s, "," );
   //trim them using the config file class (i.e. remove spaces)
   //and at the same time put in vectors with numbers for the ones that are numbers
   for(int i = 0 ; i < digitizer_f.size() ; i++)
@@ -101,13 +100,21 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     config.trim(yPositions_f[i]);
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
-  for(int i = 0 ; i < saturation_f.size() ; i++)
-  {
-    config.trim(saturation_f[i]);
-    saturation.push_back(atof(saturation_f[i].c_str()));
-  }
   //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
+  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+
+  if(saturation_s.compare(std::string("0")) != 0)
+  {
+    correctingSaturation = true;
+    config.split( saturation_f, saturation_s, "," );
+    for(int i = 0 ; i < saturation_f.size() ; i++)
+    {
+      config.trim(saturation_f[i]);
+      saturation.push_back(atof(saturation_f[i].c_str()));
+    }
+    assert( (digitizer.size() == saturation.size()) );
+  }
+
 
   for(int i = 0 ; i < digitizer.size() ; i++)
   {
@@ -199,68 +206,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     }
   }
 
-  // specific MPPC strings
-
-
-
-
-  //FIXME from here to the ---- it's now useless
-  //read strings that describes crystals
-  //a string for input for each crystal
-  //   crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
-  //   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
-  //crystal on
-
-  //a float vector for each crystal
-  //   crystaldata = new float**[ncrystalsx*nmppcx*nmodulex];
-  //   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++)
-  //   {
-  //     crystaldata[i] = new float*[ncrystalsy*nmppcy*nmoduley];
-  //     for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++)
-  //     {
-  //       crystaldata[i][j] = new float[5];
-  //       for (int k = 0 ; k < 5 ; k++)
-  //       {
-  // 	crystaldata[i][j][k] = 0;
-  //       }
-  //     }
-  //   }
-  //   int crystalCounter = 0;
-  //   for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
-  //   {
-  //     std::stringstream crystalstring;
-  //     crystalstring << "crystal" << crystalCounter;
-  //     std::string tempString;
-  //     std::vector<std::string> tempStringVector;
-  //     tempString = config.read<std::string>(crystalstring.str().c_str(),"0,0,0,0,0,0,0"); //FIXME i and j here are not the i and j set on the crystals!!! actually, in the loop for the crystals, below, it's wrong as well, as we don't consider the multiple modules case!! it will work for one module, it has to be fixed for multiple ones.
-  //
-  // //     std::cout << crystalCounter << " " << crystalstring.str() << " " << tempString /*<< std::endl*/;
-  //
-  //     config.split( tempStringVector, tempString, "," );
-  //     for(int i = 0 ; i < tempStringVector.size() ; i++)
-  //     {
-  //       config.trim(tempStringVector[i]);
-  //       // 	crystaldata.push_back(atof(crystal_f[i].c_str()));
-  //     }
-  //     int CryIDi = atoi(tempStringVector[0].c_str());
-  //     int CryIDj = atoi(tempStringVector[1].c_str());
-  //
-  //     if(tempString != "0,0,0,0,0,0,0")
-  //     {
-  //       crystalIsOn[CryIDi][CryIDj] = true;
-  //       for(int i = 0 ; i < 5 ; i++)
-  //       {
-  //         crystaldata[CryIDi][CryIDj][i] = atof(tempStringVector[i+2].c_str());
-  //       }
-  //     }
-  //     crystalCounter++;
-  //   }
-  //----------------------------------------------------------
-
-  //   if(digitizer.size() > 16) //FIXME is this necessary?
-  //   {
-  //     std::cout << "ERROR: Only one module can be analyzed at a time! Set 16 or less input channels in the config file!" << std::endl;
-  //   }
   //feedback to the user
   std::cout << std::endl;
   std::cout << "------------------------" << std::endl;
@@ -275,12 +220,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
 
-  //crystal ON for analysis
-  //   crystalIsOn = new bool* [nmodulex*nmppcx*ncrystalsx];
-  //   for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++) crystalIsOn[j] = new bool [nmoduley*nmppcy*ncrystalsy];
-  //   for(int i = 0; i < nmodulex*nmppcx*ncrystalsx; i++)
-  //     for(int j = 0; j < nmoduley*nmppcy*ncrystalsy; j++)
-  //       crystalIsOn = false;
 
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
