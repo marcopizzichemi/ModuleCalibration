@@ -155,8 +155,9 @@ int main (int argc, char** argv)
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
+
   ConfigFile config(ConfigFileName); // create a ConfigFile object
-  InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
+  InputFile input(config); // read the input chain of root files, passing the inputs and the config object
 
   //decide whether to load the ttree from file or produce it, and whether to save it or not to file
   std::string loadAnalysisTreeName         = config.read<std::string>("loadAnalysisTreeName","0");       // look for input analysis ttree in config file. if no input, it will produced by this program
@@ -200,13 +201,30 @@ int main (int argc, char** argv)
   std::cout<<"###########################################################"<<std::endl;
   std::cout<<"\n"<<std::endl;
 
-
+  int electronics               = config.read<int>("electronics",0) ;
   if(!loadAnalysisTree)
   {
-    input.ImportTChain(argc,argv);
-    input.PrepareTTree();
-    input.FillTree();                        // create the TTree that will be used in analysis
-
+    if(electronics == 0) // CAEN x740
+    {
+      input.ImportTChain(argc,argv);  // import the tchain of input
+      input.PrepareTTree();       // prepare the ttree that will b used for the analysis
+      input.FillTreeCAENx740();               // fill the TTree that will be used in analysis
+    }
+    else if(electronics == 1) //NINO
+    {
+      input.PrepareTTree();       // prepare the ttree that will b used for the analysis
+      input.FillTreeNINO(argc,argv);               // fill the TTree that will be used in analysis
+      //Temp
+      // if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
+      // {
+      //   std::cout << "Saving analysis TTree to file " <<  saveAnalysisTreeName.c_str() << std::endl;
+      //   TTree* tree = input.GetTree();
+      //   TFile* fFile = new TFile(saveAnalysisTreeName.c_str(),"recreate");
+      //   fFile->cd();
+      //   tree->Write();
+      //   fFile->Close();
+      // }
+    }
 
   }
   else    // otherwise load it from the indicated file
@@ -235,6 +253,8 @@ int main (int argc, char** argv)
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  float taggingMin            = config.read<int>("taggingMin",0);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  float taggingMax            = config.read<int>("taggingMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm - default to 0
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not. default to false
   bool correctingSaturation     = config.read<bool>("correctingSaturation",0);        // true (=1) if saturation correction is applied, false if it's not, default to 0
@@ -260,6 +280,9 @@ int main (int argc, char** argv)
   double lambda511              = config.read<double>("lambda511",12.195); //everything in mm
   bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false
   bool lightYieldComputation    = config.read<bool>("lightYieldComputation",0);         //wheter to perform or not the light yield calculation. Default to false
+  double timingHistoMin         = config.read<double>("timingHistoMin",-50000);
+  double timingHistoMax         = config.read<double>("timingHistoMax",-50000);
+  double timingHistoBin         = config.read<double>("timingHistoBin",500);
   // set output file name
   std::string outputFileName = config.read<std::string>("output","genericOutput");
   outputFileName += ".root";
@@ -391,7 +414,7 @@ int main (int argc, char** argv)
 
       if(usingTaggingBench)//trigger spectrum
       {
-        TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,0,12000);
+        TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",1200,taggingMin,taggingMax);
         varModule << "Tagging >> TaggingCrystalSpectrum";
         // 	std::cout << nameModule << " ... ";
         TaggingCrystalSpectrum->SetName("TaggingCrystalSpectrum");
@@ -408,7 +431,7 @@ int main (int argc, char** argv)
         Float_t *TagCrystalPeaks = sTagCrystal->GetPositionX();
         TF1 *gaussTag = new TF1("gaussTag", "gaus");
         TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[0] - 0.075*TagCrystalPeaks[0],TagCrystalPeaks[0] + 0.075*TagCrystalPeaks[0]);
-        TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(0,12000);
+        TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingMin,taggingMax);
         //define a TCut for this peak
         double tagPhotopeakMin = gaussTag->GetParameter(1) - 1.5*gaussTag->GetParameter(2);
         double tagPhotopeakMax = gaussTag->GetParameter(1) + 2.0*gaussTag->GetParameter(2);
@@ -416,7 +439,7 @@ int main (int argc, char** argv)
         tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
         triggerPhotopeakCut = tagString.str().c_str();
         //highlighted spectrum
-        TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",1200,0,12000);
+        TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",1200,taggingMin,taggingMax);
         varModule.str("");
         varModule << "Tagging >> TriggerSpectrumHighlight";
         TriggerSpectrumHighlight->SetLineColor(3);
@@ -495,7 +518,7 @@ int main (int argc, char** argv)
             // raw spectrum
             name = "Raw Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() + " - Module " + module[iModule][jModule]->GetName();
             var << "ch" << channel << " >> " << name;
-            TH1F* spectrumRaw = new TH1F(name,name,histo1Dbins,1,histo1Dmax);
+            TH1F* spectrumRaw = new TH1F(name,name,histo1Dbins,0,histo1Dmax);
             tree->Draw(var.str().c_str(),"");
             spectrumRaw->GetXaxis()->SetTitle("ADC Channels");
             spectrumRaw->GetYaxis()->SetTitle("N");
@@ -505,7 +528,7 @@ int main (int argc, char** argv)
             //trigger selected spectrum
             name = "Trigger Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
             var << "ch" << channel << " >> " << name;
-            TH1F* spectrumTrigger = new TH1F(name,name,histo1Dbins,1,histo1Dmax);
+            TH1F* spectrumTrigger = new TH1F(name,name,histo1Dbins,0,histo1Dmax);
             tree->Draw(var.str().c_str(),CutTrigger);
             spectrumTrigger->GetXaxis()->SetTitle("ADC Channels");
             spectrumTrigger->GetYaxis()->SetTitle("N");
@@ -547,7 +570,7 @@ int main (int argc, char** argv)
             //prepare an highlighted plot to show the broad cut
             name = "Trigger Spectrum Hg - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
             var << "ch" << channel << " >> " << name;
-            TH1F* spectrumTriggerHighlighted = new TH1F(name,name,histo1Dbins,1,histo1Dmax);
+            TH1F* spectrumTriggerHighlighted = new TH1F(name,name,histo1Dbins,0,histo1Dmax);
             tree->Draw(var.str().c_str(),CutTrigger);
             spectrumTriggerHighlighted->GetXaxis()->SetTitle("ADC Channels");
             spectrumTriggerHighlighted->GetYaxis()->SetTitle("N");
@@ -651,7 +674,7 @@ int main (int argc, char** argv)
                     //draw charge spectrum
                     sname << "Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                     var << SumChannels << " >> " << sname.str();
-                    TH1F* spectrumCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                    TH1F* spectrumCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax);
                     tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
                     spectrumCharge->GetXaxis()->SetTitle("ADC Channels");
                     spectrumCharge->GetYaxis()->SetTitle("N");
@@ -662,7 +685,7 @@ int main (int argc, char** argv)
                       //SumSpectrum in Ph/MeV -- CAREFUL this is not as accurate as measuring LY on PMTs
                       sname << "Light Yield @ "<< sourceMeV <<  " MeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                       var << "(" << SumChannels << ")* " << chargeBinningADC << "/(" << gainMPPC <<"*1.6e-19* " << qe << "*"<<  sourceMeV << ") >> " << sname.str();
-                      TH1F* spectrumLY = new TH1F(sname.str().c_str(),sname.str().c_str(),histoLYbins,1,histoLYmax);
+                      TH1F* spectrumLY = new TH1F(sname.str().c_str(),sname.str().c_str(),histoLYbins,0,histoLYmax);
                       tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
                       spectrumLY->GetXaxis()->SetTitle("[Ph/MeV]");
                       spectrumLY->GetYaxis()->SetTitle("N");
@@ -709,6 +732,8 @@ int main (int argc, char** argv)
                       //store the mean and sigma in the crystal
                       if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
                         CurrentCrystal->SetLY(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
+                      else
+                        CurrentCrystal->SetLY(0,0);
                       CurrentCrystal->SetLYFit(gauss);
 
 
@@ -765,6 +790,8 @@ int main (int argc, char** argv)
                       //store the mean and sigma in the crystal
                       if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
                         CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
+                      else
+                        CurrentCrystal->SetPhotopeak(0,0);
                       CurrentCrystal->SetFit(gauss);
                       // 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
                       // 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
@@ -781,7 +808,7 @@ int main (int argc, char** argv)
                       // then prepare the highlighted spectrum and store it in the crystal
                       sname << "Hg Charge Spectrum - Crystal " << CurrentCrystal->GetID();
                       var << SumChannels << " >> " << sname.str();
-                      TH1F* spectrumChargeHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                      TH1F* spectrumChargeHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax);
                       tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut);
                       spectrumChargeHighlighted->GetXaxis()->SetTitle("ADC Channels");
                       spectrumChargeHighlighted->GetYaxis()->SetTitle("N");
@@ -914,7 +941,7 @@ int main (int argc, char** argv)
                         // 		    std::cout << std::endl;
                         // 		    std::cout << bin3 << " " << bin4 << " "  << baseVar.str() << std::endl;
                         var << baseVar.str() << " >> " << sname.str();
-                        TH1F* spectrumChargeCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                        TH1F* spectrumChargeCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax);
                         tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
                         spectrumChargeCorrected->GetXaxis()->SetTitle("ADC channels");
                         spectrumChargeCorrected->GetYaxis()->SetTitle("Counts");
@@ -965,6 +992,8 @@ int main (int argc, char** argv)
                         //store the mean and sigma in the crystal
                         if(gauss_corr->GetParameter(1) > 0) // otherwise the fit was very wrong..)
                           CurrentCrystal->SetPhotopeakCorrected(gauss_corr->GetParameter(1),std::abs(gauss_corr->GetParameter(2)));
+                        else
+                          CurrentCrystal->SetPhotopeakCorrected(0,0);
                         // 		  else
                         // 		    CurrentCrystal->SetPhotopeakCorrected(1,1);
                         CurrentCrystal->SetFitCorrected(gauss_corr);
@@ -982,7 +1011,7 @@ int main (int argc, char** argv)
                         sname << "Hg Charge Spectrum Correctd - Crystal " << CurrentCrystal->GetID();
                         // 			var << "("  <<  SumChannels<< " ) - ( ( FloodZ - " <<  meanW20 << " ) * ( " << parM << ") ) >> " << sname.str();
                         var << baseVar.str() << " >> " << sname.str();
-                        TH1F* spectrumChargeCorrectedHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                        TH1F* spectrumChargeCorrectedHighlighted = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax);
                         tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCutCorrected);
                         spectrumChargeCorrectedHighlighted->GetXaxis()->SetTitle("ADC Channels");
                         spectrumChargeCorrectedHighlighted->GetYaxis()->SetTitle("N");
@@ -1017,15 +1046,18 @@ int main (int argc, char** argv)
                     var.str("");
 
                     // Histogram 2d of time evolution
-                    sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
-                    var << SumChannels << ":ExtendedTimeTag >> " << sname.str();
-                    TH2F* spectrum2dVersusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tree->GetMaximum("ExtendedTimeTag"),histo1Dbins,0,histo1Dmax);
-                    tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
-                    spectrum2dVersusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
-                    spectrum2dVersusTime->GetYaxis()->SetTitle("ADC channels");
-                    CurrentCrystal->SetVersusTime(spectrum2dVersusTime);
-                    var.str("");
-                    sname.str("");
+                    if(electronics == 0)
+                    {
+                      sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
+                      var << SumChannels << ":ExtendedTimeTag >> " << sname.str();
+                      TH2F* spectrum2dVersusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tree->GetMaximum("ExtendedTimeTag"),histo1Dbins,0,histo1Dmax);
+                      tree->Draw(var.str().c_str(),CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
+                      spectrum2dVersusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
+                      spectrum2dVersusTime->GetYaxis()->SetTitle("ADC channels");
+                      CurrentCrystal->SetVersusTime(spectrum2dVersusTime);
+                      var.str("");
+                      sname.str("");
+                    }
 
                     //histogram of w versus adc channels - this time without the photopeak cut (so it looks nicer in the paper...)
                     sname << "Complete ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
@@ -1241,10 +1273,7 @@ int main (int argc, char** argv)
                           }
 
 
-                      //       }
-                      //     }
-                      //   }
-                      // }
+
                       CurrentCrystal->SetComptonCalibration(ComptonCalibation);
                       CurrentCrystal->SetConvertedComptonCalibration(ConvertedComptonCalibration);
                       // CurrentCrystal->SetComptonCalibrationHistogram(ComptonCalibationHistogram);
@@ -1308,12 +1337,28 @@ int main (int argc, char** argv)
                       sname.str("");
                       CurrentCrystal->SetSimZvsW(gTot);
                       CurrentCrystal->SetSimSigmaW(sigmaSim);
+                    }
 
+                    //TIMING with NINO - for now
+                    if(electronics == 1 && usingTaggingBench)
+                    {
+                      // std::cout << "bump" << std::endl;
+                      sname.str();
+                      var.str();
+                      if(correctingForDOI)
+                        PhotopeakEnergyCut = PhotopeakEnergyCutCorrected;
 
-
-
-
-
+                      sname << "CTR wrt tagging - Crystal " << CurrentCrystal->GetID();
+                      var << "t" << channel << "- t_Tagging" << " >> " << sname.str();
+                      TH1F* spectrumTiming = new TH1F(sname.str().c_str(),sname.str().c_str(),timingHistoBin,timingHistoMin,timingHistoMax);
+                      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+triggerPhotopeakCut);
+                      // std::cout << PhotopeakEnergyCut << std::endl;
+                      // std::cout << triggerPhotopeakCut << std::endl;
+                      spectrumTiming->GetXaxis()->SetTitle("Delta T [ ps]");
+                      spectrumTiming->GetYaxis()->SetTitle("N");
+                      CurrentCrystal->SetCTRSpectrum(spectrumTiming);
+                      sname.str("");
+                      var.str("");
                     }
                   }
                   else
@@ -1376,6 +1421,8 @@ int main (int argc, char** argv)
     for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
     {
       BigSpectraCanvas->cd(canvascounter);
+      if(crystal[iCrystal][jCrystal])
+      {
       if(crystal[iCrystal][jCrystal]->GetIsOnForModular())
       {
         if(crystal[iCrystal][jCrystal]->CrystalIsOn())
@@ -1403,12 +1450,16 @@ int main (int argc, char** argv)
           }
         }
       }
+      }
       BigLYCanvas->cd(canvascounter);
       if(lightYieldComputation)
       {
+        if(crystal[iCrystal][jCrystal])
+        {
         crystal[iCrystal][jCrystal]->GetLYSpectrum()->SetFillStyle(3001);
         crystal[iCrystal][jCrystal]->GetLYSpectrum()->SetFillColor(kBlue);
         crystal[iCrystal][jCrystal]->GetLYSpectrum()->Draw();
+      }
       }
       canvascounter++;
     }
@@ -1688,22 +1739,30 @@ int main (int argc, char** argv)
                     //fill the global distributions histograms
                     if(!backgroundRun)
                     {
-                      PeakPositionDistro->Fill(CurrentCrystal->GetPhotopeakPosition());
-                      PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
+                      if(CurrentCrystal->GetPhotopeakPosition())
+                        PeakPositionDistro->Fill(CurrentCrystal->GetPhotopeakPosition());
+                      if(CurrentCrystal->GetPhotopeakEnergyResolution())
+                        PeakEnergyResolutionDistro->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 
                       if(correctingForDOI)
                       {
-                        PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
+                        if(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected())
+                          PeakEnergyResolutionDistro_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                       }
-                      PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
-                      EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
-                      EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
+                      if(CurrentCrystal->GetPhotopeakPosition())
+                        PeakPositionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakPosition());
+                      if(CurrentCrystal->GetPhotopeakEnergyResolution())
+                        EnergyResolutionVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolution());
+                      if(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected())
+                        EnergyResolutionVsIJ_corr->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                     }
 
                     if(lightYieldComputation)
                     {
-                      LYDistro->Fill(CurrentCrystal->GetLY());
-                      LYVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetLY());
+                      if(CurrentCrystal->GetLY())
+                        LYDistro->Fill(CurrentCrystal->GetLY());
+                      if(CurrentCrystal->GetLY())
+                        LYVsIJ->Fill(CurrentCrystal->GetI(),CurrentCrystal->GetJ(),CurrentCrystal->GetLY());
                     }
 
                     if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 ))
@@ -1711,17 +1770,21 @@ int main (int argc, char** argv)
                       // 		  Wwidth20percCentral->Fill(CurrentCrystal->GetWwidth20perc());
                       if(!backgroundRun)
                       {
-                        PeakPositionDistroCentral->Fill(CurrentCrystal->GetPhotopeakPosition());
-                        PeakEnergyResolutionDistroCentral->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
+                        if(CurrentCrystal->GetPhotopeakPosition())
+                          PeakPositionDistroCentral->Fill(CurrentCrystal->GetPhotopeakPosition());
+                        if(CurrentCrystal->GetPhotopeakEnergyResolution())
+                          PeakEnergyResolutionDistroCentral->Fill(CurrentCrystal->GetPhotopeakEnergyResolution());
 
                         if(correctingForDOI)
                         {
-                          PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
+                          if(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected())
+                            PeakEnergyResolutionDistroCentral_corr->Fill(CurrentCrystal->GetPhotopeakEnergyResolutionCorrected());
                         }
                       }
                       if(lightYieldComputation)
                       {
-                        LYDistroCentral->Fill(CurrentCrystal->GetLY());
+                        if(CurrentCrystal->GetLY())
+                          LYDistroCentral->Fill(CurrentCrystal->GetLY());
                       }
                     }
 
@@ -1760,6 +1823,17 @@ int main (int argc, char** argv)
                     C_spectrum->Write();
                     delete C_spectrum;
 
+                    // CTR spectrum
+                    if(electronics == 1 && usingTaggingBench)
+                    {
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetCRTSpectrum()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetCRTSpectrum()->Draw();
+                      C_spectrum->Write();
+                      delete C_spectrum;
+                    }
+
                     if(lightYieldComputation)
                     {
                       //LY spectrum
@@ -1782,12 +1856,15 @@ int main (int argc, char** argv)
                     delete C_spectrum;
 
                     // adc versus time
-                    C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                    C_spectrum->SetName(CurrentCrystal->GetVersusTime()->GetName());
-                    C_spectrum->cd();
-                    CurrentCrystal->GetVersusTime()->Draw("COLZ");
-                    C_spectrum->Write();
-                    delete C_spectrum;
+                    if(electronics == 0)
+                    {
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetVersusTime()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetVersusTime()->Draw("COLZ");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+                    }
 
                     // adc versus w
                     if(!backgroundRun)

@@ -27,175 +27,44 @@ struct Point // definition fo a point (it is used in the binary output)
 } __attribute__((__packed__));
 
 
+
 // default constructor.
 // - Reads the necessary info from the config file
 // - Opens the input TChain
 // - Prepares the analysis TTree
-InputFile::InputFile (int argc, char** argv, ConfigFile& config)
+InputFile::InputFile (ConfigFile& config)
 {
+  gErrorIgnoreLevel = kError;     // set ROOT error level
+  ReadConfig(config);             //read config file and fill the variables
 
-  gErrorIgnoreLevel = kError;
-  //read configuration file
-  fname                       = config.read<std::string>("chainName","adc");
-  ncrystalsx                  = config.read<int>("ncrystalsx",1);
-  ncrystalsy                  = config.read<int>("ncrystalsy",1);
-  nmppcx                      = config.read<int>("nmppcx",1);
-  nmppcy                      = config.read<int>("nmppcy",1);
-  nmodulex                    = config.read<int>("nmodulex",1);
-  nmoduley                    = config.read<int>("nmoduley",1);
-  taggingPosition             = config.read<float>("taggingPosition",0);
-  usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
-  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
-  usingRealSimData            = config.read<bool>("usingRealSimData",0);
-  binary                      = config.read<bool>("binary",0);
-  correctingSaturation        = config.read<bool>("correctingSaturation",0);
-  BinaryOutputFileName        = config.read<std::string>("output","binOutput");
-  BinaryOutputFileName       += ".bin";
-  //read the strings that describe the input channels
-  digitizer_s                 = config.read<std::string>("digitizer");     //MANDATORY, so no default
-  mppc_s                      = config.read<std::string>("mppc");          //MANDATORY, so no default
-  plotPositions_s             = config.read<std::string>("plotPositions"); //MANDATORY, so no default
-  xPositions_s                = config.read<std::string>("xPositions");    //MANDATORY, so no default
-  yPositions_s                = config.read<std::string>("yPositions");    //MANDATORY, so no default
-  saturation_s                = config.read<std::string>("saturation","0");
-  adcChannels                 = config.read<int>("digitizerTotalCh",32);
-  nclock                      = config.read<double>("nclock",0);
-  crystalx                    = config.read<double>("crystalx",1.53);
-  crystaly                    = config.read<double>("crystaly",1.53);
-  crystalz                    = config.read<double>("crystalz",15);
-  esrThickness                = config.read<double>("esrThickness",0.07);
-  usingAllChannels            = config.read<bool>("usingAllChannels",0);   // whether to use the sum of all channels to compute u,v or just the neighbours. Deafult to false = 0.
-  wAllChannels                = config.read<bool>("wAllChannels",0);       // whether we use the sum of all channels to compute w ( of just the neighbours. Deafult to false = 0.
-
-  //split them using the config file class
-  config.split( digitizer_f, digitizer_s, "," );
-  config.split( mppc_f, mppc_s, "," );
-  config.split( plotPositions_f, plotPositions_s, "," );
-  config.split( xPositions_f, xPositions_s, "," );
-  config.split( yPositions_f, yPositions_s, "," );
-  //trim them using the config file class (i.e. remove spaces)
-  //and at the same time put in vectors with numbers for the ones that are numbers
-  for(int i = 0 ; i < digitizer_f.size() ; i++)
+  //prepare and fill detector struct - all info except isNeighbour (because that will change from trigger to trigger)
+  for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
-    config.trim(digitizer_f[i]);
-    digitizer.push_back(atoi(digitizer_f[i].c_str()));
-  }
-  for(int i = 0 ; i < mppc_f.size() ; i++)
-  {
-    config.trim(mppc_f[i]);
-    mppc_label.push_back(mppc_f[i]);
-  }
-  for(int i = 0 ; i < plotPositions_f.size() ; i++)
-  {
-    config.trim(plotPositions_f[i]);
-    plotPositions.push_back(atoi(plotPositions_f[i].c_str()));
-  }
-  for(int i = 0 ; i < xPositions_f.size() ; i++)
-  {
-    config.trim(xPositions_f[i]);
-    xPositions.push_back(atof(xPositions_f[i].c_str()));
-  }
-  for(int i = 0 ; i < yPositions_f.size() ; i++)
-  {
-    config.trim(yPositions_f[i]);
-    yPositions.push_back(atof(yPositions_f[i].c_str()));
-  }
-  //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
-
-  if(saturation_s.compare(std::string("0")) != 0)
-  {
-    correctingSaturation = true;
-    config.split( saturation_f, saturation_s, "," );
-    for(int i = 0 ; i < saturation_f.size() ; i++)
+    detector_t det;    // create a detector_t structure
+    det.digitizerChannel = digitizer[i];    // set channel
+    det.label            = mppc_label[i];   // set label
+    if(correctingSaturation)                // if saturation parameters are given
     {
-      config.trim(saturation_f[i]);
-      saturation.push_back(atof(saturation_f[i].c_str()));
+      if(electronics == 0)                  // if electronics is CAEN x740
+      {
+        //then saturation is only one parameter
+        det.saturation.push_back(saturation[i]);
+      }
+      else if(electronics == 1)             // if electronics is NINO
+      {
+        //then saturation is ninoSaturationParameters parameters per channel
+        for(int pSat = 0 ; pSat < ninoSaturationParameters ; pSat++)
+          det.saturation.push_back(saturation[i*ninoSaturationParameters + pSat]);
+      }
     }
-    assert( (digitizer.size() == saturation.size()) );
+    det.plotPosition     = plotPositions[i];//canvas position
+    det.xPosition        = xPositions[i];   //mppc x
+    det.yPosition        = yPositions[i];   //mppc y
+    detector.push_back(det);  // add this struct to a std::vector of detector_t
   }
 
-
-  for(int i = 0 ; i < digitizer.size() ; i++)
-  {
-    detector_t det;
-    det.digitizerChannel = digitizer[i];
-    det.label            = mppc_label[i];
-    det.saturation       = saturation[i];
-    det.plotPosition     = plotPositions[i];
-    det.xPosition        = xPositions[i];
-    det.yPosition        = yPositions[i];
-    det.OnForDOI         = 0;
-    det.OnForModular     = true; //never set otherwise anywhere - not used
-    detector.push_back(det);
-  }
-
-  //read string for doi analysis channels
-  digitizerDoi_s = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
-  config.split( digitizerDoi_f, digitizerDoi_s, "," );
-  for(int i = 0 ; i < digitizerDoi_f.size() ; i++)
-  {
-    config.trim(digitizerDoi_f[i]);
-    digitizerDoi.push_back(atoi(digitizerDoi_f[i].c_str()));
-  }
-  for(int i = 0 ; i < digitizerDoi.size() ; i++)
-  {
-    detector[digitizerDoi[i]].OnForDOI = 1;
-  }
-
-  //on or off for modular analysis
-  mppcOFF_s                      = config.read<std::string>("mppcOFF","");
-  config.split( mppcOFF_f, mppcOFF_s, "," );
-  for(int i = 0 ; i < mppcOFF_f.size() ; i++)
-  {
-    config.trim(mppcOFF_f[i]);
-    mppcOFF.push_back(mppcOFF_f[i]);
-  }
-  crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
-  config.split( crystalOFF_f, crystalOFF_s, "," );
-  for(int i = 0 ; i < crystalOFF_f.size() ; i++)
-  {
-    config.trim(crystalOFF_f[i]);
-    crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
-  }
-
-  // global 3d plots variables for single mppcs
-  global_histo3DchannelBin = config.read<int>("histo3DchannelBin",100);
-  global_div               = config.read<int>("clusterLevelPrecision",10);
-  global_clusterVolumeCut  = config.read<double>("clusterVolumeCut",0.001);
-
-  //specific variables for mppcs
-  specificMPPC_s          = config.read<std::string>("specificMPPCname","");
-  config.split( specificMPPC_f, specificMPPC_s, "," );
-  for(int i = 0 ; i < specificMPPC_f.size() ; i++)
-  {
-    config.trim(specificMPPC_f[i]);
-    specificMPPC.push_back(specificMPPC_f[i]);
-  }
-  specificBin_s          = config.read<std::string>("specificBin","");
-  config.split( specificBin_f, specificBin_s, "," );
-  for(int i = 0 ; i < specificBin_f.size() ; i++)
-  {
-    config.trim(specificBin_f[i]);
-    specificBin.push_back(atoi(specificBin_f[i].c_str()));
-  }
-  specificPrecision_s          = config.read<std::string>("specificPrecision","");
-  config.split( specificPrecision_f, specificPrecision_s, "," );
-  for(int i = 0 ; i < specificPrecision_f.size() ; i++)
-  {
-    config.trim(specificPrecision_f[i]);
-    specificPrecision.push_back(atoi(specificPrecision_f[i].c_str()));
-  }
-  specificCut_s          = config.read<std::string>("specificCut","");
-  config.split( specificCut_f, specificCut_s, "," );
-  for(int i = 0 ; i < specificCut_f.size() ; i++)
-  {
-    config.trim(specificCut_f[i]);
-    specificCut.push_back(atof(specificCut_f[i].c_str()));
-  }
-
-
-
+  //crystals
+  //set all crystals to off, to start
   crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++)
   {
@@ -206,40 +75,63 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     }
   }
 
+
   //feedback to the user
   std::cout << std::endl;
   std::cout << "------------------------" << std::endl;
   std::cout << " Channels configuration " << std::endl;
   std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]" << std::endl;
+  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tSaturation Parameters" << std::endl;
   std::cout << "------------------------" << std::endl;
-  for(int i = 0 ; i < digitizer.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
-    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t" <<  detector[i].label << "\t" << detector[i].plotPosition << "\t" << detector[i].xPosition << "\t" << detector[i].yPosition << std::endl;
+    std::cout   << "Channel["
+                << detector[i].digitizerChannel << "] = \t"
+                << detector[i].label << "\t"
+                << detector[i].plotPosition << "\t"
+                << detector[i].xPosition << "\t"
+                << detector[i].yPosition << "\t";
+    for(unsigned int j = 0 ; j < detector[0].saturation.size() ; j++)
+      std::cout << detector[i].saturation[j] << "\t";
+    std::cout << std::endl;
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
 
 
+
+  inputChannels       = detector.size();
+  //set channels on, i.e. channel biased
+  DigitizerChannelOn  = new bool[adcChannels];
+  for(int i = 0; i < adcChannels; i++) // first set all the possible inputs from ADC to OFF
+  {
+    DigitizerChannelOn[i] = false;
+  }
+  for(int i = 0; i < inputChannels; i++) // then turn on only the ones were there is bias (i.e. the ones mentioned in the config digitizer key)
+  {
+    DigitizerChannelOn[detector[i].digitizerChannel] = true;
+  }
+
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
   //------------------------------------------------------------------------------------------//
-  inputChannels       = detector.size();
-  fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
-  ftree               = new TTree(fname.c_str(),fname.c_str());
+
+  fchain                  = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
+  ftree                   = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
-  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC
-  DigitizerChannelOn  = new bool[adcChannels];
-  bChainAdcChannel    = new TBranch* [adcChannels];
-  TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed
+  CAENx740AdcChannel      = new Short_t [adcChannels]; // input from ADC
+  bCAENx740AdcChannel     = new TBranch* [adcChannels];
+  // analysis variables
+  TreeCAENx740AdcChannel  = new Short_t [inputChannels]; // channels analyzed
+  TreeNINOChargeChannel   = new Float_t [inputChannels]; // channels analyzed
+  TreeNINOTimeChannel     = new Float_t [inputChannels]; // channels analyzed
 }
 
 
-
+//Imports TChain from CAEN x740 output or from g4matrix simulation
 void InputFile::ImportTChain(int argc, char** argv)
 {
   gROOT->ProcessLine("#include <vector>");
-
   // fill the tchain with input files
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
@@ -267,59 +159,392 @@ void InputFile::ImportTChain(int argc, char** argv)
     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
     fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
     fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
-    // fchain->SetBranchAddress("TotalCryEnergy",&TotalCryEnergy, &bTotalCryEnergy);
-
   }
   for(int i=0; i<adcChannels; i++)
   {
     std::stringstream sname;
     sname << "ch" << i;
-    fchain->SetBranchAddress(sname.str().c_str(), &ChainAdcChannel[i], &bChainAdcChannel[i]);
+    fchain->SetBranchAddress(sname.str().c_str(), &CAENx740AdcChannel[i], &bCAENx740AdcChannel[i]);
   }
 }
+
+
+void InputFile::FillTreeNINO(int argc, char** argv)
+{
+  gROOT->ProcessLine("#include <vector>");
+  // struct ninoChannel_t
+  // {
+  //   Float_t t;
+  //   Float_t w;
+  // };
+  // int ninoChannels = 32;
+  // ninoChannel_t ninoCh[ninoChannels];  // NINO is always set to 32+32 ch output... for now. FIXME
+  int startFiles = 1;
+  if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
+  {
+    startFiles = 3;
+  }
+  // for(int i = 0; i < adcChannels; i++)
+  // {
+  //   DigitizerChannelOn[i] = false;
+  // }
+  // for(int i = 0; i < inputChannels; i++)
+  // {
+  //   DigitizerChannelOn[detector[i].digitizerChannel] = true;
+  // }
+  for (int m = startFiles; m < argc ; m++) // run on the remaining arguments to add all the input files
+  {
+    std::ifstream inFile;
+    inFile.open( argv[m],std::ios::in);
+    std::cout << "Adding file " << argv[m] << std::endl;
+
+    while(!inFile.eof())
+    // for(int aaa = 0 ; aaa < 2 ; aaa++) //TEMP
+    {
+      //take all data
+      Float_t tempT[adcChannels];
+      Float_t tempW[adcChannels];
+      int TreeEntryCounter = 0;
+      double maxCharge = 0;
+      float columnsum= 0;
+      float rowsum= 0;
+      float total=  0;
+
+      for (int i = 0; i < adcChannels; i++)
+      {
+        inFile >> tempT[i];
+      }
+      for (int i = 0; i < adcChannels; i++)
+      {
+        inFile >> tempW[i];
+      }
+
+      //BEGIN of DEBUG -------------------------
+      // for (int i = 0; i < adcChannels; i++)
+      // {
+      //   std::cout << tempT[i] << std::endl;
+      // }
+      // std::cout << std::endl;
+      // for (int i = 0; i < adcChannels; i++)
+      // {
+      //   std::cout << tempW[i] << std::endl;
+      // }
+      // std::cout << std::endl;
+      //END of DEBUG ---------------------------
+
+      for (int j = 0 ; j < adcChannels ; j++) // runs on all the possible inputs of ADC/electronics, but then uses only the biased ones
+      {
+        if(DigitizerChannelOn[j])
+        {
+          // fill tree with data from the channels
+          // also correcting for saturation if it's set in the config file
+          TreeNINOTimeChannel[TreeEntryCounter] = (Float_t) tempT[j];
+          if(correctingSaturation)
+          {
+            TreeNINOChargeChannel[TreeEntryCounter] = (Float_t) (-1./detector[TreeEntryCounter].saturation[2])*(TMath::Log(1-((1./detector[TreeEntryCounter].saturation[1])*(TMath::Exp((tempW[j])/detector[TreeEntryCounter].saturation[0])-detector[TreeEntryCounter].saturation[3]))));
+          }
+          else
+            TreeNINOChargeChannel[TreeEntryCounter] = (Float_t) tempW[j];
+
+          //find the max charge and therefore the TriggerChannel
+          if (TreeNINOChargeChannel[TreeEntryCounter] > maxCharge)
+          {
+            maxCharge = TreeNINOChargeChannel[TreeEntryCounter];
+            TreeTriggerChannel = digitizer[TreeEntryCounter];
+          }
+          TreeEntryCounter++;
+        }
+
+        if(usingTaggingBench)
+        {
+          if( j == taggingCrystalChannel)
+          {
+            TreeNINOtaggingCharge = (Float_t) tempW[j]; // no saturation correction for the tagging crystal..
+            TreeNINOtaggingTime   = (Float_t) tempT[j];
+          }
+        }
+      }
+
+
+      //     std::cout << std::endl;
+      // terrible implementation to allow us of only neighbour channels...
+      //loop to find the neighbour channels of trigger (if needed)
+      //read position of the trigger channel
+
+      double xTrigger = 0;
+      double yTrigger = 0;
+      std::vector<float> allowedX,allowedY;
+      //std::vector <bool> isNeighbour; // channel is neighbour of trigger
+      if(!usingAllChannels)
+      {
+        for(int iFill = 0; iFill < inputChannels; iFill++)
+        {
+          detector[iFill].isNeighbour = false;
+        }
+
+
+        std::vector<float> xCopyTemp;
+        std::vector<float> yCopyTemp;
+
+        for(int iFill = 0; iFill < inputChannels; iFill++)
+        {
+          if(detector[iFill].digitizerChannel == TreeTriggerChannel)
+          {
+            xTrigger = detector[iFill].xPosition;
+            yTrigger = detector[iFill].yPosition;
+          }
+          xCopyTemp.push_back(detector[iFill].xPosition);
+          yCopyTemp.push_back(detector[iFill].yPosition);
+
+        }
+        //       xTrigger = xPositions[TreeTriggerChannel];
+        //       yTrigger = yPositions[TreeTriggerChannel];
+        //       std::vector<float> xCopyTemp = xPositions;
+        //       std::vector<float> yCopyTemp = yPositions;
+
+        //sort the position vectors
+        std::sort (xCopyTemp.begin(),xCopyTemp.end());
+        std::sort (yCopyTemp.begin(),yCopyTemp.end());
+        //filter repetitions
+        std::vector<float> xCopy;
+        std::vector<float> yCopy;
+        xCopy.push_back(xCopyTemp[0]);
+        yCopy.push_back(yCopyTemp[0]);
+        int xCounter = 0;
+        int yCounter = 0;
+        for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
+        {
+          if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
+          {
+            xCopy.push_back(xCopyTemp[j]);
+            xCounter++;
+          }
+        }
+        for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
+        {
+          if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
+          {
+            yCopy.push_back(yCopyTemp[j]);
+            yCounter++;
+          }
+        }
+
+        // by default trigger row and column are allowed
+        allowedX.push_back(xTrigger);
+        allowedY.push_back(yTrigger);
+
+        int TrigI = -1;
+        int TrigJ = -1;
+        //locate trigger in the new vectors
+        for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+        {
+          if(xCopy[xPos] == xTrigger) TrigI = xPos;
+        }
+        for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+        {
+          if(yCopy[yPos] == yTrigger) TrigJ = yPos;
+        }
+
+
+        // take x and y of neighbours
+        // double xleft,xright,ytop,ybottom;
+        if(TrigI != 0)
+        {
+          allowedX.push_back(xCopy[TrigI-1]);
+        }
+        if(TrigI != nmppcx-1)
+        {
+          allowedX.push_back(xCopy[TrigI+1]);
+        }
+        if(TrigJ != 0)
+        {
+          allowedY.push_back(yCopy[TrigJ-1]);
+        }
+        if(TrigJ != nmppcy-1)
+        {
+          allowedY.push_back(yCopy[TrigJ+1]);
+        }
+
+        //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
+        //       {
+        // 	std::cout << allowedX[xPos] << " ";
+        //       }
+        //       std::cout << std::endl;
+        //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
+        //       {
+        // 	std::cout << allowedY[xPos] << " ";
+        //       }
+        //       std::cout << std::endl;
+
+        int counterNeighbour = 0;
+        for (int j = 0 ; j < adcChannels ; j++)
+        {
+          if(DigitizerChannelOn[j])
+          {
+            for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)
+            {
+              if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
+              {
+                for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++)
+                {
+                  if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
+                  {
+                    detector[counterNeighbour].isNeighbour = true;
+                  }
+                }
+              }
+            }
+            counterNeighbour++;
+          }
+        }
+      }
+      //loop to calculate u,v
+      int counterFill = 0;
+      for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
+      {
+        if(DigitizerChannelOn[j])// first, is the digitizer ON?
+        {
+          //two options to calculate FloodX_Y_Z
+          //First, use all the channels
+          //Second, use only the neighbours of the trigger channel
+          //both options for u,v and for z
+          //all combinations possible (user decides in config file)
+          //first, the u,v
+          if(usingAllChannels) //all channels for u and v
+          {
+            // 	  total     += TreeAdcChannel[counterFill];
+            rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
+            columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
+          }
+          else //only neighbours...
+          {
+            if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+            {
+              // 	    total     += TreeAdcChannel[counterFill];
+              rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
+              columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
+            }
+            // 	  totalForFloodZ += TreeAdcChannel[counterFill];
+          }
+          //then, the w coordinate
+          if(wAllChannels) //all channels for w
+          {
+            total += TreeNINOChargeChannel[counterFill];
+          }
+          else//only neighbours...
+          {
+            if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+            {
+              total += TreeNINOChargeChannel[counterFill];
+            }
+          }
+          counterFill++;
+        }
+      }
+
+      //compute u,v,w
+      // near channels vs. total channels depending on what decided before
+      TreeFloodX = rowsum/total;
+      TreeFloodY = columnsum/total;
+      TreeFloodZ =  maxCharge/total;
+      if(usingTaggingBench) TreeZPosition = taggingPosition;
+      if(usingRealSimData)
+      {
+        TreeRealX = RealX;
+        TreeRealY = RealY;
+        TreeRealZ = RealZ;
+        TreeCrystalsHit = CrystalsHit;
+        TreeNumbOfInteractions = NumbOfInteractions;
+      }
+      ftree->Fill();
+    }
+    inFile.close();
+  }
+}
+
+
+
+
+
+
+
+
 
 void InputFile::PrepareTTree()
 {
   //set branches also for the analysis ttree
-  ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l");
-  ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
-
-  //branches of the 32 channels data
-  for (int i = 0 ; i < inputChannels ; i++)
+  //branches of the channels data
+  if(electronics == 0) //CAEN x740
   {
-    //empty the stringstreams
-    std::stringstream sname,stype;
-    sname << "ch" << detector[i].digitizerChannel;
-    stype << "ch" << detector[i].digitizerChannel << "/S";
-    ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
+    ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l");
+    ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
+    for (int i = 0 ; i < inputChannels ; i++)
+    {
+      std::stringstream sname,stype;
+      sname << "ch" << detector[i].digitizerChannel;
+      stype << "ch" << detector[i].digitizerChannel << "/S";
+      ftree->Branch(sname.str().c_str(),&TreeCAENx740AdcChannel[i],stype.str().c_str());
+    }
+    ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
+    ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
+    ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
+    ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
+    if(usingTaggingBench)
+    {
+      ftree->Branch("Tagging",&TreeTagging,"Tagging/S");
+      ftree->Branch("ZPosition",&TreeZPosition,"TreeZPosition/F");
+    }
+    ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O");
   }
-  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/S");
-  ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
-  ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
-  ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
-  ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
-  if(usingTaggingBench) ftree->Branch("ZPosition",&TreeZPosition,"TreeZPosition/F");
-  ftree->Branch("Theta",&TreeTheta,"Theta/F");
-  ftree->Branch("Phi",&TreePhi,"Phi/F");
-  ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O");
-  if(usingRealSimData)
+  else if(electronics == 1) // NINO
+  {
+    for (int i = 0 ; i < inputChannels ; i++)
+    {
+      std::stringstream sname,stype;
+      sname << "ch" << detector[i].digitizerChannel;
+      stype << "ch" << detector[i].digitizerChannel << "/F";
+      ftree->Branch(sname.str().c_str(),&TreeNINOChargeChannel[i],stype.str().c_str());
+      // sname.str("");
+      // stype.str("");
+    }
+    for (int i = 0 ; i < inputChannels ; i++)
+    {
+      std::stringstream sname,stype;
+      sname << "t" << detector[i].digitizerChannel;
+      stype << "t" << detector[i].digitizerChannel << "/F";
+      ftree->Branch(sname.str().c_str(),&TreeNINOTimeChannel[i],stype.str().c_str());
+    }
+    ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
+    ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
+    ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
+    ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
+    if(usingTaggingBench)
+    {
+      ftree->Branch("Tagging",&TreeNINOtaggingCharge,"Tagging/F");
+      ftree->Branch("t_Tagging",&TreeNINOtaggingTime,"t_Tagging/F");
+      ftree->Branch("ZPosition",&TreeZPosition,"TreeZPosition/F");
+    }
+  }
+  if(usingRealSimData) // sim data have same type of CAEN x740, plus other data //TODO decide how to integrate time. in principle we should use the NINO format
   {
     // pTreeTotalCryEnergy = &TreeTotalCryEnergy;
-
     ftree->Branch("RealX",&TreeRealX,"RealX/F");
     ftree->Branch("RealY",&TreeRealY,"RealY/F");
     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F");
     ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S");
     ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S");
     // ftree->Branch("TotalCryEnergy","std::vector<float>",&pTreeTotalCryEnergy);
-
-
   }
 }
 
+
+
+
+
+
 // Runs on the input TChain elements
 // and fills the analysis TTree
-void InputFile::FillTree()
+void InputFile::FillTreeCAENx740()
 {
   //creates the TTree from the input Tchain
   std::cout << "Filling the TTree for the analysis... " << std::endl;
@@ -333,21 +558,6 @@ void InputFile::FillTree()
   if(binary)
     output_file.open(BinaryOutputFileName.c_str(), std::ios::binary);
 
-  for(int i = 0; i < adcChannels; i++)
-  {
-    DigitizerChannelOn[i] = false;
-  }
-  for(int i = 0; i < inputChannels; i++)
-  {
-    DigitizerChannelOn[detector[i].digitizerChannel] = true;
-  }
-
-  //   translateCh = new int[inputChannels]; // the number of input channels is set by the user, then they are created in the analysis ttree as ch0, ch1...
-  //   for(int i = 0; i < inputChannels; i++)
-  //   {
-  //     translateCh[i] = i;  // then they will always be in order, so first channel in digitizer array goes to ch0, second to ch1 etc..
-  //   }
-
 
 
   for (Int_t i=0;i<nevent;i++)
@@ -356,11 +566,11 @@ void InputFile::FillTree()
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
     double maxCharge = 0;
-    double secondCharge = 0;
+    // double secondCharge = 0;
     float columnsum= 0;
     float rowsum= 0;
     float total=  0;
-    float totalForFloodZ = 0;
+    // float totalForFloodZ = 0;
     TreeBadevent = false;
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
@@ -376,20 +586,20 @@ void InputFile::FillTree()
         // also correcting for saturation if it's set in the config file
         if(correctingSaturation)
         {
-          if(TreeAdcChannel[TreeEntryCounter] > saturation[TreeEntryCounter])
+          if(TreeCAENx740AdcChannel[TreeEntryCounter] > detector[TreeEntryCounter].saturation[0])
           {
             TreeBadevent = true;
             // 	    std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
           }
-          TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
+          TreeCAENx740AdcChannel[TreeEntryCounter] = (Short_t)round(-detector[TreeEntryCounter].saturation[0] * TMath::Log(1.0 - ( CAENx740AdcChannel[j]/detector[TreeEntryCounter].saturation[0] )));
         }
         else
-          TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
+          TreeCAENx740AdcChannel[TreeEntryCounter] = CAENx740AdcChannel[j];
 
         //find the max charge and therefore the TriggerChannel
-        if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
+        if (TreeCAENx740AdcChannel[TreeEntryCounter] > maxCharge)
         {
-          maxCharge = TreeAdcChannel[TreeEntryCounter];
+          maxCharge = TreeCAENx740AdcChannel[TreeEntryCounter];
           TreeTriggerChannel = digitizer[TreeEntryCounter];
         }
         TreeEntryCounter++;
@@ -399,18 +609,19 @@ void InputFile::FillTree()
       {
         if( j == taggingCrystalChannel)
         {
-          TreeTagging = ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
+          TreeTagging = CAENx740AdcChannel[j]; // no saturation correction for the tagging crystal..
           //this is the tagging crystal data
         }
       }
     }
     //     std::cout << std::endl;
-    // terrible implementation to allow us of only neighbour channels...
-    //loop to find the neighbour channels of trigger (if needed)
-    //read position of the trigger channel
 
-    double xTrigger;
-    double yTrigger;
+
+    // terrible implementation to allow us of only neighbour channels...
+    // loop to find the neighbour channels of trigger (if needed)
+    // read position of the trigger channel
+    double xTrigger = 0;
+    double yTrigger = 0;
     std::vector<float> allowedX,allowedY;
     //std::vector <bool> isNeighbour; // channel is neighbour of trigger
     if(!usingAllChannels)
@@ -419,11 +630,8 @@ void InputFile::FillTree()
       {
         detector[iFill].isNeighbour = false;
       }
-
-
       std::vector<float> xCopyTemp;
       std::vector<float> yCopyTemp;
-
       for(int iFill = 0; iFill < inputChannels; iFill++)
       {
         if(detector[iFill].digitizerChannel == TreeTriggerChannel)
@@ -433,12 +641,7 @@ void InputFile::FillTree()
         }
         xCopyTemp.push_back(detector[iFill].xPosition);
         yCopyTemp.push_back(detector[iFill].yPosition);
-
       }
-      //       xTrigger = xPositions[TreeTriggerChannel];
-      //       yTrigger = yPositions[TreeTriggerChannel];
-      //       std::vector<float> xCopyTemp = xPositions;
-      //       std::vector<float> yCopyTemp = yPositions;
 
       //sort the position vectors
       std::sort (xCopyTemp.begin(),xCopyTemp.end());
@@ -450,7 +653,7 @@ void InputFile::FillTree()
       yCopy.push_back(yCopyTemp[0]);
       int xCounter = 0;
       int yCounter = 0;
-      for (int j = 0 ; j < xCopyTemp.size() ; j++)
+      for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
       {
         if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
         {
@@ -458,7 +661,7 @@ void InputFile::FillTree()
           xCounter++;
         }
       }
-      for (int j = 0 ; j < yCopyTemp.size() ; j++)
+      for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
       {
         if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
         {
@@ -471,20 +674,19 @@ void InputFile::FillTree()
       allowedX.push_back(xTrigger);
       allowedY.push_back(yTrigger);
 
-      int TrigI,TrigJ;
+      int TrigI = -1;
+      int TrigJ = -1;
       //locate trigger in the new vectors
-      for(int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+      for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
       {
         if(xCopy[xPos] == xTrigger) TrigI = xPos;
       }
-      for(int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+      for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
       {
         if(yCopy[yPos] == yTrigger) TrigJ = yPos;
       }
 
-
       // take x and y of neighbours
-      double xleft,xright,ytop,ybottom;
       if(TrigI != 0)
       {
         allowedX.push_back(xCopy[TrigI-1]);
@@ -502,27 +704,17 @@ void InputFile::FillTree()
         allowedY.push_back(yCopy[TrigJ+1]);
       }
 
-      //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-      //       {
-      // 	std::cout << allowedX[xPos] << " ";
-      //       }
-      //       std::cout << std::endl;
-      //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-      //       {
-      // 	std::cout << allowedY[xPos] << " ";
-      //       }
-      //       std::cout << std::endl;
 
       int counterNeighbour = 0;
       for (int j = 0 ; j < adcChannels ; j++)
       {
         if(DigitizerChannelOn[j])
         {
-          for(int iCheck = 0; iCheck < allowedX.size(); iCheck++)
+          for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)
           {
             if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
             {
-              for(int jCheck = 0; jCheck < allowedY.size(); jCheck++)
+              for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++)
               {
                 if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
                 {
@@ -550,29 +742,29 @@ void InputFile::FillTree()
         if(usingAllChannels) //all channels for u and v
         {
           // 	  total     += TreeAdcChannel[counterFill];
-          rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
-          columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
+          rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
+          columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
         }
         else //only neighbours...
         {
           if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
           {
             // 	    total     += TreeAdcChannel[counterFill];
-            rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
-            columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
+            rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
+            columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
           }
           // 	  totalForFloodZ += TreeAdcChannel[counterFill];
         }
         //then, the w coordinate
         if(wAllChannels) //all channels for w
         {
-          total += TreeAdcChannel[counterFill];
+          total += TreeCAENx740AdcChannel[counterFill];
         }
         else//only neighbours...
         {
           if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
           {
-            total += TreeAdcChannel[counterFill];
+            total += TreeCAENx740AdcChannel[counterFill];
           }
         }
         counterFill++;
@@ -589,8 +781,8 @@ void InputFile::FillTree()
 
     if(usingTaggingBench) TreeZPosition = taggingPosition;
 
-    TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX - 2.8,2) + std::pow(TreeFloodY - (-1.0),2) + std::pow(TreeFloodZ,2)) ));
-    TreePhi =  std::atan (TreeFloodY / TreeFloodX);
+    // TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX - 2.8,2) + std::pow(TreeFloodY - (-1.0),2) + std::pow(TreeFloodZ,2)) ));
+    // TreePhi =  std::atan (TreeFloodY / TreeFloodX);
 
     point.x = TreeFloodX;
     point.y = TreeFloodY;
@@ -663,6 +855,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
     for(int jModule = 0; jModule < nmoduley ; jModule++)
     {
       sname << "Module " << iModule << "." << jModule;
+      // std::cout << sname.str() << std::endl;
       module[iModule][jModule] = new Module(); // creates a default module
       module[iModule][jModule]->SetName(sname.str().c_str());          // assign a name
       sname.str("");
@@ -674,7 +867,6 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       module[iModule][jModule]->SetJ(jModule);
       module[iModule][jModule]->SetChildrenI(nmppcx);
       module[iModule][jModule]->SetChildrenJ(nmppcy);
-
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
         for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
@@ -686,111 +878,129 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           //  	  int pos = (mppcI*nmppcx + mppcJ) +1 ; // +1 is because of root multicanvas starting from 1...
           int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((nmppcy-mppcI));
           // 	  std::cout << mppcI << "." << mppcJ << " " << pos << std::endl;
-          int posID;
-          for(int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...
+          int posID = -1;
+          for(unsigned int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...
           {
             if(plotPositions[arrayCounter] == pos) posID = arrayCounter;
           }
 
-
-          sname << "MPPC " << mppcI << "." << mppcJ;
-
-          mppc[mppcI][mppcJ] = new Mppc();
-          mppc[mppcI][mppcJ]->SetName(sname.str().c_str());
-          mppc[mppcI][mppcJ]->SetLabel( mppc_label[posID] ); // ----
-          sname.str("");
-          sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc;
-
-          mppc[mppcI][mppcJ]->SetIsOnForModular(true);
-          for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
+          if(posID != -1)
           {
-            if(mppcOFF[modCounter].compare(mppc_label[posID]) == 0) mppc[mppcI][mppcJ]->SetIsOnForModular(false);
-          }
+            sname << "MPPC " << mppcI << "." << mppcJ;
+            // std::cout << sname.str() << std::endl;
+            mppc[mppcI][mppcJ] = new Mppc();
+            mppc[mppcI][mppcJ]->SetName(sname.str().c_str());
+            mppc[mppcI][mppcJ]->SetLabel( mppc_label[posID] ); // ----
+            sname.str("");
+            sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc;
 
-          //set the global mppc variables for 3d plots, then override if specified
-          mppc[mppcI][mppcJ]->SetHisto3DchannelBin(global_histo3DchannelBin);
-          mppc[mppcI][mppcJ]->SetClusterLevelPrecision(global_div);
-          mppc[mppcI][mppcJ]->SetClusterVolumeCut(global_clusterVolumeCut);
-          //now override
-          for(int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
-          {
-            if(specificMPPC[modCounter].compare(mppc_label[posID]) == 0)
+            mppc[mppcI][mppcJ]->SetIsOnForModular(true);
+            for(unsigned int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
             {
-              mppc[mppcI][mppcJ]->SetHisto3DchannelBin(specificBin[modCounter]);
-              mppc[mppcI][mppcJ]->SetClusterLevelPrecision(specificPrecision[modCounter]);
-              mppc[mppcI][mppcJ]->SetClusterVolumeCut(specificCut[modCounter]);
+              if(mppcOFF[modCounter].compare(mppc_label[posID]) == 0) mppc[mppcI][mppcJ]->SetIsOnForModular(false);
             }
-          }
 
 
-          mppc[mppcI][mppcJ]->SetExtendedID(sname.str().c_str());
-          mppc[mppcI][mppcJ]->SetID(posID);                  // ----
-          mppc[mppcI][mppcJ]->SetI(mppcI);
-          mppc[mppcI][mppcJ]->SetJ(mppcJ);
-          mppc[mppcI][mppcJ]->SetChildrenI(ncrystalsx);
-          mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
-          mppc[mppcI][mppcJ]->SetPosition(xPositions[posID],yPositions[posID],0);
-          mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
-          mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
-          mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
-
-          mppc[mppcI][mppcJ]->SetIsOnForDoi(false);
-          for(int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
-          {
-            if(mppc[mppcI][mppcJ]->GetDigitizerChannel() == digitizerDoi[iDoi])
-              mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
-          }
-
-          // 	  mppc[mppcI][mppcJ]->Print();
-          sname.str("");
-
-          module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );
-
-          for(int iCry = 0; iCry < ncrystalsx ; iCry++)
-          {
-            for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+            //set the global mppc variables for 3d plots, then override if specified
+            mppc[mppcI][mppcJ]->SetHisto3DchannelBin(global_histo3DchannelBin);
+            mppc[mppcI][mppcJ]->SetClusterLevelPrecision(global_div);
+            mppc[mppcI][mppcJ]->SetClusterVolumeCut(global_clusterVolumeCut);
+            //now override
+            for(unsigned int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
             {
-              int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
-              int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
-              sname << "Crystal " << cryI << "." << cryJ;
-              crystal[cryI][cryJ] = new Crystal();
-              crystal[cryI][cryJ]->SetName(sname.str().c_str());   // assign a name
-              sname.str("");
-              sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc << "-" << iCry << "." << jCry;
-              crystal[cryI][cryJ]->SetExtendedID(sname.str().c_str());
-              sname.str("");
-              crystal[cryI][cryJ]->SetID(cryI*ncrystalsx*nmppcx + cryJ);          // assign an ID  //----
-
-              crystal[cryI][cryJ]->SetIsOnForModular(true);
-              for(int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
+              if(specificMPPC[modCounter].compare(mppc_label[posID]) == 0)
               {
-                if(crystalOFF[modCounter] == (cryI*ncrystalsx*nmppcx + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
+                mppc[mppcI][mppcJ]->SetHisto3DchannelBin(specificBin[modCounter]);
+                mppc[mppcI][mppcJ]->SetClusterLevelPrecision(specificPrecision[modCounter]);
+                mppc[mppcI][mppcJ]->SetClusterVolumeCut(specificCut[modCounter]);
               }
-
-              crystal[cryI][cryJ]->SetI(cryI);
-              crystal[cryI][cryJ]->SetJ(cryJ);
-              crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());
-              crystal[cryI][cryJ]->SetCrystalOn(crystalIsOn[cryI][cryJ]);
-              crystal[cryI][cryJ]->SetPosition(
-                xPositions[posID] + iCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)
-                , yPositions[posID] + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)
-                ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
-              crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
-              // 	      double u  = crystaldata[cryI][cryJ][0];
-              // 	      double v  = crystaldata[cryI][cryJ][1];
-              // 	      double wu = crystaldata[cryI][cryJ][2];
-              // 	      double wv = crystaldata[cryI][cryJ][3];
-              // 	      double t  = crystaldata[cryI][cryJ][4];
-              // 	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
-              // 	      std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
-              // 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
-              // 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
-              // 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
-              // 	      crystal[cryI][cryJ]->Print();
-
-              mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
             }
-          }
+
+            mppc[mppcI][mppcJ]->SetExtendedID(sname.str().c_str());
+            mppc[mppcI][mppcJ]->SetID(posID);                  // ----
+            mppc[mppcI][mppcJ]->SetI(mppcI);
+            mppc[mppcI][mppcJ]->SetJ(mppcJ);
+            mppc[mppcI][mppcJ]->SetChildrenI(ncrystalsx);
+            mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
+            mppc[mppcI][mppcJ]->SetPosition(xPositions[posID],yPositions[posID],0);
+            mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
+            mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
+            mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
+
+            mppc[mppcI][mppcJ]->SetIsOnForDoi(false);
+            for(unsigned int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
+            {
+              if(mppc[mppcI][mppcJ]->GetDigitizerChannel() == digitizerDoi[iDoi])
+              mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
+            }
+
+            // 	  mppc[mppcI][mppcJ]->Print();
+            sname.str("");
+
+            module[iModule][jModule]->AddChild( mppc[mppcI][mppcJ]->GetName() );
+
+            for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+            {
+              for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+              {
+                int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
+                int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
+                sname << "Crystal " << cryI << "." << cryJ;
+                std::cout << sname.str() << std::endl;
+                crystal[cryI][cryJ] = new Crystal();
+                crystal[cryI][cryJ]->SetName(sname.str().c_str());   // assign a name
+                sname.str("");
+                sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc << "-" << iCry << "." << jCry;
+                crystal[cryI][cryJ]->SetExtendedID(sname.str().c_str());
+                sname.str("");
+                crystal[cryI][cryJ]->SetID(cryI*ncrystalsx*nmppcx + cryJ);          // assign an ID  //----
+
+                crystal[cryI][cryJ]->SetIsOnForModular(true);
+                for(unsigned int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
+                {
+                  if(crystalOFF[modCounter] == (cryI*ncrystalsx*nmppcx + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
+                }
+
+                crystal[cryI][cryJ]->SetI(cryI);
+                crystal[cryI][cryJ]->SetJ(cryJ);
+                crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());
+                crystal[cryI][cryJ]->SetCrystalOn(crystalIsOn[cryI][cryJ]);
+                crystal[cryI][cryJ]->SetPosition(
+                  xPositions[posID] + iCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)
+                  , yPositions[posID] + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)
+                  ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
+                  crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
+                  // 	      double u  = crystaldata[cryI][cryJ][0];
+                  // 	      double v  = crystaldata[cryI][cryJ][1];
+                  // 	      double wu = crystaldata[cryI][cryJ][2];
+                  // 	      double wv = crystaldata[cryI][cryJ][3];
+                  // 	      double t  = crystaldata[cryI][cryJ][4];
+                  // 	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
+                  // 	      std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
+                  // 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
+                  // 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
+                  // 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
+                  // 	      crystal[cryI][cryJ]->Print();
+
+                  mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
+                }
+              }
+            }
+            else //set them off for modular
+            {
+              mppc[mppcI][mppcJ] = new Mppc();
+              mppc[mppcI][mppcJ]->SetIsOnForModular(false);
+              for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+              {
+                for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+                {
+                  int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
+                  int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
+                  crystal[cryI][cryJ] = new Crystal();
+                  crystal[cryI][cryJ]->SetIsOnForModular(false);
+                }
+              }
+            }
         }
       }
     }
@@ -804,8 +1014,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   {
     for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
-      std::cout <<  mppc[iMppc][jMppc]->GetLabel() << "\t";
-
+      if(mppc[iMppc][jMppc]->GetIsOnForModular()) std::cout <<  mppc[iMppc][jMppc]->GetLabel() << "\t";
+      else std::cout << "\t";
       //       std::cout <<  mppc[iMppc][jMppc]->GetLabel() << " " <<  mppc[iMppc][jMppc]->GetI() << "." << mppc[iMppc][jMppc]->GetJ() << " " << mppc[iMppc][jMppc]->GetDigitizerChannel();  /*<< "\t"*/;
       //       std::cout <<  " " <<mppc[iMppc][jMppc]->GetX() << " " <<  mppc[iMppc][jMppc]->GetY();
       //       std::cout << std::endl;
@@ -819,7 +1029,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   {
     for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
     {
-      std::cout << mppc[iMppc][jMppc]->GetDigitizerChannel() << "\t";
+      if(mppc[iMppc][jMppc]->GetIsOnForModular()) std::cout << mppc[iMppc][jMppc]->GetDigitizerChannel() << "\t";
+      else std::cout << "\t";
     }
     std::cout << std::endl;
   }
@@ -830,7 +1041,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   {
     for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
     {
-      std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
+      if(crystal[iCrystal][jCrystal]->GetIsOnForModular()) std::cout << crystal[iCrystal][jCrystal]->GetID() << "\t";
+      else std::cout << "\t";
     }
     std::cout << std::endl;
   }
@@ -842,12 +1054,162 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   {
     for(int iCrystal = 0 ; iCrystal < ncrystalsx*nmppcx*nmodulex   ; iCrystal++)
     {
-      std::cout << "(" << crystal[iCrystal][jCrystal]->GetX() << "," << crystal[iCrystal][jCrystal]->GetY() << ")"  << "\t";
+      if(crystal[iCrystal][jCrystal]->GetIsOnForModular()) std::cout << "(" << crystal[iCrystal][jCrystal]->GetX() << "," << crystal[iCrystal][jCrystal]->GetY() << ")"  << "\t";
+      else std::cout << "\t\t";
     }
     std::cout << std::endl;
   }
   std::cout << std::endl;
+}
 
 
+// READ configuration file, parse the strings
+void InputFile::ReadConfig(ConfigFile& config)
+{
+   //read configuration file
+   fname                       = config.read<std::string>("chainName","adc");
+   ncrystalsx                  = config.read<int>("ncrystalsx",1);
+   ncrystalsy                  = config.read<int>("ncrystalsy",1);
+   nmppcx                      = config.read<int>("nmppcx",1);
+   nmppcy                      = config.read<int>("nmppcy",1);
+   nmodulex                    = config.read<int>("nmodulex",1);
+   nmoduley                    = config.read<int>("nmoduley",1);
+   taggingPosition             = config.read<float>("taggingPosition",0);
+   usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
+   taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
+   usingRealSimData            = config.read<bool>("usingRealSimData",0);
+   binary                      = config.read<bool>("binary",0);
+   correctingSaturation        = config.read<bool>("correctingSaturation",0);
+   BinaryOutputFileName        = config.read<std::string>("output","binOutput");
+   BinaryOutputFileName       += ".bin";
+   //read the strings that describe the input channels
+   digitizer_s                 = config.read<std::string>("digitizer");     //MANDATORY, so no default
+   mppc_s                      = config.read<std::string>("mppc");          //MANDATORY, so no default
+   plotPositions_s             = config.read<std::string>("plotPositions"); //MANDATORY, so no default
+   xPositions_s                = config.read<std::string>("xPositions");    //MANDATORY, so no default
+   yPositions_s                = config.read<std::string>("yPositions");    //MANDATORY, so no default
+   saturation_s                = config.read<std::string>("saturation","0");
+   adcChannels                 = config.read<int>("digitizerTotalCh",32);
+   nclock                      = config.read<double>("nclock",0);
+   crystalx                    = config.read<double>("crystalx",1.53);
+   crystaly                    = config.read<double>("crystaly",1.53);
+   crystalz                    = config.read<double>("crystalz",15);
+   esrThickness                = config.read<double>("esrThickness",0.07);
+   usingAllChannels            = config.read<bool>("usingAllChannels",0);   // whether to use the sum of all channels to compute u,v or just the neighbours. Deafult to false = 0.
+   wAllChannels                = config.read<bool>("wAllChannels",0);       // whether we use the sum of all channels to compute w ( of just the neighbours. Deafult to false = 0.
+   electronics                 = config.read<int>("electronics",0) ;
+   ninoSaturationParameters    = config.read<int>("ninoSaturationParameters",4) ;
+   digitizerDoi_s              = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
+   mppcOFF_s                   = config.read<std::string>("mppcOFF","");
+   crystalOFF_s                = config.read<std::string>("crystalOFF","-1");
+   // global 3d plots variables for single mppcs
+   global_histo3DchannelBin    = config.read<int>("histo3DchannelBin",100);
+   global_div                  = config.read<int>("clusterLevelPrecision",10);
+   global_clusterVolumeCut     = config.read<double>("clusterVolumeCut",0.001);
+   specificMPPC_s              = config.read<std::string>("specificMPPCname","");
+   specificBin_s               = config.read<std::string>("specificBin","");
+   specificPrecision_s         = config.read<std::string>("specificPrecision","");
+   specificCut_s               = config.read<std::string>("specificCut","");
 
+   //PARSE STRINGS
+   //split them using the config file class
+   config.split( digitizer_f, digitizer_s, "," );
+   config.split( mppc_f, mppc_s, "," );
+   config.split( plotPositions_f, plotPositions_s, "," );
+   config.split( xPositions_f, xPositions_s, "," );
+   config.split( yPositions_f, yPositions_s, "," );
+   //trim them using the config file class (i.e. remove spaces)
+   //and at the same time put in vectors with numbers for the ones that are numbers
+   for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
+   {
+     config.trim(digitizer_f[i]);
+     digitizer.push_back(atoi(digitizer_f[i].c_str()));
+   }
+   for(unsigned int i = 0 ; i < mppc_f.size() ; i++)
+   {
+     config.trim(mppc_f[i]);
+     mppc_label.push_back(mppc_f[i]);
+   }
+   for(unsigned int i = 0 ; i < plotPositions_f.size() ; i++)
+   {
+     config.trim(plotPositions_f[i]);
+     plotPositions.push_back(atoi(plotPositions_f[i].c_str()));
+   }
+   for(unsigned int i = 0 ; i < xPositions_f.size() ; i++)
+   {
+     config.trim(xPositions_f[i]);
+     xPositions.push_back(atof(xPositions_f[i].c_str()));
+   }
+   for(unsigned int i = 0 ; i < yPositions_f.size() ; i++)
+   {
+     config.trim(yPositions_f[i]);
+     yPositions.push_back(atof(yPositions_f[i].c_str()));
+   }
+   //check if the vectors just built have the same size
+   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+
+
+   //saturation part. different for caen and NINO, but only difference is that CAEN takes 1 saturation param, NINO 4. so the asset is the only difference
+   if(saturation_s.compare("0") != 0)
+   {
+     correctingSaturation = true;
+     config.split( saturation_f, saturation_s, "," );
+     for(unsigned int i = 0 ; i < saturation_f.size() ; i++)
+     {
+       config.trim(saturation_f[i]);
+       saturation.push_back(atof(saturation_f[i].c_str()));
+     }
+     if(electronics == 0) assert( (digitizer.size() == saturation.size()) );   //CAEN
+     else if(electronics == 1) assert( (digitizer.size()*ninoSaturationParameters == saturation.size()) ); //NINO
+   }
+
+   //read string for doi analysis channels
+   // digitizerDoi_s = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
+   config.split( digitizerDoi_f, digitizerDoi_s, "," );
+   for(unsigned int i = 0 ; i < digitizerDoi_f.size() ; i++)
+   {
+     config.trim(digitizerDoi_f[i]);
+     digitizerDoi.push_back(atoi(digitizerDoi_f[i].c_str()));
+   }
+   //on or off for modular analysis
+   config.split( mppcOFF_f, mppcOFF_s, "," );
+   for(unsigned int i = 0 ; i < mppcOFF_f.size() ; i++)
+   {
+     config.trim(mppcOFF_f[i]);
+     mppcOFF.push_back(mppcOFF_f[i]);
+   }
+
+   config.split( crystalOFF_f, crystalOFF_s, "," );
+   for(unsigned int i = 0 ; i < crystalOFF_f.size() ; i++)
+   {
+     config.trim(crystalOFF_f[i]);
+     crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
+   }
+   //specific variables for mppcs
+   config.split( specificMPPC_f, specificMPPC_s, "," );
+   for(unsigned int i = 0 ; i < specificMPPC_f.size() ; i++)
+   {
+     config.trim(specificMPPC_f[i]);
+     specificMPPC.push_back(specificMPPC_f[i]);
+   }
+
+   config.split( specificBin_f, specificBin_s, "," );
+   for(unsigned int i = 0 ; i < specificBin_f.size() ; i++)
+   {
+     config.trim(specificBin_f[i]);
+     specificBin.push_back(atoi(specificBin_f[i].c_str()));
+   }
+
+   config.split( specificPrecision_f, specificPrecision_s, "," );
+   for(unsigned int i = 0 ; i < specificPrecision_f.size() ; i++)
+   {
+     config.trim(specificPrecision_f[i]);
+     specificPrecision.push_back(atoi(specificPrecision_f[i].c_str()));
+   }
+   config.split( specificCut_f, specificCut_s, "," );
+   for(unsigned int i = 0 ; i < specificCut_f.size() ; i++)
+   {
+     config.trim(specificCut_f[i]);
+     specificCut.push_back(atof(specificCut_f[i].c_str()));
+   }
 }

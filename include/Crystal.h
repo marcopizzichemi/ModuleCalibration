@@ -23,6 +23,7 @@ private:
   //spectra and co.
   TH1F*                Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
   TH1F*                LYSpectrum;
+  TH1F*                CTRspectrum;
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
   TH1F*                HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
   TH1F*                HighlightedSpectrumCorrected; ///<
@@ -91,6 +92,7 @@ public:
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};
   TH1F*                GetSpectrum(){return Spectrum;};
   TH1F*                GetLYSpectrum(){return LYSpectrum;};
+  TH1F*                GetCRTSpectrum(){return CTRspectrum;};
   TH1F*                GetCorrectedSpectrum(){return CorrectedSpectrum;};
   TH1F*                GetHighlightedSpectrum(){return HighlightedSpectrum;};
   TH1F*                GetHighlightedSpectrumCorrected(){return HighlightedSpectrumCorrected;};
@@ -126,10 +128,10 @@ public:
   float                GetPhotopeakSigma(){return peakSigma;};
   float                GetLY(){return LY;};
   float                GetLYSigma(){return LYSigma;};
-  float                GetPhotopeakEnergyResolution(){return ((peakSigma*2.355)/peakPosition);};
-  float                GetPhotopeakPositionCorrected(){return peakPositionCorrected;};
-  float                GetPhotopeakSigmaCorrected(){return peakSigmaCorrected;};
-  float                GetPhotopeakEnergyResolutionCorrected(){return ((peakSigmaCorrected*2.355)/peakPositionCorrected);};
+  float                GetPhotopeakEnergyResolution();
+  float                GetPhotopeakPositionCorrected();
+  float                GetPhotopeakSigmaCorrected();
+  float                GetPhotopeakEnergyResolutionCorrected();
   double               GetWbegin(){return wBegin;};
   double               GetWend(){return wEnd;};
   double               GetDeltaW(){return std::abs(deltaW);};
@@ -167,6 +169,7 @@ public:
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
   void                 SetLYSpectrum(TH1F* aHisto){LYSpectrum = aHisto;};
+  void                 SetCTRSpectrum(TH1F* aHisto){CTRspectrum = aHisto;};
   void                 SetHighlightedSpectrum(TH1F* aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHighlightedSpectrumCorrected(TH1F* aHisto){HighlightedSpectrumCorrected = aHisto;};
   void                 SetHistoW(TH1F* aHisto){HistoW = aHisto;};
