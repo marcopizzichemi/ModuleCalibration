@@ -63,6 +63,99 @@ InputFile::InputFile (ConfigFile& config)
     detector.push_back(det);  // add this struct to a std::vector of detector_t
   }
 
+  inputChannels       = detector.size();
+  //set channels on, i.e. channel biased
+  DigitizerChannelOn  = new bool[adcChannels];
+  for(int i = 0; i < adcChannels; i++) // first set all the possible inputs from ADC to OFF
+  {
+    DigitizerChannelOn[i] = false;
+  }
+  for(int i = 0; i < inputChannels; i++) // then turn on only the ones were there is bias (i.e. the ones mentioned in the config digitizer key)
+  {
+    DigitizerChannelOn[detector[i].digitizerChannel] = true;
+  }
+  std::vector<int> all;
+  for(unsigned int i = 0 ; i < detector.size() ; i++)
+  {
+    all.push_back(detector[i].digitizerChannel);
+  }
+  //find neighbour channels for each detector, write the numbers in the detector structs
+  for(unsigned int i = 0 ; i < detector.size() ; i++)
+  {
+    detector[i].neighbours = FindNeighbours(detector[i].digitizerChannel);
+    detector[i].cross      = FindCross(detector[i].digitizerChannel);
+    detector[i].all        = all;
+
+    //now assign the vectors
+    //u-v
+    // std::cout << allChannels << " " << neighbourChannels << " " << crossChannels << std::endl;
+    // std::cout << relevantForUV << std::endl;
+    switch(relevantForUV)
+    {
+      case allChannels:
+        // std::cout << "allChannels" << std::endl;
+        detector[i].relevantForUV = detector[i].all;
+        break;
+      case neighbourChannels:
+        // std::cout << "neighbourChannels" << std::endl;
+        detector[i].relevantForUV = detector[i].neighbours;
+        break;
+      case crossChannels:
+        // std::cout << "crossChannels" << std::endl;
+        detector[i].relevantForUV = detector[i].cross;
+        break;
+    }
+    // std::cout << relevantForW<< std::endl;
+    switch(relevantForW)
+    {
+      case allChannels:
+        detector[i].relevantForW = detector[i].all;
+        break;
+      case neighbourChannels:
+        detector[i].relevantForW = detector[i].neighbours;
+        break;
+      case crossChannels:
+        detector[i].relevantForW = detector[i].cross;
+        break;
+    }
+    // std::cout << relevantForE << std::endl;
+    switch(relevantForE)
+    {
+      case allChannels:
+        detector[i].relevantForE = detector[i].all;
+        break;
+      case neighbourChannels:
+        detector[i].relevantForE = detector[i].neighbours;
+        break;
+      case crossChannels:
+        detector[i].relevantForE = detector[i].cross;
+        break;
+    }
+
+
+    // std::cout << neig.size() << std::endl;
+    //testing output
+    // std::cout << "Channel " << detector[i].digitizerChannel << std::endl;
+    // std::cout << "RelevantForUV: ";
+    // for(unsigned int a = 0 ; a < detector[i].relevantForUV.size(); a++)
+    //   std::cout << detector[i].relevantForUV[a] << " ";
+    // std::cout << std::endl;
+    // std::cout << "RelevantForW: ";
+    // for(unsigned int a = 0 ; a < detector[i].relevantForW.size(); a++)
+    //   std::cout << detector[i].relevantForW[a] << " ";
+    // std::cout << std::endl;
+    // std::cout << "RelevantForE: ";
+    // for(unsigned int a = 0 ; a < detector[i].relevantForE.size(); a++)
+    //   std::cout << detector[i].relevantForE[a] << " ";
+    // std::cout << std::endl;
+  }
+
+  // for(unsigned int i = 0 ; i < detector.size() ; i++)
+  // {
+  //
+  // }
+
+
   //crystals
   //set all crystals to off, to start
   crystalIsOn = new bool*[ncrystalsx*nmppcx*nmodulex];
@@ -100,17 +193,8 @@ InputFile::InputFile (ConfigFile& config)
 
 
 
-  inputChannels       = detector.size();
-  //set channels on, i.e. channel biased
-  DigitizerChannelOn  = new bool[adcChannels];
-  for(int i = 0; i < adcChannels; i++) // first set all the possible inputs from ADC to OFF
-  {
-    DigitizerChannelOn[i] = false;
-  }
-  for(int i = 0; i < inputChannels; i++) // then turn on only the ones were there is bias (i.e. the ones mentioned in the config digitizer key)
-  {
-    DigitizerChannelOn[detector[i].digitizerChannel] = true;
-  }
+
+
 
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
@@ -208,7 +292,8 @@ void InputFile::FillTreeNINO(int argc, char** argv)
       double maxCharge = 0;
       float columnsum= 0;
       float rowsum= 0;
-      float total=  0;
+      float totalUV=  0;
+      float totalW=  0;
 
       for (int i = 0; i < adcChannels; i++)
       {
@@ -238,20 +323,25 @@ void InputFile::FillTreeNINO(int argc, char** argv)
         {
           // fill tree with data from the channels
           // also correcting for saturation if it's set in the config file
+
           TreeNINOTimeChannel[TreeEntryCounter] = (Float_t) tempT[j];
+          detector[TreeEntryCounter].EventTime = TreeNINOTimeChannel[TreeEntryCounter];
           if(correctingSaturation)
           {
             TreeNINOChargeChannel[TreeEntryCounter] = (Float_t) (-1./detector[TreeEntryCounter].saturation[2])*(TMath::Log(1-((1./detector[TreeEntryCounter].saturation[1])*(TMath::Exp((tempW[j])/detector[TreeEntryCounter].saturation[0])-detector[TreeEntryCounter].saturation[3]))));
+
           }
           else
             TreeNINOChargeChannel[TreeEntryCounter] = (Float_t) tempW[j];
 
+          detector[TreeEntryCounter].EventCharge = TreeNINOChargeChannel[TreeEntryCounter];
           //find the max charge and therefore the TriggerChannel
           if (TreeNINOChargeChannel[TreeEntryCounter] > maxCharge)
           {
             maxCharge = TreeNINOChargeChannel[TreeEntryCounter];
             TreeTriggerChannel = digitizer[TreeEntryCounter];
           }
+
           TreeEntryCounter++;
         }
 
@@ -271,182 +361,86 @@ void InputFile::FillTreeNINO(int argc, char** argv)
       //loop to find the neighbour channels of trigger (if needed)
       //read position of the trigger channel
 
-      double xTrigger = 0;
-      double yTrigger = 0;
-      std::vector<float> allowedX,allowedY;
+      // double xTrigger = 0;
+      // double yTrigger = 0;
+      // std::vector<float> allowedX,allowedY;
       //std::vector <bool> isNeighbour; // channel is neighbour of trigger
-      if(!usingAllChannels)
-      {
-        for(int iFill = 0; iFill < inputChannels; iFill++)
-        {
-          detector[iFill].isNeighbour = false;
-        }
-
-
-        std::vector<float> xCopyTemp;
-        std::vector<float> yCopyTemp;
-
-        for(int iFill = 0; iFill < inputChannels; iFill++)
-        {
-          if(detector[iFill].digitizerChannel == TreeTriggerChannel)
-          {
-            xTrigger = detector[iFill].xPosition;
-            yTrigger = detector[iFill].yPosition;
-          }
-          xCopyTemp.push_back(detector[iFill].xPosition);
-          yCopyTemp.push_back(detector[iFill].yPosition);
-
-        }
-        //       xTrigger = xPositions[TreeTriggerChannel];
-        //       yTrigger = yPositions[TreeTriggerChannel];
-        //       std::vector<float> xCopyTemp = xPositions;
-        //       std::vector<float> yCopyTemp = yPositions;
-
-        //sort the position vectors
-        std::sort (xCopyTemp.begin(),xCopyTemp.end());
-        std::sort (yCopyTemp.begin(),yCopyTemp.end());
-        //filter repetitions
-        std::vector<float> xCopy;
-        std::vector<float> yCopy;
-        xCopy.push_back(xCopyTemp[0]);
-        yCopy.push_back(yCopyTemp[0]);
-        int xCounter = 0;
-        int yCounter = 0;
-        for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
-        {
-          if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
-          {
-            xCopy.push_back(xCopyTemp[j]);
-            xCounter++;
-          }
-        }
-        for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
-        {
-          if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
-          {
-            yCopy.push_back(yCopyTemp[j]);
-            yCounter++;
-          }
-        }
-
-        // by default trigger row and column are allowed
-        allowedX.push_back(xTrigger);
-        allowedY.push_back(yTrigger);
-
-        int TrigI = -1;
-        int TrigJ = -1;
-        //locate trigger in the new vectors
-        for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
-        {
-          if(xCopy[xPos] == xTrigger) TrigI = xPos;
-        }
-        for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
-        {
-          if(yCopy[yPos] == yTrigger) TrigJ = yPos;
-        }
-
-
-        // take x and y of neighbours
-        // double xleft,xright,ytop,ybottom;
-        if(TrigI != 0)
-        {
-          allowedX.push_back(xCopy[TrigI-1]);
-        }
-        if(TrigI != nmppcx-1)
-        {
-          allowedX.push_back(xCopy[TrigI+1]);
-        }
-        if(TrigJ != 0)
-        {
-          allowedY.push_back(yCopy[TrigJ-1]);
-        }
-        if(TrigJ != nmppcy-1)
-        {
-          allowedY.push_back(yCopy[TrigJ+1]);
-        }
-
-        //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-        //       {
-        // 	std::cout << allowedX[xPos] << " ";
-        //       }
-        //       std::cout << std::endl;
-        //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-        //       {
-        // 	std::cout << allowedY[xPos] << " ";
-        //       }
-        //       std::cout << std::endl;
-
-        int counterNeighbour = 0;
-        for (int j = 0 ; j < adcChannels ; j++)
-        {
-          if(DigitizerChannelOn[j])
-          {
-            for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)
-            {
-              if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
-              {
-                for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++)
-                {
-                  if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
-                  {
-                    detector[counterNeighbour].isNeighbour = true;
-                  }
-                }
-              }
-            }
-            counterNeighbour++;
-          }
-        }
-      }
+      // if(!usingAllChannels)
+      // {
+      //   FindNeighbours(TreeTriggerChannel);
+      // }
       //loop to calculate u,v
-      int counterFill = 0;
-      for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
+      // int counterFill = 0;
+
+      //try a more general implementation. We already have the all, neighbours and cross digitizer channels for each detector. We also know the TreeTriggerChannel. Let's get that channel and the relevant vectors
+      for(unsigned int i = 0 ; i < detector.size() ; i++)
       {
-        if(DigitizerChannelOn[j])// first, is the digitizer ON?
+        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForUV.size() ; a++)
         {
-          //two options to calculate FloodX_Y_Z
-          //First, use all the channels
-          //Second, use only the neighbours of the trigger channel
-          //both options for u,v and for z
-          //all combinations possible (user decides in config file)
-          //first, the u,v
-          if(usingAllChannels) //all channels for u and v
+          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForUV[a])
           {
-            // 	  total     += TreeAdcChannel[counterFill];
-            rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
-            columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
+            rowsum    += detector[i].EventCharge*detector[i].xPosition;
+            columnsum += detector[i].EventCharge*detector[i].yPosition;
+            totalUV   += detector[i].EventCharge;
           }
-          else //only neighbours...
+        }
+        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForW.size() ; a++)
+        {
+          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForW[a])
           {
-            if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-            {
-              // 	    total     += TreeAdcChannel[counterFill];
-              rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
-              columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
-            }
-            // 	  totalForFloodZ += TreeAdcChannel[counterFill];
+            totalW    += detector[i].EventCharge;
           }
-          //then, the w coordinate
-          if(wAllChannels) //all channels for w
-          {
-            total += TreeNINOChargeChannel[counterFill];
-          }
-          else//only neighbours...
-          {
-            if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-            {
-              total += TreeNINOChargeChannel[counterFill];
-            }
-          }
-          counterFill++;
         }
       }
+
+
+      // for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
+      // {
+      //   if(DigitizerChannelOn[j])// first, is the digitizer ON?
+      //   {
+      //     //two options to calculate FloodX_Y_Z
+      //     //First, use all the channels
+      //     //Second, use only the neighbours of the trigger channel
+      //     //both options for u,v and for z
+      //     //all combinations possible (user decides in config file)
+      //     //first, the u,v
+      //     if(usingAllChannels) //all channels for u and v
+      //     {
+      //       // 	  total     += TreeAdcChannel[counterFill];
+      //       rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
+      //       columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
+      //     }
+      //     else //only neighbours...
+      //     {
+      //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+      //       {
+      //         // 	    total     += TreeAdcChannel[counterFill];
+      //         rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
+      //         columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
+      //       }
+      //       // 	  totalForFloodZ += TreeAdcChannel[counterFill];
+      //     }
+      //     //then, the w coordinate
+      //     if(wAllChannels) //all channels for w
+      //     {
+      //       total += TreeNINOChargeChannel[counterFill];
+      //     }
+      //     else//only neighbours...
+      //     {
+      //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+      //       {
+      //         total += TreeNINOChargeChannel[counterFill];
+      //       }
+      //     }
+      //     counterFill++;
+      //   }
+      // }
 
       //compute u,v,w
       // near channels vs. total channels depending on what decided before
-      TreeFloodX = rowsum/total;
-      TreeFloodY = columnsum/total;
-      TreeFloodZ =  maxCharge/total;
+      TreeFloodX = rowsum/totalUV;
+      TreeFloodY = columnsum/totalUV;
+      TreeFloodZ =  maxCharge/totalW;
       if(usingTaggingBench) TreeZPosition = taggingPosition;
       if(usingRealSimData)
       {
@@ -561,7 +555,7 @@ void InputFile::FillTreeCAENx740()
 
 
   for (Int_t i=0;i<nevent;i++)
-    //   for(Int_t i=0;i<2;i++)
+      // for(Int_t i=0;i<2;i++)
   {
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
@@ -569,7 +563,8 @@ void InputFile::FillTreeCAENx740()
     // double secondCharge = 0;
     float columnsum= 0;
     float rowsum= 0;
-    float total=  0;
+    float totalUV=  0;
+    float totalW=  0;
     // float totalForFloodZ = 0;
     TreeBadevent = false;
     TreeExtendedTimeTag = ChainExtendedTimeTag;
@@ -592,10 +587,12 @@ void InputFile::FillTreeCAENx740()
             // 	    std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
           }
           TreeCAENx740AdcChannel[TreeEntryCounter] = (Short_t)round(-detector[TreeEntryCounter].saturation[0] * TMath::Log(1.0 - ( CAENx740AdcChannel[j]/detector[TreeEntryCounter].saturation[0] )));
+
         }
         else
           TreeCAENx740AdcChannel[TreeEntryCounter] = CAENx740AdcChannel[j];
 
+        detector[TreeEntryCounter].EventCharge = TreeCAENx740AdcChannel[TreeEntryCounter];
         //find the max charge and therefore the TriggerChannel
         if (TreeCAENx740AdcChannel[TreeEntryCounter] > maxCharge)
         {
@@ -620,163 +617,83 @@ void InputFile::FillTreeCAENx740()
     // terrible implementation to allow us of only neighbour channels...
     // loop to find the neighbour channels of trigger (if needed)
     // read position of the trigger channel
-    double xTrigger = 0;
-    double yTrigger = 0;
-    std::vector<float> allowedX,allowedY;
+
     //std::vector <bool> isNeighbour; // channel is neighbour of trigger
-    if(!usingAllChannels)
+    // if(!usingAllChannels)
+    // {
+    //   FindNeighbours(TreeTriggerChannel);
+    // }
+    //
+    //
+    // //loop to calculate u,v
+    // int counterFill = 0;
+    // for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
+    // {
+    //   if(DigitizerChannelOn[j])// first, is the digitizer ON?
+    //   {
+    //     //two options to calculate FloodX_Y_Z
+    //     //First, use all the channels
+    //     //Second, use only the neighbours of the trigger channel
+    //     //both options for u,v and for z
+    //     //all combinations possible (user decides in config file)
+    //     //first, the u,v
+    //     if(usingAllChannels) //all channels for u and v
+    //     {
+    //       // 	  total     += TreeAdcChannel[counterFill];
+    //       rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
+    //       columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
+    //     }
+    //     else //only neighbours...
+    //     {
+    //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+    //       {
+    //         // 	    total     += TreeAdcChannel[counterFill];
+    //         rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
+    //         columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
+    //       }
+    //       // 	  totalForFloodZ += TreeAdcChannel[counterFill];
+    //     }
+    //     //then, the w coordinate
+    //     if(wAllChannels) //all channels for w
+    //     {
+    //       total += TreeCAENx740AdcChannel[counterFill];
+    //     }
+    //     else//only neighbours...
+    //     {
+    //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+    //       {
+    //         total += TreeCAENx740AdcChannel[counterFill];
+    //       }
+    //     }
+    //     counterFill++;
+    //   }
+    // }
+
+    for(unsigned int i = 0 ; i < detector.size() ; i++)
     {
-      for(int iFill = 0; iFill < inputChannels; iFill++)
+      for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForUV.size() ; a++)
       {
-        detector[iFill].isNeighbour = false;
-      }
-      std::vector<float> xCopyTemp;
-      std::vector<float> yCopyTemp;
-      for(int iFill = 0; iFill < inputChannels; iFill++)
-      {
-        if(detector[iFill].digitizerChannel == TreeTriggerChannel)
+        if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForUV[a])
         {
-          xTrigger = detector[iFill].xPosition;
-          yTrigger = detector[iFill].yPosition;
-        }
-        xCopyTemp.push_back(detector[iFill].xPosition);
-        yCopyTemp.push_back(detector[iFill].yPosition);
-      }
-
-      //sort the position vectors
-      std::sort (xCopyTemp.begin(),xCopyTemp.end());
-      std::sort (yCopyTemp.begin(),yCopyTemp.end());
-      //filter repetitions
-      std::vector<float> xCopy;
-      std::vector<float> yCopy;
-      xCopy.push_back(xCopyTemp[0]);
-      yCopy.push_back(yCopyTemp[0]);
-      int xCounter = 0;
-      int yCounter = 0;
-      for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
-      {
-        if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
-        {
-          xCopy.push_back(xCopyTemp[j]);
-          xCounter++;
+          rowsum    += detector[i].EventCharge*detector[i].xPosition;
+          columnsum += detector[i].EventCharge*detector[i].yPosition;
+          totalUV   += detector[i].EventCharge;
         }
       }
-      for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
+      for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForW.size() ; a++)
       {
-        if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
+        if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForW[a])
         {
-          yCopy.push_back(yCopyTemp[j]);
-          yCounter++;
-        }
-      }
-
-      // by default trigger row and column are allowed
-      allowedX.push_back(xTrigger);
-      allowedY.push_back(yTrigger);
-
-      int TrigI = -1;
-      int TrigJ = -1;
-      //locate trigger in the new vectors
-      for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
-      {
-        if(xCopy[xPos] == xTrigger) TrigI = xPos;
-      }
-      for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
-      {
-        if(yCopy[yPos] == yTrigger) TrigJ = yPos;
-      }
-
-      // take x and y of neighbours
-      if(TrigI != 0)
-      {
-        allowedX.push_back(xCopy[TrigI-1]);
-      }
-      if(TrigI != nmppcx-1)
-      {
-        allowedX.push_back(xCopy[TrigI+1]);
-      }
-      if(TrigJ != 0)
-      {
-        allowedY.push_back(yCopy[TrigJ-1]);
-      }
-      if(TrigJ != nmppcy-1)
-      {
-        allowedY.push_back(yCopy[TrigJ+1]);
-      }
-
-
-      int counterNeighbour = 0;
-      for (int j = 0 ; j < adcChannels ; j++)
-      {
-        if(DigitizerChannelOn[j])
-        {
-          for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)
-          {
-            if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
-            {
-              for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++)
-              {
-                if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
-                {
-                  detector[counterNeighbour].isNeighbour = true;
-                }
-              }
-            }
-          }
-          counterNeighbour++;
+          totalW    += detector[i].EventCharge;
         }
       }
     }
-    //loop to calculate u,v
-    int counterFill = 0;
-    for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
-    {
-      if(DigitizerChannelOn[j])// first, is the digitizer ON?
-      {
-        //two options to calculate FloodX_Y_Z
-        //First, use all the channels
-        //Second, use only the neighbours of the trigger channel
-        //both options for u,v and for z
-        //all combinations possible (user decides in config file)
-        //first, the u,v
-        if(usingAllChannels) //all channels for u and v
-        {
-          // 	  total     += TreeAdcChannel[counterFill];
-          rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
-          columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
-        }
-        else //only neighbours...
-        {
-          if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-          {
-            // 	    total     += TreeAdcChannel[counterFill];
-            rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
-            columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
-          }
-          // 	  totalForFloodZ += TreeAdcChannel[counterFill];
-        }
-        //then, the w coordinate
-        if(wAllChannels) //all channels for w
-        {
-          total += TreeCAENx740AdcChannel[counterFill];
-        }
-        else//only neighbours...
-        {
-          if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-          {
-            total += TreeCAENx740AdcChannel[counterFill];
-          }
-        }
-        counterFill++;
-      }
-    }
-
 
     //compute u,v,w
     // near channels vs. total channels depending on what decided before
-    TreeFloodX = rowsum/total;
-    TreeFloodY = columnsum/total;
-    TreeFloodZ =  maxCharge/total;
+    TreeFloodX = rowsum/totalUV;
+    TreeFloodY = columnsum/totalUV;
+    TreeFloodZ =  maxCharge/totalW;
     //     TreeFloodZ =  maxCharge/totalForFloodZ;
 
     if(usingTaggingBench) TreeZPosition = taggingPosition;
@@ -926,6 +843,16 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
             mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
             mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
             mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
+            for(unsigned int iDet = 0 ; iDet < detector.size() ; iDet++)
+            {
+              if(detector[iDet].digitizerChannel == digitizer[posID])
+              {
+                mppc[mppcI][mppcJ]->SetRelevantForUV(detector[iDet].relevantForUV);
+                mppc[mppcI][mppcJ]->SetRelevantForW(detector[iDet].relevantForW);
+                mppc[mppcI][mppcJ]->SetRelevantForE(detector[iDet].relevantForE);
+              }
+
+            }
 
             mppc[mppcI][mppcJ]->SetIsOnForDoi(false);
             for(unsigned int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
@@ -946,7 +873,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
                 int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
                 int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
                 sname << "Crystal " << cryI << "." << cryJ;
-                std::cout << sname.str() << std::endl;
+                // std::cout << sname.str() << std::endl;
                 crystal[cryI][cryJ] = new Crystal();
                 crystal[cryI][cryJ]->SetName(sname.str().c_str());   // assign a name
                 sname.str("");
@@ -1110,6 +1037,15 @@ void InputFile::ReadConfig(ConfigFile& config)
    specificBin_s               = config.read<std::string>("specificBin","");
    specificPrecision_s         = config.read<std::string>("specificPrecision","");
    specificCut_s               = config.read<std::string>("specificCut","");
+   // u-v-w and e computation
+   // choice of channels involved in calculation of u-v-w and total energy
+   // Possibilities:
+   // 0 = all channels in the mppc array
+   // 1 = only the trigger channel + neighbour channels (DEFAULT for all 3)
+   // 2 = only the trigger channel + cross channels
+   relevantForUV               = config.read<int>("relevantForUV",1);
+   relevantForW                = config.read<int>("relevantForW",1);
+   relevantForE                = config.read<int>("relevantForE",1);
 
    //PARSE STRINGS
    //split them using the config file class
@@ -1212,4 +1148,259 @@ void InputFile::ReadConfig(ConfigFile& config)
      config.trim(specificCut_f[i]);
      specificCut.push_back(atof(specificCut_f[i].c_str()));
    }
+}
+
+
+
+std::vector<int> InputFile::FindNeighbours(int TreeTriggerChannel)
+{
+  std::vector<int> channels;
+
+  double xTrigger = 0;
+  double yTrigger = 0;
+  std::vector<float> allowedX,allowedY;
+  for(int iFill = 0; iFill < inputChannels; iFill++)
+  {
+    detector[iFill].isNeighbour = false;
+  }
+
+  std::vector<float> xCopyTemp;
+  std::vector<float> yCopyTemp;
+  for(int iFill = 0; iFill < inputChannels; iFill++)
+  {
+    if(detector[iFill].digitizerChannel == TreeTriggerChannel)
+    {
+      xTrigger = detector[iFill].xPosition;
+      yTrigger = detector[iFill].yPosition;
+    }
+    xCopyTemp.push_back(detector[iFill].xPosition);
+    yCopyTemp.push_back(detector[iFill].yPosition);
+  }
+
+  //sort the position vectors
+  std::sort (xCopyTemp.begin(),xCopyTemp.end());
+  std::sort (yCopyTemp.begin(),yCopyTemp.end());
+  //filter repetitions
+  std::vector<float> xCopy;
+  std::vector<float> yCopy;
+  xCopy.push_back(xCopyTemp[0]);
+  yCopy.push_back(yCopyTemp[0]);
+  int xCounter = 0;
+  int yCounter = 0;
+  for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
+  {
+    if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
+    {
+      xCopy.push_back(xCopyTemp[j]);
+      xCounter++;
+    }
+  }
+  for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
+  {
+    if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
+    {
+      yCopy.push_back(yCopyTemp[j]);
+      yCounter++;
+    }
+  }
+
+  // by default trigger row and column are allowed
+  allowedX.push_back(xTrigger);
+  allowedY.push_back(yTrigger);
+
+  int TrigI = -1;
+  int TrigJ = -1;
+  //locate trigger in the new vectors
+  for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+  {
+    if(xCopy[xPos] == xTrigger) TrigI = xPos;
+  }
+  for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+  {
+    if(yCopy[yPos] == yTrigger) TrigJ = yPos;
+  }
+
+  // take x and y of neighbours
+  if(TrigI != 0)
+  {
+    allowedX.push_back(xCopy[TrigI-1]);
+  }
+  if(TrigI != nmppcx-1)
+  {
+    allowedX.push_back(xCopy[TrigI+1]);
+  }
+  if(TrigJ != 0)
+  {
+    allowedY.push_back(yCopy[TrigJ-1]);
+  }
+  if(TrigJ != nmppcy-1)
+  {
+    allowedY.push_back(yCopy[TrigJ+1]);
+  }
+
+
+
+  int counterNeighbour = 0;
+  for (int j = 0 ; j < adcChannels ; j++)
+  {
+    if(DigitizerChannelOn[j])
+    {
+      for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)
+      {
+        if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
+        {
+          for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++)
+          {
+            if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
+            {
+              detector[counterNeighbour].isNeighbour = true;
+              channels.push_back(detector[counterNeighbour].digitizerChannel);
+            }
+          }
+        }
+      }
+      counterNeighbour++;
+    }
+  }
+
+  // std::cout << detector[counterNeighbour].digitizerChannel << " ";
+  // for(unsigned int i = 0; i < channels.size(); i++)
+  //   std::cout << channels[i] << " ";
+  // std::cout << std::endl;
+
+
+  return channels;
+}
+
+std::vector<int> InputFile::FindCross(int TreeTriggerChannel)
+{
+  std::vector<int> channels;
+
+  double xTrigger = 0;
+  double yTrigger = 0;
+  std::vector<float> allowedX,allowedY;
+  for(int iFill = 0; iFill < inputChannels; iFill++)
+  {
+    detector[iFill].isCross = false;
+  }
+
+  std::vector<float> xCopyTemp;
+  std::vector<float> yCopyTemp;
+  for(int iFill = 0; iFill < inputChannels; iFill++)
+  {
+    if(detector[iFill].digitizerChannel == TreeTriggerChannel)
+    {
+      xTrigger = detector[iFill].xPosition;
+      yTrigger = detector[iFill].yPosition;
+    }
+    xCopyTemp.push_back(detector[iFill].xPosition);
+    yCopyTemp.push_back(detector[iFill].yPosition);
+  }
+
+  //sort the position vectors
+  std::sort (xCopyTemp.begin(),xCopyTemp.end());
+  std::sort (yCopyTemp.begin(),yCopyTemp.end());
+  //filter repetitions
+  std::vector<float> xCopy;
+  std::vector<float> yCopy;
+  xCopy.push_back(xCopyTemp[0]);
+  yCopy.push_back(yCopyTemp[0]);
+  int xCounter = 0;
+  int yCounter = 0;
+  for (unsigned int j = 0 ; j < xCopyTemp.size() ; j++)
+  {
+    if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
+    {
+      xCopy.push_back(xCopyTemp[j]);
+      xCounter++;
+    }
+  }
+  for (unsigned int j = 0 ; j < yCopyTemp.size() ; j++)
+  {
+    if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
+    {
+      yCopy.push_back(yCopyTemp[j]);
+      yCounter++;
+    }
+  }
+
+  // by default trigger row and column are allowed
+  allowedX.push_back(xTrigger);
+  allowedY.push_back(yTrigger);
+
+  int TrigI = -1;
+  int TrigJ = -1;
+  //locate trigger in the new vectors
+  for(unsigned int xPos = 0 ; xPos < xCopy.size() ; xPos++)
+  {
+    if(xCopy[xPos] == xTrigger) TrigI = xPos;
+  }
+  for(unsigned int yPos = 0 ; yPos < yCopy.size() ; yPos++)
+  {
+    if(yCopy[yPos] == yTrigger) TrigJ = yPos;
+  }
+
+  // take x and y of neighbours
+  if(TrigI != 0)
+  {
+    allowedX.push_back(xCopy[TrigI-1]);
+  }
+  if(TrigI != nmppcx-1)
+  {
+    allowedX.push_back(xCopy[TrigI+1]);
+  }
+  if(TrigJ != 0)
+  {
+    allowedY.push_back(yCopy[TrigJ-1]);
+  }
+  if(TrigJ != nmppcy-1)
+  {
+    allowedY.push_back(yCopy[TrigJ+1]);
+  }
+
+
+
+  int counterNeighbour = 0;
+  for (int j = 0 ; j < adcChannels ; j++)
+  {
+    if(DigitizerChannelOn[j])
+    {
+      if(detector[counterNeighbour].xPosition == xTrigger && detector[counterNeighbour].yPosition == yTrigger) //trigger is part of the cross
+      {
+        detector[counterNeighbour].isCross = true;
+        channels.push_back(detector[counterNeighbour].digitizerChannel);
+      }
+      for(unsigned int iCheck = 0; iCheck < allowedX.size(); iCheck++)  // allowed X, only if y is trigger y
+      {
+        if(detector[counterNeighbour].xPosition == allowedX[iCheck] && detector[counterNeighbour].xPosition != xTrigger) //check if x is allowed
+        {
+          if(detector[counterNeighbour].yPosition == yTrigger)
+          {
+            detector[counterNeighbour].isCross = true;
+            channels.push_back(detector[counterNeighbour].digitizerChannel);
+          }
+        }
+      }
+      for(unsigned int jCheck = 0; jCheck < allowedY.size(); jCheck++) // allowed Y, only if x is trigger x
+      {
+        if(detector[counterNeighbour].yPosition == allowedY[jCheck] && detector[counterNeighbour].yPosition != yTrigger) //check if y is allowed
+        {
+          if(detector[counterNeighbour].xPosition == xTrigger )
+          {
+            detector[counterNeighbour].isCross = true;
+            channels.push_back(detector[counterNeighbour].digitizerChannel);
+          }
+        }
+      }
+      counterNeighbour++;
+    }
+  }
+
+  // std::cout << detector[counterNeighbour].digitizerChannel << " ";
+  // for(unsigned int i = 0; i < channels.size(); i++)
+  //   std::cout << channels[i] << " ";
+  // std::cout << std::endl;
+
+
+  return channels;
 }

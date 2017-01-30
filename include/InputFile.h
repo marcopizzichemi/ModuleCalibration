@@ -119,6 +119,29 @@ private:
   int                            global_div;
   double                         global_clusterVolumeCut;
   int                            electronics;
+  // u-v-w and e computation
+  // choice of channels involved in calculation of u-v-w and total energy
+  // Possibilities:
+  // 0 = all channels in the mppc array
+  // 1 = only the trigger channel + neighbour channels (DEFAULT for all 3)
+  // 2 = only the trigger channel + cross channels
+  int                            relevantForUV;
+  int                            relevantForW;
+  int                            relevantForE;
+
+  enum Relevant
+  {
+    allChannels,
+    neighbourChannels,
+    crossChannels
+  };
+
+  // bool                           usingAllChannelsForUV;
+  // bool                           usingAllChannelsForW;
+  // bool                           usingAllChannelsForE;
+  // bool                           usingNeighboursForUV;
+  // bool                           usingNeighboursForW;
+  // bool                           usingNeighboursForE;
   int ninoSaturationParameters;
 
   //variables for the input TChain
@@ -176,7 +199,16 @@ private:
     int plotPosition;
     float xPosition;
     float yPosition;
+    Float_t EventCharge;
+    Float_t EventTime;
     bool isNeighbour;
+    bool isCross;
+    std::vector<int> neighbours;
+    std::vector<int> cross;
+    std::vector<int> all;
+    std::vector<int> relevantForUV;
+    std::vector<int> relevantForW;
+    std::vector<int> relevantForE;
   };
 
   std::vector<detector_t> detector;
@@ -197,6 +229,8 @@ public:
   void          FillTreeNINO(int argc, char** argv) ;                          // method to run on the input and fill the analysis TTree
   void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
   void          ReadConfig(ConfigFile& config);
+  std::vector<int> FindNeighbours(int TreeTriggerChannel);
+  std::vector<int> FindCross(int TreeTriggerChannel);
 };
 
 

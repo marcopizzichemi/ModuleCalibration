@@ -25,26 +25,28 @@ private:
   double                 ThetaWU;                ///< angle from w to u in radiants
   double                 ThetaWV;                ///< angle from w to v in radiants
   double                 specificWthreshold;     ///< clusterLevelPrecision for this MPPC
-  
+  std::vector<int>       relevantForUV;
+  std::vector<int>       relevantForW;
+  std::vector<int>       relevantForE;
   int                    histo3DchannelBin;
   int                    div;
   double                 clusterVolumeCut;
-  
-  
-  
+
+
+
   //histograms
   TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F*                  TriggerSpectrum;        ///< trigger spectrum of all events seen by this mppc
   TH1F*                  TriggerSpectrumHighlighted;///< trigger spectrum of all events seen by this mppc, highlighting the broad energy cut
   TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
   TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
-  //   TH1D*                  projection_x;           ///< 
+  //   TH1D*                  projection_x;           ///<
   //   TH1D*                  projection_y;           ///<
   TProfile*              profileX;               ///< Profile of w,u histogram (for each bin in w, mean u and sigma are plotted)
   TProfile*              profileY;               ///< Profile of w,v histogram (for each bin in w, mean v and sigma are plotted)
   TF1*                   lineX;                  ///< Line to fit the profileX plot -> u(w) = m*w + c
   TF1*                   lineY;                  ///< Line to fit the profileX plot -> v(w) = m*w + c
-  
+
   std::vector<double>    fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DmeanY ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DsigmaX;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
@@ -56,7 +58,7 @@ private:
     int j;
     int k;
   };
-  
+
   struct masks_t
   {
     double meanx;
@@ -68,8 +70,8 @@ private:
     long int nBinsXMask;
     //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
-  
-  
+
+
   struct compare_by_x
   {
     bool operator()(const masks_t& lhs, const masks_t& rhs) const
@@ -77,7 +79,7 @@ private:
       return lhs.meanx < rhs.meanx;
     }
   };
-  
+
   struct compare_by_y
   {
     bool operator()(const masks_t& lhs, const masks_t& rhs) const
@@ -85,14 +87,14 @@ private:
       return lhs.meany < rhs.meany;
     }
   };
-  
+
 public:
   Mppc();                                        ///< default constructor
   Mppc(const Mppc &obj);                         ///< copy constructor
   ~Mppc();                                       ///< destructor
-  
+
   // methods to get and set the private variables. Names should be self explanatory
-  void                   SetModule(Module *amodule); 
+  void                   SetModule(Module *amodule);
   Module*                GetModule(){return (Module*)parentModule;};
   void                   SetDigitizerChannel(int num){digitizerChannel = num;};
   int                    GetDigitizerChannel(){return digitizerChannel;};
@@ -120,28 +122,34 @@ public:
   TH2D*                  GetProjectionZY(){return projection_zy;};
   double                 GetThetaWU(){return ThetaWU;};
   double                 GetThetaWV(){return ThetaWV;};
-  
+
   int                    GetHisto3DchannelBin(){return histo3DchannelBin;};
   int                    GetClusterLevelPrecision(){return div;};
   double                 GetClusterVolumeCut(){return clusterVolumeCut;};
-  
+
   void                   SetHisto3DchannelBin(int a){histo3DchannelBin = a;};
   void                   SetClusterLevelPrecision(int a){div = a;};
   void                   SetClusterVolumeCut(double a){clusterVolumeCut = a;};
-  
+
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
-  
+
   void                   MakeRotatedFlood();
   bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
-  
+  std::vector<int>       GetRelevantForUV(){return relevantForUV;};
+  void                   SetRelevantForUV(std::vector<int> aVect){relevantForUV = aVect;};
+  std::vector<int>       GetRelevantForW(){return relevantForW;};
+  void                   SetRelevantForW(std::vector<int> aVect){relevantForW = aVect;};
+  std::vector<int>       GetRelevantForE(){return relevantForE;};
+  void                   SetRelevantForE(std::vector<int> aVect){relevantForE = aVect;};
+
   //   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
   //   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
-  
-  
-  
-  
+
+
+
+
   //print methods
   void PrintGlobal();
   void PrintSpecific();

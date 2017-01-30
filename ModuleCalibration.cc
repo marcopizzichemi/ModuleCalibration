@@ -202,6 +202,11 @@ int main (int argc, char** argv)
   std::cout<<"\n"<<std::endl;
 
   int electronics               = config.read<int>("electronics",0) ;
+
+
+
+
+
   if(!loadAnalysisTree)
   {
     if(electronics == 0) // CAEN x740
@@ -253,8 +258,8 @@ int main (int argc, char** argv)
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
-  float taggingMin            = config.read<int>("taggingMin",0);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
-  float taggingMax            = config.read<int>("taggingMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  float taggingMin              = config.read<int>("taggingMin",0);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  float taggingMax              = config.read<int>("taggingMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm - default to 0
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not. default to false
   bool correctingSaturation     = config.read<bool>("correctingSaturation",0);        // true (=1) if saturation correction is applied, false if it's not, default to 0
@@ -283,6 +288,74 @@ int main (int argc, char** argv)
   double timingHistoMin         = config.read<double>("timingHistoMin",-50000);
   double timingHistoMax         = config.read<double>("timingHistoMax",-50000);
   double timingHistoBin         = config.read<double>("timingHistoBin",500);
+  double NsigmasEnergyCutMin           = config.read<double>("NsigmasEnergyCutMin",3.0);
+  double NsigmasEnergyCutMax           = config.read<double>("NsigmasEnergyCutMax",4.0);
+  double NsigmasEnergyCutMinCorrected  = config.read<double>("NsigmasEnergyCutMinCorrected",2.5);
+  double NsigmasEnergyCutMaxCorrected  = config.read<double>("NsigmasEnergyCutMaxCorrected",3.0);
+  double NsigmasEnergyCutMinTagging    = config.read<double>("NsigmasEnergyCutMinTagging",1.5);
+  double NsigmasEnergyCutMaxTagging    = config.read<double>("NsigmasEnergyCutMaxTagging",2.0);
+  // u-v-w and e computation
+  // choice of channels involved in calculation of u-v-w and total energy
+  // Possibilities:
+  // 0 = all channels in the mppc array
+  // 1 = only the trigger channel + neighbour channels (DEFAULT for all 3)
+  // 2 = only the trigger channel + cross channels
+  int relevantForUV = config.read<int>("relevantForUV",1);
+  int relevantForW = config.read<int>("relevantForW",1);
+  int relevantForE = config.read<int>("relevantForE",1);
+  enum Relevant
+  {
+    allChannels,
+    neighbourChannels,
+    crossChannels
+  };
+  //feedback
+  std::cout<<std::endl;
+  std::cout<<std::endl;
+  std::cout<<      "###########################################################"<<std::endl;
+  std::cout<<      "#                                                         #"<<std::endl;
+  switch(relevantForUV)
+  {
+    case allChannels:
+      std::cout << "#         Using All Channels For U-V calculation          #" << std::endl;
+      break;
+    case neighbourChannels:
+      std::cout << "#         Using Near Channels For U-V calculation         #" << std::endl;
+      break;
+    case crossChannels:
+      std::cout << "#         Using Cross Channels For U-V calculation        #" << std::endl;
+      break;
+  }
+  // std::cout << relevantForW<< std::endl;
+  switch(relevantForW)
+  {
+    case allChannels:
+      std::cout << "#         Using All Channels For W calculation            #" << std::endl;
+      break;
+    case neighbourChannels:
+      std::cout << "#         Using Near Channels For W calculation           #" << std::endl;
+      break;
+    case crossChannels:
+      std::cout << "#         Using Cross Channels For W calculation          #" << std::endl;
+      break;
+  }
+  // std::cout << relevantForE << std::endl;
+  switch(relevantForE)
+  {
+    case allChannels:
+      std::cout << "#         Using All Channels For E calculation            #" << std::endl;
+      break;
+    case neighbourChannels:
+      std::cout << "#         Using Near Channels For E calculation           #" << std::endl;
+      break;
+    case crossChannels:
+      std::cout << "#         Using Cross Channels For E calculation          #" << std::endl;
+      break;
+  }
+  std::cout<<      "#                                                         #"<<std::endl;
+  std::cout<<      "###########################################################"<<std::endl;
+
+
   // set output file name
   std::string outputFileName = config.read<std::string>("output","genericOutput");
   outputFileName += ".root";
@@ -305,10 +378,10 @@ int main (int argc, char** argv)
   // create the string
   std::stringstream sSumChannels;
   std::string SumChannels;
-  sSumChannels << "ch" <<  digitizer[0];
-  for(unsigned int i = 1 ; i < digitizer.size() ; i++)
-    sSumChannels << "+ch" << digitizer[i];
-  SumChannels = sSumChannels.str();
+  // sSumChannels << "ch" <<  digitizer[0];
+  // for(unsigned int i = 1 ; i < digitizer.size() ; i++)
+  //   sSumChannels << "+ch" << digitizer[i];
+  // SumChannels = sSumChannels.str();
   //   std::cout << SumChannels << std::endl;
   //----------------------------------------------------------//
 
@@ -433,8 +506,8 @@ int main (int argc, char** argv)
         TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[0] - 0.075*TagCrystalPeaks[0],TagCrystalPeaks[0] + 0.075*TagCrystalPeaks[0]);
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingMin,taggingMax);
         //define a TCut for this peak
-        double tagPhotopeakMin = gaussTag->GetParameter(1) - 1.5*gaussTag->GetParameter(2);
-        double tagPhotopeakMax = gaussTag->GetParameter(1) + 2.0*gaussTag->GetParameter(2);
+        double tagPhotopeakMin = gaussTag->GetParameter(1) - NsigmasEnergyCutMinTagging*gaussTag->GetParameter(2);
+        double tagPhotopeakMax = gaussTag->GetParameter(1) + NsigmasEnergyCutMaxTagging*gaussTag->GetParameter(2);
         std::stringstream tagString;
         tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
         triggerPhotopeakCut = tagString.str().c_str();
@@ -504,12 +577,31 @@ int main (int argc, char** argv)
           {
             // 	    mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->PrintSpecific();
             // strings and stuff
+
+
             TString name;
             std::stringstream var,cut,sname;
             //FIXME careful, at the moment it works only because there's one module. but honestly, at this stage it is supposed to work only on one module.
             // it should be fixed for more modules by using the same mppc[][] logic used for the crystals, below
             // did i already fix it? i guess i'll test once we have to deal with more tha 1 module
             int channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+            std::vector<int> relevatForE = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRelevantForE();
+            // std::cout << "--- Channel " << channel << " - Neighbours(+itself): ";
+            // for(unsigned int a = 0 ; a < neighbours.size(); a++)
+            //   std::cout << neighbours[a] << " ";
+            // std::cout << std::endl;
+
+            //set SumChannels depending on user choice
+            // if(relevantForE)
+            // {
+            std::stringstream NewSumChannels;
+            SumChannels = "";
+            NewSumChannels << "ch" <<  relevatForE[0];
+            for(unsigned int iNeig = 1 ; iNeig < relevatForE.size() ; iNeig++)
+              NewSumChannels << "+ch" << relevatForE[iNeig];
+            SumChannels = NewSumChannels.str();
+            // }
+
             std::cout << "Generating spectra for MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " ..." << std::endl;
             cut << "TriggerChannel == " << channel  ;
             TCut CutTrigger = cut.str().c_str();
@@ -676,6 +768,9 @@ int main (int argc, char** argv)
                     var << SumChannels << " >> " << sname.str();
                     TH1F* spectrumCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax);
                     tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                    // std::cout << spectrumCharge->GetEntries() << std::endl;
+                    // std::cout << "Crystal " << CurrentCrystal->GetID() << " "<< var.str() << std::endl;
+                    // std::cout << CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName() << std::endl;
                     spectrumCharge->GetXaxis()->SetTitle("ADC Channels");
                     spectrumCharge->GetYaxis()->SetTitle("N");
                     sname.str("");
@@ -798,8 +893,8 @@ int main (int argc, char** argv)
                       // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
                       //Compute the energy Tcut
                       std::stringstream streamEnergyCut;
-                      EnergyCutMin = gauss->GetParameter(1) - 2.0*std::abs(gauss->GetParameter(2));
-                      EnergyCutMax = gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
+                      EnergyCutMin = gauss->GetParameter(1) - NsigmasEnergyCutMin*std::abs(gauss->GetParameter(2));
+                      EnergyCutMax = gauss->GetParameter(1) + NsigmasEnergyCutMax*std::abs(gauss->GetParameter(2));
                       streamEnergyCut << SumChannels << " > " << EnergyCutMin << " && " << SumChannels << " < " << EnergyCutMax;
                       // 		  TCut PhotopeakEnergyCutCorrected;
                       PhotopeakEnergyCut  = streamEnergyCut.str().c_str();
@@ -1002,7 +1097,7 @@ int main (int argc, char** argv)
                         // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
                         //Compute the energy Tcut
                         std::stringstream streamEnergyCutCorrected;
-                        streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - 2.5*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + 3.0*std::abs(gauss_corr->GetParameter(2));
+                        streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - NsigmasEnergyCutMinCorrected*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + NsigmasEnergyCutMaxCorrected*std::abs(gauss_corr->GetParameter(2));
                         PhotopeakEnergyCutCorrected = streamEnergyCutCorrected.str().c_str();
                         // 		CurrentCrystal->SetSpectrum(*spectrum);
                         sname.str("");
@@ -1535,7 +1630,7 @@ int main (int argc, char** argv)
   //plots to summarize the values of relevant variable found on each crystal
   //--Distribution of photopeak positions, in ADC channels
   //histogram
-  TH1F *PeakPositionDistro = new TH1F("Photopeak position","Distribution photopeak positions",100,0,12000);
+  TH1F *PeakPositionDistro = new TH1F("Photopeak position","Distribution photopeak positions",100,0,histo1Dmax);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   PeakPositionDistro->SetStats(1);
@@ -1613,7 +1708,7 @@ int main (int argc, char** argv)
   EnergyResolutionVsIJ_corr->GetXaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ_corr->GetYaxis()->SetTitleOffset(1.8);
   EnergyResolutionVsIJ_corr->GetZaxis()->SetTitleOffset(2.2);
-  EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,0.3);
+  EnergyResolutionVsIJ_corr->GetZaxis()->SetRangeUser(0,EnergyResolutionVsIJmax);
   //----------------------------------------------------------//
 
 
