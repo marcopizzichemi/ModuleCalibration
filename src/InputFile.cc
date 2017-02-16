@@ -544,6 +544,7 @@ void InputFile::FillTreeCAENx740()
       TreeRealZ = RealZ;
       TreeCrystalsHit = CrystalsHit;
       TreeNumbOfInteractions = NumbOfInteractions;
+      TreeTotalEnergyDeposited = TotalEnergyDeposited;
       // for(int k=0; k<(TotalCryEnergy->size()); k++)
         //std::cout<< TotalCryEnergy->at(k) <<std::endl;
         // TreeTotalCryEnergy.push_back(TotalCryEnergy->at(k));
