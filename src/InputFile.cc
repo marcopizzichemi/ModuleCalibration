@@ -37,7 +37,7 @@ InputFile::InputFile (ConfigFile& config)
   gErrorIgnoreLevel = kError;     // set ROOT error level
   ReadConfig(config);             //read config file and fill the variables
 
-  //prepare and fill detector struct - all info except isNeighbour (because that will change from trigger to trigger)
+  //prepare and fill detector struct - all info except isNeighbour and isCross (because those will change from trigger to trigger and will be used temporarily)
   for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
     detector_t det;    // create a detector_t structure
@@ -131,30 +131,7 @@ InputFile::InputFile (ConfigFile& config)
         detector[i].relevantForE = detector[i].cross;
         break;
     }
-
-
-    // std::cout << neig.size() << std::endl;
-    //testing output
-    // std::cout << "Channel " << detector[i].digitizerChannel << std::endl;
-    // std::cout << "RelevantForUV: ";
-    // for(unsigned int a = 0 ; a < detector[i].relevantForUV.size(); a++)
-    //   std::cout << detector[i].relevantForUV[a] << " ";
-    // std::cout << std::endl;
-    // std::cout << "RelevantForW: ";
-    // for(unsigned int a = 0 ; a < detector[i].relevantForW.size(); a++)
-    //   std::cout << detector[i].relevantForW[a] << " ";
-    // std::cout << std::endl;
-    // std::cout << "RelevantForE: ";
-    // for(unsigned int a = 0 ; a < detector[i].relevantForE.size(); a++)
-    //   std::cout << detector[i].relevantForE[a] << " ";
-    // std::cout << std::endl;
   }
-
-  // for(unsigned int i = 0 ; i < detector.size() ; i++)
-  // {
-  //
-  // }
-
 
   //crystals
   //set all crystals to off, to start
@@ -243,6 +220,7 @@ void InputFile::ImportTChain(int argc, char** argv)
     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
     fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
     fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
+    fchain->SetBranchAddress("TotalEnergyDeposited",&TotalEnergyDeposited, &bTotalEnergyDeposited);
   }
   for(int i=0; i<adcChannels; i++)
   {
@@ -256,26 +234,11 @@ void InputFile::ImportTChain(int argc, char** argv)
 void InputFile::FillTreeNINO(int argc, char** argv)
 {
   gROOT->ProcessLine("#include <vector>");
-  // struct ninoChannel_t
-  // {
-  //   Float_t t;
-  //   Float_t w;
-  // };
-  // int ninoChannels = 32;
-  // ninoChannel_t ninoCh[ninoChannels];  // NINO is always set to 32+32 ch output... for now. FIXME
   int startFiles = 1;
-  if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
-  {
-    startFiles = 3;
-  }
-  // for(int i = 0; i < adcChannels; i++)
-  // {
-  //   DigitizerChannelOn[i] = false;
-  // }
-  // for(int i = 0; i < inputChannels; i++)
-  // {
-  //   DigitizerChannelOn[detector[i].digitizerChannel] = true;
-  // }
+
+  // first argument is -c, then the config file name is passed by command line
+  if(std::string(argv[1]) == std::string("-c")) startFiles = 3;
+
   for (int m = startFiles; m < argc ; m++) // run on the remaining arguments to add all the input files
   {
     std::ifstream inFile;
@@ -283,7 +246,7 @@ void InputFile::FillTreeNINO(int argc, char** argv)
     std::cout << "Adding file " << argv[m] << std::endl;
 
     while(!inFile.eof())
-    // for(int aaa = 0 ; aaa < 2 ; aaa++) //TEMP
+    // for(int aaa = 0 ; aaa < 2 ; aaa++) //TEMP for debugging
     {
       //take all data
       Float_t tempT[adcChannels];
@@ -303,19 +266,6 @@ void InputFile::FillTreeNINO(int argc, char** argv)
       {
         inFile >> tempW[i];
       }
-
-      //BEGIN of DEBUG -------------------------
-      // for (int i = 0; i < adcChannels; i++)
-      // {
-      //   std::cout << tempT[i] << std::endl;
-      // }
-      // std::cout << std::endl;
-      // for (int i = 0; i < adcChannels; i++)
-      // {
-      //   std::cout << tempW[i] << std::endl;
-      // }
-      // std::cout << std::endl;
-      //END of DEBUG ---------------------------
 
       for (int j = 0 ; j < adcChannels ; j++) // runs on all the possible inputs of ADC/electronics, but then uses only the biased ones
       {
@@ -355,88 +305,28 @@ void InputFile::FillTreeNINO(int argc, char** argv)
         }
       }
 
-
-      //     std::cout << std::endl;
-      // terrible implementation to allow us of only neighbour channels...
-      //loop to find the neighbour channels of trigger (if needed)
-      //read position of the trigger channel
-
-      // double xTrigger = 0;
-      // double yTrigger = 0;
-      // std::vector<float> allowedX,allowedY;
-      //std::vector <bool> isNeighbour; // channel is neighbour of trigger
-      // if(!usingAllChannels)
-      // {
-      //   FindNeighbours(TreeTriggerChannel);
-      // }
-      //loop to calculate u,v
-      // int counterFill = 0;
-
-      //try a more general implementation. We already have the all, neighbours and cross digitizer channels for each detector. We also know the TreeTriggerChannel. Let's get that channel and the relevant vectors
-      for(unsigned int i = 0 ; i < detector.size() ; i++)
+      // more general implementation. We already have the all, neighbours and cross digitizer channels for each detector. We also know the TreeTriggerChannel. Let's get that channel and the relevant vectors
+      for(unsigned int i = 0 ; i < detector.size() ; i++) // run on all detectors
       {
-        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForUV.size() ; a++)
+        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForUV.size() ; a++) // for as many detectors as the ones set to relevantForUV
         {
-          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForUV[a])
+          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForUV[a]) // if the detector is among the ones that are relevantForUV, use them for U-V calculation
           {
             rowsum    += detector[i].EventCharge*detector[i].xPosition;
             columnsum += detector[i].EventCharge*detector[i].yPosition;
             totalUV   += detector[i].EventCharge;
           }
         }
-        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForW.size() ; a++)
+        for(unsigned int a = 0; a < detector[TreeTriggerChannel].relevantForW.size() ; a++) // for as many detectors as the ones set to relevantForW
         {
-          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForW[a])
+          if(detector[i].digitizerChannel == detector[TreeTriggerChannel].relevantForW[a]) // if the detector is among the ones that are relevantForUV, use them for W calculation
           {
             totalW    += detector[i].EventCharge;
           }
         }
       }
 
-
-      // for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
-      // {
-      //   if(DigitizerChannelOn[j])// first, is the digitizer ON?
-      //   {
-      //     //two options to calculate FloodX_Y_Z
-      //     //First, use all the channels
-      //     //Second, use only the neighbours of the trigger channel
-      //     //both options for u,v and for z
-      //     //all combinations possible (user decides in config file)
-      //     //first, the u,v
-      //     if(usingAllChannels) //all channels for u and v
-      //     {
-      //       // 	  total     += TreeAdcChannel[counterFill];
-      //       rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
-      //       columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
-      //     }
-      //     else //only neighbours...
-      //     {
-      //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-      //       {
-      //         // 	    total     += TreeAdcChannel[counterFill];
-      //         rowsum    += TreeNINOChargeChannel[counterFill]*detector[counterFill].xPosition;
-      //         columnsum += TreeNINOChargeChannel[counterFill]*detector[counterFill].yPosition;
-      //       }
-      //       // 	  totalForFloodZ += TreeAdcChannel[counterFill];
-      //     }
-      //     //then, the w coordinate
-      //     if(wAllChannels) //all channels for w
-      //     {
-      //       total += TreeNINOChargeChannel[counterFill];
-      //     }
-      //     else//only neighbours...
-      //     {
-      //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-      //       {
-      //         total += TreeNINOChargeChannel[counterFill];
-      //       }
-      //     }
-      //     counterFill++;
-      //   }
-      // }
-
-      //compute u,v,w
+      // finally, compute u,v,w
       // near channels vs. total channels depending on what decided before
       TreeFloodX = rowsum/totalUV;
       TreeFloodY = columnsum/totalUV;
@@ -449,16 +339,13 @@ void InputFile::FillTreeNINO(int argc, char** argv)
         TreeRealZ = RealZ;
         TreeCrystalsHit = CrystalsHit;
         TreeNumbOfInteractions = NumbOfInteractions;
+        TreeTotalEnergyDeposited = TotalEnergyDeposited;
       }
       ftree->Fill();
     }
     inFile.close();
   }
 }
-
-
-
-
 
 
 
@@ -527,6 +414,7 @@ void InputFile::PrepareTTree()
     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F");
     ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S");
     ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S");
+    ftree->Branch("TotalEnergyDeposited",&TreeTotalEnergyDeposited,"TotalEnergyDeposited/F");
     // ftree->Branch("TotalCryEnergy","std::vector<float>",&pTreeTotalCryEnergy);
   }
 }
@@ -612,62 +500,6 @@ void InputFile::FillTreeCAENx740()
       }
     }
     //     std::cout << std::endl;
-
-
-    // terrible implementation to allow us of only neighbour channels...
-    // loop to find the neighbour channels of trigger (if needed)
-    // read position of the trigger channel
-
-    //std::vector <bool> isNeighbour; // channel is neighbour of trigger
-    // if(!usingAllChannels)
-    // {
-    //   FindNeighbours(TreeTriggerChannel);
-    // }
-    //
-    //
-    // //loop to calculate u,v
-    // int counterFill = 0;
-    // for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
-    // {
-    //   if(DigitizerChannelOn[j])// first, is the digitizer ON?
-    //   {
-    //     //two options to calculate FloodX_Y_Z
-    //     //First, use all the channels
-    //     //Second, use only the neighbours of the trigger channel
-    //     //both options for u,v and for z
-    //     //all combinations possible (user decides in config file)
-    //     //first, the u,v
-    //     if(usingAllChannels) //all channels for u and v
-    //     {
-    //       // 	  total     += TreeAdcChannel[counterFill];
-    //       rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
-    //       columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
-    //     }
-    //     else //only neighbours...
-    //     {
-    //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-    //       {
-    //         // 	    total     += TreeAdcChannel[counterFill];
-    //         rowsum    += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].xPosition;
-    //         columnsum += TreeCAENx740AdcChannel[counterFill]*detector[counterFill].yPosition;
-    //       }
-    //       // 	  totalForFloodZ += TreeAdcChannel[counterFill];
-    //     }
-    //     //then, the w coordinate
-    //     if(wAllChannels) //all channels for w
-    //     {
-    //       total += TreeCAENx740AdcChannel[counterFill];
-    //     }
-    //     else//only neighbours...
-    //     {
-    //       if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-    //       {
-    //         total += TreeCAENx740AdcChannel[counterFill];
-    //       }
-    //     }
-    //     counterFill++;
-    //   }
-    // }
 
     for(unsigned int i = 0 ; i < detector.size() ; i++)
     {
@@ -761,7 +593,9 @@ void InputFile::FillTreeCAENx740()
 }
 
 
-// takes the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Method to take the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..) //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 {
 
@@ -989,8 +823,9 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
   std::cout << std::endl;
 }
 
-
-// READ configuration file, parse the strings
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Method to read the config file and set the keys                                                                       //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void InputFile::ReadConfig(ConfigFile& config)
 {
    //read configuration file
@@ -1151,7 +986,9 @@ void InputFile::ReadConfig(ConfigFile& config)
 }
 
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Method to find the neighbouring channels of the channel specified by TreeTriggerChannel                               //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<int> InputFile::FindNeighbours(int TreeTriggerChannel)
 {
   std::vector<int> channels;
@@ -1237,9 +1074,6 @@ std::vector<int> InputFile::FindNeighbours(int TreeTriggerChannel)
   {
     allowedY.push_back(yCopy[TrigJ+1]);
   }
-
-
-
   int counterNeighbour = 0;
   for (int j = 0 ; j < adcChannels ; j++)
   {
@@ -1262,16 +1096,14 @@ std::vector<int> InputFile::FindNeighbours(int TreeTriggerChannel)
       counterNeighbour++;
     }
   }
-
-  // std::cout << detector[counterNeighbour].digitizerChannel << " ";
-  // for(unsigned int i = 0; i < channels.size(); i++)
-  //   std::cout << channels[i] << " ";
-  // std::cout << std::endl;
-
-
   return channels;
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Method to find the channels above, below, on the right and on the left of the channel specified by TreeTriggerChannel //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<int> InputFile::FindCross(int TreeTriggerChannel)
 {
   std::vector<int> channels;
@@ -1357,9 +1189,6 @@ std::vector<int> InputFile::FindCross(int TreeTriggerChannel)
   {
     allowedY.push_back(yCopy[TrigJ+1]);
   }
-
-
-
   int counterNeighbour = 0;
   for (int j = 0 ; j < adcChannels ; j++)
   {
@@ -1395,12 +1224,5 @@ std::vector<int> InputFile::FindCross(int TreeTriggerChannel)
       counterNeighbour++;
     }
   }
-
-  // std::cout << detector[counterNeighbour].digitizerChannel << " ";
-  // for(unsigned int i = 0; i < channels.size(); i++)
-  //   std::cout << channels[i] << " ";
-  // std::cout << std::endl;
-
-
   return channels;
 }

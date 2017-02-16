@@ -153,6 +153,7 @@ private:
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
   Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
   Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
+  Float_t       TotalEnergyDeposited;
   std::vector <float>* TotalCryEnergy;
 
   //branches for the input TChain
@@ -164,6 +165,7 @@ private:
   TBranch      *bRealZ;                                              // branches for above data
   TBranch      *bCrystalsHit;                                        // branches for above data
   TBranch      *bNumbOfInteractions;                                 // branches for above data
+  TBranch      *TotalEnergyDeposited;
   TBranch      *bTotalCryEnergy;                                     //
 
   //variables for the analysis TTree
@@ -188,6 +190,7 @@ private:
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
   Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
   Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
+  Float_t       TreeTotalEnergyDeposited;
   std::vector <float> TreeTotalCryEnergy;
   std::vector <float>* pTreeTotalCryEnergy;
 
@@ -199,16 +202,16 @@ private:
     int plotPosition;
     float xPosition;
     float yPosition;
-    Float_t EventCharge;
-    Float_t EventTime;
-    bool isNeighbour;
-    bool isCross;
-    std::vector<int> neighbours;
-    std::vector<int> cross;
-    std::vector<int> all;
-    std::vector<int> relevantForUV;
-    std::vector<int> relevantForW;
-    std::vector<int> relevantForE;
+    Float_t EventCharge;               // charge on this detector for a given event - temporary, used for calculation
+    Float_t EventTime;                 // time stamp of this detector for a given event - temporary, used for calculation
+    bool isNeighbour;                  // temporary variable for the function the looks for neighbouring channels
+    bool isCross;                      // temporary variable for the function the looks for cross channels
+    std::vector<int> neighbours;       // IDs of neighbouring channels wrt this detector
+    std::vector<int> cross;            // IDs of the 4 cross channels (i.e. the one above, the one below, the one on the right and the one on the left) wrt this detector
+    std::vector<int> all;              // IDs of all channels (trivial to fill)
+    std::vector<int> relevantForUV;    // channels that are relevant for the computation of u-v, given the choice of how to compute it made by user in config file (see relevantForUV key)
+    std::vector<int> relevantForW;     // channels that are relevant for the computation of w, given the choice of how to compute it made by user in config file (see relevantForUV key)
+    std::vector<int> relevantForE;     // channels that are relevant for the computation of e, given the choice of how to compute it made by user in config file (see relevantForUV key)
   };
 
   std::vector<detector_t> detector;
