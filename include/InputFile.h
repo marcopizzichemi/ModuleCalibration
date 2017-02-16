@@ -165,7 +165,7 @@ private:
   TBranch      *bRealZ;                                              // branches for above data
   TBranch      *bCrystalsHit;                                        // branches for above data
   TBranch      *bNumbOfInteractions;                                 // branches for above data
-  TBranch      *TotalEnergyDeposited;
+  TBranch      *bTotalEnergyDeposited;
   TBranch      *bTotalCryEnergy;                                     //
 
   //variables for the analysis TTree
