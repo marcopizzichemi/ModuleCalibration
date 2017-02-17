@@ -40,7 +40,6 @@ private:
   //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
-  TH2F*                EnDepSumCharge;
   TGraph2D***          ComptonCalibation;
   TGraph2D***          ConvertedComptonCalibation;
   TGraphDelaunay***    interpolationGraph;
@@ -143,7 +142,6 @@ public:
   //   TH1D*                GetFitSlicesSimDOIplot(){return FitSlicesSimDOIplot;};
   //   TH1D*                GetFitSlicesSimDOIplotSigma(){return FitSlicesSimDOIplotSigma;};
   TGraph*              GetSimGraph(){return SimGraph;};
-  TH2F*                GetEnDepSumCharge(){return EnDepSumCharge;};
   double               GetU(){return u;};
   double               GetV(){return v;};
   double               GetWU(){return wu;};
@@ -209,7 +207,6 @@ public:
   void                 SetSimZvsW(TGraphErrors* aGraph){simZvsW = aGraph;};
   void                 SetSimSigmaW(TH1F* aHisto){simSigmaW = aHisto;};
   void                 SetSimGraph(TGraph* aGraph){SimGraph = aGraph;};
-  void                 SetEnDepSumCharge(TH2F* aHisto){EnDepSumCharge = aHisto;};
   void                 SetSimFit(TF1* aFit){SimFit = aFit;};
   void                 SetW20percCut(TCut aCut){w20percCut = aCut;};
   void                 SetSlicesMean(TH1D* aHisto){SlicesMean = aHisto;};

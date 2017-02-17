@@ -50,11 +50,13 @@ protected:
   bool                 isOnForModular;
   TH1D*                SlicesSigma;           ///< histogram of fitted sigma values of profiles from TH2F EnDepSumCharge
   TGraph*              EnDepSumChargeGraph;
+
   //2d histos
   TH2F*                FloodMap2D;          ///< u,v map for this element
   TH2F*                FloodMap2DSingleCrystalHit; ///< Simulation dataset: u,v map for this element, accepting only events where energy was deposited in just one crystal
   TH2F*                ADCversusW;          ///< 2d histo of "energy" versus w coordinate
   TH2F*                ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
+  TH2F*                EnDepSumCharge;
   //3d histos
   TH3I*                FloodMap3D;          ///< u,v,w map for this element
   TH3I*                FloodMap3DSeparation;
@@ -85,6 +87,7 @@ public:
   TH2F*                GetFloodMap2DSingleCrystalHit()           {return FloodMap2DSingleCrystalHit;};
   TH2F*                GetADCversusW()                           {return ADCversusW;};
   TH2F*                GetADCversusWComplete()                   {return ADCversusWComplete;};
+  TH2F*                GetEnDepSumCharge()                       {return EnDepSumCharge;};
   //   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};
   //   TH2F*                GetSphericalMap()                         {return &SphericalMap;};
   //   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};
@@ -135,6 +138,7 @@ public:
   //methods to add and return children elements
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};
   void                 SetSlicesSigma(TH1D* aHisto)              {SlicesSigma = aHisto;};
+  void                 SetEnDepSumCharge(TH2F* aHisto)           {EnDepSumCharge = aHisto;};
   void                 SetEnDepSumChargeGraph(TGraph* aGraph)    {EnDepSumChargeGraph = aGraph;};
 
 

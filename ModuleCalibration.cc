@@ -545,6 +545,7 @@ int main (int argc, char** argv)
 
       if(usingRealSimData)
       {
+        std::stringstream sname, var;
         // GLOBAL SPECTRA but with events confined in one crystal (from sim data)
         // Flood histogram
         nameModule = "SIM - Crystal Hit = 1 - Flood Histogram 2D - " + module[iModule][jModule]->GetName();
@@ -559,6 +560,40 @@ int main (int argc, char** argv)
         module[iModule][jModule]->SetFloodMap2DSingleCrystalHit(spectrum2dModuleSingleCrystalHit);
         varModule.str("");
 
+        //GLOBAL Total Energy Deposited vs. Total charge
+        
+        //sum of the charge deposited in all the channels
+        std::stringstream NewSumChannels;
+        SumChannels = "";
+        NewSumChannels << "ch0";
+        for(unsigned int iCh = 1; iCh < 16; iCh ++)
+          NewSumChannels << "+ch" << iCh;
+        SumChannels = NewSumChannels.str();
+
+        sname << "Global total Energy Deposited vs. Total charge" << module[iModule][jModule]->GetName();
+        var << SumChannels << ":TotalEnergyDeposited >> " << sname.str() ;
+        TH2F* GlobalEnDepSumCharge = new TH2F(sname.str().c_str(),sname.str().c_str(),30,0,0.52,100,0,16000);
+        tree->Draw(var.str().c_str());
+        GlobalEnDepSumCharge->GetXaxis()->SetTitle("Total Energy Deposited");
+        GlobalEnDepSumCharge->GetYaxis()->SetTitle("Total Charge");
+        module[iModule][jModule]->SetEnDepSumCharge(GlobalEnDepSumCharge);
+        sname.str("");
+        var.str("");
+
+        GlobalEnDepSumCharge->FitSlicesY(0, 0, -1, 0, "QNRG3S");
+        sname << GlobalEnDepSumCharge->GetName() << "_2";
+        TH1D *GlobalEnDepSumCharge_2 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _2 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the sigma values
+        module[iModule][jModule]->SetSlicesSigma(GlobalEnDepSumCharge_2);
+        
+        TGraph* GlobalEnDepSumChargeGraph = new TGraph(GlobalEnDepSumCharge_2); // same but TGraph (so it can be fitted in 1D)
+        sname.str("");
+        sname << "Global sigmaEnergyCharge graph Crystal" << module[iModule][jModule]->GetName();
+        GlobalEnDepSumChargeGraph->SetTitle(sname.str().c_str());
+        GlobalEnDepSumChargeGraph->SetName(sname.str().c_str());
+        GlobalEnDepSumChargeGraph->GetXaxis()->SetTitle("Energy Deposited [MeV]");
+        GlobalEnDepSumChargeGraph->GetYaxis()->SetTitle("sigma");
+        sname.str("");
+        module[iModule][jModule]->SetEnDepSumChargeGraph(GlobalEnDepSumChargeGraph);
 
       }
 
@@ -1443,7 +1478,7 @@ int main (int argc, char** argv)
                       sname.str("");
                       var.str("");
 
-                      EnDepSumCharge->FitSlicesY(0, 0, -1, 0, "QNRG10S");
+                      EnDepSumCharge->FitSlicesY(0, 0, -1, 0, "QNRG3S");
                       sname << EnDepSumCharge->GetName() << "_2";
                       TH1D *EnDepSumCharge_2 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _2 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the sigma values
                       CurrentCrystal->SetSlicesSigma(EnDepSumCharge_2);
@@ -1457,7 +1492,6 @@ int main (int argc, char** argv)
                       EnDepSumChargeGraph->GetYaxis()->SetTitle("sigma");
                       sname.str("");
                       CurrentCrystal->SetEnDepSumChargeGraph(EnDepSumChargeGraph);
-
                     }
 
                     //TIMING with NINO - for now
@@ -1775,6 +1809,30 @@ int main (int argc, char** argv)
         C_spectrum->SetName(module[iModule][jModule]->GetFloodMap2DSingleCrystalHit()->GetName());
         C_spectrum->cd();
         module[iModule][jModule]->GetFloodMap2DSingleCrystalHit()->Draw("COLZ");
+        C_spectrum->Write();
+        delete C_spectrum;
+
+        //GLOBAL Total energy deposited vs Sum of the charge
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetEnDepSumCharge()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetEnDepSumCharge()->Draw("LEGO2");
+        C_spectrum->Write();
+        delete C_spectrum;
+
+        //GLOBAL sigma sliceY of EnDepSumCharge
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetSlicesSigma()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetSlicesSigma()->Draw();
+        C_spectrum->Write();
+        delete C_spectrum;
+
+        //GLOBAL Total energy deposited vs. sigma graph
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetEnDepSumChargeGraph()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetEnDepSumChargeGraph()->Draw("AL");
         C_spectrum->Write();
         delete C_spectrum;
 
