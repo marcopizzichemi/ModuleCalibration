@@ -1432,6 +1432,32 @@ int main (int argc, char** argv)
                       sname.str("");
                       CurrentCrystal->SetSimZvsW(gTot);
                       CurrentCrystal->SetSimSigmaW(sigmaSim);
+
+                      sname << "Total Energy Deposited vs. Total charge" << CurrentCrystal->GetID();
+                      var << SumChannels << ":TotalEnergyDeposited >> " << sname.str() ;
+                      TH2F* EnDepSumCharge = new TH2F(sname.str().c_str(),sname.str().c_str(),30,0,0.52,100,0,16000);
+                      tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                      EnDepSumCharge->GetXaxis()->SetTitle("Total Energy Deposited");
+                      EnDepSumCharge->GetYaxis()->SetTitle("Total Charge");
+                      CurrentCrystal->SetEnDepSumCharge(EnDepSumCharge);
+                      sname.str("");
+                      var.str("");
+
+                      EnDepSumCharge->FitSlicesY(0, 0, -1, 0, "QNRG10S");
+                      sname << EnDepSumCharge->GetName() << "_2";
+                      TH1D *EnDepSumCharge_2 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _2 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the sigma values
+                      CurrentCrystal->SetSlicesSigma(EnDepSumCharge_2);
+                      
+                      TGraph* EnDepSumChargeGraph = new TGraph(EnDepSumCharge_2); // same but TGraph (so it can be fitted in 1D)
+                      sname.str("");
+                      sname << "sigmaEnergyCharge graph Crystal" << CurrentCrystal->GetID();
+                      EnDepSumChargeGraph->SetTitle(sname.str().c_str());
+                      EnDepSumChargeGraph->SetName(sname.str().c_str());
+                      EnDepSumChargeGraph->GetXaxis()->SetTitle("Energy Deposited [MeV]");
+                      EnDepSumChargeGraph->GetYaxis()->SetTitle("sigma");
+                      sname.str("");
+                      CurrentCrystal->SetEnDepSumChargeGraph(EnDepSumChargeGraph);
+
                     }
 
                     //TIMING with NINO - for now
@@ -2104,6 +2130,7 @@ int main (int argc, char** argv)
                       mg->Draw("a");
                       legend_sim->Draw();
                       C_spectrum->Write();
+                      sname.str("");
                       delete C_spectrum;
 
                       C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
@@ -2119,6 +2146,30 @@ int main (int argc, char** argv)
                       C_spectrum->cd();
                       CurrentCrystal->GetSimGraph()->Draw("ap");
                       // 		      CurrentCrystal->GetSimFit()->Draw("same");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+                      //Total energy deposited vs Sum of the charge
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                      C_spectrum->SetName(CurrentCrystal->GetEnDepSumCharge()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetEnDepSumCharge()->Draw("LEGO2");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+                      //sigma sliceY of EnDepSumCharge
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetSlicesSigma()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetSlicesSigma()->Draw();
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+                      //Total energy deposited vs. sigma graph
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetEnDepSumChargeGraph()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetEnDepSumChargeGraph()->Draw("AL");
                       C_spectrum->Write();
                       delete C_spectrum;
                     }

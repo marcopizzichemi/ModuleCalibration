@@ -48,6 +48,8 @@ protected:
   int                  iChildren;         ///< number of children on "i"
   int                  jChildren;         ///< number of children on "j"
   bool                 isOnForModular;
+  TH1D*                SlicesSigma;           ///< histogram of fitted sigma values of profiles from TH2F EnDepSumCharge
+  TGraph*              EnDepSumChargeGraph;
   //2d histos
   TH2F*                FloodMap2D;          ///< u,v map for this element
   TH2F*                FloodMap2DSingleCrystalHit; ///< Simulation dataset: u,v map for this element, accepting only events where energy was deposited in just one crystal
@@ -97,6 +99,8 @@ public:
   bool                 GetIsOnForModular()                       {return isOnForModular;};
   //   TGraph*              GetGraphFlood2D()                         {return &GraphFlood2D;};
   //   TGraph2D*            GetGraphFlood3D()                         {return &GraphFlood3D;};
+  TH1D*                GetSlicesSigma()                          {return SlicesSigma;};
+  TGraph*              GetEnDepSumChargeGraph()                  {return EnDepSumChargeGraph;};
 
   void                 SetName(std::string aname)                {name = aname;};
   void                 SetLabel(std::string aname)               {label = aname;};
@@ -130,6 +134,10 @@ public:
 
   //methods to add and return children elements
   void                 AddChild(std::string aName)               {childrenName.push_back(aName);};
+  void                 SetSlicesSigma(TH1D* aHisto)              {SlicesSigma = aHisto;};
+  void                 SetEnDepSumChargeGraph(TGraph* aGraph)    {EnDepSumChargeGraph = aGraph;};
+
+
   std::vector<std::string> GetChildren()                         {return childrenName;};
 
 
