@@ -741,7 +741,7 @@ int main (int argc, char** argv)
 
             TGraph* MPPCEnDepSumChargeGraph = new TGraph(MPPCEnDepSumCharge_2); // same but TGraph (so it can be fitted in 1D)
             sname.str("");
-            sname << "Global sigmaEnergyCharge graph MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+            sname << "SigmaEnergyCharge graph MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
             MPPCEnDepSumChargeGraph->SetTitle(sname.str().c_str());
             MPPCEnDepSumChargeGraph->SetName(sname.str().c_str());
             MPPCEnDepSumChargeGraph->GetXaxis()->SetTitle("Energy Deposited [MeV]");
