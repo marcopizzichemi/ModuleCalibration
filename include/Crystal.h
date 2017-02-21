@@ -35,6 +35,9 @@ private:
   TH1F*                DerivativeDoiResolution;
   TH1F*                cumulativeW;
   TH1F*                resolutions;
+  TH2F*                ComptonEnDepSumCharge;
+  TH1D*                ComptonSlicesSigma;
+  TGraph*              ComptonEnDepSumChargeGraph;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
   //   TH1D*                FitSlicesSimDOIplotSigma;
@@ -45,6 +48,10 @@ private:
   TGraphDelaunay***    interpolationGraph;
   TH3I***              ComptonCalibationHistogram;
   std::vector<TH3I*>   ListOfComptonHisto;
+  std::vector<TH2F*>   ListOfComptonEnDepSumCharge; 
+  std::vector<TH1D*>   ListOfComptonSlicesSigma;
+  std::vector<TGraph*> ListOfComptonEnDepSumChargeGraph;
+
   TH3I*                oneHisto;
   TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
@@ -162,7 +169,13 @@ public:
   TH1F*                GetSimSigmaW(){return simSigmaW;};
   TGraphErrors*        GetSimZvsW(){return simZvsW;};
   TH3I*                GetComptonHistogram(int i){return ListOfComptonHisto[i];};
+  TH2F*                GetComptonEnDepSumCharge(int i){return ListOfComptonEnDepSumCharge[i];};
+  TH1D*                GetComptonSlicesSigma(int i){return ListOfComptonSlicesSigma[i];};
+  TGraph*              GetComptonEnDepSumChargeGraph(int i){return ListOfComptonEnDepSumChargeGraph[i];};
   int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
+  int                  GetNumOfComptonEnDepSumCharge(){return ListOfComptonEnDepSumCharge.size();};
+  int                  GetNumOfComptonSlicesSigma(){return ListOfComptonSlicesSigma.size();};
+  int                  GetNumOfComptonEnDepSumChargeGraph(){return ListOfComptonEnDepSumChargeGraph.size();};
 
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -223,6 +236,9 @@ public:
   void                 SetDoiResZ(TGraph* aGraph){doiResZ = aGraph;};
   void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
   void                 SetComptonHistogram(TH3I* aHisto){ListOfComptonHisto.push_back(aHisto);};
+  void                 SetComptonEnDepSumCharge(TH2F* aHisto){ListOfComptonEnDepSumCharge.push_back(aHisto);};
+  void                 SetComptonSlicesSigma(TH1D* aHisto){ListOfComptonSlicesSigma.push_back(aHisto);};
+  void                 SetComptonEnDepSumChargeGraph(TGraph* aHisto){ListOfComptonEnDepSumChargeGraph.push_back(aHisto);};
   void                 Analyze();
 
   void PrintGlobal();

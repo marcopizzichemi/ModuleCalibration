@@ -1350,7 +1350,6 @@ int main (int argc, char** argv)
                         {
                               sname.str("");
                               var.str("");
-
                               int tempChannel = mppc[iComptMppc][jComptMppc]->GetDigitizerChannel();
                               var << "(ch"<< tempChannel << "):(" << SumChannels << "):(FloodZ)" ;
                               tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
@@ -1426,6 +1425,50 @@ int main (int argc, char** argv)
                               ConvertedComptonCalibration[iComptMppc][jComptMppc]->GetZaxis()->SetTitle("pi [ADC ch]");
                               sname.str("");
 
+
+                              //Total energy deposited vs Charge deposited in MPPC
+                              //so for each crystal, there are 16 graphs (for each MPPC)
+
+                              //TH2F
+                              var << "ch" << tempChannel << ":TotalEnergyDeposited >> " << sname.str() ;
+                              tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());                              
+                              TGraph* tempGraph = new TGraph(tree->GetSelectedRows(), tree->GetV2(), tree->GetV1());
+                              sname << "MPPC[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID() << "Compton total Energy Deposited vs. MPPC charge";
+                              TH2F* comptonEnDepSumCharge = new TH2F(
+                                sname.str().c_str(),
+                                sname.str().c_str(),
+                                100,
+                                0,
+                                0.515, 
+                                100,
+                                TMath::MinElement(tempGraph->GetN(),tempGraph->GetY()),
+                                TMath::MaxElement(tempGraph->GetN(),tempGraph->GetY())); 
+
+                              comptonEnDepSumCharge->GetXaxis()->SetTitle("Total Energy Deposited");
+                              comptonEnDepSumCharge->GetYaxis()->SetTitle("Charge deposited in MPPC");
+                              var.str("");
+                              var << "ch" << tempChannel << ":TotalEnergyDeposited >> " << sname.str() ;
+                              tree->Draw(var.str().c_str(),CutXYZ + CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName());
+                              CurrentCrystal->SetComptonEnDepSumCharge(comptonEnDepSumCharge);
+                              sname.str("");
+                              var.str("");
+
+                              //fit slices Y
+                              comptonEnDepSumCharge->FitSlicesY(0, 0, -1, 0, "QNRG3S");
+                              sname << comptonEnDepSumCharge->GetName() << "_2";
+                              TH1D *comptonEnDepSumCharge_2 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _2 is the TH1D automatically created by ROOT when FitSlicesX is called, holding the TH1F of the sigma values
+                              CurrentCrystal->SetComptonSlicesSigma(comptonEnDepSumCharge_2);
+
+                              //graph
+                              TGraph* comptonEnDepSumChargeGraph = new TGraph(comptonEnDepSumCharge_2); // same but TGraph (so it can be fitted in 1D)
+                              sname.str("");
+                              sname << "MPPC[" << iComptMppc <<  "][" << jComptMppc <<  "]_" << CurrentCrystal->GetID() << "Graph Compton total Energy Deposited vs. MPPC charge";
+                              comptonEnDepSumChargeGraph->SetTitle(sname.str().c_str());
+                              comptonEnDepSumChargeGraph->SetName(sname.str().c_str());
+                              comptonEnDepSumChargeGraph->GetXaxis()->SetTitle("Energy Deposited [MeV]");
+                              comptonEnDepSumChargeGraph->GetYaxis()->SetTitle("sigma");
+                              sname.str("");
+                              CurrentCrystal->SetComptonEnDepSumChargeGraph(comptonEnDepSumChargeGraph);                              
                             }
                           }
 
@@ -2200,7 +2243,8 @@ int main (int argc, char** argv)
                           TGraph2D ***tempGraph = CurrentCrystal->GetComptonCalibration();
                           tempGraph[iComptMppc][jComptMppc]->Write();
                           TGraph2D ***tempCorrGraph = CurrentCrystal->GetConvertedComptonCalibration();
-                          tempCorrGraph[iComptMppc][jComptMppc]->Write();
+                          tempCorrGraph[iComptMppc][jComptMppc]->Write();                         
+
                         }
                       }
                       for(int iCompt = 0 ; iCompt < CurrentCrystal->GetNumOfComptonHisto(); iCompt++)
@@ -2209,6 +2253,31 @@ int main (int argc, char** argv)
                         C_spectrum->SetName(CurrentCrystal->GetComptonHistogram(iCompt)->GetName());
                         C_spectrum->cd();
                         CurrentCrystal->GetComptonHistogram(iCompt)->Draw();
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
+
+                        //compton Total energy deposited vs Sum of the charge in MPPC
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                        C_spectrum->SetName(CurrentCrystal->GetComptonEnDepSumCharge(iCompt)->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetComptonEnDepSumCharge(iCompt)->Draw("LEGO2");
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
+                        //compton MPPC sigma sliceY of EnDepSumCharge
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetComptonSlicesSigma(iCompt)->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetComptonSlicesSigma(iCompt)->Draw();
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
+                        //compton MPPC graph Total energy deposited vs. sigma
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetComptonEnDepSumChargeGraph(iCompt)->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetComptonEnDepSumChargeGraph(iCompt)->Draw("AL");
                         C_spectrum->Write();
                         delete C_spectrum;
                       }

@@ -33,7 +33,6 @@ private:
   double                 clusterVolumeCut;
 
 
-
   //histograms
   TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F*                  TriggerSpectrum;        ///< trigger spectrum of all events seen by this mppc
@@ -46,6 +45,7 @@ private:
   TProfile*              profileY;               ///< Profile of w,v histogram (for each bin in w, mean v and sigma are plotted)
   TF1*                   lineX;                  ///< Line to fit the profileX plot -> u(w) = m*w + c
   TF1*                   lineY;                  ///< Line to fit the profileX plot -> v(w) = m*w + c
+
 
   std::vector<double>    fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DmeanY ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
@@ -122,6 +122,7 @@ public:
   TH2D*                  GetProjectionZY(){return projection_zy;};
   double                 GetThetaWU(){return ThetaWU;};
   double                 GetThetaWV(){return ThetaWV;};
+
 
   int                    GetHisto3DchannelBin(){return histo3DchannelBin;};
   int                    GetClusterLevelPrecision(){return div;};
