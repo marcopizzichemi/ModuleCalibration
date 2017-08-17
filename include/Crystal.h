@@ -34,6 +34,7 @@ private:
   TH1F*                DerivativeDoiResolution;
   TH1F*                cumulativeW;
   TH1F*                resolutions;
+  TH1F*                histoAltDoiRes;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
   //   TH1D*                FitSlicesSimDOIplotSigma;
@@ -64,6 +65,7 @@ private:
   TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
   TF1*                 LYFit;                  ///< fit function (it's a gaussian)
+  TF1*                 histoAltDoiFit;
 
   TF1*                 SimFit;
   TF1*                 Wfit;
@@ -102,12 +104,14 @@ public:
   TH1F*                GetCumulativeW(){return cumulativeW;};
   TH1F*                GetDerivativeDoiResolution(){return DerivativeDoiResolution;};
   TH1F*                GetDoiResolutions(){return resolutions;};
+  TH1F*                GetHistoAltDoiRes(){return histoAltDoiRes;};
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
   TF1*                 GetLYFit(){return LYFit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
+  TF1*                 GetHistoAltDoiFit(){return histoAltDoiFit;};
   TGraph2D***          GetComptonCalibration(){return ComptonCalibation;};
   TGraph2D***          GetConvertedComptonCalibration(){return ConvertedComptonCalibation;};
   TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
@@ -181,6 +185,7 @@ public:
   void                 SetHistoWrms(double a){w_rms = a;};
   void                 SetHistoWwidth20perc(double a){w_width20perc = a;};
   void                 SetHistoWfit(TF1* aFit){Wfit = aFit;};
+  void                 SetHistoAltDoiFit(TF1* aFit){histoAltDoiFit = aFit;};
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
@@ -220,6 +225,7 @@ public:
   void                 SetDoiResZ(TGraph* aGraph){doiResZ = aGraph;};
   void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
   void                 SetComptonHistogram(TH3I* aHisto){ListOfComptonHisto.push_back(aHisto);};
+  void                 SetHistoAltDoiRes(TH1F *aHisto){histoAltDoiRes = aHisto;};
   void                 Analyze();
 
   void PrintGlobal();

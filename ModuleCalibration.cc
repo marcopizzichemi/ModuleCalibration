@@ -99,6 +99,7 @@
 #include "Crystal.h"
 #include "Module.h"
 #include "Mppc.h"
+#include "ModuleCalibration.h"
 
 // #include <omp.h>
 //test
@@ -108,7 +109,7 @@
 
 
 
-Double_t thetaFunction(Double_t *x, Double_t *par);
+// Double_t thetaFunction(Double_t *x, Double_t *par);
 
 int main (int argc, char** argv)
 {
@@ -257,6 +258,9 @@ int main (int argc, char** argv)
   float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
+  bool calcDoiResWithDelta      = config.read<bool>("calcDoiResWithDelta",0);         // alternative calcolation of doi res, based on deltas. only if it's usingTaggingBench
+  std::string calcDoiFileName   = config.read<std::string>("calcDoiFileName","");      // name (and path if not in this folder) of calibration_params.txt
+  int pointsFromDoi             = config.read<int>("pointsFromDoi",0);                 // points measured in file calcDoiFileName. this is MANDATORY if calcDoiFileName is specified!
   bool correctingSaturation     = config.read<bool>("correctingSaturation");        // true if saturation correction is applied, false if it's not
   bool correctingForDOI         = config.read<bool>("correctingForDOI",0);              // true if the energy correction using DOI info is computed
   float energyResolution        = config.read<float>("expectedEnergyResolution",0);     // energy resolution input by the user, if any, otherwise 0
@@ -275,7 +279,7 @@ int main (int argc, char** argv)
   double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
   double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0)
-  double LYvsIJmax              = config.read<double>("LYvsIJmax",40000); 
+  double LYvsIJmax              = config.read<double>("LYvsIJmax",40000);
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
   double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
@@ -286,6 +290,7 @@ int main (int argc, char** argv)
   bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false
   bool lightYieldComputation    = config.read<bool>("lightYieldComputation",0);         //wheter to perform or not the light yield calculation. Default to false
+  // float taggingPosition        = config.read<float>("taggingPosition");
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
   //   double base_lateralQ1         = config.read<double>("lateralQ1",0.905);           // right and left
@@ -384,12 +389,47 @@ int main (int argc, char** argv)
 
   // doi bench specific part
   std::ofstream doiFile;
+  std::ofstream AltDoiFile;
+  std::ifstream altDoiCalcFile;
   TCut triggerPhotopeakCut = "" ;
   TH1F* TaggingCrystalSpectrum;
   TH1F *TriggerSpectrumHighlight;
+
+  if( (calcDoiFileName.compare("") == 0)  )
+  {
+    std::cout << "No file with doi Calibration provided!" << std::endl;
+    calcDoiResWithDelta = false;
+  }
+  if( pointsFromDoi == 0)
+  {
+    std::cout << "Need to specify the number of points in doi calibration file!" << std::endl;
+    calcDoiResWithDelta = false;
+  }
+
+  std::vector<inputDoi_t> inputDoi;
+  inputDoi_t tempInputDoi(pointsFromDoi);
+
   if(usingTaggingBench)
   {
     doiFile.open("doiData.txt", std::ofstream::out);
+    if(calcDoiResWithDelta)
+    {
+      altDoiCalcFile.open(calcDoiFileName.c_str(), std::ios::in);
+      if(!altDoiCalcFile)
+      {
+        std::cout << "Doi calibration file not found!" << std::endl;
+        calcDoiResWithDelta = false;
+      }
+      else //finally, everything is fine...
+      {
+        AltDoiFile.open("altDoiRes.txt", std::ofstream::out);
+        while(altDoiCalcFile >> tempInputDoi)
+        {
+          inputDoi.push_back(tempInputDoi);
+          tempInputDoi.clear();
+        }
+      }
+    }
   }
 
   // simulation dataset spectific part
@@ -927,6 +967,43 @@ int main (int argc, char** argv)
                         doiFile << CurrentCrystal->GetI() + doiColumnOffset << "\t" << CurrentCrystal->GetJ() << "\t" << gaussW->GetParameter(1) << "\t" << taggingPosition <<"\t" << gaussW->GetParameter(2)/TMath::Sqrt(nentries) <<"\t"<<TMath::Sqrt(nentries)<< std::endl;
                       CurrentCrystal->SetHistoWfit(gaussW);
                       sname.str("");
+
+                      if(calcDoiResWithDelta)
+                      {
+                        for(int kAltDoi = 0; kAltDoi < inputDoi.size(); kAltDoi++)
+                        {
+                          int ik = inputDoi[kAltDoi].i;
+                          int jk = inputDoi[kAltDoi].j;
+                          if( ((CurrentCrystal->GetI() + doiColumnOffset ) == ik) && CurrentCrystal->GetJ() == jk)
+                          {
+                            sname << "Alternate DOI res - Crystal " << CurrentCrystal->GetID();
+                            var << "(FloodZ * " << inputDoi[kAltDoi].m << "+" << inputDoi[kAltDoi].q << ") - (TreeZPosition  ) >> " << sname.str();
+                            TH1F* spectrumAltDoiRes = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,-10,10); //FIXME boundaries hardcoded
+                            tree->Draw(var.str().c_str(),CutXYZ+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName()+PhotopeakEnergyCut+triggerPhotopeakCut);
+                            spectrumAltDoiRes->GetXaxis()->SetTitle("Doi_calculated - DoiTagPosition [mm]");
+                            spectrumAltDoiRes->GetYaxis()->SetTitle("N");
+                            var.str("");
+                            sname.str("");
+
+                            sname << "gaussFit Alternate - Crystal " << CurrentCrystal->GetID();
+                            TF1 *gaussFitAlt = new TF1(sname.str().c_str(),  "gaus",-10,10); //FIXME boundaries hardcoded
+                            Int_t fitStatusAlt = spectrumAltDoiRes->Fit(sname.str().c_str(),"QR");
+                            if(!fitStatus)
+                            {
+                              AltDoiFile << ik << " " << jk << " " << taggingPosition << " " << gaussFitAlt->GetParameter(2)*2.355 << std::endl;
+                            }
+
+
+                            CurrentCrystal->SetHistoAltDoiRes(spectrumAltDoiRes);
+                            CurrentCrystal->SetHistoAltDoiFit(gaussFitAlt);
+                            sname.str("");
+                            // for(int iik =0 ; iik < pointsFromDoi ; iik++)
+                            // {
+                            //   sigmaWdoiCentral->Fill(inputDoi[kAltDoi].sw[iik] * inputDoi[kAltDoi].sqrt_nentries[iik]);
+                            // }
+                          }
+                        }
+                      }
                     }
 
 
@@ -2518,6 +2595,25 @@ int main (int argc, char** argv)
                     CurrentCrystal->GetZYCut()->Write();
                     CurrentCrystal->GetZXCut()->Write();
                     // CurrentCrystal->GetOneHisto()->Write();
+
+
+                    if(usingTaggingBench)
+                    {
+                      if(calcDoiResWithDelta)
+                      {
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetHistoAltDoiRes()->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetHistoAltDoiRes()->Draw();
+                        CurrentCrystal->GetHistoAltDoiFit()->Draw("same");
+                        C_spectrum->Write();
+                        delete C_spectrum;
+                      }
+                    }
+
+
+
+
                     // compton calibration
                     if(comptonAnalysis)
                     {
@@ -2880,6 +2976,11 @@ int main (int argc, char** argv)
   if(usingTaggingBench)
   {
     doiFile.close();
+    if(calcDoiResWithDelta)
+    {
+      AltDoiFile.close();
+      altDoiCalcFile.close();
+    }
   }
 
   delete crystal;
@@ -2889,17 +2990,17 @@ int main (int argc, char** argv)
   return 0;
 }
 
-Double_t thetaFunction(Double_t *x, Double_t *par)
-{
-  Double_t f;
-  Float_t xx =x[0];
-  if (xx>par[0] && xx<par[1])
-  {
-    f = par[2];
-  }
-  else
-  {
-    f = 0;
-  }
-  return f;
-}
+// Double_t thetaFunction(Double_t *x, Double_t *par)
+// {
+//   Double_t f;
+//   Float_t xx =x[0];
+//   if (xx>par[0] && xx<par[1])
+//   {
+//     f = par[2];
+//   }
+//   else
+//   {
+//     f = 0;
+//   }
+//   return f;
+// }
