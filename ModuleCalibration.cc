@@ -395,17 +395,20 @@ int main (int argc, char** argv)
   TH1F* TaggingCrystalSpectrum;
   TH1F *TriggerSpectrumHighlight;
 
-  if( (calcDoiFileName.compare("") == 0)  )
+  if(usingTaggingBench)
   {
-    std::cout << "No file with doi Calibration provided!" << std::endl;
-    calcDoiResWithDelta = false;
+    if( (calcDoiFileName.compare("") == 0)  )
+    {
+      std::cout << "No file with doi Calibration provided!" << std::endl;
+      calcDoiResWithDelta = false;
+    }
+    if( pointsFromDoi == 0)
+    {
+      std::cout << "Need to specify the number of points in doi calibration file!" << std::endl;
+      calcDoiResWithDelta = false;
+    }
   }
-  if( pointsFromDoi == 0)
-  {
-    std::cout << "Need to specify the number of points in doi calibration file!" << std::endl;
-    calcDoiResWithDelta = false;
-  }
-
+  
   std::vector<inputDoi_t> inputDoi;
   inputDoi_t tempInputDoi(pointsFromDoi);
 
