@@ -255,9 +255,9 @@ int main (int argc, char** argv)
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
 
-  float taggingPosition         = config.read<float>("taggingPosition");            // position of the tagging bench in mm
-  bool usingTaggingBench        = config.read<bool>("usingTaggingBench");           // true if the input is using tagging bench, false if not
-  int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel");        // input channel where the tagging crystal information is stored
+  float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm
+  bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not
+  int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel",16);        // input channel where the tagging crystal information is stored
   bool calcDoiResWithDelta      = config.read<bool>("calcDoiResWithDelta",0);         // alternative calcolation of doi res, based on deltas. only if it's usingTaggingBench
   std::string calcDoiFileName   = config.read<std::string>("calcDoiFileName","");      // name (and path if not in this folder) of calibration_params.txt
   int pointsFromDoi             = config.read<int>("pointsFromDoi",0);                 // points measured in file calcDoiFileName. this is MANDATORY if calcDoiFileName is specified!
@@ -408,7 +408,7 @@ int main (int argc, char** argv)
       calcDoiResWithDelta = false;
     }
   }
-  
+
   std::vector<inputDoi_t> inputDoi;
   inputDoi_t tempInputDoi(pointsFromDoi);
 

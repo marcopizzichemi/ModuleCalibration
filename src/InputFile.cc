@@ -43,9 +43,9 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   nmppcy                      = config.read<int>("nmppcy");
   nmodulex                    = config.read<int>("nmodulex");
   nmoduley                    = config.read<int>("nmoduley");
-  taggingPosition             = config.read<float>("taggingPosition");
-  usingTaggingBench           = config.read<bool>("usingTaggingBench");
-  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel");
+  taggingPosition             = config.read<float>("taggingPosition",0);
+  usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
+  taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
   usingRealSimData            = config.read<bool>("usingRealSimData");
   binary                      = config.read<bool>("binary");
   correctingSaturation        = config.read<bool>("correctingSaturation");
