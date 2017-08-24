@@ -290,6 +290,8 @@ int main (int argc, char** argv)
   bool wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   bool comptonAnalysis          = config.read<bool>("comptonAnalysis",0);               //wheter to perform or not the compton recovery analysis part. Default to false
   bool lightYieldComputation    = config.read<bool>("lightYieldComputation",0);         //wheter to perform or not the light yield calculation. Default to false
+  float peakSearchRangeMin      = config.read<int>("peakSearchRangeMin",0);                             //lower limit for search of 511KeV peak - wide limitation to help peak search
+  float peakSearchRangeMax      = config.read<int>("peakSearchRangeMax",histo1Dmax);                    //upper limit for search of 511KeV peak - wide limitation to help peak search
   // float taggingPosition        = config.read<float>("taggingPosition");
   // --- paramenters for roto-translations to separate the nXn peaks
   // lateral, not corners
@@ -1076,24 +1078,53 @@ int main (int argc, char** argv)
                         CurrentCrystal->SetCorrectedSpectrum(spectrumChargeCorrected);
                         var.str("");
                         sname.str("");
-                        //find peaks in each crystal spectrum, with TSpectrum
+
+                        // sname << "Charge Spectrum Corrected Search Area - Crystal " << CurrentCrystal->GetID();
+                        // //find peaks in each crystal spectrum, with TSpectrum
+                        // var << baseVar.str() << " >> " << sname.str();
+                        // TH1F* spectrumChargeCorrectedSearchArea = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                        //
+                        // std::stringstream SearchAreaStream;
+                        // SearchAreaStream << "((" << baseVar.str() << ") > " <<  peakSearchRangeMin <<   " )&&( (" << baseVar.str() << ") < " << peakSearchRangeMax << ")";
+                        // TCut SearchArea = SearchAreaStream.str().c_str();
+                        // tree->Draw(var.str().c_str(),SearchArea+CutTrigger+CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName(),"COLZ");
+                        // spectrumChargeCorrectedSearchArea->GetXaxis()->SetTitle("ADC channels");
+                        // spectrumChargeCorrectedSearchArea->GetYaxis()->SetTitle("Counts");
+                        // // std::cout << SearchArea << std::endl;
+                        // var.str("");
+                        // sname.str("");
+                        // CurrentCrystal->SetCorrectedSpectrumSearchArea(spectrumChargeCorrectedSearchArea);
+
+                        spectrumChargeCorrected->GetXaxis()->SetRangeUser(peakSearchRangeMin,peakSearchRangeMax);
                         TSpectrum *s_corr;
                         s_corr = new TSpectrum(20);
                         // 		Input[i].SumSpectraCanvas->cd(j+1);
+
+
                         Int_t CrystalPeaksN_corr = s_corr->Search(spectrumChargeCorrected,2,"goff",0.5);
                         Float_t *CrystalPeaks_corr = s_corr->GetPositionX();
                         Float_t *CrystalPeaksY_corr = s_corr->GetPositionY();
                         // 		  delete s_corr;
                         float maxPeak_corr = 0.0;
                         int peakID_corr = 0;
+
+                        // std::cout << "-----------------------------------------------" << std::endl;
                         for (int peakCounter = 0 ; peakCounter < CrystalPeaksN_corr ; peakCounter++ )
                         {
-                          if(CrystalPeaks_corr[peakCounter] > maxPeak_corr)
-                          {
-                            maxPeak_corr = CrystalPeaks_corr[peakCounter];
-                            peakID_corr = peakCounter;
-                          }
+                          //DEBUG
+                          // std::cout << peakCounter << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
+                          // if( (CrystalPeaks_corr[peakCounter] >= peakSearchRangeMin) && (CrystalPeaks_corr[peakCounter] <= peakSearchRangeMax) ) //look for the 511 peak only in the selected range (which could be all histogram if nothing is set)
+                          // {
+                            if(CrystalPeaksY_corr[peakCounter] > maxPeak_corr) // then look for taller peak in the range
+                            {
+                              maxPeak_corr = CrystalPeaksY_corr[peakCounter];
+                              peakID_corr = peakCounter;
+                            }
+                          // }
                         }
+                        //DEBUG
+                        // std::cout << "FINAL - " << CurrentCrystal->GetID() << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
+                        spectrumChargeCorrected->GetXaxis()->SetRangeUser(1,histo1Dmax);
                         //std::cout << CrystalPeaks[0] << std::endl;
                         //std::cout << CrystalPeaksY[0] << std::endl;
                         //fit the spectra - TODO use the gaussian plus fermi?
@@ -1110,6 +1141,9 @@ int main (int argc, char** argv)
                         float par2_corr = (CrystalPeaks_corr[peakID_corr]*energyResolution)/2.35;
                         float fitmin_corr = par1_corr-1.4*par2_corr;
                         float fitmax_corr = par1_corr+1.5*par2_corr;
+
+                        //DEBUG
+                        // std::cout << fitmin_corr << " " << fitmax_corr << std::endl;
 
                         sname << "gauss_corr - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                         TF1 *gauss_corr = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin_corr,fitmax_corr);
@@ -2529,6 +2563,18 @@ int main (int argc, char** argv)
                         CurrentCrystal->GetFitCorrected()->Draw("same");
                         C_spectrum->Write();
                         delete C_spectrum;
+
+                        // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        // C_spectrum->SetName(CurrentCrystal->GetCorrectedSpectrumSearchArea()->GetName());
+                        // C_spectrum->cd();
+                        // CurrentCrystal->GetCorrectedSpectrumSearchArea()->Draw();
+                        // // CurrentCrystal->GetHighlightedSpectrumCorrected()->SetFillColor(3);
+                        // // CurrentCrystal->GetHighlightedSpectrumCorrected()->Draw("same");
+                        // // CurrentCrystal->GetFitCorrected()->Draw("same");
+                        // C_spectrum->Write();
+                        // delete C_spectrum;
+
+
                       }
                     }
 

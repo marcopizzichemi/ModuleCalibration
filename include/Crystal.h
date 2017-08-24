@@ -35,6 +35,7 @@ private:
   TH1F*                cumulativeW;
   TH1F*                resolutions;
   TH1F*                histoAltDoiRes;
+  TH1F*                CorrectedSpectrumSearchArea;
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
   //   TH1D*                FitSlicesSimDOIplotSigma;
@@ -165,7 +166,9 @@ public:
   TGraphErrors*        GetSimZvsW(){return simZvsW;};
   TH3I*                GetComptonHistogram(int i){return ListOfComptonHisto[i];};
   int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
+  TH1F*                GetCorrectedSpectrumSearchArea(){return CorrectedSpectrumSearchArea;};
 
+  void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
   void                 SetMppc(Mppc *amppc);
