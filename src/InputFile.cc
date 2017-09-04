@@ -49,6 +49,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   usingRealSimData            = config.read<bool>("usingRealSimData");
   binary                      = config.read<bool>("binary");
   correctingSaturation        = config.read<bool>("correctingSaturation");
+  saturationRun               = config.read<bool>("saturationRun");
   BinaryOutputFileName        = config.read<std::string>("output");
   BinaryOutputFileName       += ".bin";
   //read the strings that describe the input channels
@@ -204,58 +205,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
 
 
-  //FIXME from here to the ---- it's now useless
-  //read strings that describes crystals
-  //a string for input for each crystal
-  //   crystal_s = new std::string*[ncrystalsx*nmppcx*nmodulex];
-  //   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++) crystal_s[i] = new std::string[ncrystalsy*nmppcy*nmoduley];
-  //crystal on
 
-  //a float vector for each crystal
-  //   crystaldata = new float**[ncrystalsx*nmppcx*nmodulex];
-  //   for(int i = 0 ; i < ncrystalsx*nmppcx*nmodulex ; i++)
-  //   {
-  //     crystaldata[i] = new float*[ncrystalsy*nmppcy*nmoduley];
-  //     for(int j = 0 ; j < ncrystalsy*nmppcy*nmoduley ; j++)
-  //     {
-  //       crystaldata[i][j] = new float[5];
-  //       for (int k = 0 ; k < 5 ; k++)
-  //       {
-  // 	crystaldata[i][j][k] = 0;
-  //       }
-  //     }
-  //   }
-  //   int crystalCounter = 0;
-  //   for(int ii = 0; ii < ncrystalsx*nmppcx*nmodulex*ncrystalsy*nmppcy*nmoduley ; ii++)
-  //   {
-  //     std::stringstream crystalstring;
-  //     crystalstring << "crystal" << crystalCounter;
-  //     std::string tempString;
-  //     std::vector<std::string> tempStringVector;
-  //     tempString = config.read<std::string>(crystalstring.str().c_str(),"0,0,0,0,0,0,0"); //FIXME i and j here are not the i and j set on the crystals!!! actually, in the loop for the crystals, below, it's wrong as well, as we don't consider the multiple modules case!! it will work for one module, it has to be fixed for multiple ones.
-  //
-  // //     std::cout << crystalCounter << " " << crystalstring.str() << " " << tempString /*<< std::endl*/;
-  //
-  //     config.split( tempStringVector, tempString, "," );
-  //     for(int i = 0 ; i < tempStringVector.size() ; i++)
-  //     {
-  //       config.trim(tempStringVector[i]);
-  //       // 	crystaldata.push_back(atof(crystal_f[i].c_str()));
-  //     }
-  //     int CryIDi = atoi(tempStringVector[0].c_str());
-  //     int CryIDj = atoi(tempStringVector[1].c_str());
-  //
-  //     if(tempString != "0,0,0,0,0,0,0")
-  //     {
-  //       crystalIsOn[CryIDi][CryIDj] = true;
-  //       for(int i = 0 ; i < 5 ; i++)
-  //       {
-  //         crystaldata[CryIDi][CryIDj][i] = atof(tempStringVector[i+2].c_str());
-  //       }
-  //     }
-  //     crystalCounter++;
-  //   }
-  //----------------------------------------------------------
 
   //   if(digitizer.size() > 16) //FIXME is this necessary?
   //   {
@@ -275,12 +225,10 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
 
-  //crystal ON for analysis
-  //   crystalIsOn = new bool* [nmodulex*nmppcx*ncrystalsx];
-  //   for(int j = 0; j < nmodulex*nmppcx*ncrystalsx ; j++) crystalIsOn[j] = new bool [nmoduley*nmppcy*ncrystalsy];
-  //   for(int i = 0; i < nmodulex*nmppcx*ncrystalsx; i++)
-  //     for(int j = 0; j < nmoduley*nmppcy*ncrystalsy; j++)
-  //       crystalIsOn = false;
+  if(saturationRun) // if this is a saturationRun and the user has left correctingSaturation flag ON by mistake, force it to OFF (in saturationRun correcting for saturation makes no sense...)
+  {
+    correctingSaturation = false;
+  }
 
   //------------------------------------------------------------------------------------------//
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //

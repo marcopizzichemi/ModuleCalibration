@@ -44,3 +44,11 @@ public:
     return input;
   }
 };
+
+
+struct SaturationPeak_t
+{
+  float energy;
+  float peakMin;
+  float peakMax;
+};

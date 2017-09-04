@@ -1,8 +1,8 @@
 // InputFile.h
 // this class reads the input tchain and generates the TTree that will be used for the analysis /plot production
-// Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
+// Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree
 // makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
-// the config file. 
+// the config file.
 
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
@@ -18,65 +18,65 @@
 
 
 /** @brief Class that controls the input files
- * 
+ *
  *  This class reads the input tchain and generates the TTree that will be used for the analysis /plot production
- *  Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree 
+ *  Reading of config file and creation of TChain is performed directly in the class constructor, then CreateTree
  *  makes the TTree and FillElements is used to fill the modules, mppcs, and crystals with the information stored in
  *  the config file.
- * 
+ *
  *  @author M. Pizzichemi
  *  @date Nov 2015
  */
 
 class InputFile
 {
-  
+
 private:
-  
+
   TChain*                        fchain;                             // pointer to input TChain
   std::string                    fname;                              // name of the input TChain
   TTree*                         ftree;                              // pointer to analysis TTree
   int                            inputChannels;                      // number of input channels
   int                            adcChannels;                        // number of output channels in the adc in use (32 for the CAEN DT5740)
   bool                           *DigitizerChannelOn;                // for each channel, if it's on or not. Meaning if it is specified in the config file "digitizer" key
-  //variables read from the config file 
+  //variables read from the config file
   std::string                    ConfigFileName;                     // name of the config file
-  //   std::string                    chainName; 
-  std::string                    digitizer_s;                        // input string of the digitizer key from config file 
-  std::string                    mppc_s;                             // input string of the mppc key from config file 
-  std::string                    plotPositions_s;                    // input string of the plotPositions key from config file 
-  std::string                    xPositions_s;                       // input string of the xPositions key from config file 
-  std::string                    yPositions_s;                       // input string of the yPositions key from config file 
-  std::string                    saturation_s;                       // input string of the saturation key from config file 
+  //   std::string                    chainName;
+  std::string                    digitizer_s;                        // input string of the digitizer key from config file
+  std::string                    mppc_s;                             // input string of the mppc key from config file
+  std::string                    plotPositions_s;                    // input string of the plotPositions key from config file
+  std::string                    xPositions_s;                       // input string of the xPositions key from config file
+  std::string                    yPositions_s;                       // input string of the yPositions key from config file
+  std::string                    saturation_s;                       // input string of the saturation key from config file
   std::string                    mppcOFF_s;
   std::vector <std::string>      mppcOFF_f;
   std::vector <std::string>      mppcOFF;
   std::string                    crystalOFF_s;
   std::vector <std::string>      crystalOFF_f;
   std::vector <int>              crystalOFF;
-  
+
   std::string                    specificMPPC_s;
   std::vector <std::string>      specificMPPC_f;
   std::vector <std::string>      specificMPPC;
-  
+
   std::string                    specificBin_s;
   std::vector <std::string>      specificBin_f;
   std::vector <int>              specificBin;
-  
+
   std::string                    specificPrecision_s;
   std::vector <std::string>      specificPrecision_f;
   std::vector <int>           specificPrecision;
-  
+
   std::string                    specificCut_s;
   std::vector <std::string>      specificCut_f;
   std::vector <double>           specificCut;
-  
-  std::vector <std::string>      digitizer_f;                        // tokenization of above strings 
-  std::vector <std::string>      mppc_f;                             // tokenization of above strings 
-  std::vector <std::string>      plotPositions_f;                    // tokenization of above strings 
-  std::vector <std::string>      xPositions_f;                       // tokenization of above strings 
-  std::vector <std::string>      yPositions_f;                       // tokenization of above strings 
-  std::vector <std::string>      saturation_f;                       // tokenization of above strings 
+
+  std::vector <std::string>      digitizer_f;                        // tokenization of above strings
+  std::vector <std::string>      mppc_f;                             // tokenization of above strings
+  std::vector <std::string>      plotPositions_f;                    // tokenization of above strings
+  std::vector <std::string>      xPositions_f;                       // tokenization of above strings
+  std::vector <std::string>      yPositions_f;                       // tokenization of above strings
+  std::vector <std::string>      saturation_f;                       // tokenization of above strings
   std::vector <int>              digitizer;                          // above tokenized string transformed in the proper variable types
   std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
   std::vector <int>              plotPositions;                      // above tokenized string transformed in the proper variable types
@@ -85,23 +85,24 @@ private:
   std::vector <float>            saturation;                         // above tokenized string transformed in the proper variable types
   std::string                    **crystal_s;                        // array of string, one for each crystal input by the user in the config file
   std::vector <std::string>      crystal_f;                          // tokenized version
-  std::string                    digitizerDoi_s;                        // input string of the digitizer key from config file 
-  std::vector <std::string>      digitizerDoi_f;                        // tokenization of above strings 
+  std::string                    digitizerDoi_s;                        // input string of the digitizer key from config file
+  std::vector <std::string>      digitizerDoi_f;                        // tokenization of above strings
   std::vector <int>              digitizerDoi;                          // above tokenized string transformed in the proper variable types
-  
+
   float                          ***crystaldata;                     // i,j matrix with data of the above string transformed in float
   bool                           **crystalIsOn;                      // i,j matrix with crystal ON/OFF
   // variable for the module(s) structure
-  int                            ncrystalsx;                         // number of crystals in x direction per mppc 
-  int                            ncrystalsy;                         // number of crystals in y direction per mppc 
-  int                            nmppcx;                             // number of mppc in x direction per mppc 
-  int                            nmppcy;                             // number of mppc in y direction per mppc 
-  int                            nmodulex;                           // number of modules in x direction per mppc 
-  int                            nmoduley;                           // number of modules in y direction per mppc 
-  // 
+  int                            ncrystalsx;                         // number of crystals in x direction per mppc
+  int                            ncrystalsy;                         // number of crystals in y direction per mppc
+  int                            nmppcx;                             // number of mppc in x direction per mppc
+  int                            nmppcy;                             // number of mppc in y direction per mppc
+  int                            nmodulex;                           // number of modules in x direction per mppc
+  int                            nmoduley;                           // number of modules in y direction per mppc
+  //
   std::string                    BinaryOutputFileName;               // name of the output binary file (if selected)
   bool                           binary;                             // true if the user wants a binary output, false otherwise
   bool                           correctingSaturation;               // true if the input dataset will be corrected for saturation
+  bool                           saturationRun;                      // whether this is a saturation run or not
   float                          taggingPosition;                    // tagging DOI bench position
   bool                           usingTaggingBench;                  // true if the input datasets uses the DOI tagging
   bool                           usingRealSimData;                   // true if the "real" gamma interaction point is used (of course valid only for simulation datasets)
@@ -114,11 +115,11 @@ private:
   double                         crystaly;                           // dimension of crystal in x [mm]
   double                         crystalz;                           // dimension of crystal in x [mm]
   double                         esrThickness;                       // thickness of esr separation foil [mm]
-  
+
   int                            global_histo3DchannelBin;
   int                            global_div;
   double                         global_clusterVolumeCut;
-  
+
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous event
@@ -128,7 +129,7 @@ private:
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
   Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
   Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
-  std::vector <float>* TotalCryEnergy; 
+  std::vector <float>* TotalCryEnergy;
 
   //branches for the input TChain
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
@@ -159,8 +160,8 @@ private:
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
   Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
   Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
-  std::vector <float> TreeTotalCryEnergy; 
-  std::vector <float>* pTreeTotalCryEnergy; 
+  std::vector <float> TreeTotalCryEnergy;
+  std::vector <float>* pTreeTotalCryEnergy;
 
   struct detector_t
   {
@@ -175,16 +176,16 @@ private:
     bool OnForModular;
     //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
-  
+
   std::vector<detector_t> detector;
-  
+
 public:
-  
+
   InputFile(int argc, char** argv, ConfigFile& config);              //ctor
-  
+
   static InputFile*  Instance() { return fInstance; };               // not useful right now
   static InputFile*  fInstance;                                      // not useful right now
-  
+
   TChain*       GetChain() const { return fchain; };                 // method to provide a pointer to the input TChain
   TTree*        GetTree()  const { return ftree; };                   // method to provide a pointer to the analysis TTree
   void          SetTree(TTree *aTree){ftree = aTree;};

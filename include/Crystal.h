@@ -22,6 +22,7 @@ private:
   Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
   TH1F*                Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
+  TH1F*                singleChargeSpectrum; ///< charge spectrum for this crystal, but not sum of all mppcs, just the sipm in front of the crystal
   TH1F*                LYSpectrum;
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
   TH1F*                HighlightedSpectrum;  ///< same spectrum above, but in green and only for the photopeak
@@ -36,6 +37,7 @@ private:
   TH1F*                resolutions;
   TH1F*                histoAltDoiRes;
   TH1F*                CorrectedSpectrumSearchArea;
+
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
   //   TH1D*                FitSlicesSimDOIplotSigma;
@@ -68,6 +70,7 @@ private:
   TF1*                 LYFit;                  ///< fit function (it's a gaussian)
   TF1*                 histoAltDoiFit;
 
+
   TF1*                 SimFit;
   TF1*                 Wfit;
   TF1*                 FitCorrected;
@@ -76,6 +79,7 @@ private:
   TF1*                 deltaWfit_2;
   //   TF1                  ProfileXFit;
   TF1*                 SlicesMeanFit;
+  std::vector<TF1*>    saturationFits;
   double               w_fwhm;               ///< width at half maximum for the w histogram
   double               w_rms;                ///< rms of w histogram
   double               w_width20perc;        ///< width at 20% maximum for the w histogram
@@ -106,6 +110,7 @@ public:
   TH1F*                GetDerivativeDoiResolution(){return DerivativeDoiResolution;};
   TH1F*                GetDoiResolutions(){return resolutions;};
   TH1F*                GetHistoAltDoiRes(){return histoAltDoiRes;};
+  TH1F*                GetSingleChargeSpectrum(){return singleChargeSpectrum;};
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
@@ -167,6 +172,7 @@ public:
   TH3I*                GetComptonHistogram(int i){return ListOfComptonHisto[i];};
   int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
   TH1F*                GetCorrectedSpectrumSearchArea(){return CorrectedSpectrumSearchArea;};
+  std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
 
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
@@ -229,6 +235,8 @@ public:
   void                 SetAverageDoiResolution(double a){averageDoiResolution = a;};
   void                 SetComptonHistogram(TH3I* aHisto){ListOfComptonHisto.push_back(aHisto);};
   void                 SetHistoAltDoiRes(TH1F *aHisto){histoAltDoiRes = aHisto;};
+  void                 SetSingleChargeSpectrum(TH1F *aHisto){singleChargeSpectrum = aHisto;};
+  void                 SetSaturationFits(std::vector<TF1*> aVec){saturationFits = aVec;};
   void                 Analyze();
 
   void PrintGlobal();
