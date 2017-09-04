@@ -833,6 +833,9 @@ int main (int argc, char** argv)
                         spectrumSingleCharge->Fit(sname.str().c_str(),"Q","",saturationPeak[iSaturation].peakMin,saturationPeak[iSaturation].peakMax);
                         gaussFitSaturation.push_back(satGauss);
                         saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
+                                       << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
+                                       << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetJ() << "\t"
+                                       << CurrentCrystal->GetID() << "\t"
                                        << CurrentCrystal->GetI() << "\t"
                                        << CurrentCrystal->GetJ() << "\t"
                                        << saturationPeak[iSaturation].energy << "\t"
