@@ -28,6 +28,7 @@
  *  @date Nov 2015
  */
 
+
 class InputFile
 {
 
@@ -115,6 +116,8 @@ private:
   double                         crystaly;                           // dimension of crystal in x [mm]
   double                         crystalz;                           // dimension of crystal in x [mm]
   double                         esrThickness;                       // thickness of esr separation foil [mm]
+  double                         chargeBinningADC;                   // adc charge binning
+  int                            saturationFormat;                   // format of saturation input. It can be in units of ADC_CHANNELS or CHARGE
 
   int                            global_histo3DchannelBin;
   int                            global_div;

@@ -49,7 +49,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   usingRealSimData            = config.read<bool>("usingRealSimData");
   binary                      = config.read<bool>("binary");
   correctingSaturation        = config.read<bool>("correctingSaturation");
-  saturationRun               = config.read<bool>("saturationRun");
+  saturationRun               = config.read<bool>("saturationRun",0);
   BinaryOutputFileName        = config.read<std::string>("output");
   BinaryOutputFileName       += ".bin";
   //read the strings that describe the input channels
@@ -64,9 +64,11 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   crystalx                    = config.read<double>("crystalx",1.53);
   crystaly                    = config.read<double>("crystaly",1.53);
   crystalz                    = config.read<double>("crystalz",15);
+  chargeBinningADC            = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
+  saturationFormat            = config.read<int>("saturationFormat",1);   // format of saturation data
   esrThickness                = config.read<double>("esrThickness",0.07);
   usingAllChannels            = config.read<bool>("usingAllChannels",1);
-  wAllChannels             = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
+  wAllChannels                = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
 
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -115,7 +117,18 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     detector_t det;
     det.digitizerChannel = digitizer[i];
     det.label            = mppc_label[i];
-    det.saturation       = saturation[i];
+    //convert saturation data to ADC channels, if necessary
+    if(saturationFormat == 0)
+    {
+
+      det.saturation       = saturation[i];
+    }
+    else
+    {
+      det.saturation       = saturation[i] / chargeBinningADC;
+    }
+    // std::cout << det.saturation << std::endl;
+
     det.plotPosition     = plotPositions[i];
     det.xPosition        = xPositions[i];
     det.yPosition        = yPositions[i];
@@ -385,12 +398,12 @@ void InputFile::FillTree()
         // also correcting for saturation if it's set in the config file
         if(correctingSaturation)
         {
-          if(TreeAdcChannel[TreeEntryCounter] > saturation[TreeEntryCounter])
+          if(TreeAdcChannel[TreeEntryCounter] > detector[TreeEntryCounter].saturation)
           {
             TreeBadevent = true;
             // 	    std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
           }
-          TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-saturation[TreeEntryCounter] * TMath::Log(1.0 - ( ChainAdcChannel[j]/saturation[TreeEntryCounter] )));
+          TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-detector[TreeEntryCounter].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[TreeEntryCounter].saturation )));
         }
         else
           TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
