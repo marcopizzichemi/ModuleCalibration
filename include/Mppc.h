@@ -25,38 +25,41 @@ private:
   double                 ThetaWU;                ///< angle from w to u in radiants
   double                 ThetaWV;                ///< angle from w to v in radiants
   double                 specificWthreshold;     ///< clusterLevelPrecision for this MPPC
-  
+
   int                    histo3DchannelBin;
   int                    div;
   double                 clusterVolumeCut;
-  
-  
-  
+  // std::vector<int>       neighbours;
+
+
   //histograms
   TH1F*                  RawSpectrum;            ///< raw spectrum of all events seen by this mppc
   TH1F*                  TriggerSpectrum;        ///< trigger spectrum of all events seen by this mppc
+  TH1F*                  RawChargeSpectrum;      ///< raw spectrum of all events seen by this mppc, expressed in coulomb
+  TH1F*                  TriggerChargeSpectrum;  ///< trigger spectrum of all events seen by this mppc, expressed in coulomb
   TH1F*                  TriggerSpectrumHighlighted;///< trigger spectrum of all events seen by this mppc, highlighting the broad energy cut
   TH2D*                  projection_zy;          ///< Projection histogram of u,v,w points on the w,v plane
   TH2D*                  projection_zx;          ///< Projection histogram of u,v,w points on the w,u plane
-  //   TH1D*                  projection_x;           ///< 
+  //   TH1D*                  projection_x;           ///<
   //   TH1D*                  projection_y;           ///<
   TProfile*              profileX;               ///< Profile of w,u histogram (for each bin in w, mean u and sigma are plotted)
   TProfile*              profileY;               ///< Profile of w,v histogram (for each bin in w, mean v and sigma are plotted)
   TF1*                   lineX;                  ///< Line to fit the profileX plot -> u(w) = m*w + c
   TF1*                   lineY;                  ///< Line to fit the profileX plot -> v(w) = m*w + c
-  
   std::vector<double>    fit2DmeanX ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DmeanY ;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DsigmaX;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2DsigmaY;            ///< arrays of mean and sigma for the 2d search of peaks in this mppc
   std::vector<double>    fit2Dtheta;             ///< arrays of mean and sigma for the 2d search of peaks in this mppc
+
+  std::vector<int>       neighbours;
   struct point
   {
     int i;
     int j;
     int k;
   };
-  
+
   struct masks_t
   {
     double meanx;
@@ -68,8 +71,8 @@ private:
     long int nBinsXMask;
     //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
   };
-  
-  
+
+
   struct compare_by_x
   {
     bool operator()(const masks_t& lhs, const masks_t& rhs) const
@@ -77,7 +80,7 @@ private:
       return lhs.meanx < rhs.meanx;
     }
   };
-  
+
   struct compare_by_y
   {
     bool operator()(const masks_t& lhs, const masks_t& rhs) const
@@ -85,14 +88,14 @@ private:
       return lhs.meany < rhs.meany;
     }
   };
-  
+
 public:
   Mppc();                                        ///< default constructor
   Mppc(const Mppc &obj);                         ///< copy constructor
   ~Mppc();                                       ///< destructor
-  
+
   // methods to get and set the private variables. Names should be self explanatory
-  void                   SetModule(Module *amodule); 
+  void                   SetModule(Module *amodule);
   Module*                GetModule(){return (Module*)parentModule;};
   void                   SetDigitizerChannel(int num){digitizerChannel = num;};
   int                    GetDigitizerChannel(){return digitizerChannel;};
@@ -105,6 +108,12 @@ public:
   void                   SetRawSpectrum(TH1F* aHisto){RawSpectrum = aHisto;};
   TH1F*                  GetTriggerSpectrum(){return TriggerSpectrum;};
   void                   SetTriggerSpectrum(TH1F* aHisto){TriggerSpectrum = aHisto;};
+
+  TH1F*                  GetRawChargeSpectrum(){return RawChargeSpectrum;};
+  void                   SetRawChargeSpectrum(TH1F* aHisto){RawChargeSpectrum = aHisto;};
+  TH1F*                  GetTriggerChargeSpectrum(){return TriggerChargeSpectrum;};
+  void                   SetTriggerChargeSpectrum(TH1F* aHisto){TriggerChargeSpectrum = aHisto;};
+
   TH1F*                  GetTriggerSpectrumHighlighted(){return TriggerSpectrumHighlighted;};
   void                   SetTriggerSpectrumHighlighted(TH1F* aHisto){TriggerSpectrumHighlighted = aHisto;};
   void                   SetIsOnForDoi(bool abool){IsOnForDoi = abool;};
@@ -120,28 +129,32 @@ public:
   TH2D*                  GetProjectionZY(){return projection_zy;};
   double                 GetThetaWU(){return ThetaWU;};
   double                 GetThetaWV(){return ThetaWV;};
-  
+
   int                    GetHisto3DchannelBin(){return histo3DchannelBin;};
   int                    GetClusterLevelPrecision(){return div;};
   double                 GetClusterVolumeCut(){return clusterVolumeCut;};
-  
+
   void                   SetHisto3DchannelBin(int a){histo3DchannelBin = a;};
   void                   SetClusterLevelPrecision(int a){div = a;};
   void                   SetClusterVolumeCut(double a){clusterVolumeCut = a;};
-  
+
   // methods to analyze the mppc
   int                    Find2Dpeaks(int nofcrystals,TH2F* histogram2d); ///< Finds the 2D peaks for crystals coupled to this module
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
-  
+
   void                   MakeRotatedFlood();
   bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
-  
+
+  void                   SetNeighbours(std::vector<int> aVec){neighbours = aVec;};
+  std::vector<int>       GetNeighbours(){return neighbours;};
+
+
   //   bool compare_by_x(const masks_t& lhs, const masks_t& rhs) { return lhs.meanx < rhs.meanx; };
   //   bool compare_by_y(const masks_t& lhs, const masks_t& rhs) { return lhs.meany < rhs.meany; };
-  
-  
-  
-  
+
+
+
+
   //print methods
   void PrintGlobal();
   void PrintSpecific();

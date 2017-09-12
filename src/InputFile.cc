@@ -112,6 +112,57 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
 
+
+
+
+  //on or off for modular analysis
+  mppcOFF_s                      = config.read<std::string>("mppcOFF","");
+  config.split( mppcOFF_f, mppcOFF_s, "," );
+  for(int i = 0 ; i < mppcOFF_f.size() ; i++)
+  {
+    config.trim(mppcOFF_f[i]);
+    mppcOFF.push_back(mppcOFF_f[i]);
+  }
+
+
+  std::vector<float> xPositionsSorted;
+  std::vector<float> yPositionsSorted;
+  //push the first values
+  xPositionsSorted.push_back(xPositions[0]);
+  yPositionsSorted.push_back(yPositions[0]);
+  for(int iFill = 1; iFill < xPositions.size(); iFill++)
+  {
+    bool XalreadyThere = false;
+    for(int iSorted = 0 ; iSorted < xPositionsSorted.size() ; iSorted++)
+    {
+      if(xPositions[iFill] == xPositionsSorted[iSorted])
+      {
+        XalreadyThere = true;
+      }
+    }
+    if(!XalreadyThere)
+    {
+      xPositionsSorted.push_back(xPositions[iFill]);
+    }
+    bool YalreadyThere = false;
+    for(int iSorted = 0 ; iSorted < yPositionsSorted.size() ; iSorted++)
+    {
+      if(yPositions[iFill] == yPositionsSorted[iSorted])
+      {
+        YalreadyThere = true;
+      }
+    }
+    if(!YalreadyThere)
+    {
+      yPositionsSorted.push_back(yPositions[iFill]);
+    }
+  }
+  //sort the position vectors
+  std::sort (xPositionsSorted.begin(),xPositionsSorted.end());
+  std::sort (yPositionsSorted.begin(),yPositionsSorted.end());
+
+
+
   for(int i = 0 ; i < digitizer.size() ; i++)
   {
     detector_t det;
@@ -120,7 +171,6 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     //convert saturation data to ADC channels, if necessary
     if(saturationFormat == 0)
     {
-
       det.saturation       = saturation[i];
     }
     else
@@ -128,13 +178,83 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
       det.saturation       = saturation[i] / chargeBinningADC;
     }
     // std::cout << det.saturation << std::endl;
-
     det.plotPosition     = plotPositions[i];
     det.xPosition        = xPositions[i];
     det.yPosition        = yPositions[i];
     det.OnForDOI         = 0;
-    det.OnForModular     = true; //never set otherwise anywhere - not used
+
+    det.OnForModular     = true;
+    for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
+    {
+      if(mppcOFF[modCounter].compare(det.label) == 0) det.OnForModular = false;
+    }
+    //find I and J
+    int posI = -1;
+    int posJ = -1;
+    for(int pos = 0 ; pos < xPositionsSorted.size(); pos++)
+    {
+      if(det.xPosition == xPositionsSorted[pos])
+      {
+        posI = pos;
+      }
+      if(det.yPosition == yPositionsSorted[pos])
+      {
+        posJ = pos;
+      }
+    }
+    det.i = posI;
+    det.j = posJ;
     detector.push_back(det);
+  }
+
+  //find which channels are the neighbours
+  for(int i = 0 ; i < detector.size() ; i++)
+  {
+     std::vector<int> neighbourChannels;
+     std::vector<int> neighbourI;  //collection of i of neighbour channels
+     std::vector<int> neighbourJ;  //collection of j of neighbour channels
+     neighbourI.push_back(detector[i].i);
+     neighbourJ.push_back(detector[i].j);
+
+     if(detector[i].i != 0)
+     {
+       neighbourI.push_back(detector[i].i - 1);
+     }
+     if(detector[i].i != (xPositionsSorted.size() - 1))
+     {
+       neighbourI.push_back(detector[i].i + 1);
+     }
+
+     if(detector[i].j != 0)
+     {
+       neighbourJ.push_back(detector[i].j - 1);
+     }
+     if(detector[i].j != (yPositionsSorted.size()-1))
+     {
+       neighbourJ.push_back(detector[i].j + 1);
+     }
+
+     for(int iDet = 0; iDet < detector.size(); iDet++)
+     {
+       for(int iCheck = 0; iCheck < neighbourI.size() ; iCheck++)
+       {
+         if(detector[iDet].i == neighbourI[iCheck])
+         {
+           for(int jCheck = 0; jCheck < neighbourJ.size() ; jCheck++)
+           {
+             if(detector[iDet].j == neighbourJ[jCheck])
+             {
+               //both i and j are neighbour, then just check is not the same and add
+               if(detector[iDet].digitizerChannel != detector[i].digitizerChannel)
+               {
+                 //both i and j are neighbour, then just check is not the same and add
+                 detector[i].neighbourChannels.push_back(detector[iDet].digitizerChannel);
+               }
+             }
+           }
+         }
+       }
+     }
   }
 
   //read string for doi analysis channels
@@ -150,14 +270,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     detector[digitizerDoi[i]].OnForDOI = 1;
   }
 
-  //on or off for modular analysis
-  mppcOFF_s                      = config.read<std::string>("mppcOFF","");
-  config.split( mppcOFF_f, mppcOFF_s, "," );
-  for(int i = 0 ; i < mppcOFF_f.size() ; i++)
-  {
-    config.trim(mppcOFF_f[i]);
-    mppcOFF.push_back(mppcOFF_f[i]);
-  }
+
   crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
   config.split( crystalOFF_f, crystalOFF_s, "," );
   for(int i = 0 ; i < crystalOFF_f.size() ; i++)
@@ -229,11 +342,14 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << " Channels configuration " << std::endl;
   std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]" << std::endl;
+  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tNeighbour channels" << std::endl;
   std::cout << "------------------------" << std::endl;
   for(int i = 0 ; i < digitizer.size() ; i++)
   {
-    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t" <<  detector[i].label << "\t" << detector[i].plotPosition << "\t" << detector[i].xPosition << "\t" << detector[i].yPosition << std::endl;
+    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t" <<  detector[i].label << "\t" << detector[i].plotPosition << "\t" << detector[i].xPosition << "\t" << detector[i].yPosition << "\t";
+    for(int iNeighbour = 0; iNeighbour < detector[i].neighbourChannels.size(); iNeighbour++)
+        std::cout << detector[i].neighbourChannels[iNeighbour] << " ";
+    std::cout << std::endl;
   }
   std::cout << "------------------------" << std::endl;
   std::cout << std::endl;
@@ -306,7 +422,7 @@ void InputFile::PrepareTTree()
   ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l");
   ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
 
-  //branches of the 32 channels data
+  //branches of the channels data
   for (int i = 0 ; i < inputChannels ; i++)
   {
     //empty the stringstreams
@@ -364,13 +480,6 @@ void InputFile::FillTree()
     DigitizerChannelOn[detector[i].digitizerChannel] = true;
   }
 
-  //   translateCh = new int[inputChannels]; // the number of input channels is set by the user, then they are created in the analysis ttree as ch0, ch1...
-  //   for(int i = 0; i < inputChannels; i++)
-  //   {
-  //     translateCh[i] = i;  // then they will always be in order, so first channel in digitizer array goes to ch0, second to ch1 etc..
-  //   }
-
-
 
   for (Int_t i=0;i<nevent;i++)
     //   for(Int_t i=0;i<2;i++)
@@ -387,217 +496,103 @@ void InputFile::FillTree()
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
 
-    int TreeEntryCounter = 0;
+    // int TreeEntryCounter = 0;
+    int detectorCounter = 0;
+    int TriggerID = 0;
     //loop to fill the channel
     for (int j = 0 ; j < adcChannels ; j++)
     {
-      if(DigitizerChannelOn[j])
+      for(int iDet = 0 ; iDet < detector.size(); iDet++)
       {
-        // 	std::cout << ChainAdcChannel[j] << " " ;
-        // fill tree with data from the channels
-        // also correcting for saturation if it's set in the config file
-        if(correctingSaturation)
+        if(j == detector[iDet].digitizerChannel)
         {
-          if(TreeAdcChannel[TreeEntryCounter] > detector[TreeEntryCounter].saturation)
+          if(correctingSaturation)
           {
-            TreeBadevent = true;
-            // 	    std::cout << "BadCharge " << (int)round(-Input[i].param0 * TMath::Log(1.0 - ( charge[i]/Input[i].param0 ))) << std::endl;
-          }
-          TreeAdcChannel[TreeEntryCounter] = (Short_t)round(-detector[TreeEntryCounter].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[TreeEntryCounter].saturation )));
-        }
-        else
-          TreeAdcChannel[TreeEntryCounter] = ChainAdcChannel[j];
-
-        //find the max charge and therefore the TriggerChannel
-        if (TreeAdcChannel[TreeEntryCounter] > maxCharge)
-        {
-          maxCharge = TreeAdcChannel[TreeEntryCounter];
-          TreeTriggerChannel = digitizer[TreeEntryCounter];
-        }
-        TreeEntryCounter++;
-      }
-
-      if(usingTaggingBench)
-      {
-        if( j == taggingCrystalChannel)
-        {
-          TreeTagging = ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
-          //this is the tagging crystal data
-        }
-      }
-    }
-    //     std::cout << std::endl;
-    // terrible implementation to allow us of only neighbour channels...
-    //loop to find the neighbour channels of trigger (if needed)
-    //read position of the trigger channel
-
-    double xTrigger;
-    double yTrigger;
-    std::vector<float> allowedX,allowedY;
-    //std::vector <bool> isNeighbour; // channel is neighbour of trigger
-    if(!usingAllChannels)
-    {
-      for(int iFill = 0; iFill < inputChannels; iFill++)
-      {
-        detector[iFill].isNeighbour = false;
-      }
-
-
-      std::vector<float> xCopyTemp;
-      std::vector<float> yCopyTemp;
-
-      for(int iFill = 0; iFill < inputChannels; iFill++)
-      {
-        if(detector[iFill].digitizerChannel == TreeTriggerChannel)
-        {
-          xTrigger = detector[iFill].xPosition;
-          yTrigger = detector[iFill].yPosition;
-        }
-        xCopyTemp.push_back(detector[iFill].xPosition);
-        yCopyTemp.push_back(detector[iFill].yPosition);
-
-      }
-      //       xTrigger = xPositions[TreeTriggerChannel];
-      //       yTrigger = yPositions[TreeTriggerChannel];
-      //       std::vector<float> xCopyTemp = xPositions;
-      //       std::vector<float> yCopyTemp = yPositions;
-
-      //sort the position vectors
-      std::sort (xCopyTemp.begin(),xCopyTemp.end());
-      std::sort (yCopyTemp.begin(),yCopyTemp.end());
-      //filter repetitions
-      std::vector<float> xCopy;
-      std::vector<float> yCopy;
-      xCopy.push_back(xCopyTemp[0]);
-      yCopy.push_back(yCopyTemp[0]);
-      int xCounter = 0;
-      int yCounter = 0;
-      for (int j = 0 ; j < xCopyTemp.size() ; j++)
-      {
-        if(xCopy[xCounter] != xCopyTemp[j])// this will work only because xCopyTemp is already sorted...
-        {
-          xCopy.push_back(xCopyTemp[j]);
-          xCounter++;
-        }
-      }
-      for (int j = 0 ; j < yCopyTemp.size() ; j++)
-      {
-        if(yCopy[yCounter] != yCopyTemp[j])// this will work only because yCopyTemp is already sorted...
-        {
-          yCopy.push_back(yCopyTemp[j]);
-          yCounter++;
-        }
-      }
-
-      // by default trigger row and column are allowed
-      allowedX.push_back(xTrigger);
-      allowedY.push_back(yTrigger);
-
-      int TrigI,TrigJ;
-      //locate trigger in the new vectors
-      for(int xPos = 0 ; xPos < xCopy.size() ; xPos++)
-      {
-        if(xCopy[xPos] == xTrigger) TrigI = xPos;
-      }
-      for(int yPos = 0 ; yPos < yCopy.size() ; yPos++)
-      {
-        if(yCopy[yPos] == yTrigger) TrigJ = yPos;
-      }
-
-
-      // take x and y of neighbours
-      double xleft,xright,ytop,ybottom;
-      if(TrigI != 0)
-      {
-        allowedX.push_back(xCopy[TrigI-1]);
-      }
-      if(TrigI != nmppcx-1)
-      {
-        allowedX.push_back(xCopy[TrigI+1]);
-      }
-      if(TrigJ != 0)
-      {
-        allowedY.push_back(yCopy[TrigJ-1]);
-      }
-      if(TrigJ != nmppcy-1)
-      {
-        allowedY.push_back(yCopy[TrigJ+1]);
-      }
-
-      //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-      //       {
-      // 	std::cout << allowedX[xPos] << " ";
-      //       }
-      //       std::cout << std::endl;
-      //       for(int xPos = 0 ; xPos < allowedX.size() ; xPos++)
-      //       {
-      // 	std::cout << allowedY[xPos] << " ";
-      //       }
-      //       std::cout << std::endl;
-
-      int counterNeighbour = 0;
-      for (int j = 0 ; j < adcChannels ; j++)
-      {
-        if(DigitizerChannelOn[j])
-        {
-          for(int iCheck = 0; iCheck < allowedX.size(); iCheck++)
-          {
-            if(detector[counterNeighbour].xPosition == allowedX[iCheck]) //check if x is allowed
+            if( ChainAdcChannel[j] > detector[iDet].saturation)
             {
-              for(int jCheck = 0; jCheck < allowedY.size(); jCheck++)
-              {
-                if(detector[counterNeighbour].yPosition == allowedY[jCheck]) //check if y is allowed
-                {
-                  detector[counterNeighbour].isNeighbour = true;
-                }
-              }
+              TreeBadevent = true;
+            }
+            TreeAdcChannel[iDet] = (Short_t)round(-detector[iDet].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[iDet].saturation )));
+          }
+          else
+            TreeAdcChannel[iDet] = ChainAdcChannel[j];
+              //find the max charge and therefore the TriggerChannel
+          if (TreeAdcChannel[iDet] > maxCharge)
+          {
+            maxCharge = TreeAdcChannel[iDet];
+            TreeTriggerChannel = detector[iDet].digitizerChannel;
+            TriggerID = iDet;
+          }
+          if(usingTaggingBench)
+          {
+            if( j == taggingCrystalChannel)
+            {
+              TreeTagging = ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
+                //this is the tagging crystal data
             }
           }
-          counterNeighbour++;
         }
       }
     }
+
+    //localize trigger channel detector
+
+
     //loop to calculate u,v
-    int counterFill = 0;
-    for (int j = 0 ; j < adcChannels ; j++) // combination of two user choices. All channels vs. near channels for u,v , all channels vs. near channels for w
+    // int counterFill = 0;
+
+    for(int iDet = 0 ; iDet < detector.size(); iDet++)
     {
-      if(DigitizerChannelOn[j])// first, is the digitizer ON?
+      bool acceptedChannel = false;
+      if(usingAllChannels) //all channels for u and v, so accept all the channels
       {
-        //two options to calculate FloodX_Y_Z
-        //First, use all the channels
-        //Second, use only the neighbours of the trigger channel
-        //both options for u,v and for z
-        //all combinations possible (user decides in config file)
-        //first, the u,v
-        if(usingAllChannels) //all channels for u and v
+        acceptedChannel = true;
+      }
+      else // only neighbour channels (and trigger channel itself) are accepted
+      {
+        if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
         {
-          // 	  total     += TreeAdcChannel[counterFill];
-          rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
-          columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
+          acceptedChannel = true;
         }
-        else //only neighbours...
+        else
         {
-          if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
+          for(int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
           {
-            // 	    total     += TreeAdcChannel[counterFill];
-            rowsum    += TreeAdcChannel[counterFill]*detector[counterFill].xPosition;
-            columnsum += TreeAdcChannel[counterFill]*detector[counterFill].yPosition;
-          }
-          // 	  totalForFloodZ += TreeAdcChannel[counterFill];
-        }
-        //then, the w coordinate
-        if(wAllChannels) //all channels for w
-        {
-          total += TreeAdcChannel[counterFill];
-        }
-        else//only neighbours...
-        {
-          if(detector[counterFill].isNeighbour)//... which means check if the channel is neighbour
-          {
-            total += TreeAdcChannel[counterFill];
+            if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
+            acceptedChannel = true;
           }
         }
-        counterFill++;
+      }
+
+      bool acceptedChannelW = false;
+      if(wAllChannels) //all channels for w
+      {
+        acceptedChannelW = true;
+      }
+      else
+      {
+        if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
+        {
+          acceptedChannelW = true;
+        }
+        else
+        {
+          for(int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
+          {
+            if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
+            acceptedChannelW = true;
+          }
+        }
+      }
+
+      if(acceptedChannel)
+      {
+        rowsum    += TreeAdcChannel[iDet]*detector[iDet].xPosition;
+        columnsum += TreeAdcChannel[iDet]*detector[iDet].yPosition;
+      }
+      if(acceptedChannelW)
+      {
+        total += TreeAdcChannel[iDet];
       }
     }
 
@@ -701,33 +696,43 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       {
         for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
         {
+          //calc I and J
           int mppcI = (iModule*nmppcx)+iMppc;
           int mppcJ = (jModule*nmppcy)+jMppc;
+
+          //find corresponding detector
+          int detID;
+          for(int iDet = 0; iDet < detector.size(); iDet++)
+          {
+            if(detector[iDet].i == mppcI && detector[iDet].j == mppcJ)
+              detID = iDet;
+          }
           // compute the position of this mppc element from the plotPositions taken from config file
           //
           //  	  int pos = (mppcI*nmppcx + mppcJ) +1 ; // +1 is because of root multicanvas starting from 1...
-          int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((nmppcy-mppcI));
+          // int pos = 1 + (nmppcx * nmppcy) - (mppcJ * nmppcx) - ((nmppcy-mppcI));
           // 	  std::cout << mppcI << "." << mppcJ << " " << pos << std::endl;
-          int posID;
-          for(int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...
-          {
-            if(plotPositions[arrayCounter] == pos) posID = arrayCounter;
-          }
+          // int posID;
+          // for(int arrayCounter = 0 ; arrayCounter < digitizer.size() ; arrayCounter++) // get which input mppc goes here...
+          // {
+            // if(plotPositions[arrayCounter] == pos) posID = arrayCounter;
+          // }
 
 
           sname << "MPPC " << mppcI << "." << mppcJ;
 
           mppc[mppcI][mppcJ] = new Mppc();
           mppc[mppcI][mppcJ]->SetName(sname.str().c_str());
-          mppc[mppcI][mppcJ]->SetLabel( mppc_label[posID] ); // ----
+          mppc[mppcI][mppcJ]->SetLabel( detector[detID].label ); // ----
           sname.str("");
           sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc;
 
-          mppc[mppcI][mppcJ]->SetIsOnForModular(true);
-          for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
-          {
-            if(mppcOFF[modCounter].compare(mppc_label[posID]) == 0) mppc[mppcI][mppcJ]->SetIsOnForModular(false);
-          }
+          mppc[mppcI][mppcJ]->SetIsOnForModular(detector[detID].OnForModular);
+          // mppc[mppcI][mppcJ]->SetIsOnForModular(false);
+          // for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
+          // {
+          //   if(mppcOFF[modCounter].compare(detector[detID].label) == 0)
+          // }
 
           //set the global mppc variables for 3d plots, then override if specified
           mppc[mppcI][mppcJ]->SetHisto3DchannelBin(global_histo3DchannelBin);
@@ -736,7 +741,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           //now override
           for(int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
           {
-            if(specificMPPC[modCounter].compare(mppc_label[posID]) == 0)
+            if(specificMPPC[modCounter].compare(detector[detID].label) == 0)
             {
               mppc[mppcI][mppcJ]->SetHisto3DchannelBin(specificBin[modCounter]);
               mppc[mppcI][mppcJ]->SetClusterLevelPrecision(specificPrecision[modCounter]);
@@ -746,22 +751,23 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
 
 
           mppc[mppcI][mppcJ]->SetExtendedID(sname.str().c_str());
-          mppc[mppcI][mppcJ]->SetID(posID);                  // ----
+          mppc[mppcI][mppcJ]->SetID(detID);                  // ----
           mppc[mppcI][mppcJ]->SetI(mppcI);
           mppc[mppcI][mppcJ]->SetJ(mppcJ);
           mppc[mppcI][mppcJ]->SetChildrenI(ncrystalsx);
           mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
-          mppc[mppcI][mppcJ]->SetPosition(xPositions[posID],yPositions[posID],0);
-          mppc[mppcI][mppcJ]->SetDigitizerChannel(digitizer[posID]);
-          mppc[mppcI][mppcJ]->SetCanvasPosition(pos);
+          mppc[mppcI][mppcJ]->SetPosition(detector[detID].xPosition,detector[detID].yPosition,0);
+          mppc[mppcI][mppcJ]->SetDigitizerChannel(detector[detID].digitizerChannel);
+          mppc[mppcI][mppcJ]->SetCanvasPosition(detector[detID].plotPosition);
           mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
 
-          mppc[mppcI][mppcJ]->SetIsOnForDoi(false);
-          for(int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
-          {
-            if(mppc[mppcI][mppcJ]->GetDigitizerChannel() == digitizerDoi[iDoi])
-              mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
-          }
+          mppc[mppcI][mppcJ]->SetIsOnForDoi(detector[detID].OnForDOI);
+          mppc[mppcI][mppcJ]->SetNeighbours(detector[detID].neighbourChannels);
+          // for(int iDoi = 0 ; iDoi < digitizerDoi.size(); iDoi++)
+          // {
+          //   if(mppc[mppcI][mppcJ]->GetDigitizerChannel() == digitizerDoi[iDoi])
+          //     mppc[mppcI][mppcJ]->SetIsOnForDoi(true);
+          // }
 
           // 	  mppc[mppcI][mppcJ]->Print();
           sname.str("");
@@ -794,22 +800,10 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
               crystal[cryI][cryJ]->SetParentName(mppc[mppcI][mppcJ]->GetName());
               crystal[cryI][cryJ]->SetCrystalOn(crystalIsOn[cryI][cryJ]);
               crystal[cryI][cryJ]->SetPosition(
-                xPositions[posID] + iCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)
-                , yPositions[posID] + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)
+                detector[detID].xPosition + iCry*(crystalx+esrThickness) - (ncrystalsx-1)*((crystalx+esrThickness)/2.0)
+                , detector[detID].yPosition + jCry*(crystaly+esrThickness) - (ncrystalsy-1)*((crystaly+esrThickness)/2.0)
                 ,  0  ); //FIXME z not useful so set to 0, but maybe we should put the real one..
               crystal[cryI][cryJ]->SetDimension(crystalx,crystaly,crystalz);
-              // 	      double u  = crystaldata[cryI][cryJ][0];
-              // 	      double v  = crystaldata[cryI][cryJ][1];
-              // 	      double wu = crystaldata[cryI][cryJ][2];
-              // 	      double wv = crystaldata[cryI][cryJ][3];
-              // 	      double t  = crystaldata[cryI][cryJ][4];
-              // 	      crystal[cryI][cryJ]->SetCrystalData(u,v,wu,wv,t);
-              // 	      std::cout << u << " " << v << " " << wu << " " << wv << " " << t << std::endl;
-              // 	      crystal[cryI][cryJ]->SetEllipses(u,v,wu,wv,t);
-              // 	      TEllipse *ellipse = new TEllipse(u,v,wu,wv,0,360,t);
-              // 	      crystal[cryI][cryJ]->SetGraphicalCut(*ellipse);
-              // 	      crystal[cryI][cryJ]->Print();
-
               mppc[mppcI][mppcJ]->AddChild( crystal[cryI][cryJ]->GetName() );
             }
           }

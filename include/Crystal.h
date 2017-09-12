@@ -37,6 +37,9 @@ private:
   TH1F*                resolutions;
   TH1F*                histoAltDoiRes;
   TH1F*                CorrectedSpectrumSearchArea;
+  TH1F*                sumChargeSpectrum;
+  TH1F*                ATMChargeSpectrum;
+  TH1F*                investigatedSpectrum;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
@@ -111,6 +114,9 @@ public:
   TH1F*                GetDoiResolutions(){return resolutions;};
   TH1F*                GetHistoAltDoiRes(){return histoAltDoiRes;};
   TH1F*                GetSingleChargeSpectrum(){return singleChargeSpectrum;};
+  TH1F*                GetSumChargeSpectrum(){return sumChargeSpectrum;};
+  TH1F*                GetAMTChargeSpectrum(){return ATMChargeSpectrum;};
+  TH1F*                GetInvestigatedSpectrum(){return investigatedSpectrum;};
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
@@ -236,6 +242,9 @@ public:
   void                 SetComptonHistogram(TH3I* aHisto){ListOfComptonHisto.push_back(aHisto);};
   void                 SetHistoAltDoiRes(TH1F *aHisto){histoAltDoiRes = aHisto;};
   void                 SetSingleChargeSpectrum(TH1F *aHisto){singleChargeSpectrum = aHisto;};
+  void                 SetSumChargeSpectrum(TH1F *aHisto){sumChargeSpectrum = aHisto;};
+  void                 SetAMTChargeSpectrum(TH1F *aHisto){ATMChargeSpectrum = aHisto;};
+  void                 SetInvestigatedSpectrum(TH1F *aHisto){investigatedSpectrum = aHisto;};
   void                 SetSaturationFits(std::vector<TF1*> aVec){saturationFits = aVec;};
   void                 Analyze();
 
