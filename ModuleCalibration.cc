@@ -945,6 +945,7 @@ int main (int argc, char** argv)
                       // are much more clear. otherwise the single channel spectrum cut on the events in the crystal is used
                       if(performSaturationPeakSearch)
                       {
+                        float maxPeakHight = 0;
                         for(int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
                         {
                           sname << "Peak " << saturationPeak[iSaturation].energy << " KeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -990,9 +991,14 @@ int main (int argc, char** argv)
                                          << satGauss->GetParameter(2)
                                          << std::endl;
                           spectrumWhereToSearch->GetXaxis()->SetRangeUser(0,histoSingleChargeMax);
-                          spectrumWhereToSearch->GetYaxis()->SetRangeUser(0,CrystalPeaksY[peakID]*2.0);
+                          if(CrystalPeaksY[peakID] > maxPeakHight )
+                          {
+                            maxPeakHight = CrystalPeaksY[peakID];
+                          }
+
                           sname.str("");
                         }
+                        spectrumWhereToSearch->GetYaxis()->SetRangeUser(0,maxPeakHight*2.0);
                         CurrentCrystal->SetSaturationFits(gaussFitSaturation);
                       }
                       CurrentCrystal->SetInvestigatedSpectrum(spectrumWhereToSearch);
