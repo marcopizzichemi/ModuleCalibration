@@ -65,7 +65,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   crystaly                    = config.read<double>("crystaly",1.53);
   crystalz                    = config.read<double>("crystalz",15);
   chargeBinningADC            = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
-  saturationFormat            = config.read<int>("saturationFormat",1);   // format of saturation data
+  saturationFormat            = config.read<int>("saturationFormat",0);   // format of saturation data
   esrThickness                = config.read<double>("esrThickness",0.07);
   usingAllChannels            = config.read<bool>("usingAllChannels",1);
   wAllChannels                = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
