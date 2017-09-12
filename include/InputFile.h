@@ -126,12 +126,12 @@ private:
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous event
-  Short_t      *ChainAdcChannel;                                     // input TChain data
+  UShort_t      *ChainAdcChannel;                                     // input TChain data
   Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
-  Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
-  Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
+  UShort_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
+  UShort_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float>* TotalCryEnergy;
 
   //branches for the input TChain
@@ -148,9 +148,9 @@ private:
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
-  Short_t      *TreeAdcChannel;                                      // channels data for this event
+  UShort_t      *TreeAdcChannel;                                      // channels data for this event
   int           TreeTriggerChannel;                                  // trigger channel for this event
-  Short_t       TreeTagging;                                         // tagging crystal data for this event
+  UShort_t       TreeTagging;                                         // tagging crystal data for this event
   Float_t       TreeFloodX;                                          // u position for this event
   Float_t       TreeFloodY;                                          // v position for this event
   Float_t       TreeFloodZ;                                          // w position for this event
@@ -161,8 +161,8 @@ private:
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
-  Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
-  Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
+  UShort_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
+  UShort_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float> TreeTotalCryEnergy;
   std::vector <float>* pTreeTotalCryEnergy;
 

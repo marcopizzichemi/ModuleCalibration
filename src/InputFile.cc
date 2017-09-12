@@ -366,10 +366,10 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   ftree               = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
-  ChainAdcChannel     = new Short_t [adcChannels]; // input from ADC
+  ChainAdcChannel     = new UShort_t [adcChannels]; // input from ADC
   DigitizerChannelOn  = new bool[adcChannels];
   bChainAdcChannel    = new TBranch* [adcChannels];
-  TreeAdcChannel      = new Short_t [inputChannels]; // channels analyzed
+  TreeAdcChannel      = new UShort_t [inputChannels]; // channels analyzed
 }
 
 
@@ -428,10 +428,10 @@ void InputFile::PrepareTTree()
     //empty the stringstreams
     std::stringstream sname,stype;
     sname << "ch" << detector[i].digitizerChannel;
-    stype << "ch" << detector[i].digitizerChannel << "/S";
+    stype << "ch" << detector[i].digitizerChannel << "/s";
     ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
   }
-  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/S");
+  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/s");
   ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
@@ -512,7 +512,7 @@ void InputFile::FillTree()
             {
               TreeBadevent = true;
             }
-            TreeAdcChannel[iDet] = (Short_t)round(-detector[iDet].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[iDet].saturation )));
+            TreeAdcChannel[iDet] = (UShort_t)round(-detector[iDet].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[iDet].saturation )));
           }
           else
             TreeAdcChannel[iDet] = ChainAdcChannel[j];
