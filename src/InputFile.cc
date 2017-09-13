@@ -69,6 +69,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   esrThickness                = config.read<double>("esrThickness",0.07);
   usingAllChannels            = config.read<bool>("usingAllChannels",1);
   wAllChannels                = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
+  digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme
 
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -366,10 +367,12 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   fchain              = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   ftree               = new TTree(fname.c_str(),fname.c_str());
   // first, create the adc channels variables and branches
-  ChainAdcChannel     = new UShort_t [adcChannels]; // input from ADC
+  ChainAdcChannel        = new Int_t [adcChannels];
+  ChainDesktopAdcChannel     = new Short_t [adcChannels]; // input from ADC desktop
+  ChainVMEadcChannel     = new UShort_t [adcChannels]; // input from ADC desktop
   DigitizerChannelOn  = new bool[adcChannels];
   bChainAdcChannel    = new TBranch* [adcChannels];
-  TreeAdcChannel      = new UShort_t [inputChannels]; // channels analyzed
+  TreeAdcChannel      = new Int_t [inputChannels]; // channels analyzed
 }
 
 
@@ -412,7 +415,14 @@ void InputFile::ImportTChain(int argc, char** argv)
   {
     std::stringstream sname;
     sname << "ch" << i;
-    fchain->SetBranchAddress(sname.str().c_str(), &ChainAdcChannel[i], &bChainAdcChannel[i]);
+    if(digitizerType == 0)
+    {
+      fchain->SetBranchAddress(sname.str().c_str(), &ChainDesktopAdcChannel[i], &bChainAdcChannel[i]);
+    }
+    else
+    {
+      fchain->SetBranchAddress(sname.str().c_str(), &ChainVMEadcChannel[i], &bChainAdcChannel[i]);
+    }
   }
 }
 
@@ -428,10 +438,10 @@ void InputFile::PrepareTTree()
     //empty the stringstreams
     std::stringstream sname,stype;
     sname << "ch" << detector[i].digitizerChannel;
-    stype << "ch" << detector[i].digitizerChannel << "/s";
+    stype << "ch" << detector[i].digitizerChannel << "/I";
     ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
   }
-  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/s");
+  if(usingTaggingBench) ftree->Branch("Tagging",&TreeTagging,"Tagging/I");
   ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
@@ -496,6 +506,20 @@ void InputFile::FillTree()
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
 
+    //copy the input charges to the larger type array
+    for (int j = 0 ; j < adcChannels ; j++)
+    {
+      if(digitizerType == 0)
+      {
+        ChainAdcChannel[j] = ChainDesktopAdcChannel[j];
+      }
+      else
+      {
+        ChainAdcChannel[j] = ChainVMEadcChannel[j];
+      }
+
+    }
+
     // int TreeEntryCounter = 0;
     int detectorCounter = 0;
     int TriggerID = 0;
@@ -512,10 +536,10 @@ void InputFile::FillTree()
             {
               TreeBadevent = true;
             }
-            TreeAdcChannel[iDet] = (UShort_t)round(-detector[iDet].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[iDet].saturation )));
+            TreeAdcChannel[iDet] = (Int_t)round(-detector[iDet].saturation * TMath::Log(1.0 - ( ChainAdcChannel[j]/detector[iDet].saturation )));
           }
           else
-            TreeAdcChannel[iDet] = ChainAdcChannel[j];
+            TreeAdcChannel[iDet] = (Int_t) ChainAdcChannel[j];
               //find the max charge and therefore the TriggerChannel
           if (TreeAdcChannel[iDet] > maxCharge)
           {

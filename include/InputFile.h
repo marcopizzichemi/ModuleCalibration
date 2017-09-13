@@ -118,6 +118,7 @@ private:
   double                         esrThickness;                       // thickness of esr separation foil [mm]
   double                         chargeBinningADC;                   // adc charge binning
   int                            saturationFormat;                   // format of saturation input. It can be in units of ADC_CHANNELS or CHARGE
+  int digitizerType;
 
   int                            global_histo3DchannelBin;
   int                            global_div;
@@ -126,12 +127,14 @@ private:
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous event
-  UShort_t      *ChainAdcChannel;                                     // input TChain data
+  Int_t        *ChainAdcChannel;
+  Short_t      *ChainDesktopAdcChannel;                              // input TChain data for desktop digitizers - data is int_16
+  UShort_t     *ChainVMEadcChannel;                                  // input TChain data for VME digitizers - data is uint_16
   Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
-  UShort_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
-  UShort_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
+  Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
+  Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float>* TotalCryEnergy;
 
   //branches for the input TChain
@@ -148,9 +151,9 @@ private:
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
-  UShort_t      *TreeAdcChannel;                                      // channels data for this event
+  Int_t      *TreeAdcChannel;                                      // channels data for this event - here is ALWAYS int_32, so it can include both int_16 and uint_16 without truncation
   int           TreeTriggerChannel;                                  // trigger channel for this event
-  UShort_t       TreeTagging;                                         // tagging crystal data for this event
+  Int_t       TreeTagging;                                         // tagging crystal data for this event
   Float_t       TreeFloodX;                                          // u position for this event
   Float_t       TreeFloodY;                                          // v position for this event
   Float_t       TreeFloodZ;                                          // w position for this event
@@ -161,8 +164,8 @@ private:
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealY;                                           // "real" gamma interaction positions (from simulation data)
   Float_t       TreeRealZ;                                           // "real" gamma interaction positions (from simulation data)
-  UShort_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
-  UShort_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
+  Short_t       TreeCrystalsHit;                                     // "real" number of crystals hit in the event (from simulation data)
+  Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float> TreeTotalCryEnergy;
   std::vector <float>* pTreeTotalCryEnergy;
 
