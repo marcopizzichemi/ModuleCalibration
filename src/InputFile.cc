@@ -19,12 +19,12 @@
 #include "TEllipse.h"
 #include "TROOT.h"
 
-struct Point // definition fo a point (it is used in the binary output)
-{
-  float x;
-  float y;
-  float z;
-} __attribute__((__packed__));
+// struct Point // definition fo a point (it is used in the binary output)
+// {
+//   float x;
+//   float y;
+//   float z;
+// } __attribute__((__packed__));
 
 
 // default constructor.
@@ -36,7 +36,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
   gErrorIgnoreLevel = kError;
   //read configuration file
-  fname                       = config.read<std::string>("chainName");
+  fname                       = config.read<std::string>("chainName","adc");
   ncrystalsx                  = config.read<int>("ncrystalsx",2);
   ncrystalsy                  = config.read<int>("ncrystalsy");
   nmppcx                      = config.read<int>("nmppcx");
@@ -47,18 +47,22 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
   taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
   usingRealSimData            = config.read<bool>("usingRealSimData");
-  binary                      = config.read<bool>("binary");
+  // binary                      = config.read<bool>("binary");
   correctingSaturation        = config.read<bool>("correctingSaturation");
   saturationRun               = config.read<bool>("saturationRun",0);
-  BinaryOutputFileName        = config.read<std::string>("output");
-  BinaryOutputFileName       += ".bin";
+  // BinaryOutputFileName        = config.read<std::string>("output");
+  // BinaryOutputFileName       += ".bin";
   //read the strings that describe the input channels
   digitizer_s                 = config.read<std::string>("digitizer");
   mppc_s                      = config.read<std::string>("mppc");
   plotPositions_s             = config.read<std::string>("plotPositions");
   xPositions_s                = config.read<std::string>("xPositions");
   yPositions_s                = config.read<std::string>("yPositions");
-  saturation_s                = config.read<std::string>("saturation");
+  if(correctingSaturation)
+  {
+    saturation_s                = config.read<std::string>("saturation");
+  }
+
   adcChannels                 = config.read<int>("digitizerTotalCh");
   nclock                      = config.read<double>("nclock",0);
   crystalx                    = config.read<double>("crystalx",1.53);
@@ -67,7 +71,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   chargeBinningADC            = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
   saturationFormat            = config.read<int>("saturationFormat",0);   // format of saturation data
   esrThickness                = config.read<double>("esrThickness",0.07);
-  usingAllChannels            = config.read<bool>("usingAllChannels",1);
+  usingAllChannels            = config.read<bool>("usingAllChannels",0);
   wAllChannels                = config.read<bool>("wAllChannels",0);                  // whether we use the sum of all channels to compute w (true = 1) of just the neighbours (false = 0). Deafult to false.
   digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme
 
@@ -77,7 +81,11 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   config.split( plotPositions_f, plotPositions_s, "," );
   config.split( xPositions_f, xPositions_s, "," );
   config.split( yPositions_f, yPositions_s, "," );
-  config.split( saturation_f, saturation_s, "," );
+  if(correctingSaturation)
+  {
+    config.split( saturation_f, saturation_s, "," );
+  }
+
   //trim them using the config file class (i.e. remove spaces)
   //and at the same time put in vectors with numbers for the ones that are numbers
   for(int i = 0 ; i < digitizer_f.size() ; i++)
@@ -105,14 +113,21 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     config.trim(yPositions_f[i]);
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
-  for(int i = 0 ; i < saturation_f.size() ; i++)
+  if(correctingSaturation)
   {
-    config.trim(saturation_f[i]);
-    saturation.push_back(atof(saturation_f[i].c_str()));
+    for(int i = 0 ; i < saturation_f.size() ; i++)
+    {
+      config.trim(saturation_f[i]);
+      saturation.push_back(atof(saturation_f[i].c_str()));
+    }
   }
-  //check if the vectors just built have the same size
-  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) && (digitizer.size() == saturation.size()) );
 
+  //check if the vectors just built have the same size
+  assert( (digitizer.size() == mppc_label.size() ) && (digitizer.size() == plotPositions.size()) && (digitizer.size() == xPositions.size()) && (digitizer.size() == yPositions.size()) );
+  if(correctingSaturation)
+  {
+    assert(digitizer.size() == saturation.size());
+  }
 
 
 
@@ -170,13 +185,16 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     det.digitizerChannel = digitizer[i];
     det.label            = mppc_label[i];
     //convert saturation data to ADC channels, if necessary
-    if(saturationFormat == 0)
+    if(correctingSaturation)
     {
-      det.saturation       = saturation[i];
-    }
-    else
-    {
-      det.saturation       = saturation[i] / chargeBinningADC;
+      if(saturationFormat == 0)
+      {
+        det.saturation       = saturation[i];
+      }
+      else
+      {
+        det.saturation       = saturation[i] / chargeBinningADC;
+      }
     }
     // std::cout << det.saturation << std::endl;
     det.plotPosition     = plotPositions[i];
@@ -476,10 +494,10 @@ void InputFile::FillTree()
   long long int badEvents = 0;
   long long int counter = 0;
 
-  Point point;
-  ofstream output_file;
-  if(binary)
-    output_file.open(BinaryOutputFileName.c_str(), std::ios::binary);
+  // Point point;
+  // ofstream output_file;
+  // if(binary)
+  //   output_file.open(BinaryOutputFileName.c_str(), std::ios::binary);
 
   for(int i = 0; i < adcChannels; i++)
   {
@@ -633,9 +651,9 @@ void InputFile::FillTree()
     TreeTheta = std::acos(TreeFloodZ /( std::sqrt( std::pow(TreeFloodX - 2.8,2) + std::pow(TreeFloodY - (-1.0),2) + std::pow(TreeFloodZ,2)) ));
     TreePhi =  std::atan (TreeFloodY / TreeFloodX);
 
-    point.x = TreeFloodX;
-    point.y = TreeFloodY;
-    point.z = TreeFloodZ;
+    // point.x = TreeFloodX;
+    // point.y = TreeFloodY;
+    // point.z = TreeFloodZ;
 
     if(usingRealSimData)
     {
@@ -662,8 +680,8 @@ void InputFile::FillTree()
         badEvents++;
       }
     }
-    if(binary)
-      output_file.write((char*)&point,sizeof(point));
+    // if(binary)
+    //   output_file.write((char*)&point,sizeof(point));
 
     //counter to give a feedback to the user
     counter++;
@@ -685,8 +703,8 @@ void InputFile::FillTree()
   std::cout << "Bad events = \t" << badEvents << std::endl;
 
   //close the binary file if it was opened
-  if(binary)
-    output_file.close();
+  // if(binary)
+  //   output_file.close();
   //   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
   //std::cout << "Bad events = \t" << badEvents << std::endl;
 

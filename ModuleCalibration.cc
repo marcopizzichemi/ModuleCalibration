@@ -239,18 +239,18 @@ int main (int argc, char** argv)
   int nmppcy                    = config.read<int>("nmppcy",2);                     // number of mppc in y direction per mppc - default to 2 if the key is not found in the config file
   int nmodulex                  = config.read<int>("nmodulex",1);                   // number of modules in x direction per mppc - default to 1 if the key is not found in the config file
   int nmoduley                  = config.read<int>("nmoduley",1);                   // number of modules in y direction per mppc - default to 1 if the key is not found in the config file
-  int histo1Dmax                = config.read<int>("histo1Dmax");                   // max of the 1D charge histograms (in ADC channels)
-  int histo1Dbins               = config.read<int>("histo1Dbins");                  // number of bins of the 1D charge histograms
+  int histo1Dmax                = config.read<int>("histo1Dmax",25000);                   // max of the 1D charge histograms (in ADC channels)
+  int histo1Dbins               = config.read<int>("histo1Dbins",250);                  // number of bins of the 1D charge histograms
   int histoLYmax                = config.read<int>("histoLYmax",20000);                   // max of the 1D charge histograms (in ADC channels)
   int histoLYbins               = config.read<int>("histoLYbins",500);                  // number of bins of the 1D charge histograms
   double qe                     = config.read<double>("qe",0.35);                   // mppc QE
   double gainMPPC               = config.read<double>("gainMPPC",1.25e6);           // mppc gain
   double chargeBinningADC       = config.read<double>("chargeBinningADC",156e-15);  // adc charge binning
   double sourceMeV              = config.read<double>("sourceMeV",0.511);           // gamma peak in MeV
-  int histo2DchannelBin         = config.read<int>("histo2DchannelBin");            // number of bins of the 2D flood histograms, for single channels
-  int histo2DglobalBins         = config.read<int>("histo2DglobalBins");            // number of bins of the 2D flood histograms, for entire module
+  int histo2DchannelBin         = config.read<int>("histo2DchannelBin",250);            // number of bins of the 2D flood histograms, for single channels
+  int histo2DglobalBins         = config.read<int>("histo2DglobalBins",1000);            // number of bins of the 2D flood histograms, for entire module
   //   int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
-  int histo3DglobalBins         = config.read<int>("histo3DglobalBins");            // number of bins of the 3D flood histograms, for entire module
+  int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
@@ -273,16 +273,16 @@ int main (int argc, char** argv)
   float thresholdKev            = config.read<float>("thresholdKev",1.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
   double crystalz               = config.read<double>("crystalz",15);
-  double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
-  double RealmCalVsIJmin        = config.read<double>("RealmCalVsIJmin",-400);          // min of the 2d mCal values plot
-  double RealmCalVsIJmax        = config.read<double>("RealmCalVsIJmax",400);           // max of the 2d mCal values plot
-  double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
+  // double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
+  // double RealmCalVsIJmin        = config.read<double>("RealmCalVsIJmin",-400);          // min of the 2d mCal values plot
+  // double RealmCalVsIJmax        = config.read<double>("RealmCalVsIJmax",400);           // max of the 2d mCal values plot
+  // double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
   double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0)
   double LYvsIJmax              = config.read<double>("LYvsIJmax",40000);
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
-  double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
+  // double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
   int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
   double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
@@ -350,29 +350,29 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   //  Load electronic calibration values                      //
   //----------------------------------------------------------//
-  std::string calibFileName = config.read<std::string>("doiComparison","0");
-  std::vector<Double_t> m_tag;
-  //   std::vector<Double_t> m_cal;
-  std::vector<Double_t> q_tag;
-  //   std::vector<Double_t> q_cal;
-
-  if(calibFileName != "0")
-  {
-    std::ifstream inFile_calib;
-    inFile_calib.open(calibFileName.c_str(),std::ios::in);
-    while(!inFile_calib.eof())
-    {
-      Double_t foo, a, b, c, d;
-      inFile_calib >> foo >> a >> b;
-      //       m_cal.push_back(a);
-      //       q_cal.push_back(b);
-      m_tag.push_back(c);
-      q_tag.push_back(d);
-      //       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
-      //       i++;
-    }
-    inFile_calib.close();
-  }
+  // std::string calibFileName = config.read<std::string>("calibFileName","0");
+  // std::vector<Double_t> m_tag;
+  // //   std::vector<Double_t> m_cal;
+  // std::vector<Double_t> q_tag;
+  // //   std::vector<Double_t> q_cal;
+  //
+  // if(calibFileName != "0")
+  // {
+  //   std::ifstream inFile_calib;
+  //   inFile_calib.open(calibFileName.c_str(),std::ios::in);
+  //   while(!inFile_calib.eof())
+  //   {
+  //     Double_t foo, a, b, c, d;
+  //     inFile_calib >> foo >> a >> b;
+  //     //       m_cal.push_back(a);
+  //     //       q_cal.push_back(b);
+  //     m_tag.push_back(c);
+  //     q_tag.push_back(d);
+  //     //       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
+  //     //       i++;
+  //   }
+  //   inFile_calib.close();
+  // }
 
 
   //----------------------------------------------------------//
