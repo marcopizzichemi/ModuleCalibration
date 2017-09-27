@@ -190,7 +190,7 @@ private:
 
 public:
 
-  InputFile(int argc, char** argv, ConfigFile& config);              //ctor
+  InputFile(ConfigFile& config);              //ctor
 
   static InputFile*  Instance() { return fInstance; };               // not useful right now
   static InputFile*  fInstance;                                      // not useful right now

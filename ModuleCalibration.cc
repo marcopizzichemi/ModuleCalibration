@@ -128,6 +128,9 @@ int main (int argc, char** argv)
     return 0;
   }
 
+
+
+
   //----------------------------------------------------------//
   //  Say hello to the user                                   //
   //----------------------------------------------------------//
@@ -156,83 +159,27 @@ int main (int argc, char** argv)
   {
     std::cout << "Configuration file set to default: config.cfg "<< std::endl;
   }
+
+  //PUT THE ENTIRE CONFIG FILE IN A STRINGSTREAM, TO SAVE IT LATER IN THE OUTPUT FILE
+  std::stringstream streamConfigFile;
+  std::string strConfig;
+  std::ifstream inConfig;
+  inConfig.open (ConfigFileName.c_str(), std::ifstream::in);
+  while (std::getline(inConfig, strConfig))
+  {
+    streamConfigFile << strConfig << std::endl;
+  }
+  inConfig.close();
   ConfigFile config(ConfigFileName); // create a ConfigFile object
-  InputFile input(argc,argv,config); // read the input chain of root files, passing the inputs and the config object
-
-  //decide whether to load the ttree from file or produce it, and whether to save it or not to file
-  std::string loadAnalysisTreeName         = config.read<std::string>("loadAnalysisTreeName","0");       // look for input analysis ttree in config file. if no input, it will produced by this program
-  std::string saveAnalysisTreeName         = config.read<std::string>("saveAnalysisTreeName","0");       // look for filename to save analysis ttree in config file. if no filename, analysis tree won't be saved
-
-  bool loadAnalysisTree;
-  bool saveAnalysisTree          = config.read<bool>("saveAnalysisTree",0);            // choice to save or not the analysis TTree, in a file (name chosen above)
-
-  if(loadAnalysisTreeName.compare("0") == 0) // no file provided to load ttree
-  loadAnalysisTree = false;
-  else  // file provided
-  loadAnalysisTree = true;
-
-  //   else // analysis tree is produced by the analysis, not loaded
-  //   {
-  if(!saveAnalysisTree) // user didn't set to save ttree
-  {
-    if(saveAnalysisTreeName.compare("0") != 0) // but gave a name to save the ttree
-    {
-      saveAnalysisTree = true;  // then set the ttree to be saved
-    }
-  }
-  else //user set the flag to save ttree
-  {
-    if(saveAnalysisTreeName.compare("0") == 0) // but didn't give a name to save the ttree
-    {
-      saveAnalysisTreeName = "temp.root"; // then set the ttree to be saved into temp.root file
-    }
-  }
-  //   }
-
-  if(loadAnalysisTree) // anyway there's no point saving the analysis tree if it's not produced by this analysis but just loaded from file
-  {
-    saveAnalysisTree = false;
-  }
-  //     std::cout << "***** Analysis TTree is input by the user, it won't be overwritten or saved to another file *****" << std::endl;
-  //   }
-  //   else
-  //   {
-  //     std::cout << "Analysis TTree will be produced by this program" << std::endl;
-  //   }
-
-  //check
-
-  std::cout<<"\n"<<std::endl;
-  std::cout<<"###########################################################"<<std::endl;
-  std::cout<<"#                                                         #"<<std::endl;
-  if(loadAnalysisTree)
-  std::cout << "# Analysis TTree loaded from file " << loadAnalysisTreeName.c_str() << std::endl;
-  else
-  std::cout << "# Analysis TTree produced by this program " << std::endl;
-  if(saveAnalysisTree)
-  std::cout << "# Analysis TTree will be saved to file " << saveAnalysisTreeName.c_str() << std::endl;
-  else
-  std::cout << "# No analysis TTree file will be saved " << std::endl;
-  std::cout<<"#                                                         #"<<std::endl;
-  std::cout<<"###########################################################"<<std::endl;
-  std::cout<<"\n"<<std::endl;
+  InputFile input(config); // read the input chain of root files, passing the inputs and the config object
 
 
-  if(!loadAnalysisTree)
-  {
-    input.ImportTChain(argc,argv);
-    input.PrepareTTree();
-    input.FillTree();                        // create the TTree that will be used in analysis
-
-
-  }
-  else    // otherwise load it from the indicated file
-  {
-    TFile *fTemp = new TFile(loadAnalysisTreeName.c_str());
-    TTree *TempTree =  (TTree*) fTemp->Get("adc");
-    input.SetTree(TempTree);
-  }
-
+  /////////////////////////////////////////////
+  // READ CONFIG FILE                        //
+  ////////////////////////////////////////////7
+  std::string chainName         = config.read<std::string>("chainName","adc");
+  int digitizerTotalCh                 = config.read<int>("digitizerTotalCh");
+  int digitizerType               = config.read<int>("digitizerType",0);
   int ncrystalsx                = config.read<int>("ncrystalsx",2);                 // number of crystals in x direction per mppc - default to 2 if the key is not found in the config file
   int ncrystalsy                = config.read<int>("ncrystalsy",2);                 // number of crystals in y direction per mppc - default to 2 if the key is not found in the config file
   int nmppcx                    = config.read<int>("nmppcx",2);                     // number of mppc in x direction per mppc - default to 2 if the key is not found in the config file
@@ -249,12 +196,10 @@ int main (int argc, char** argv)
   double sourceMeV              = config.read<double>("sourceMeV",0.511);           // gamma peak in MeV
   int histo2DchannelBin         = config.read<int>("histo2DchannelBin",250);            // number of bins of the 2D flood histograms, for single channels
   int histo2DglobalBins         = config.read<int>("histo2DglobalBins",1000);            // number of bins of the 2D flood histograms, for entire module
-  //   int histo3DchannelBin         = config.read<int>("histo3DchannelBin",100);            // number of bins of the 3D flood histograms, for single channels
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
   int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
-
   float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not
   int taggingCrystalChannel     = config.read<int>("taggingCrystalChannel",16);        // input channel where the tagging crystal information is stored
@@ -273,16 +218,11 @@ int main (int argc, char** argv)
   float thresholdKev            = config.read<float>("thresholdKev",1.0);
   float wThreshold              = config.read<float>("wThreshold",0.1);                 // Threshold for w plots limits
   double crystalz               = config.read<double>("crystalz",15);
-  // double qCalVsIJmax            = config.read<double>("qCalVsIJmax",100);               // max of the 2d qCal values plot (starts from 0)
-  // double RealmCalVsIJmin        = config.read<double>("RealmCalVsIJmin",-400);          // min of the 2d mCal values plot
-  // double RealmCalVsIJmax        = config.read<double>("RealmCalVsIJmax",400);           // max of the 2d mCal values plot
-  // double mCalVsIJmax            = config.read<double>("mCalVsIJmax",400);               // max of the 2d abs(mCal) values plot (starts from 0)
   double DoiResolutionVsIJmax   = config.read<double>("DoiResolutionVsIJmax",10);       // max of the 2d DoiResolution values plot (starts from 0) - it's mm
   double EnergyResolutionVsIJmax= config.read<double>("EnergyResolutionVsIJmax",0.3);   // max of the 2d EnergyResolution values plot (starts from 0)
   double LYvsIJmax              = config.read<double>("LYvsIJmax",40000);
   double PeakPositionVsIJmax    = config.read<double>("PeakPositionVsIJmax",12000);     // max of the 2d PeakPosition values plot (starts from 0)  - it's ADC channels
   int wHistogramsBins           = config.read<int>("wHistogramsBins",250);
-  // double userSigmaW             = config.read<double>("userSigmaW",-1);                 // sigma of w distros for "pointlike" excitation, fixed externally by the user. If nothing specified in the config file, it will be calculated by fitting the rise of w histogram
   int doiColumnOffset           = config.read<int>("doiColumnOffset",0);                // for DOI output, fix the column i by adding this quantity. if not stated, 0 by default
   double energyCorrectionMin    = config.read<double>("energyCorrectionMin",0.25);      // once the wmin and wmax are found for each w histo, choose at which point to start and to stop the linear fitting
   double energyCorrectionMax    = config.read<double>("energyCorrectionMax",0.75);      // (as percentage from min to max)
@@ -304,14 +244,114 @@ int main (int argc, char** argv)
   bool backgroundSaturationRun              = config.read<bool>("backgroundSaturationRun",0);
   // set output file name
   std::string outputFileName = config.read<std::string>("output");
+  std::string digitizer_s   = config.read<std::string>("digitizer");
+  std::string saturationPeakEnergy_s = config.read<std::string>("saturationPeakEnergy","");
+  std::string saturationPeakMin_s = config.read<std::string>("saturationPeakMin","");
+  std::string saturationPeakMax_s = config.read<std::string>("saturationPeakMax","");
+  std::string loadAnalysisTreeName         = config.read<std::string>("loadAnalysisTreeName","0");       // look for input analysis ttree in config file. if no input, it will produced by this program
+  std::string saveAnalysisTreeName         = config.read<std::string>("saveAnalysisTreeName","0");       // look for filename to save analysis ttree in config file. if no filename, analysis tree won't be saved
+  bool saveAnalysisTree          = config.read<bool>("saveAnalysisTree",0);            // choice to save or not the analysis TTree, in a file (name chosen above)
+
+
+
+  //----------------------------------------------------------//
+  //  Load and save TTree                                     //
+  //----------------------------------------------------------//
+  //decide whether to load the ttree from file or produce it, and whether to save it or not to file
+  bool loadAnalysisTree;
+  if(loadAnalysisTreeName.compare("0") == 0) // no file provided to load ttree
+    loadAnalysisTree = false;
+  else  // file provided
+    loadAnalysisTree = true;
+  if(!saveAnalysisTree) // user didn't set to save ttree
+  {
+    if(saveAnalysisTreeName.compare("0") != 0) // but gave a name to save the ttree
+    {
+      saveAnalysisTree = true;  // then set the ttree to be saved
+    }
+  }
+  else //user set the flag to save ttree
+  {
+    if(saveAnalysisTreeName.compare("0") == 0) // but didn't give a name to save the ttree
+    {
+      saveAnalysisTreeName = "temp.root"; // then set the ttree to be saved into temp.root file
+    }
+  }
+  if(loadAnalysisTree) // anyway there's no point saving the analysis tree if it's not produced by this analysis but just loaded from file
+  {
+    saveAnalysisTree = false;
+  }
+  std::cout<<"\n"<<std::endl;
+  std::cout<<"###########################################################"<<std::endl;
+  std::cout<<"#                                                         #"<<std::endl;
+  if(loadAnalysisTree)
+  std::cout << "# Analysis TTree loaded from file " << loadAnalysisTreeName.c_str() << std::endl;
+  else
+  std::cout << "# Analysis TTree produced by this program " << std::endl;
+  if(saveAnalysisTree)
+  std::cout << "# Analysis TTree will be saved to file " << saveAnalysisTreeName.c_str() << std::endl;
+  else
+  std::cout << "# No analysis TTree file will be saved " << std::endl;
+  std::cout<<"#                                                         #"<<std::endl;
+  std::cout<<"###########################################################"<<std::endl;
+  std::cout<<"\n"<<std::endl;
+  if(!loadAnalysisTree)
+  {
+    input.ImportTChain(argc,argv);
+    input.PrepareTTree();
+    input.FillTree();                        // create the TTree that will be used in analysis
+  }
+  else    // otherwise load it from the indicated file
+  {
+    TFile *fTemp = new TFile(loadAnalysisTreeName.c_str());
+    TTree *TempTree =  (TTree*) fTemp->Get("adc");
+    input.SetTree(TempTree);
+  }
+
+  // GET INFO ON PC AND FILES
+  char hostname[1024];
+  hostname[1023] = '\0';
+  gethostname(hostname, 1023);
+  std::string HostNameString(hostname);
+
+  char cwd[1024];
+  getcwd(cwd, sizeof(cwd));
+  std::string PWDstring(cwd);
+  std::cout << cwd << std::endl;
+
+  std::stringstream InputFiles;  // list of all input files
+  if(!loadAnalysisTree)
+  {
+    if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
+    {
+      for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
+      {
+        // std::cout << "Adding file " << argv[i] << std::endl;
+        InputFiles << argv[i] << std::endl;
+      }
+    }
+    else // the config file was indeed the default one
+    {
+      for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
+      {
+        // std::cout << "Adding file " << argv[i] << std::endl;
+        InputFiles << argv[i] << std::endl;
+      }
+    }
+    // std::cout << InputFiles.str() << std::endl;
+  }
+  else
+  {
+    InputFiles << loadAnalysisTreeName.c_str();
+  }
+
   outputFileName += ".root";
   // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
   // first get the input digitizer channels
-  std::string digitizer_s   = config.read<std::string>("digitizer");
   std::vector<std::string> digitizer_f;
   config.split( digitizer_f, digitizer_s, "," );
   std::vector<int> digitizer;
-  for(int i = 0 ; i < digitizer_f.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
   {
     config.trim(digitizer_f[i]);
     digitizer.push_back(atoi(digitizer_f[i].c_str()));
@@ -320,7 +360,7 @@ int main (int argc, char** argv)
   std::stringstream sSumChannels;
   std::string SumChannels;
   sSumChannels << "ch" <<  digitizer[0];
-  for(int i = 1 ; i < digitizer.size() ; i++)
+  for(unsigned int i = 1 ; i < digitizer.size() ; i++)
   sSumChannels << "+ch" << digitizer[i];
   SumChannels = sSumChannels.str();
   //   std::cout << SumChannels << std::endl;
@@ -347,40 +387,12 @@ int main (int argc, char** argv)
   input.FillElements(module,mppc,crystal);
   //----------------------------------------------------------//
 
-  //----------------------------------------------------------//
-  //  Load electronic calibration values                      //
-  //----------------------------------------------------------//
-  // std::string calibFileName = config.read<std::string>("calibFileName","0");
-  // std::vector<Double_t> m_tag;
-  // //   std::vector<Double_t> m_cal;
-  // std::vector<Double_t> q_tag;
-  // //   std::vector<Double_t> q_cal;
-  //
-  // if(calibFileName != "0")
-  // {
-  //   std::ifstream inFile_calib;
-  //   inFile_calib.open(calibFileName.c_str(),std::ios::in);
-  //   while(!inFile_calib.eof())
-  //   {
-  //     Double_t foo, a, b, c, d;
-  //     inFile_calib >> foo >> a >> b;
-  //     //       m_cal.push_back(a);
-  //     //       q_cal.push_back(b);
-  //     m_tag.push_back(c);
-  //     q_tag.push_back(d);
-  //     //       inFile_calib >> foo >>m_cal[i]>>q_cal[i]>>m_tag[i]>>q_tag[i];
-  //     //       i++;
-  //   }
-  //   inFile_calib.close();
-  // }
 
 
   //----------------------------------------------------------//
   //  Plots and spectra                                       //
   //----------------------------------------------------------//
   // get the TTree, to plot the spectra
-
-
   TTree* tree = input.GetTree();
 
   // doi bench specific part
@@ -392,8 +404,8 @@ int main (int argc, char** argv)
   std::ofstream saturationFile;
 
   TCut triggerPhotopeakCut = "" ;
-  TH1F* TaggingCrystalSpectrum;
-  TH1F *TriggerSpectrumHighlight;
+  TH1F* TaggingCrystalSpectrum = NULL;
+  TH1F *TriggerSpectrumHighlight = NULL;
 
   if(usingTaggingBench)
   {
@@ -432,32 +444,30 @@ int main (int argc, char** argv)
     }
 
     //read the config file to set the search areas for peaks
-    std::string                 saturationPeakEnergy_s,saturationPeakMin_s,saturationPeakMax_s;
+    // std::string                 saturationPeakEnergy_s,saturationPeakMin_s,saturationPeakMax_s;
     std::vector <std::string>   saturationPeakEnergy_f,saturationPeakMin_f,saturationPeakMax_f;
     std::vector <float>         saturationPeakEnergy,saturationPeakMin,saturationPeakMax;
-    saturationPeakEnergy_s = config.read<std::string>("saturationPeakEnergy","");
-    saturationPeakMin_s = config.read<std::string>("saturationPeakMin","");
-    saturationPeakMax_s = config.read<std::string>("saturationPeakMax","");
+
     config.split( saturationPeakEnergy_f, saturationPeakEnergy_s, "," );
     config.split( saturationPeakMin_f, saturationPeakMin_s, "," );
     config.split( saturationPeakMax_f, saturationPeakMax_s, "," );
-    for(int i = 0 ; i < saturationPeakEnergy_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakEnergy_f.size() ; i++)
     {
       config.trim(saturationPeakEnergy_f[i]);
       saturationPeakEnergy.push_back(atof(saturationPeakEnergy_f[i].c_str()));
     }
-    for(int i = 0 ; i < saturationPeakMin_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakMin_f.size() ; i++)
     {
       config.trim(saturationPeakMin_f[i]);
       saturationPeakMin.push_back(atof(saturationPeakMin_f[i].c_str()));
     }
-    for(int i = 0 ; i < saturationPeakMax_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakMax_f.size() ; i++)
     {
       config.trim(saturationPeakMax_f[i]);
       saturationPeakMax.push_back(atof(saturationPeakMax_f[i].c_str()));
     }
     // store data in saturationPeak vector of struct
-    for(int i = 0 ; i < saturationPeakEnergy.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakEnergy.size() ; i++)
     {
       SaturationPeak_t tempPeak;
       tempPeak.energy  = saturationPeakEnergy[i];
@@ -546,7 +556,8 @@ int main (int argc, char** argv)
         //find peak in the tagging crystal
         TSpectrum *sTagCrystal;
         sTagCrystal = new TSpectrum(1);
-        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
+        // Int_t TagCrystalPeaksN =
+        sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
         Float_t *TagCrystalPeaks = sTagCrystal->GetPositionX();
         TF1 *gaussTag = new TF1("gaussTag", "gaus");
         TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[0] - 0.075*TagCrystalPeaks[0],TagCrystalPeaks[0] + 0.075*TagCrystalPeaks[0]);
@@ -660,7 +671,7 @@ int main (int argc, char** argv)
               sTrigger = new TSpectrum(20);
               Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.2);
               Float_t *TriggerCrystalPeaks  = sTrigger->GetPositionX();
-              Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
+              // Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
               //delete s;
               float TriggermaxPeak = 0.0;
               int TriggerpeakID    = 0;
@@ -905,7 +916,7 @@ int main (int argc, char** argv)
                       std::stringstream sneigh;
                       sneigh << "TriggerChannel != " <<   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
                       NotNeighbours += sneigh.str().c_str();
-                      for(int iNeig = 0 ;  iNeig < neighbours.size(); iNeig++)
+                      for(unsigned int iNeig = 0 ;  iNeig < neighbours.size(); iNeig++)
                       {
                         std::stringstream sneigh2;
                         sneigh2.str("");
@@ -946,7 +957,7 @@ int main (int argc, char** argv)
                       if(performSaturationPeakSearch)
                       {
                         float maxPeakHight = 0;
-                        for(int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
+                        for(unsigned int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
                         {
                           sname << "Peak " << saturationPeak[iSaturation].energy << " KeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
 
@@ -960,7 +971,7 @@ int main (int argc, char** argv)
                           Float_t *CrystalPeaksY = s->GetPositionY();
                           // float saturationPeakFraction
                           //delete s;
-                          float distPeak = INFINITY;
+                          // float distPeak = INFINITY;
                           float maxPeak = 0.0;
                           int peakID = 0;
                           for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
@@ -1224,7 +1235,7 @@ int main (int argc, char** argv)
 
                         if(calcDoiResWithDelta)
                         {
-                          for(int kAltDoi = 0; kAltDoi < inputDoi.size(); kAltDoi++)
+                          for(unsigned int kAltDoi = 0; kAltDoi < inputDoi.size(); kAltDoi++)
                           {
                             int ik = inputDoi[kAltDoi].i;
                             int jk = inputDoi[kAltDoi].j;
@@ -1242,7 +1253,7 @@ int main (int argc, char** argv)
                               sname << "gaussFit Alternate - Crystal " << CurrentCrystal->GetID();
                               TF1 *gaussFitAlt = new TF1(sname.str().c_str(),  "gaus",-10,10); //FIXME boundaries hardcoded
                               Int_t fitStatusAlt = spectrumAltDoiRes->Fit(sname.str().c_str(),"QR");
-                              if(!fitStatus)
+                              if(!fitStatusAlt)
                               {
                                 AltDoiFile << ik << " " << jk << " " << taggingPosition << " " << gaussFitAlt->GetParameter(2)*2.355 << std::endl;
                               }
@@ -1461,20 +1472,20 @@ int main (int argc, char** argv)
 
                       Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
                       Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
-                      double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(FirstBinAbove20perc);
-                      double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(LastBinAbove20perc);
+                      // double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(FirstBinAbove20perc);
+                      // double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(LastBinAbove20perc);
 
-                      double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
+                      // double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
                       Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
                       // look for the first "peak" in w
                       spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average
-                      double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
-                      double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
+                      // double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
+                      // double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
 
                       //FIXME quick fix for second peak, i.e. take the mx in a much shorter w range
                       spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin +  ((int) (0.7*(LastBinAbove20perc - AverageBin))),LastBinAbove20perc);
-                      double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
-                      double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());
+                      // double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
+                      // double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());
 
                       CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
                       // 		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
@@ -1784,8 +1795,8 @@ int main (int argc, char** argv)
     TCanvas* C_spectrum;
     TCanvas* C_multi;
     TCanvas* C_multi_2d;
-    TCanvas* C_global;
-    TCanvas* C_multi_2;
+    // TCanvas* C_global;
+    // TCanvas* C_multi_2;
 
 
     //----------------------------------------------------------//
@@ -1796,7 +1807,7 @@ int main (int argc, char** argv)
     TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
     TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
     TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
-    TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
+    // TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
     TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
     RawCanvas->Divide(nmppcx,nmppcy);
     TriggerCanvas->Divide(nmppcx,nmppcy);
@@ -1836,7 +1847,7 @@ int main (int argc, char** argv)
                 if(performSaturationPeakSearch)
                 {
                   std::vector<TF1*> saturationFits = crystal[iCrystal][jCrystal]->GetSaturationFits();
-                  for(int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
+                  for(unsigned int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
                   {
                     saturationFits[iSaturation]->Draw("same");
                   }
@@ -1850,7 +1861,7 @@ int main (int argc, char** argv)
                 if(performSaturationPeakSearch)
                 {
                   std::vector<TF1*> saturationFits = crystal[iCrystal][jCrystal]->GetSaturationFits();
-                  for(int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
+                  for(unsigned int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
                   {
                     saturationFits[iSaturation]->Draw("same");
                   }
@@ -1900,7 +1911,7 @@ int main (int argc, char** argv)
     //   TCanvas* GlobalCylindricalX = new TCanvas("Cylindrical Plot Theta:X","Cylindrical Plot Theta:X",1200,800);
     //   TCanvas* GlobalCylindricalY = new TCanvas("Cylindrical Plot Theta:Y","Cylindrical Plot Theta:Y",1200,800);
     //canvas for the tagging crystal
-    TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
+    // TCanvas* TaggingCanvas = new TCanvas("Tagging Crystal","Tagging Crystal",1200,800);
     //draw canvases
     std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
     for(int iModule = 0; iModule < nmodulex ; iModule++)
@@ -2202,6 +2213,9 @@ int main (int argc, char** argv)
     //----------------------------------------------------------//
     //write output plots
     TFile* fPlots = new TFile(outputFileName.c_str(),"recreate");
+
+
+
     fPlots->cd();
     //TDirectory
     TDirectory ****directory;
@@ -2382,7 +2396,7 @@ int main (int argc, char** argv)
                         C_spectrum->cd();
                         CurrentCrystal->GetSingleChargeSpectrum()->Draw();
                         std::vector<TF1*> saturationFits = CurrentCrystal->GetSaturationFits();
-                        for(int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
+                        for(unsigned int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
                         {
                           saturationFits[iSaturation]->Draw("same");
                         }
@@ -2887,6 +2901,19 @@ int main (int argc, char** argv)
         //       WDoiDistroCentral->Write();
       }
     }
+    fPlots->cd();
+    TDirectory *configDir = fPlots->mkdir("Configuration");
+    configDir->cd();
+    TNamed HostNameD("Hostname",HostNameString.c_str());
+    TNamed PWDNameD("PWD",PWDstring.c_str());
+    TNamed FilesNameD("InputFiles",InputFiles.str().c_str());
+    TNamed ConfigNameD("ConfigFile",streamConfigFile.str().c_str());
+    HostNameD.Write();
+    PWDNameD.Write();
+    FilesNameD.Write();
+    ConfigNameD.Write();
+
+
     if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
     {
       std::cout << "Saving analysis TTree to file " <<  saveAnalysisTreeName.c_str() << std::endl;

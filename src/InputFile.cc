@@ -31,7 +31,7 @@
 // - Reads the necessary info from the config file
 // - Opens the input TChain
 // - Prepares the analysis TTree
-InputFile::InputFile (int argc, char** argv, ConfigFile& config)
+InputFile::InputFile (ConfigFile& config)
 {
 
   gErrorIgnoreLevel = kError;
@@ -47,12 +47,8 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
   taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
   usingRealSimData            = config.read<bool>("usingRealSimData");
-  // binary                      = config.read<bool>("binary");
   correctingSaturation        = config.read<bool>("correctingSaturation");
   saturationRun               = config.read<bool>("saturationRun",0);
-  // BinaryOutputFileName        = config.read<std::string>("output");
-  // BinaryOutputFileName       += ".bin";
-  //read the strings that describe the input channels
   digitizer_s                 = config.read<std::string>("digitizer");
   mppc_s                      = config.read<std::string>("mppc");
   plotPositions_s             = config.read<std::string>("plotPositions");
@@ -88,34 +84,34 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
   //trim them using the config file class (i.e. remove spaces)
   //and at the same time put in vectors with numbers for the ones that are numbers
-  for(int i = 0 ; i < digitizer_f.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
   {
     config.trim(digitizer_f[i]);
     digitizer.push_back(atoi(digitizer_f[i].c_str()));
   }
-  for(int i = 0 ; i < mppc_f.size() ; i++)
+  for(unsigned int i = 0 ; i < mppc_f.size() ; i++)
   {
     config.trim(mppc_f[i]);
     mppc_label.push_back(mppc_f[i]);
   }
-  for(int i = 0 ; i < plotPositions_f.size() ; i++)
+  for(unsigned int i = 0 ; i < plotPositions_f.size() ; i++)
   {
     config.trim(plotPositions_f[i]);
     plotPositions.push_back(atoi(plotPositions_f[i].c_str()));
   }
-  for(int i = 0 ; i < xPositions_f.size() ; i++)
+  for(unsigned int i = 0 ; i < xPositions_f.size() ; i++)
   {
     config.trim(xPositions_f[i]);
     xPositions.push_back(atof(xPositions_f[i].c_str()));
   }
-  for(int i = 0 ; i < yPositions_f.size() ; i++)
+  for(unsigned int i = 0 ; i < yPositions_f.size() ; i++)
   {
     config.trim(yPositions_f[i]);
     yPositions.push_back(atof(yPositions_f[i].c_str()));
   }
   if(correctingSaturation)
   {
-    for(int i = 0 ; i < saturation_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturation_f.size() ; i++)
     {
       config.trim(saturation_f[i]);
       saturation.push_back(atof(saturation_f[i].c_str()));
@@ -134,7 +130,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //on or off for modular analysis
   mppcOFF_s                      = config.read<std::string>("mppcOFF","");
   config.split( mppcOFF_f, mppcOFF_s, "," );
-  for(int i = 0 ; i < mppcOFF_f.size() ; i++)
+  for(unsigned int i = 0 ; i < mppcOFF_f.size() ; i++)
   {
     config.trim(mppcOFF_f[i]);
     mppcOFF.push_back(mppcOFF_f[i]);
@@ -146,10 +142,10 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //push the first values
   xPositionsSorted.push_back(xPositions[0]);
   yPositionsSorted.push_back(yPositions[0]);
-  for(int iFill = 1; iFill < xPositions.size(); iFill++)
+  for(unsigned int iFill = 1; iFill < xPositions.size(); iFill++)
   {
     bool XalreadyThere = false;
-    for(int iSorted = 0 ; iSorted < xPositionsSorted.size() ; iSorted++)
+    for(unsigned int iSorted = 0 ; iSorted < xPositionsSorted.size() ; iSorted++)
     {
       if(xPositions[iFill] == xPositionsSorted[iSorted])
       {
@@ -161,7 +157,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
       xPositionsSorted.push_back(xPositions[iFill]);
     }
     bool YalreadyThere = false;
-    for(int iSorted = 0 ; iSorted < yPositionsSorted.size() ; iSorted++)
+    for(unsigned int iSorted = 0 ; iSorted < yPositionsSorted.size() ; iSorted++)
     {
       if(yPositions[iFill] == yPositionsSorted[iSorted])
       {
@@ -179,7 +175,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
 
 
-  for(int i = 0 ; i < digitizer.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
     detector_t det;
     det.digitizerChannel = digitizer[i];
@@ -203,14 +199,14 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
     det.OnForDOI         = 0;
 
     det.OnForModular     = true;
-    for(int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
+    for(unsigned int modCounter = 0; modCounter < mppcOFF.size(); modCounter++)
     {
       if(mppcOFF[modCounter].compare(det.label) == 0) det.OnForModular = false;
     }
     //find I and J
     int posI = -1;
     int posJ = -1;
-    for(int pos = 0 ; pos < xPositionsSorted.size(); pos++)
+    for(unsigned int pos = 0 ; pos < xPositionsSorted.size(); pos++)
     {
       if(det.xPosition == xPositionsSorted[pos])
       {
@@ -227,7 +223,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   }
 
   //find which channels are the neighbours
-  for(int i = 0 ; i < detector.size() ; i++)
+  for(unsigned int i = 0 ; i < detector.size() ; i++)
   {
      std::vector<int> neighbourChannels;
      std::vector<int> neighbourI;  //collection of i of neighbour channels
@@ -239,7 +235,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
      {
        neighbourI.push_back(detector[i].i - 1);
      }
-     if(detector[i].i != (xPositionsSorted.size() - 1))
+     if(detector[i].i != ( (int) (xPositionsSorted.size() - 1)))
      {
        neighbourI.push_back(detector[i].i + 1);
      }
@@ -248,18 +244,18 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
      {
        neighbourJ.push_back(detector[i].j - 1);
      }
-     if(detector[i].j != (yPositionsSorted.size()-1))
+     if(detector[i].j != ( (int)(yPositionsSorted.size()-1)))
      {
        neighbourJ.push_back(detector[i].j + 1);
      }
 
-     for(int iDet = 0; iDet < detector.size(); iDet++)
+     for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
      {
-       for(int iCheck = 0; iCheck < neighbourI.size() ; iCheck++)
+       for(unsigned int iCheck = 0; iCheck < neighbourI.size() ; iCheck++)
        {
          if(detector[iDet].i == neighbourI[iCheck])
          {
-           for(int jCheck = 0; jCheck < neighbourJ.size() ; jCheck++)
+           for(unsigned int jCheck = 0; jCheck < neighbourJ.size() ; jCheck++)
            {
              if(detector[iDet].j == neighbourJ[jCheck])
              {
@@ -279,12 +275,12 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //read string for doi analysis channels
   digitizerDoi_s = config.read<std::string>("digiChannelsForDoi","8,9,10,11");
   config.split( digitizerDoi_f, digitizerDoi_s, "," );
-  for(int i = 0 ; i < digitizerDoi_f.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizerDoi_f.size() ; i++)
   {
     config.trim(digitizerDoi_f[i]);
     digitizerDoi.push_back(atoi(digitizerDoi_f[i].c_str()));
   }
-  for(int i = 0 ; i < digitizerDoi.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizerDoi.size() ; i++)
   {
     detector[digitizerDoi[i]].OnForDOI = 1;
   }
@@ -292,7 +288,7 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
 
   crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
   config.split( crystalOFF_f, crystalOFF_s, "," );
-  for(int i = 0 ; i < crystalOFF_f.size() ; i++)
+  for(unsigned int i = 0 ; i < crystalOFF_f.size() ; i++)
   {
     config.trim(crystalOFF_f[i]);
     crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
@@ -306,28 +302,28 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   //specific variables for mppcs
   specificMPPC_s          = config.read<std::string>("specificMPPCname","");
   config.split( specificMPPC_f, specificMPPC_s, "," );
-  for(int i = 0 ; i < specificMPPC_f.size() ; i++)
+  for(unsigned int i = 0 ; i < specificMPPC_f.size() ; i++)
   {
     config.trim(specificMPPC_f[i]);
     specificMPPC.push_back(specificMPPC_f[i]);
   }
   specificBin_s          = config.read<std::string>("specificBin","");
   config.split( specificBin_f, specificBin_s, "," );
-  for(int i = 0 ; i < specificBin_f.size() ; i++)
+  for(unsigned int i = 0 ; i < specificBin_f.size() ; i++)
   {
     config.trim(specificBin_f[i]);
     specificBin.push_back(atoi(specificBin_f[i].c_str()));
   }
   specificPrecision_s          = config.read<std::string>("specificPrecision","");
   config.split( specificPrecision_f, specificPrecision_s, "," );
-  for(int i = 0 ; i < specificPrecision_f.size() ; i++)
+  for(unsigned int i = 0 ; i < specificPrecision_f.size() ; i++)
   {
     config.trim(specificPrecision_f[i]);
     specificPrecision.push_back(atoi(specificPrecision_f[i].c_str()));
   }
   specificCut_s          = config.read<std::string>("specificCut","");
   config.split( specificCut_f, specificCut_s, "," );
-  for(int i = 0 ; i < specificCut_f.size() ; i++)
+  for(unsigned int i = 0 ; i < specificCut_f.size() ; i++)
   {
     config.trim(specificCut_f[i]);
     specificCut.push_back(atof(specificCut_f[i].c_str()));
@@ -363,10 +359,10 @@ InputFile::InputFile (int argc, char** argv, ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tNeighbour channels" << std::endl;
   std::cout << "------------------------" << std::endl;
-  for(int i = 0 ; i < digitizer.size() ; i++)
+  for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
     std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t" <<  detector[i].label << "\t" << detector[i].plotPosition << "\t" << detector[i].xPosition << "\t" << detector[i].yPosition << "\t";
-    for(int iNeighbour = 0; iNeighbour < detector[i].neighbourChannels.size(); iNeighbour++)
+    for(unsigned int iNeighbour = 0; iNeighbour < detector[i].neighbourChannels.size(); iNeighbour++)
         std::cout << detector[i].neighbourChannels[iNeighbour] << " ";
     std::cout << std::endl;
   }
@@ -515,11 +511,11 @@ void InputFile::FillTree()
     //loop on all the entries of tchain
     fchain->GetEvent(i);              //read complete accepted event in memory
     double maxCharge = 0;
-    double secondCharge = 0;
+    // double secondCharge = 0;
     float columnsum= 0;
     float rowsum= 0;
     float total=  0;
-    float totalForFloodZ = 0;
+    // float totalForFloodZ = 0;
     TreeBadevent = false;
     TreeExtendedTimeTag = ChainExtendedTimeTag;
     TreeDeltaTimeTag = ChainDeltaTimeTag;
@@ -539,12 +535,12 @@ void InputFile::FillTree()
     }
 
     // int TreeEntryCounter = 0;
-    int detectorCounter = 0;
+    // int detectorCounter = 0;
     int TriggerID = 0;
     //loop to fill the channel
     for (int j = 0 ; j < adcChannels ; j++)
     {
-      for(int iDet = 0 ; iDet < detector.size(); iDet++)
+      for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
       {
         if(j == detector[iDet].digitizerChannel)
         {
@@ -583,7 +579,7 @@ void InputFile::FillTree()
     //loop to calculate u,v
     // int counterFill = 0;
 
-    for(int iDet = 0 ; iDet < detector.size(); iDet++)
+    for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
     {
       bool acceptedChannel = false;
       if(usingAllChannels) //all channels for u and v, so accept all the channels
@@ -598,7 +594,7 @@ void InputFile::FillTree()
         }
         else
         {
-          for(int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
+          for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
           {
             if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
             acceptedChannel = true;
@@ -619,7 +615,7 @@ void InputFile::FillTree()
         }
         else
         {
-          for(int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
+          for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
           {
             if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
             acceptedChannelW = true;
@@ -743,8 +739,8 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           int mppcJ = (jModule*nmppcy)+jMppc;
 
           //find corresponding detector
-          int detID;
-          for(int iDet = 0; iDet < detector.size(); iDet++)
+          int detID = 0;
+          for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
           {
             if(detector[iDet].i == mppcI && detector[iDet].j == mppcJ)
               detID = iDet;
@@ -781,7 +777,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           mppc[mppcI][mppcJ]->SetClusterLevelPrecision(global_div);
           mppc[mppcI][mppcJ]->SetClusterVolumeCut(global_clusterVolumeCut);
           //now override
-          for(int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
+          for(unsigned int modCounter = 0; modCounter < specificMPPC.size(); modCounter++)
           {
             if(specificMPPC[modCounter].compare(detector[detID].label) == 0)
             {
@@ -832,7 +828,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
               crystal[cryI][cryJ]->SetID(cryI*ncrystalsx*nmppcx + cryJ);          // assign an ID  //----
 
               crystal[cryI][cryJ]->SetIsOnForModular(true);
-              for(int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
+              for(unsigned int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
               {
                 if(crystalOFF[modCounter] == (cryI*ncrystalsx*nmppcx + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
               }
