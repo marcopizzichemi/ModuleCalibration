@@ -40,6 +40,7 @@ private:
   TH1F*                sumChargeSpectrum;
   TH1F*                ATMChargeSpectrum;
   TH1F*                investigatedSpectrum;
+  TH1F*                doiResWithCalibration;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
@@ -56,6 +57,9 @@ private:
   TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
   TCutG               *cutg[2];
+  TCut                 crytalCut;
+  TCut                 crytalCutWithoutCutG;
+  TCut                 photopeakEnergyCut;
   bool                 isOn;                 ///< if the crystal is on/off
   TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         ///< position of mean (after fitting) for the photopeak
@@ -117,6 +121,7 @@ public:
   TH1F*                GetSumChargeSpectrum(){return sumChargeSpectrum;};
   TH1F*                GetAMTChargeSpectrum(){return ATMChargeSpectrum;};
   TH1F*                GetInvestigatedSpectrum(){return investigatedSpectrum;};
+  TH1F*                GetDoiResWithCalibration(){return doiResWithCalibration;};
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
@@ -136,7 +141,7 @@ public:
   double               GetWfwhm(){return w_fwhm;};
   double               GetWrms(){return w_rms;};
   double               GetWwidth20perc(){return w_width20perc;};
-  TCut                 GetCrystalCut(){return Ellipses;};
+  // TCut                 GetCrystalCut(){return Ellipses;};
   TEllipse*            GetGraphicalCut(){return &GraphicalCut;};
   float                GetPhotopeakPosition(){return peakPosition;};
   float                GetPhotopeakSigma(){return peakSigma;};
@@ -166,6 +171,10 @@ public:
   TF1*                 GetFitCorrected(){return FitCorrected;};
   TCutG*               GetZXCut(){return cutg[0];};
   TCutG*               GetZYCut(){return cutg[1];};
+  TCut                 GetCrystalCut(){return crytalCut;};
+  TCut                 GetCrystalCutWithoutCutG(){return crytalCutWithoutCutG;};
+  TCut                 GetPhotopeakEnergyCut(){return photopeakEnergyCut;};
+
   TF1*                 GetThetaFit(){return ThetaFit;};
   TF1*                 GetDeltaWfit(){return deltaWfit;};
   TF1*                 GetDeltaWfit_2(){return deltaWfit_2;};
@@ -183,6 +192,9 @@ public:
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
+  void                 SetCrystalCut(TCut aCut){crytalCut = aCut;};
+  void                 SetCrystalCutWithoutCutG(TCut aCut){crytalCutWithoutCutG = aCut;};
+  void                 SetPhotopeakEnergyCut(TCut aCut){photopeakEnergyCut = aCut;};
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
   void                 SetLYSpectrum(TH1F* aHisto){LYSpectrum = aHisto;};
@@ -202,6 +214,7 @@ public:
   void                 SetHistoWfit(TF1* aFit){Wfit = aFit;};
   void                 SetHistoAltDoiFit(TF1* aFit){histoAltDoiFit = aFit;};
   void                 SetPdfW(TH1F* aHisto){pdfW = aHisto;};
+  void                 SetDoiResWithCalibration(TH1F* aHisto){doiResWithCalibration = aHisto;};
   void                 SetCumulativeW(TH1F* aHisto){cumulativeW = aHisto;};
   void                 SetCalibrationGraph(TGraph* aGraph){calibrationGraph = aGraph;};
   void                 SetComptonCalibration(TGraph2D*** aGraph){ComptonCalibation = aGraph;};

@@ -460,7 +460,7 @@ void InputFile::PrepareTTree()
   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
   ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
-  if(usingTaggingBench) ftree->Branch("ZPosition",&TreeZPosition,"TreeZPosition/F");
+  if(usingTaggingBench) ftree->Branch("ZPosition",&TreeZPosition,"ZPosition/F");
   ftree->Branch("Theta",&TreeTheta,"Theta/F");
   ftree->Branch("Phi",&TreePhi,"Phi/F");
   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O");
@@ -485,7 +485,7 @@ void InputFile::FillTree()
 {
   //creates the TTree from the input Tchain
   std::cout << "Filling the TTree for the analysis... " << std::endl;
-  Int_t nevent = fchain->GetEntries();
+  long long int nevent = fchain->GetEntries();
   long long int GoodCounter = 0;
   long long int badEvents = 0;
   long long int counter = 0;
@@ -505,7 +505,7 @@ void InputFile::FillTree()
   }
 
 
-  for (Int_t i=0;i<nevent;i++)
+  for (long long int i=0;i<nevent;i++)
     //   for(Int_t i=0;i<2;i++)
   {
     //loop on all the entries of tchain
@@ -561,14 +561,15 @@ void InputFile::FillTree()
             TreeTriggerChannel = detector[iDet].digitizerChannel;
             TriggerID = iDet;
           }
-          if(usingTaggingBench)
-          {
-            if( j == taggingCrystalChannel)
-            {
-              TreeTagging = ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
-                //this is the tagging crystal data
-            }
-          }
+
+        }
+      }
+      if(usingTaggingBench)
+      {
+        if( j == taggingCrystalChannel)
+        {
+          TreeTagging = (Int_t) ChainAdcChannel[j]; // no saturation correction for the tagging crystal..
+            //this is the tagging crystal data
         }
       }
     }
