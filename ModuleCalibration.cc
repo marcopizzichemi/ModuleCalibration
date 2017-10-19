@@ -257,6 +257,7 @@ int main (int argc, char** argv)
   int   taggingCrystalBins = config.read<int>("taggingCrystalBins",1200);
   float taggingSpectrumMin = config.read<float>("taggingSpectrumMin",0.0);
   float taggingSpectrumMax = config.read<float>("taggingSpectrumMax",12000.0);
+  bool TagEdgeCalculation  = config.read<bool>("tagEdgeCalculation",0);
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -504,6 +505,9 @@ int main (int argc, char** argv)
     SingleEnergyDeposition = "NumbOfInteractions == 1";
   }
 
+  //variable that will be used only if the user requires the TagEdgeCalculation
+  double tagPeakHgEntries = 0.0;
+
   // MAIN LOOP
   // Loop on modules, mppcs and crystal
   for(int iModule = 0; iModule < nmodulex ; iModule++)
@@ -587,7 +591,7 @@ int main (int argc, char** argv)
         tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
         taggingPhotopeakCut = tagString.str().c_str();
         //highlighted spectrum
-        TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",1200,0,12000);
+        TriggerSpectrumHighlight = new TH1F("TriggerSpectrumHighlight","",taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
         varModule.str("");
         varModule << "Tagging >> TriggerSpectrumHighlight";
         TriggerSpectrumHighlight->SetLineColor(3);
@@ -595,6 +599,10 @@ int main (int argc, char** argv)
         TriggerSpectrumHighlight->SetFillStyle(3001);
         tree->Draw(varModule.str().c_str(),taggingPhotopeakCut);
         varModule.str("");
+        if(TagEdgeCalculation)
+        {
+          tagPeakHgEntries = TriggerSpectrumHighlight->GetEntries();
+        }
         // 	delete sTagCrystal;
         delete gaussTag;
         // 	std::cout << " done" << std::endl;
@@ -1204,6 +1212,20 @@ int main (int argc, char** argv)
                         gauss->SetParameter(1,par1);
                         gauss->SetParameter(2,par2);
                         spectrumCharge->Fit(sname.str().c_str(),"Q","",fitmin,fitmax);
+
+                        if(usingTaggingBench && TagEdgeCalculation)
+                        {
+                          std::cout << "Crystal "
+                                    << CurrentCrystal->GetID()
+                                    << " - MPPC "
+                                    << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()
+                                    << ", Ratio = "
+                                    << fabs(gauss->GetParameter(0)*
+                                            gauss->GetParameter(2)*
+                                            TMath::Sqrt(2.0*TMath::Pi())) /
+                                            tagPeakHgEntries
+                                    << std::endl;
+                        }
                         //store the mean and sigma in the crystal
                         if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
                         CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
@@ -1510,6 +1532,17 @@ int main (int argc, char** argv)
                       spectrum2dVersusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
                       spectrum2dVersusTime->GetYaxis()->SetTitle("ADC channels");
                       CurrentCrystal->SetVersusTime(spectrum2dVersusTime);
+                      var.str("");
+                      sname.str("");
+
+                      // Time evolution for W
+                      sname << "W vs. Time - Crystal " << CurrentCrystal->GetID();
+                      var << "FloodZ:ExtendedTimeTag >> " << sname.str();
+                      TH2F* spectrum2dWversusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tree->GetMaximum("ExtendedTimeTag"),wHistogramsBins,0,1);
+                      tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
+                      spectrum2dWversusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
+                      spectrum2dWversusTime->GetYaxis()->SetTitle("W");
+                      CurrentCrystal->SetWversusTime(spectrum2dWversusTime);
                       var.str("");
                       sname.str("");
 
@@ -2630,6 +2663,15 @@ int main (int argc, char** argv)
                         CurrentCrystal->GetVersusTime()->Draw("COLZ");
                         C_spectrum->Write();
                         delete C_spectrum;
+
+                        //W versus time
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetWversusTime()->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetWversusTime()->Draw("COLZ");
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
 
                         // adc versus w
                         if(!backgroundRun)

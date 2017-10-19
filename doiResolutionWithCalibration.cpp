@@ -103,7 +103,7 @@ void usage()
             << "\t\t" << "temp.root              - complete dataset (analysis ttree) of tagging run (obtained with hadd)"   << std::endl
             << "\t\t" << "output.root            - output file name"   << std::endl
             << "\t\t" << "calibration.root       - calibration file, obtained by running ModuleCalibration on temp.root with calcDoiResWithCalibration option and providing a calibration file obtained on a top (or lat or bg) irradiation" << std::endl
-            << "\t\t" << "zPositions.txt         - output file name"   << std::endl
+            << "\t\t" << "zPositions.txt         - z positions"   << std::endl
             << "\t\t" << "N                      - points taken from doi bench - MANDATORY if --zpos is given!"   << std::endl
             << "\t\t" << std::endl;
 }
@@ -359,8 +359,8 @@ int main (int argc, char** argv)
          sname.str("");
 
          TCut globalCut; // the cut for the formula
-         globalCut += temp_crystal.CrystalCutWithoutCutG;     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
-         globalCut += temp_crystal.PhotopeakEnergyCut;        // this is the cut on photopeak energy of the corrected spectrum for this crystal
+         globalCut += temp_crystal.CrystalCutWithoutCutG->GetTitle();     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
+         globalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();        // this is the cut on photopeak energy of the corrected spectrum for this crystal
          for(unsigned int iCutg = 0; iCutg < temp_crystal.cutg.size(); iCutg++)
          {
            globalCut += temp_crystal.cutg[iCutg]->GetName();              // these are the two cutg for this crystal
@@ -424,9 +424,10 @@ int main (int argc, char** argv)
 
       if(crystal[iCry].Formula->EvalInstance())  //evaluate TFormula of TCut
       {
-        // std::cout << crystal[iCry].number << "\t";
+        // std::cout << i << " " << iCry << " " <<  crystal[iCry].number << "\n";
         // std::cout << crystal[iCry].calibrationGraph->Eval(FloodZ) << "\t" << (crystal[iCry].calibrationGraph->Eval(FloodZ) - ZPosition) << std::endl;
         Float_t realZ = ZPosition;
+        // std::cout << realZ << std::endl;
         if(zPosGiven)//check ZPosition, then take the z vector from the crystal and use the closest z
         {
           float distance = INFINITY; // in mm, i doubt it will ever be bigger...
@@ -440,7 +441,9 @@ int main (int argc, char** argv)
             }
           }
           realZ = crystal[iCry].z[posMarker];
+
         }
+        // std::cout << realZ << std::endl;
 
         crystal[iCry].doiResolution->Fill(( crystal[iCry].calibrationGraph->Eval(FloodZ) - realZ ));
       }

@@ -46,6 +46,7 @@ private:
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
   //   TH1D*                FitSlicesSimDOIplotSigma;
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
+  TH2F*                WversusTime;
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
   TGraph2D***          ComptonCalibation;
   TGraph2D***          ConvertedComptonCalibation;
@@ -157,6 +158,7 @@ public:
 
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
+  TH2F*                GetWversusTime(){return WversusTime;};
   TH2F*                GetSimDOIplot(){return SimDOIplot;};
   //   TH1D*                GetFitSlicesSimDOIplot(){return FitSlicesSimDOIplot;};
   //   TH1D*                GetFitSlicesSimDOIplotSigma(){return FitSlicesSimDOIplotSigma;};
@@ -231,6 +233,7 @@ public:
   void                 SetLY(float a, float b){LY = a;LYSigma = b;};
   void                 SetPhotopeakCorrected(float a, float b){peakPositionCorrected = a;peakSigmaCorrected = b;};
   void                 SetVersusTime(TH2F* aHisto){VersusTime = aHisto;};
+  void                 SetWversusTime(TH2F* aHisto){WversusTime = aHisto;};
   void                 SetSimDOIplot(TH2F* aHisto){SimDOIplot = aHisto;};
   //   void                 SetFitSlicesSimDOIplot(TH1D* aHisto){FitSlicesSimDOIplot = aHisto;};
   //   void                 SetFitSlicesSimDOIplotSigma(TH1D* aHisto){FitSlicesSimDOIplotSigma = aHisto;};
