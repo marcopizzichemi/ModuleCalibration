@@ -41,6 +41,8 @@ private:
   TH1F*                ATMChargeSpectrum;
   TH1F*                investigatedSpectrum;
   TH1F*                doiResWithCalibration;
+  TH1F*                CTRcentralCorrection;
+  TH1F*                DeltaTimeWRTTagging;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
@@ -48,11 +50,14 @@ private:
   TH2F*                VersusTime;           ///< 2d histogram to plot the evolution of photopeak with time (in case of gain drift?)
   TH2F*                WversusTime;
   TH2F*                SimDOIplot;           ///< 2d histogram for simulation, showing z versus w
+  // TH1D*                slicesDelta;
+  // TF1*                 slicesDeltaFit;
   TGraph2D***          ComptonCalibation;
   TGraph2D***          ConvertedComptonCalibation;
   TGraphDelaunay***    interpolationGraph;
   TH3I***              ComptonCalibationHistogram;
   std::vector<TH3I*>   ListOfComptonHisto;
+
   TH3I*                oneHisto;
   TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
@@ -72,6 +77,8 @@ private:
   TGraph*              calibrationGraph;
   TGraph*              doiResZ;
   TGraph*              wzgraph;
+  TGraph*              graphDeltaW;
+  TGraph*              graphDeltaRMS;
   TH1F*                simSigmaW;            ///< distribution of sigma W (sigma of gaussian fit of w histogram) for a simulation
   TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
@@ -96,6 +103,40 @@ private:
   double               wEnd;                 ///< end of w histogram after fitting with theta function
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
   double               averageDoiResolution;
+
+  struct multiSpectrum_t
+  {
+    int canvasPosition;
+    TH1F* spectrum;
+  };
+  struct multiScatter_t
+  {
+    int canvasPosition;
+    TH2F* spectrum;
+  };
+  struct multiDeltaSlice_t
+  {
+    int canvasPosition;
+    TH1D* spectrum;
+    TF1* fit;
+  };
+  struct multiGraphDelayW_t
+  {
+    int canvasPosition;
+    TGraph* spectrum;
+  };
+  struct multiGraphDelayRMS_t
+  {
+    int canvasPosition;
+    TGraph* spectrum;
+  };
+
+
+  std::vector<multiSpectrum_t>   deltaTcryTneig;
+  std::vector<multiScatter_t>   deltaT2vsW;
+  std::vector<multiDeltaSlice_t> slicesDelta;
+  std::vector<multiGraphDelayW_t> graphDelayW;
+  std::vector<multiGraphDelayRMS_t> graphDelayRMS;
 
 public:
   Crystal();                                 ///< default constructor
@@ -189,8 +230,20 @@ public:
   TH3I*                GetComptonHistogram(int i){return ListOfComptonHisto[i];};
   int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
   TH1F*                GetCorrectedSpectrumSearchArea(){return CorrectedSpectrumSearchArea;};
-  std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
+  TH1F*                GetCTRcentralCorrection(){return CTRcentralCorrection;};
+  TGraph*              GetGraphDeltaW(){return graphDeltaW;};
+  TGraph*              GetGraphDeltaRMS(){return graphDeltaRMS;};
 
+  std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
+  std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
+  std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
+  std::vector<multiDeltaSlice_t>           GetDeltaSlice(){return slicesDelta;};
+  std::vector<multiGraphDelayW_t>          GetGraphDelayW(){return graphDelayW;};
+  std::vector<multiGraphDelayRMS_t>          GetGraphDelayRMS(){return graphDelayRMS;};
+
+  TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
+
+  void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -262,7 +315,53 @@ public:
   void                 SetAMTChargeSpectrum(TH1F *aHisto){ATMChargeSpectrum = aHisto;};
   void                 SetInvestigatedSpectrum(TH1F *aHisto){investigatedSpectrum = aHisto;};
   void                 SetSaturationFits(std::vector<TF1*> aVec){saturationFits = aVec;};
+  void                 SetCTRcentralCorrection(TH1F* aHisto){CTRcentralCorrection = aHisto;};
   void                 Analyze();
+  void                 SetGraphDeltaW(TGraph* aGraph){graphDeltaW = aGraph;};
+  void                 SetGraphDeltaRMS(TGraph* aGraph){graphDeltaRMS = aGraph;};
+
+
+  void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
+  {
+    multiSpectrum_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    deltaTcryTneig.push_back(tempSpectrum);
+  };
+  void                 AddDeltaT2vsW(TH2F* aHisto,int aPos)
+  {
+    multiScatter_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    deltaT2vsW.push_back(tempSpectrum);
+  };
+  // void                 AddSlicesDelta(TH1D* aHisto,TF1* aFit,int aPos)
+  void                 AddSlicesDelta(TH1D* aHisto,int aPos)
+  {
+    multiDeltaSlice_t tempDelta;
+    tempDelta.canvasPosition = aPos;
+    tempDelta.spectrum       = aHisto;
+    // tempDelta.fit            = aFit;
+    slicesDelta.push_back(tempDelta);
+  };
+  void                 AddGraphDelayW(TGraph* aGraph,int aPos)
+  {
+    multiGraphDelayW_t tempDelta;
+    tempDelta.canvasPosition = aPos;
+    tempDelta.spectrum       = aGraph;
+    // tempDelta.fit            = aFit;
+    graphDelayW.push_back(tempDelta);
+  };
+
+  void AddGraphDelayRMS(TGraph* aGraph,int aPos)
+  {
+    multiGraphDelayRMS_t tempDelta;
+    tempDelta.canvasPosition = aPos;
+    tempDelta.spectrum       = aGraph;
+    // tempDelta.fit            = aFit;
+    graphDelayRMS.push_back(tempDelta);
+  }
+
 
   void PrintGlobal();
   void PrintSpecific();

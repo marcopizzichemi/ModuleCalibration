@@ -15,6 +15,7 @@
 #include "Crystal.h"
 #include "Module.h"
 #include "Mppc.h"
+#include "TRandom3.h"
 
 
 /** @brief Class that controls the input files
@@ -49,6 +50,7 @@ private:
   std::string                    xPositions_s;                       // input string of the xPositions key from config file
   std::string                    yPositions_s;                       // input string of the yPositions key from config file
   std::string                    saturation_s;                       // input string of the saturation key from config file
+  std::string                    pedestal_s;                       // input string of the saturation key from config file
   std::string                    mppcOFF_s;
   std::vector <std::string>      mppcOFF_f;
   std::vector <std::string>      mppcOFF;
@@ -78,7 +80,9 @@ private:
   std::vector <std::string>      xPositions_f;                       // tokenization of above strings
   std::vector <std::string>      yPositions_f;                       // tokenization of above strings
   std::vector <std::string>      saturation_f;                       // tokenization of above strings
+  std::vector <std::string>      pedestal_f;                         // tokenization of above strings
   std::vector <int>              digitizer;                          // above tokenized string transformed in the proper variable types
+  std::vector <int>              pedestal;                          // above tokenized string transformed in the proper variable types
   std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
   std::vector <int>              plotPositions;                      // above tokenized string transformed in the proper variable types
   std::vector <float>            xPositions;                         // above tokenized string transformed in the proper variable types
@@ -119,10 +123,21 @@ private:
   double                         chargeBinningADC;                   // adc charge binning
   int                            saturationFormat;                   // format of saturation input. It can be in units of ADC_CHANNELS or CHARGE
   int digitizerType;
-
+  float approximateTDCbinning;
+  int TDCcalculationEntries;
   int                            global_histo3DchannelBin;
+  float                          global_histo3Dmin;
+  float                          global_histo3Dmax;
   int                            global_div;
   double                         global_clusterVolumeCut;
+
+  long long int                  GoodCounter;
+  long long int                  badEvents;
+  long long int                  counter;
+  bool calculateTDCbinning;
+  float minDeltaForFT;
+  float pedestalTag;
+  bool taggingForTiming;
 
   //variables for the input TChain
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
@@ -130,9 +145,14 @@ private:
   Int_t        *ChainAdcChannel;
   Short_t      *ChainDesktopAdcChannel;                              // input TChain data for desktop digitizers - data is int_16
   UShort_t     *ChainVMEadcChannel;                                  // input TChain data for VME digitizers - data is uint_16
+  Float_t      *ChainTimeStamp;
+  Float_t      *TDCBinning;
+  // Short_t      *ChainPetirocChannel;                                 //FIXME temporary data type of petiroc charge input - ask
   Float_t       RealX;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealY;                                               // "real" gamma interaction positions (from simulation data)
   Float_t       RealZ;                                               // "real" gamma interaction positions (from simulation data)
+  Float_t       simTaggingCharge;
+  Float_t       simTaggingTime;
   Short_t       CrystalsHit;                                         // "real" number of crystals hit in the event (from simulation data)
   Short_t       NumbOfInteractions;                                  // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float>* TotalCryEnergy;
@@ -141,9 +161,12 @@ private:
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
   TBranch     **bChainAdcChannel;                                    // branches for above data
+  TBranch     **bChainTimeStamp;
   TBranch      *bRealX;                                              // branches for above data
   TBranch      *bRealY;                                              // branches for above data
   TBranch      *bRealZ;                                              // branches for above data
+  TBranch      *bsimTaggingCharge;                                              // branches for above data
+  TBranch      *bsimTaggingTime;                                              // branches for above data
   TBranch      *bCrystalsHit;                                        // branches for above data
   TBranch      *bNumbOfInteractions;                                 // branches for above data
   TBranch      *bTotalCryEnergy;                                     //
@@ -151,14 +174,16 @@ private:
   //variables for the analysis TTree
   ULong64_t     TreeExtendedTimeTag;                                 // extended time tag
   ULong64_t     TreeDeltaTimeTag;                                    // delta tag from previous event
-  Int_t      *TreeAdcChannel;                                      // channels data for this event - here is ALWAYS int_32, so it can include both int_16 and uint_16 without truncation
+  Float_t       *TreeAdcChannel;                                      // channels data for this event
   int           TreeTriggerChannel;                                  // trigger channel for this event
-  Int_t       TreeTagging;                                         // tagging crystal data for this event
+  Float_t       TreeTagging;                                         // tagging crystal data for this event
+  Float_t       TaggingTimeStamp;
   Float_t       TreeFloodX;                                          // u position for this event
   Float_t       TreeFloodY;                                          // v position for this event
   Float_t       TreeFloodZ;                                          // w position for this event
-  Float_t       TreeTheta;                                           // u position for this event
-  Float_t       TreePhi;                                             // u position for this event
+  // Float_t       TreeTheta;                                           // u position for this event
+  // Float_t       TreePhi;                                             // u position for this event
+  Float_t      *TreeTimeStamp;                                       // timestamps data for each channel
   Bool_t        TreeBadevent;                                        // whether the event is "bad" --> too high to allow saturation correction with a logarithm
   Float_t       TreeZPosition;                                       // z position of the tagging bench
   Float_t       TreeRealX;                                           // "real" gamma interaction positions (from simulation data)
@@ -168,6 +193,10 @@ private:
   Short_t       TreeNumbOfInteractions;                              // "real" number of interaction (energy depositions) in the event (from simulation data)
   std::vector <float> TreeTotalCryEnergy;
   std::vector <float>* pTreeTotalCryEnergy;
+
+  bool smearTaggingTime ;                                            // whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
+  float sigmaTimeTag;                                                // sigma for the smearing of tagging time [ps]. it's the time resolution of an hypothetical external short crystal + fast sipm - default = 30.0, which corresponds to Hamamatsu MPPC + 2x2x3 m3 LSO-Ca codoped crystal (100ps FWHM CTR, see Mythra poster)
+  TRandom3 *randGen;
 
   struct detector_t
   {
@@ -179,6 +208,7 @@ private:
     int plotPosition;
     float xPosition;
     float yPosition;
+    float pedestal;
     int OnForDOI;
     bool isNeighbour;
     std::vector<int> neighbourChannels;
@@ -187,6 +217,42 @@ private:
   };
 
   std::vector<detector_t> detector;
+
+
+  class inputPetirocFile_t
+  {
+  public:
+
+    int Nchannels;
+    std::vector<int> FineTime;
+    std::vector<int> Charge;
+    std::vector<int> CoarseTime;
+    inputPetirocFile_t(int a){ Nchannels = a;};
+    inputPetirocFile_t(){};
+    void clear()
+    {
+      FineTime.clear();
+      Charge.clear();
+      CoarseTime.clear();
+    };
+    friend std::istream& operator>>(std::istream& input, inputPetirocFile_t& s)
+    {
+      for(int p = 0; p < s.Nchannels; p++)
+      {
+        int a,b;
+        input >> a >> b;
+        s.FineTime.push_back(a);
+        s.Charge.push_back(b);
+      }
+      for(int p = 0; p < s.Nchannels; p++)
+      {
+        int a,b;
+        input >> a >> b;
+        s.CoarseTime.push_back(a);
+      }
+      return input;
+    }
+  };
 
 public:
 
@@ -199,9 +265,13 @@ public:
   TTree*        GetTree()  const { return ftree; };                   // method to provide a pointer to the analysis TTree
   void          SetTree(TTree *aTree){ftree = aTree;};
   void          ImportTChain(int argc, char** argv);
+  // void          ImportPetirocData(int argc, char** argv);
   void          PrepareTTree();
-  void          FillTree();                                        // method to run on the input and fill the analysis TTree
+  void          FillTree(int argc, char** argv);                                        // method to run on the input and fill the analysis TTree
   void          FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal);  // method to fill with info the elements (modules, mppcs, crystals)
+  void          FillTreeCAEN();
+  void          FillEvent();
+  void          FillTreePetiroc(int argc, char** argv);
 };
 
 

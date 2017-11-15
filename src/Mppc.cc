@@ -19,20 +19,20 @@ Double_t g2(Double_t *x, Double_t *par) { //A Gaussian function
 //generic 2d gaussian
 // par[] = {amplitude,mean_x,mean_y,sigma_x,sigma_y,theta}
 // par[0] = amplitude
-// par[1] = mean x 
+// par[1] = mean x
 // par[2] = mean y
 // par[3] = sigma x
 // par[4] = sigma y
 // par[5] = theta
 
-Double_t gauss2d(Double_t *x, Double_t *par) 
+Double_t gauss2d(Double_t *x, Double_t *par)
 {
   Double_t xrot = x[0]*cos(par[5]) - x[1]*sin(par[5]);
   Double_t yrot = x[0]*sin(par[5]) + x[1]*cos(par[5]);
   Double_t x0rot = par[1]*cos(par[5]) - par[2]*sin(par[5]);
   Double_t y0rot = par[1]*sin(par[5]) + par[2]*cos(par[5]);
-  
-  
+
+
   Double_t result = par[0]* TMath::Exp( -( (xrot - x0rot )*(xrot - x0rot )/(2.0*par[3]*par[3]) + (yrot - y0rot )*(yrot - y0rot )/(2.0*par[4]*par[4]) ) );
   return result;
 }
@@ -46,9 +46,9 @@ Mppc::Mppc()
   canvasPosition = -1;
 }
 
-Mppc::Mppc(const Mppc &obj) 
+Mppc::Mppc(const Mppc &obj)
 {
-  std::cout << "Copy ctor"  << std::endl;  
+  std::cout << "Copy ctor"  << std::endl;
 }
 
 Mppc::~Mppc()
@@ -79,26 +79,26 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 // int Mppc::Find2Dpeaks(int nofcrystals,TH2F* histogram2d)
 // {
 //   /**Function to look for the 2D peaks
-//    * 
+//    *
 //    */
-//   TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line 
+//   TSpectrum2 *peak2d = new TSpectrum2(nofcrystals); //FIXME for the moment hardcoded to find the line
 //   int nfound = peak2d->Search(histogram2d,2,"col",0.1);
-//   
+//
 //   //   std::cout << nfound << std::endl;
-//   
+//
 //   //store what has been found in some array
 //   float *xpeaks = peak2d->GetPositionX();
 //   float *ypeaks = peak2d->GetPositionY();
-//   
-//   
+//
+//
 //   //   float *zpeaks = peak2d->GetPositionZ();
-//   
+//
 //   double *xsigma = new double[nofcrystals];
 //   double *ysigma = new double[nofcrystals];
 //   //   double *tempXsigma = new double[nofcrystals];
 //   //   double *tempYsigma = new double[nofcrystals];
-//   
-//   
+//
+//
 //   // for each point, find the minimum fitting area
 //   for ( int j = 0 ; j < nfound ; j++) // cycle on all points found
 //   {
@@ -108,7 +108,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //       if(i != j)
 //       {
 // 	//calculate the distance
-// 	
+//
 // 	double distance = sqrt( pow((xpeaks[j] - xpeaks[i]),2) +   pow(ypeaks[j] - ypeaks[i],2) );
 // 	if(distance < minDistance)
 // 	  minDistance = distance;
@@ -117,8 +117,8 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //     }
 //     xsigma[j] = ysigma[j] = minDistance / 2.0;
 //   }
-//   
-//   
+//
+//
 //   // manually set the sigma for the fitting area
 //   //   for(int i = 0 ; i < nofcrystals ; i++)
 //   //   {
@@ -127,7 +127,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //     xsigma[i] = tempXsigma[i];
 //   //     ysigma[i] = tempYsigma[i];
 //   //   }
-//   
+//
 //   // zero level. just use the peak positions and separation ranges from half distance
 //   //   for ( int j = 0 ; j < nfound ; j++)
 //   //   {
@@ -137,10 +137,10 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //     fit2DsigmaY.push_back(ysigma[j]);
 //   //     fit2Dtheta.push_back(0);
 //   //   }
-//   
-//   
-//   
-//   
+//
+//
+//
+//
 //   //2d fit
 //   for ( int j = 0 ; j < nfound ; j++)
 //   {
@@ -152,7 +152,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //     //declare the fit function
 //     TF2 *f2 = new TF2("f2",gauss2d,xpeaks[j]-xsigma[j],xpeaks[j]+xsigma[j],ypeaks[j]-ysigma[j],ypeaks[j]+ysigma[j], npar);
 //     f2->SetParameters(f2params);  // set initial guesses
-//     
+//
 //     //parameter limits
 //     //f2->SetParLimits(0,0,INFINITY);
 //     f2->SetParLimits(1,xpeaks[j]-0.5*xsigma[j],xpeaks[j]+0.5*xsigma[j]);
@@ -160,7 +160,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //     f2->SetParLimits(3,-xsigma[j],xsigma[j]);
 //     f2->SetParLimits(4,-ysigma[j],ysigma[j]);
 //     f2->SetParLimits(5,0,TMath::Pi());
-//     
+//
 //     //     TF2 *f2 = new TF2("f2","[0]*TMath::Gaus(x,[1],[2])*TMath::Gaus(y,[3],[4])",xpeaks[j]-2.0*xsigma[j],xpeaks[j]+2.0*xsigma[j],ypeaks[j]-2.0*ysigma[j],ypeaks[j]+2.0*ysigma[j]);
 //     //     f2->SetParameters(14,xpeaks[j],xsigma[j],ypeaks[j],ysigma[j]);
 //     FloodMap2D.Fit("f2","QNR");
@@ -170,10 +170,10 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //     fit2DsigmaX.push_back(TMath::Abs(f2->GetParameter(3)));
 //     fit2DsigmaY.push_back(TMath::Abs(f2->GetParameter(4)));
 //     //careful: theta will set t, and t is in degrees, not in radiands!!
-//     fit2Dtheta.push_back(180.0*f2->GetParameter(5)/TMath::Pi()); 
-//   }  
-//   
-//   
+//     fit2Dtheta.push_back(180.0*f2->GetParameter(5)/TMath::Pi());
+//   }
+//
+//
 //   //forget about ellipses
 //   //   for ( int j = 0 ; j < nfound ; j++)
 //   //   {
@@ -183,7 +183,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //     fit2DsigmaX[j] = (sx+sy)/2.0;
 //   //     fit2DsigmaY[j] = (sx+sy)/2.0;
 //   //   }
-//   
+//
 //   //   now for each peak, check if any other peak is closer than the sum of the relative circles
 //   //   for ( int j = 0 ; j < nfound ; j++)// run on all peaks
 //   //   {
@@ -204,7 +204,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //       }
 //   //     }
 //   //   }
-//   //   
+//   //
 //   //   // sort them so that first is lower y
 //   //   double swapFit2DmeanX,swapFit2DmeanY,swapFit2DsigmaX,swapFit2DsigmaY;
 //   //   if(fit2DmeanY[0] > fit2DmeanY[1])
@@ -213,18 +213,18 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //     swapFit2DmeanY  = fit2DmeanY[1];
 //   //     swapFit2DsigmaX = fit2DsigmaX[1];
 //   //     swapFit2DsigmaY = fit2DsigmaY[1];
-//   //     
+//   //
 //   //     fit2DmeanX[1] = fit2DmeanX[0];
 //   //     fit2DmeanY[1] = fit2DmeanY[0];
 //   //     fit2DsigmaX[1] = fit2DsigmaX[0];
 //   //     fit2DsigmaY[1] = fit2DsigmaY[0];
-//   //     
+//   //
 //   //     fit2DmeanX[0] = swapFit2DmeanX  ;
 //   //     fit2DmeanY[0] = swapFit2DmeanY  ;
 //   //     fit2DsigmaX[0] =swapFit2DsigmaX ;
 //   //     fit2DsigmaY[0] =swapFit2DsigmaY ;
 //   //   }
-//   
+//
 //   return nfound;
 // }
 
@@ -233,53 +233,53 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 // {
 //   TString name = FloodMap3D.GetName();
 //   //   std::cout << FloodMap3D.GetName() << std::endl;
-//   
+//
 //   TString string_zy = name + "_zy";
 //   TString string_zx = name + "_zx";
-//   
-//   FloodMap3D.Project3D("zy");  // projection of u,v,w points on v,w plane 
+//
+//   FloodMap3D.Project3D("zy");  // projection of u,v,w points on v,w plane
 //   projection_zy = (TH2D*) gDirectory->Get(string_zy);
-//   
+//
 //   FloodMap3D.Project3D("zx");  // projection of u,v,w points on u,w plane
 //   projection_zx = (TH2D*) gDirectory->Get(string_zx);
-//   
-//   //   projection_y = projection_zy->ProjectionY("spectrum3d_x"); 
+//
+//   //   projection_y = projection_zy->ProjectionY("spectrum3d_x");
 //   //   projection_x = projection_zx->ProjectionY("spectrum3d_y");
-//   
-//   profileX = projection_zx->ProfileY();  // profile along w of u,w plot. for each bin in w, average u is plotted with stdev 
-//   profileY = projection_zy->ProfileY();  // profile along w of u,w plot. for each bin in w, average v is plotted with stdev 
-//   
+//
+//   profileX = projection_zx->ProfileY();  // profile along w of u,w plot. for each bin in w, average u is plotted with stdev
+//   profileY = projection_zy->ProfileY();  // profile along w of u,w plot. for each bin in w, average v is plotted with stdev
+//
 //   lineX = new TF1("lineX",  "[0]*x + [1]",0,1);  // line becomes u(w) = m*w + c
 //   lineY = new TF1("lineY",  "[0]*x + [1]",0,1);  // line becomes v(w) = m*w + c
-//   
+//
 //   profileX->Fit("lineX","Q");
 //   profileY->Fit("lineY","Q");
-//   
+//
 //   //FIXME
 //   ThetaWU = TMath::ATan(lineX->GetParameter(0)); // --> ThetaWU = atan(-1/(m_w,u)) --> angle perpendicular to the angle from w to u in radiants
 //   ThetaWV = TMath::ATan(lineY->GetParameter(0)); // --> ThetaWV = atan(-1/(m_w,v)) --> angle perpendicular to the angle from w to v in radiants
-//   
-//   //equations become 
-//   // u" = u*cos(t_wu) + (v*sin(t_wv) + w*cos(t_wv))*sin(t_wu) 
+//
+//   //equations become
+//   // u" = u*cos(t_wu) + (v*sin(t_wv) + w*cos(t_wv))*sin(t_wu)
 //   // v" = v * cos(t_wv) - w*sin(t_wv)
-//   
-//   
+//
+//
 // }
 
 
 // void Mppc::MakeRotatedFlood()
 // {
-//   //-------------------------------------------------------------------------------  
+//   //-------------------------------------------------------------------------------
 //   // Flood histogram
 //   // Plot a different histogram depending on the position of the mppc
 //   std::stringstream varX,varY; // the variables of the following 2d plots will have to be build custom depending on the position of the mppc
-//   
+//
 //   varX << "FloodX";
 //   varY << "FloodY";
-//   
-//   
-//   
-//   
+//
+//
+//
+//
 //   // the if statements below are an embarassing example of how poor my coding is. But hei, i'm in a rush for a conference..
 //   //   spectrum2d = new TH2F("spectrum2d","spectrum2d",histo2DchannelBin,-7,7,histo2DchannelBin,-7,7);
 //   //   if( ((iModule*nmppcx)+iMppc) > 0 && (((iModule*nmppcx)+iMppc) < nmppcx -1) && ((jModule*nmppcy)+jMppc) > 0 && (((jModule*nmppcy)+jMppc) < nmppcy -1 )) // central mppcs
@@ -287,7 +287,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //     // standard flood 2d
 //   //     varX << "FloodX";
 //   //     varY << "FloodY";
-//   //     // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl; 
+//   //     // 	    std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " CENTRAL"<< std::endl;
 //   //   }
 //   //   else // we are not in the center
 //   //   {
@@ -312,12 +312,12 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //       << lateralDeltaV
 //   //       << " + "
 //   //       << lateralRescaleTB
-//   //       << "* ((FloodY)*TMath::Cos(" 
+//   //       << "* ((FloodY)*TMath::Cos("
 //   //       << lateralQ2
 //   //       << ") - (FloodZ)*TMath::Sin("
 //   //       << lateralQ2
 //   //       << ")))";
-//   //       varX << "(FloodX)";  
+//   //       varX << "(FloodX)";
 //   //     }
 //   //     else
 //   //     {
@@ -338,7 +338,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " RIGHT LATERAL" << std::endl;
 //   // 	}
 //   // 	// left and right crystals have the same var structure
-//   // 	varY << "(FloodY)";  
+//   // 	varY << "(FloodY)";
 //   // 	varX << "("
 //   // 	<< lateralDeltaU
 //   // 	<< " + "
@@ -354,7 +354,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   // 	if(((iModule*nmppcx)+iMppc) == 0 &&  ((jModule*nmppcy)+jMppc) == 0 )   // bottom left crystals
 //   // 	{
 //   // 	  cornerDeltaU   = - base_cornerDeltaU  ;
-//   // 	  cornerDeltaV   = - base_cornerDeltaV  ; 
+//   // 	  cornerDeltaV   = - base_cornerDeltaV  ;
 //   // 	  cornerQ1       = + base_cornerQ1      ;
 //   // 	  cornerQ2       = - base_cornerQ2      ;
 //   // 	  cornerRescale  =   base_cornerRescale ;
@@ -387,38 +387,38 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   // 	  cornerRescale  =   base_cornerRescale ;
 //   // 	  // 		  std::cout << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " TOP RIGHT"<< std::endl;
 //   // 	}
-//   // 	varY 
+//   // 	varY
 //   // 	<< "( "
 //   // 	<< cornerDeltaV
-//   // 	<< " + " 
+//   // 	<< " + "
 //   // 	<< cornerRescale
-//   // 	<<"*((FloodX*TMath::Sin(" 
-//   // 	<< cornerQ1 
+//   // 	<<"*((FloodX*TMath::Sin("
+//   // 	<< cornerQ1
 //   // 	<< ") + FloodY*TMath::Cos( "
-//   // 	<< cornerQ1 
+//   // 	<< cornerQ1
 //   // 	<< ")) *TMath::Cos("
 //   // 	<< cornerQ2
 //   // 	<< ") - FloodZ*TMath::Sin("
-//   // 	<< cornerQ2 
+//   // 	<< cornerQ2
 //   // 	<< ")))" ;
-//   // 	varX << " ( " 
+//   // 	varX << " ( "
 //   // 	<< cornerDeltaU
 //   // 	<< " + (FloodX*TMath::Cos("
 //   // 	<< cornerQ1
 //   // 	<< ") - FloodY*TMath::Sin("
 //   // 	<< cornerQ1
 //   // 	<< ")))";
-//   // 	
+//   //
 //   // 	// 		std::cout << varY.str() << std::endl;
 //   // 	// 		std::cout << varX.str() << std::endl;
 //   //       }
-//   //     }	    
+//   //     }
 //   //   }
 //   //   var << varY.str() << ":" << varX.str() << " >> spectrum2d";
 //   //   std::cout << var << std::endl;
 //   //   tree->Draw(var.str().c_str(),CutXYZ+CutTrigger,"COLZ");
 //   //   name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-//   //   spectrum2d->SetName(name); 
+//   //   spectrum2d->SetName(name);
 //   //   spectrum2d->SetTitle(name);
 //   //   spectrum2d->GetXaxis()->SetTitle("U");
 //   //   spectrum2d->GetYaxis()->SetTitle("V");
@@ -426,15 +426,15 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 //   //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetXvariable(varX.str());
 //   //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetYvariable(varY.str());
 //   //   /*TSpectrum2 *peaks2D = new TSpectrum2(ncrystalsx*ncrystalsy,1);
-//   //    *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/	
+//   //    *  int nfound2D = peaks2D->Search(spectrum2d,1,"col",0.3);*/
 //   //   module[iModule][jModule]->GetFloodMap2DSeparated()->Add(spectrum2d);
 //   //   // 	  module[iModule][jModule]->SetFloodMap2DSeparated(*spectrum2d);
 //   //   varX.str("");
 //   //   varY.str("");
 //   //   var.str("");
-//   //   delete spectrum2d; 
+//   //   delete spectrum2d;
 //   //-------------------------------------------------------------------------------
-//   
+//
 // }
 
 
@@ -445,27 +445,27 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
    * It works like this:
    * it finds the voxel with maximum amount of events in the 3D map of this mppc
-   * sets a threshold equal to the numbers of events in that voxel divided by div 
+   * sets a threshold equal to the numbers of events in that voxel divided by div
    * starting by that voxel, checks the 26 voxel around to see if the number of events in them is above the threshold
    * for the ones above threshold, checks in the same way the 26 voxel around (skipping of course the ones already checked)
    * goes on until there's no voxel above threshold left. the collection of voxels above threshold found are the first crystal volume
    * then it excludes the voxel of first crystal, find the new maximum, and repeat the procedure keeping the same value of threshold.
    * the procedure goes on until ncrystalsx by ncrystalsy volumes are found. If less volumes are found, the threshold is increased and the entire
    * procedure is started over
-   * 
+   *
    * Takes as input:
    * cutg_external     = the pointer to the matrix of cutg that will be used in the main program to select the crystals
-   * histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice. 
+   * histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice.
    *                         The parameter is set in the config file (default to 100)
    * div               = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
    * ncrystalsx        = number of crystal "columns" to look for. It's the number of columns of crystals connected to this mppc, if this is a standard acq. If it's a DOI tagging run, insstead, only 1 column is considered and
    *                         therefore this number is fixed to 1 when the function is called
    * ncrystalsy        = number of crystal "rows" to look for
    */
-  
+
   //  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
   //  int ncrystalsy = jChildren;
-  
+
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;
   cutg = new TCutG**[2]; // two planes of cuts, their intersection will create a 3d cut
@@ -473,10 +473,10 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   {
     cutg[iCut] = new TCutG*[numbOfCrystals];
   }
-  
+
   TH3I *histogram_original = this->FloodMap3D; // get the 3D map of this channel
-  
-  
+
+
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
   int NbinY = histogram_original->GetYaxis()->GetNbins();
@@ -486,7 +486,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   double maxX3Dplot = histogram_original->GetXaxis()->GetBinCenter(NbinX) + 0.5*histogram_original->GetXaxis()->GetBinWidth(NbinX);
   double minY3Dplot = histogram_original->GetYaxis()->GetBinCenter(1) - 0.5*histogram_original->GetYaxis()->GetBinWidth(1);
   double maxY3Dplot = histogram_original->GetYaxis()->GetBinCenter(NbinY) + 0.5*histogram_original->GetYaxis()->GetBinWidth(NbinY);
-  
+
   // find the number of non-empty bins
   long int nonEmpty = 0;
   for(int iBin = 0; iBin < NbinX ; iBin++)
@@ -504,18 +504,18 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   //   double clusterVolumeCut = 0.001; //FIXME for the moment hardcoded
   double volumeLimit = clusterVolumeCut*nonEmpty;
   //   std::cout << NbinX*NbinY*NbinZ << " " << nonEmpty << " " << volumeLimit /*<< " " << totalEntries*/ << std::endl;
-  
-  
+
+
   std::stack<point> stack;   // prepare a stack of point type. point type defined in the header
   TH3I *done;
   TH3I *mask[numbOfCrystals];
-  Int_t u,v,w;  
+  Int_t u,v,w;
   histogram_original->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
   double max = histogram_original->GetBinContent(u,v,w); //get ax bin content
   double step = max/((double) div); // calculated the step of the separation search
-  
+
   double threshold = step;
-  
+
   bool found = false;
   std::vector<masks_t> mask_pos;
   /*
@@ -531,37 +531,37 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
   //   int    maskI[numbOfCrystals];
   //   int    maskJ[numbOfCrystals];
   //   long int nBinsXMask[numbOfCrystals] ;
-  
+
   for(int count = 0; count < numbOfCrystals ; count++)
   {
     masks_t temp = {0,0,0,0,0,0,0};
     mask_pos.push_back(temp);
   }
-  
+
   while(!found)
-  { 
+  {
     for(int count = 0; count < numbOfCrystals ; count++)
     {
       mask_pos[count].nBinsXMask = 0;
     }
-    
-    int nMasks = 0;    
+
+    int nMasks = 0;
     for(int i = 0 ; i < numbOfCrystals ; i++)//create the masks
     {
       std::stringstream name;
       name << "mask" << i;
-      mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
+      mask[i] = new TH3I(name.str().c_str(),name.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,histo3Dmin,histo3Dmax);
     }
-    done = new TH3I("done","done",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1); //create the histogram to hold the "done" flags
+    done = new TH3I("done","done",histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,histo3Dmin,histo3Dmax); //create the histogram to hold the "done" flags
     TH3I *histogram = (TH3I*) histogram_original->Clone(); // take an histogram from the original 3d histo
-    
+
     //now the messy part: start with very broad binning, then mak it finer and finer...
     //     for(int i = 0 ; i < numbOfCrystals ; i++)//create the masks
     //     {
     //       mask[i]
     //     }
-    
-    
+
+
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
       histogram->GetMaximumBin(u,v,w); // have to do it at each step
@@ -576,12 +576,12 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
         stack.pop(); //remove it from stack
         for(int i = -1 ; i < 2 ; i++) //take the 26 neighbours of point
         {
-          for(int j = -1 ; j < 2 ; j++) 
+          for(int j = -1 ; j < 2 ; j++)
           {
-            for(int k = -1 ; k < 2 ; k++) 
+            for(int k = -1 ; k < 2 ; k++)
             {
               point p = {pSeed.i+i,pSeed.j+j,pSeed.k+k};
-              
+
               if(!done->GetBinContent(p.i,p.j,p.k)) // if the point has not been checked before
               {
                 if(histogram->GetBinContent(p.i,p.j,p.k) > threshold)
@@ -596,11 +596,11 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
           }
         }
       }
-      
+
       // now take away the points of this mask
-      for(int i = 1 ; i < NbinX+1 ; i++) 
+      for(int i = 1 ; i < NbinX+1 ; i++)
       {
-        for(int j = 1 ; j < NbinY+1 ; j++) 
+        for(int j = 1 ; j < NbinY+1 ; j++)
         {
           for(int k = 1 ; k < NbinZ+1 ; k++)
           {
@@ -611,9 +611,9 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
           }
         }
       }
-      
-      
-      if(mask_pos[iMasks].nBinsXMask < volumeLimit) //check the mask, if it holds too few points, don't accept it 
+
+
+      if(mask_pos[iMasks].nBinsXMask < volumeLimit) //check the mask, if it holds too few points, don't accept it
         break;
       else
         nMasks++; //otherwise count it as +1 good mask found
@@ -623,8 +623,8 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
       found = true; // if you did, set found as true and the while cycle will end here
       //       std::cout << "Found threshold at " << threshold << " - Max = " << max << std::endl;
       delete histogram;
-    } 
-    else 
+    }
+    else
     {
       threshold += step;  // increase the threshold for next search
       for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
@@ -637,20 +637,20 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
         break;
     }
   }
-  
+
   //delete done;
-  
-  
-  if(found)  
+
+
+  if(found)
   {
     //     //DEBUG
     //     for(int count = 0; count < numbOfCrystals ; count++)
-    //     {  
+    //     {
     //       std::cout << nBinsXMask[count] << "\t" ;
     //     }
     //     std::cout << std::endl;
     //     //-----
-    
+
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
       mask_pos[iMasks].meanx  = mask[iMasks]->GetMean(1);
@@ -659,22 +659,22 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
       mask_pos[iMasks].maskID = iMasks;
       //       std::cout << "Mask numb " << iMasks << "\t" << mask[iMasks]->GetMean(1) << "\t" <<  mask[iMasks]->GetMean(2) << "\t" <<  mask[iMasks]->GetMean(3) << std::endl;
     }
-    
+
     //     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     //     {
-    //       std::cout << 
+    //       std::cout <<
     //       mask_pos[iMasks].meanx << " " <<
     //       mask_pos[iMasks].meany << " " <<
     //       mask_pos[iMasks].meanz << " " <<
     //       mask_pos[iMasks].maskID << std::endl;
     //     }
-    
+
     //sort the vector of struct by the x position
     std::sort (mask_pos.begin(),mask_pos.end(),compare_by_x());
     //     std::cout << "----------------------" << std::endl;
     //     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     //     {
-    //       std::cout << 
+    //       std::cout <<
     //       mask_pos[iMasks].meanx << " " <<
     //       mask_pos[iMasks].meany << " " <<
     //       mask_pos[iMasks].meanz << " " <<
@@ -698,11 +698,11 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
         maskCounter++;
       }
     }
-    
+
     //     std::cout << "----------------------" << std::endl;
     //     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     //     {
-    //       std::cout << 
+    //       std::cout <<
     //       mask_pos[iMasks].meanx << " " <<
     //       mask_pos[iMasks].meany << " " <<
     //       mask_pos[iMasks].meanz << " " <<
@@ -710,33 +710,33 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
     //       mask_pos[iMasks].maskJ << " " <<
     //       mask_pos[iMasks].maskID << std::endl;
     //     }
-    
-    
+
+
     // now generate a "TCutg" from these selections of points
     // simplest way is a bit stupid..
     // first project each mask on xz and yz
     // then find a tcutg on these two planes, and their intersection will define the 3d area of TCutG you want
-    
+
     TH2D* mask_zx[numbOfCrystals];
     TH2D* mask_zy[numbOfCrystals];
     TCanvas *C_contours[numbOfCrystals];
     TCanvas *C_graph[numbOfCrystals];
     TString plane[2] = {"zx","zy"};
-    TString varX[2] = {"FloodX","FloodY"};    
+    TString varX[2] = {"FloodX","FloodY"};
     Double_t contours[2] = {0.5,1}; //fixed level to get the all the points
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
       std::stringstream name;
-      
+
       name << "C_" << mask[iMasks]->GetName();
       C_contours[iMasks] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,600);
       C_contours[iMasks]->Divide(2,1);
-      
+
       name.str("");
       name << "Gr_" << mask[iMasks]->GetName();
       C_graph[iMasks] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,600);
       C_graph[iMasks]->Divide(2,1);
-      
+
       for(int iCut =0 ; iCut < 2 ; iCut++)
       {
         name.str("");
@@ -747,40 +747,40 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
         C_contours[iMasks]->cd(1);
         mask_zx[iMasks]->Draw("CONT Z LIST");
         C_contours[iMasks]->Update();
-        
+
         TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
         TList* contLevel = NULL;
         TGraph* curv     = NULL;
         TGraph* gc       = NULL;
-        
+
         Int_t nGraphs    = 0;
         Int_t TotalConts = 0;
-        
+
         if (conts == NULL)
         {
           printf("*** No Contours Were Extracted!\n");
           TotalConts = 0;
-        } 
-        else 
+        }
+        else
         {
           TotalConts = conts->GetSize();
         }
-        
+
         contLevel = (TList*)conts->At(0); //take the lowest level
         curv = (TGraph*)contLevel->First(); // i expect only 1 graph
         C_graph[iMasks]->cd(1);
         curv->Draw("alp");
-        
+
         name.str("");
-        name << "cutg_" << iCut << "_" << iMasks << "_" << this->GetLabel();	
+        name << "cutg_" << iCut << "_" << iMasks << "_" << this->GetLabel();
         cutg[iCut][iMasks] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
         cutg[iCut][iMasks]->SetVarX(varX[iCut]);
         cutg[iCut][iMasks]->SetVarY("FloodZ");
-        
+
       }
     }
-    
-    
+
+
     for(int iCry = 0; iCry < ncrystalsx ; iCry++)
     {
       for(int jCry = 0; jCry < ncrystalsy ; jCry++)
@@ -802,14 +802,14 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
             }
           }
         }
-      }     
+      }
     }
-    
-    for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks 
+
+    for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks
     {
       delete mask[i];
     }
-    
+
     return true;
   }
   else

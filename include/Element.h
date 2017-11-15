@@ -9,6 +9,7 @@
 #include "TGraph2D.h"
 #include "TProfile.h"
 #include "TTree.h"
+#include "TCut.h"
 
 class Module;
 class Mppc;
@@ -71,6 +72,12 @@ protected:
   //3d histos
   TH3I*                FloodMap3D;          ///< u,v,w map for this element
   TH3I*                FloodMap3DSeparation;
+  TH1F*                TimeSpectrum;
+  // TH1F*                DeltaTimeWRTTagging;
+  TH2F*                deltaTvsW;
+  TH1D*                deltaTvsWSlice;
+  TF1*                 deltaTvsWFit;
+  TCut                 taggingPhotopeakCut;
 
 public:
 
@@ -100,6 +107,13 @@ public:
   TH2F*                GetFloodMap2DSingleCrystalHit()           {return FloodMap2DSingleCrystalHit;};
   TH2F*                GetADCversusW()                           {return ADCversusW;};
   TH2F*                GetADCversusWComplete()                   {return ADCversusWComplete;};
+  TH1F*                GetTimeSpectrum()                         {return TimeSpectrum;};
+  // TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
+  TH2F*                GetDeltaTvsW()                            {return deltaTvsW;};
+  TH1D*                GetDeltaTvsWSlice()                       {return deltaTvsWSlice;}
+  TF1*                 GetDeltaTvsWFit()                         {return deltaTvsWFit;};
+  TCut                 GetTaggingPhotopeakCut()                  {return taggingPhotopeakCut;};
+
   //   TH2F*                GetFloodMap2DSeparated()                  {return &FloodMap2DSeparated;};
   //   TH2F*                GetSphericalMap()                         {return &SphericalMap;};
   //   TH2F*                GetCylindricalXMap()                      {return &CylindricalXMap;};
@@ -131,6 +145,11 @@ public:
   void                 SetADCversusW(TH2F* aHisto)                {ADCversusW = aHisto;};
   void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};
   void                 SetIsOnForModular(bool aBool)              {isOnForModular = aBool;};
+  void                 SetTimeSpectrum(TH1F* aHisto)              {TimeSpectrum = aHisto;};
+  // void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};
+  void                 SetDeltaTvsW(TH2F* aHisto)                 {deltaTvsW = aHisto;};
+  void                 SetDeltaTvsWFit(TF1* aFit)                 {deltaTvsWFit = aFit;};
+  void                 SetDeltaTvsWSlice(TH1D* aHisto)              {deltaTvsWSlice = aHisto;};
   //   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};
   //   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};
   //   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};
@@ -142,6 +161,7 @@ public:
   //   void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};
   void                 SetXvariable(std::string astring)         {variableX = astring;};
   void                 SetYvariable(std::string astring)         {variableY = astring;};
+  void                 SetTaggingPhotopeakCut(TCut aCut)         {taggingPhotopeakCut = aCut;};
   //   void                 SetGraphFlood2D(TGraph aGraph)            {GraphFlood2D = aGraph;};
   //   void                 SetGraphFlood3D(TGraph2D aGraph)          {GraphFlood3D = aGraph;};
 

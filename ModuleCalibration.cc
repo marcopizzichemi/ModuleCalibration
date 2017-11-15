@@ -114,7 +114,7 @@
 int main (int argc, char** argv)
 {
 
-  gStyle->SetOptStat(0);
+  // gStyle->SetOptStat(0);
 
   //----------------------------------------------------------//
   //  Check input                                             //
@@ -258,6 +258,25 @@ int main (int argc, char** argv)
   float taggingSpectrumMin = config.read<float>("taggingSpectrumMin",0.0);
   float taggingSpectrumMax = config.read<float>("taggingSpectrumMax",12000.0);
   bool TagEdgeCalculation  = config.read<bool>("tagEdgeCalculation",0);
+  int digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme, 2 = petiroc
+  bool cuttingOnTagPhotopeak = config.read<bool>("cuttingOnTagPhotopeak",1);
+  int CTRbins = config.read<int>("CTRbins",500);
+  float CTRmin = config.read<float>("CTRmin",-5e-9);
+  float CTRmax = config.read<float>("CTRmax",5e-9);
+  float histo3Dmin = config.read<float>("histo3Dmin",0);
+  float histo3Dmax = config.read<float>("histo3Dmax",1);
+  int DeltaTimeBins  = config.read<int>("DeltaTimeBins",500);
+  float DeltaTimeMin = config.read<float>("DeltaTimeMin",-5e-9);
+  float DeltaTimeMax = config.read<float>("DeltaTimeMax",5e-9);
+  bool taggingForTiming = config.read<bool>("taggingForTiming",0);
+  float photopeakSigmasMin = config.read<float>("photopeakSigmasMin",2.0);      // how many sigmas far from mean is the lower bound of cut on photopeak  - default = 2.0
+  float photopeakSigmasMax = config.read<float>("photopeakSigmasMax",4.0);     // how many sigmas far from mean is the upper bound of cut on photopeak  - default = 4.0
+  float TaggingPhotopeakSigmasMin = config.read<float>("TaggingPhotopeakSigmasMin",1.5);      // how many sigmas far from mean is the lower bound of cut on Tagging photopeak  - default = 1.5
+  float TaggingPhotopeakSigmasMax = config.read<float>("TaggingPhotopeakSigmasMin",2.0);     // how many sigmas far from mean is the upper bound of cut on Tagging photopeak  - default = 2.0
+  int WrangeBinsForTiming = config.read<int>("WrangeBinsForTiming",10);
+  bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
+
+
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -301,9 +320,12 @@ int main (int argc, char** argv)
   std::cout<<"\n"<<std::endl;
   if(!loadAnalysisTree)
   {
-    input.ImportTChain(argc,argv);
+    if(digitizerType == 0 || digitizerType == 1)
+    {
+      input.ImportTChain(argc,argv);
+    }
     input.PrepareTTree();
-    input.FillTree();                        // create the TTree that will be used in analysis
+    input.FillTree(argc,argv);                        // create the TTree that will be used in analysis
   }
   else    // otherwise load it from the indicated file
   {
@@ -466,8 +488,6 @@ int main (int argc, char** argv)
       tempPeak.peakMax = saturationPeakMax[i];
       saturationPeak.push_back(tempPeak);
     }
-
-
   }
 
   std::vector<inputDoi_t> inputDoi;
@@ -522,7 +542,7 @@ int main (int argc, char** argv)
       // 2. A cut on photopeak of the tagging crystal, if there is any such crystal involved
       TCut BasicCut;
       std::stringstream CutXYZstream;
-      CutXYZstream << "FloodX > " << -moduleLateralSideX << " && FloodX < " << moduleLateralSideX  << "&& FloodY > " << -moduleLateralSideY <<   " && FloodY < " << moduleLateralSideY << "&& FloodZ > 0 && FloodZ < 1";
+      CutXYZstream << "FloodX > " << -moduleLateralSideX << " && FloodX < " << moduleLateralSideX  << "&& FloodY > " << -moduleLateralSideY <<   " && FloodY < " << moduleLateralSideY << "&& FloodZ > " << histo3Dmin << " && FloodZ <  " << histo3Dmax;
       TCut CutXYZ = CutXYZstream.str().c_str();
       std::cout << "Generating global spectra..." << std::endl;
       TString nameModule;
@@ -546,7 +566,7 @@ int main (int argc, char** argv)
       module[iModule][jModule]->SetFloodMap2D(spectrum2dModule);
       varModule.str("");
 
-      if(usingTaggingBench | calcDoiResWithCalibration)//trigger spectrum
+      if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming)//trigger spectrum
       {
         TaggingCrystalSpectrum =  new TH1F("TaggingCrystalSpectrum","TaggingCrystalSpectrum",taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
         varModule << "Tagging >> TaggingCrystalSpectrum";
@@ -556,6 +576,9 @@ int main (int argc, char** argv)
         TaggingCrystalSpectrum->GetYaxis()->SetTitle("Counts");
         TaggingCrystalSpectrum->SetTitle("Spectrum of Tagging Crystal");
         tree->Draw(varModule.str().c_str(),"");
+        varModule.str("");
+
+
         //restrict the region where to look for peaks. Fix for tspectrum...
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingPeakMin,taggingPeakMax);
         //find peak in the tagging crystal
@@ -582,11 +605,11 @@ int main (int argc, char** argv)
         TF1 *gaussTag = new TF1("gaussTag", "gaus");
         gaussTag->SetParameter(1,TagCrystalPeaks[peakID]);
         gaussTag->SetParameter(0,TagCrystalPeaksY[peakID]);
-        TaggingCrystalSpectrum->Fit("gaussTag","NQ","",TagCrystalPeaks[peakID] - 0.075*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + 0.075*TagCrystalPeaks[peakID]);
+        TaggingCrystalSpectrum->Fit("gaussTag","Q","",TagCrystalPeaks[peakID] - 0.075*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + 0.075*TagCrystalPeaks[peakID]);
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingSpectrumMin,taggingSpectrumMax);
         //define a TCut for this peak
-        double tagPhotopeakMin = gaussTag->GetParameter(1) - 1.5*gaussTag->GetParameter(2);
-        double tagPhotopeakMax = gaussTag->GetParameter(1) + 2.0*gaussTag->GetParameter(2);
+        double tagPhotopeakMin = gaussTag->GetParameter(1) - TaggingPhotopeakSigmasMin*gaussTag->GetParameter(2);
+        double tagPhotopeakMax = gaussTag->GetParameter(1) + TaggingPhotopeakSigmasMax*gaussTag->GetParameter(2);
         std::stringstream tagString;
         tagString << "Tagging > " << tagPhotopeakMin << "&& Tagging < " << tagPhotopeakMax;
         taggingPhotopeakCut = tagString.str().c_str();
@@ -603,19 +626,28 @@ int main (int argc, char** argv)
         {
           tagPeakHgEntries = TriggerSpectrumHighlight->GetEntries();
         }
+        if(cuttingOnTagPhotopeak) // only if tagging on photopeak is chosen
+        {
+          BasicCut += taggingPhotopeakCut;  // add the cut on photopeak of the tagging crystal.
+        }
+        //but always save the tagging cut in the output file
+        taggingPhotopeakCut.SetName("taggingPhotopeakCut");
+        module[iModule][jModule]->SetTaggingPhotopeakCut(taggingPhotopeakCut);        // energy cut, events in the photopeak
         // 	delete sTagCrystal;
         delete gaussTag;
+
+
         // 	std::cout << " done" << std::endl;
 
       }
 
-      BasicCut += taggingPhotopeakCut;  // add the cut on photopeak of the tagging crystal. of course if there is no tagging crystal, no cut will be added (string would be "")
+
 
 
       nameModule = "Flood Histogram 3D - Module " + module[iModule][jModule]->GetName();
       varModule << "FloodZ:FloodY:FloodX >> " << nameModule;
       //       std::cout << nameModule << " ... ";
-      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,0,1);
+      TH3I* spectrum3dModule = new TH3I(nameModule,nameModule,histo3DglobalBins,-moduleLateralSideX,moduleLateralSideX,histo3DglobalBins,-moduleLateralSideY,moduleLateralSideY,histo3DglobalBins,histo3Dmin,histo3Dmax);
       // if(usingTaggingBench | calcDoiResWithCalibration)
       // {
       tree->Draw(varModule.str().c_str(),BasicCut);
@@ -765,6 +797,30 @@ int main (int argc, char** argv)
 
 
 
+            // if(digitizerType == 1 || digitizerType == 2)
+            // {
+            //   //global time spectrum of this mppc
+            //   name = "Time Spectrum - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+            //   var << "t" << channel << " >> " << name;
+            //   TH1F* spectrumTime = new TH1F(name,name,100,0,20e-6);
+            //   tree->Draw(var.str().c_str(),BasicCut+CutTrigger);
+            //   spectrumTime->GetXaxis()->SetTitle("Time [S]");
+            //   spectrumTime->GetYaxis()->SetTitle("N");
+            //   // sname.str("");
+            //   var.str("");
+            //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetTimeSpectrum(spectrumTime);
+            //
+            //   // //delta time spectrum of this mppc
+            //   // name = "Delta Time WRT Tagging - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+            //   // var << "(t" << channel << " - TaggingTimeStamp) >> " << name;
+            //   // TH1F* spectrumDeltaTimeWRTTagging = new TH1F(name,name,500,-5e-9,5e-9);
+            //   // tree->Draw(var.str().c_str(),BasicCut+CutTrigger);
+            //   // spectrumDeltaTimeWRTTagging->GetXaxis()->SetTitle("Time [S]");
+            //   // spectrumDeltaTimeWRTTagging->GetYaxis()->SetTitle("N");
+            //   // // sname.str("");
+            //   // var.str("");
+            //   // mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetDeltaTimeWRTTagging(spectrumDeltaTimeWRTTagging);
+            // }
             //standard 2d plot
             name = "Flood Histogram 2D - MPPC " + mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
             TH2F* spectrum2dMPPC = new TH2F(name,name,histo2DchannelBin,-moduleLateralSideX,moduleLateralSideX,histo2DchannelBin,-moduleLateralSideY,moduleLateralSideY);
@@ -791,7 +847,7 @@ int main (int argc, char** argv)
             var << "FloodZ:FloodY:FloodX >> " << name;
 
             int histo3DchannelBin =  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetHisto3DchannelBin();
-            TH3I* spectrum3dMPPC = new TH3I(name,name,histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);//FIXME temp
+            TH3I* spectrum3dMPPC = new TH3I(name,name,histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,histo3Dmin,histo3Dmax);//FIXME temp
             // if(usingTaggingBench | calcDoiResWithCalibration)
             // {
             tree->Draw(var.str().c_str(),BasicCut+CutTrigger);
@@ -872,6 +928,7 @@ int main (int argc, char** argv)
                     // create the string
                     std::stringstream sSumChannels;
                     std::string SumChannels;
+                    std::vector<int> neighbours = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetNeighbours(); //get neighbours anyway, they will be useful later
                     // now the 2 cases
 
                     if(usingAllChannelsForEnergySpectra) // add all channels in the digitizer list
@@ -887,7 +944,7 @@ int main (int argc, char** argv)
                     else // add only this channel and the neighbourChannels
                     {
                       sSumChannels << "ch" << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
-                      std::vector<int> neighbours = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetNeighbours();
+
                       for(unsigned int iNeighbour = 0 ; iNeighbour < neighbours.size() ; iNeighbour++)
                       {
                         sSumChannels << "+ch" << neighbours[iNeighbour];
@@ -905,8 +962,13 @@ int main (int argc, char** argv)
                     // a cut for events falling in this crystal. This basically means
                     // 1. "Physical" constrains are satisfied (u and v are not beyond the broad physical x-y limits of the array, w is between 0 and 1). This is set at module level
                     // 2. If a tagging crystal is used, events have charge in the channel of tagging crystal in the photopeak of the tagging crystal. This is set at module level
-                    // 3. The "broad" cut on energy is applied, which means that the user decided to discard events that in the trigger spectrum of this mppc are "too low". This is set at mppc level
-                    // 4. Events are in the density area of this crystal, defined by the two tcutg
+                    // 3. The MPPC where the crystal is has the maximum signal in the event ("trigger" channel).
+                    // 4. The "broad" cut on energy is applied, which means that the user decided to discard events that in the "trigger" spectrum of this mppc are "too low". This is set at mppc level
+                    // 5. Events are in the density area of this crystal, defined by the two tcutg
+                    //
+                    // BasicCut = 1. and 2.
+                    // CutTrigger = 3. and 4.
+                    // CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName() = 5.
 
                     TCut CrystalCut = BasicCut + CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName();
 
@@ -914,7 +976,7 @@ int main (int argc, char** argv)
                     sname << "Flood Histogram 3D - Crystal " << CurrentCrystal->GetID();
                     var << "FloodZ:FloodY:FloodX >> " << sname.str();
                     // NB histo3DchannelBin is taken from the MPPC element earlier in the code
-                    TH3I* spectrum3dCrystal = new TH3I(sname.str().c_str(),sname.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,0,1);
+                    TH3I* spectrum3dCrystal = new TH3I(sname.str().c_str(),sname.str().c_str(),histo3DchannelBin,minX3Dplot,maxX3Dplot,histo3DchannelBin,minY3Dplot,maxY3Dplot,histo3DchannelBin,histo3Dmin,histo3Dmax);
                     tree->Draw(var.str().c_str(),CrystalCut);
                     spectrum3dCrystal->GetXaxis()->SetTitle("U");
                     spectrum3dCrystal->GetYaxis()->SetTitle("V");
@@ -981,7 +1043,7 @@ int main (int argc, char** argv)
 
                       //spectrum of charge in this mppc, but when the trigger is NOT itself nor a neighbouring channel
                       sname << "Not-Neighbour Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-                      std::vector<int> neighbours = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetNeighbours();
+                      // std::vector<int> neighbours = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetNeighbours();
                       TCut NotNeighbours;
                       std::stringstream sneigh;
                       sneigh << "TriggerChannel != " <<   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
@@ -1085,12 +1147,6 @@ int main (int argc, char** argv)
                       CurrentCrystal->SetInvestigatedSpectrum(spectrumWhereToSearch);
                       CurrentCrystal->SetSingleChargeSpectrum(spectrumSingleCharge);
 
-
-
-
-
-
-
                     }
                     else
                     {
@@ -1179,8 +1235,8 @@ int main (int argc, char** argv)
                         TSpectrum *s;
                         s = new TSpectrum(20);
                         // 		Input[i].SumSpectraCanvas->cd(j+1);
-                        Int_t CrystalPeaksN = s->Search(spectrumCharge,2,"goff",0.5);
-                        Float_t *CrystalPeaks = s->GetPositionX();
+                        Int_t CrystalPeaksN = s->Search(spectrumCharge,2,"",0.5);
+                        Float_t *CrystalPeaks =  s->GetPositionX();
                         Float_t *CrystalPeaksY = s->GetPositionY();
                         //delete s;
                         float maxPeak = 0.0;
@@ -1201,11 +1257,17 @@ int main (int argc, char** argv)
                           else
                           energyResolution = ENERGY_RESOLUTION;
                         }
-                        float par0 = CrystalPeaksY[peakID];
-                        float par1 = CrystalPeaks[peakID];
-                        float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
-                        float fitmin = par1-1.5*par2;
-                        float fitmax = par1+1.8*par2;
+                        Float_t par0 = CrystalPeaksY[peakID];
+                        Float_t par1 = CrystalPeaks[peakID];
+                        Float_t par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
+                        Float_t fitmin = par1-1.5*par2;
+                        Float_t fitmax = par1+1.8*par2;
+                        // std::cout << par0   << "\t"
+                        //           << par1   << "\t"
+                        //           << par2   << "\t"
+                        //           << fitmin << "\t"
+                        //           << fitmax << std::endl;
+
                         sname << "gaussCharge - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                         TF1 *gauss = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
                         gauss->SetParameter(0,par0);
@@ -1235,8 +1297,8 @@ int main (int argc, char** argv)
                         // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
                         //Compute the energy Tcut
                         std::stringstream streamEnergyCut;
-                        EnergyCutMin = gauss->GetParameter(1) - 2.0*std::abs(gauss->GetParameter(2));
-                        EnergyCutMax = gauss->GetParameter(1) + 4.0*std::abs(gauss->GetParameter(2));
+                        EnergyCutMin = gauss->GetParameter(1) - photopeakSigmasMin*std::abs(gauss->GetParameter(2));
+                        EnergyCutMax = gauss->GetParameter(1) + photopeakSigmasMax*std::abs(gauss->GetParameter(2));
                         streamEnergyCut << SumChannels << " > " << EnergyCutMin << " && " << SumChannels << " < " << EnergyCutMax;
                         PhotopeakEnergyCut  = streamEnergyCut.str().c_str();
                         sname.str("");
@@ -1260,7 +1322,7 @@ int main (int argc, char** argv)
                       sname << "W histogram - Crystal " << CurrentCrystal->GetID();
                       //var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
                       var << "FloodZ >> " << sname.str();
-                      TH1F* spectrumHistoW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);
+                      TH1F* spectrumHistoW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
                       spectrumHistoW->GetXaxis()->SetTitle("W");
                       spectrumHistoW->GetYaxis()->SetTitle("N");
@@ -1300,10 +1362,10 @@ int main (int argc, char** argv)
                       var.str("");
                       sname.str("");
 
-                      if(usingTaggingBench | calcDoiResWithCalibration) //done on the standard W because there's no ADCvsW correction in tagging bench
+                      if(usingTaggingBench || calcDoiResWithCalibration) //done on the standard W because there's no ADCvsW correction in tagging bench
                       {
                         sname << "gaussW histogram - Crystal " << CurrentCrystal->GetID();
-                        TF1 *gaussW = new TF1(sname.str().c_str(),  "gaus",0,1);
+                        TF1 *gaussW = new TF1(sname.str().c_str(),  "gaus",histo3Dmin,histo3Dmax);
                         int binmax = spectrumHistoW->GetMaximumBin();
                         double maximum = spectrumHistoW->GetXaxis()->GetBinCenter(binmax);
                         int nentries= spectrumHistoW->GetEntries();
@@ -1363,7 +1425,7 @@ int main (int argc, char** argv)
                         //long long int nPoints;
                         sname << "ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
                         var << SumChannels << ":FloodZ >> " << sname.str();
-                        TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1,histo1Dbins,0,histo1Dmax);
+                        TH2F* spectrum2dADCversusW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,histo1Dbins,0,histo1Dmax);
                         tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+w20percCut,"COLZ");
                         spectrum2dADCversusW->GetXaxis()->SetTitle("W");
                         spectrum2dADCversusW->GetYaxis()->SetTitle("ADC channels");
@@ -1430,7 +1492,7 @@ int main (int argc, char** argv)
 
 
                           Int_t CrystalPeaksN_corr = s_corr->Search(spectrumChargeCorrected,2,"goff",0.5);
-                          Float_t *CrystalPeaks_corr = s_corr->GetPositionX();
+                          Float_t *CrystalPeaks_corr =  s_corr->GetPositionX();
                           Float_t *CrystalPeaksY_corr = s_corr->GetPositionY();
                           // 		  delete s_corr;
                           float maxPeak_corr = 0.0;
@@ -1490,7 +1552,7 @@ int main (int argc, char** argv)
                           // 		std::cout << "Photopeak Energy Resolution FWHM for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakEnergyResolution() << std::endl;
                           //Compute the energy Tcut
                           std::stringstream streamEnergyCutCorrected;
-                          streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - 2.5*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + 3.0*std::abs(gauss_corr->GetParameter(2));
+                          streamEnergyCutCorrected << baseVar.str() << " > " << gauss_corr->GetParameter(1) - photopeakSigmasMin*std::abs(gauss_corr->GetParameter(2)) << " && " << baseVar.str() << " < " << gauss_corr->GetParameter(1) + photopeakSigmasMax*std::abs(gauss_corr->GetParameter(2));
                           PhotopeakEnergyCutCorrected = streamEnergyCutCorrected.str().c_str();
 
                           // then PhotopeakEnergyCut becomes PhotopeakEnergyCutCorrected
@@ -1538,7 +1600,7 @@ int main (int argc, char** argv)
                       // Time evolution for W
                       sname << "W vs. Time - Crystal " << CurrentCrystal->GetID();
                       var << "FloodZ:ExtendedTimeTag >> " << sname.str();
-                      TH2F* spectrum2dWversusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tree->GetMaximum("ExtendedTimeTag"),wHistogramsBins,0,1);
+                      TH2F* spectrum2dWversusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tree->GetMaximum("ExtendedTimeTag"),wHistogramsBins,histo3Dmin,histo3Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
                       spectrum2dWversusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
                       spectrum2dWversusTime->GetYaxis()->SetTitle("W");
@@ -1549,7 +1611,7 @@ int main (int argc, char** argv)
                       //histogram of w versus adc channels - this time without the photopeak cut (so it looks nicer in the paper...)
                       sname << "Complete ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
                       var << SumChannels << ":FloodZ >> " << sname.str() ;
-                      TH2F* spectrum2dADCversusWComplete = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,1,histo1Dbins,0,histo1Dmax);
+                      TH2F* spectrum2dADCversusWComplete = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,histo1Dbins,0,histo1Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
                       spectrum2dADCversusWComplete->GetXaxis()->SetTitle("W");
                       spectrum2dADCversusWComplete->GetYaxis()->SetTitle("ADC channels");
@@ -1564,41 +1626,24 @@ int main (int argc, char** argv)
                       // no cut on the photopeak will be applied if it's a background run (since there will be no photopeak)
                       sname << "W histogram Corrected - Crystal " << CurrentCrystal->GetID();
                       var << "(FloodZ) >> " << sname.str();
-                      TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);
+                      TH1F* spectrumHistoWCorrected = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
                       spectrumHistoWCorrected->GetXaxis()->SetTitle("W");
                       spectrumHistoWCorrected->GetYaxis()->SetTitle("N");
+                      var.str("");
+                      sname.str("");
 
-                      //clone this histogram, to smooth and find consistent relevant points. fitting will be performed on the non-smoothed version
-                      // TH1F* spectrumHistoWCorrectedClone = (TH1F*) spectrumHistoWCorrected->Clone();
-                      // spectrumHistoWCorrectedClone->SetName("Smooth W corrected");
-                      // spectrumHistoWCorrectedClone->Smooth(10); //smooth the w histo
-                      //relevant points in the w corrected plot, to be used later
-
-                      // Int_t  FirstBinAbove20perc = spectrumHistoWCorrectedClone->FindFirstBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
-                      // Int_t  LastBinAbove20perc  = spectrumHistoWCorrectedClone->FindLastBinAbove(wThreshold*spectrumHistoWCorrectedClone->GetMaximum());
-                      // double FirstWAbove20perc   = spectrumHistoWCorrectedClone->GetBinCenter(FirstBinAbove20perc);
-                      // double LastWAbove20perc    = spectrumHistoWCorrectedClone->GetBinCenter(LastBinAbove20perc);
-
-                      // double AverageW            = (FirstWAbove20perc + LastWAbove20perc) /2.0;                                                                                  // average w between first 20% and last 20%
-                      // Int_t  AverageBin          = (int) (FirstBinAbove20perc + LastBinAbove20perc) /2.0;                                                                        // average bin between first 20% and last 20%
-                      // look for the first "peak" in w
-                      // spectrumHistoWCorrectedClone->GetXaxis()->SetRange(FirstBinAbove20perc,AverageBin);                               // restric the range where to look for the max to first above 20% and average
-                      // double FirstWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the first max is
-                      // double FirstWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());                                         // get value of max in this range
-
-                      //FIXME quick fix for second peak, i.e. take the mx in a much shorter w range
-                      // spectrumHistoWCorrectedClone->GetXaxis()->SetRange(AverageBin +  ((int) (0.7*(LastBinAbove20perc - AverageBin))),LastBinAbove20perc);
-                      // double LastWpeak        = spectrumHistoWCorrectedClone->GetBinCenter(spectrumHistoWCorrectedClone->GetMaximumBin());  // get the w where the last max is
-                      // double LastWpeakValue   = spectrumHistoWCorrectedClone->GetBinContent(spectrumHistoWCorrectedClone->GetMaximumBin());
 
                       CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
-                      // 		    CurrentCrystal->SetWbegin(w_fit_func->GetParameter(0));
-                      // 		    CurrentCrystal->SetWend(w_fit_func->GetParameter(1));
 
-                      // CurrentCrystal->SetHistoWCorrectedSmooth(spectrumHistoWCorrectedClone);
+
+
+
 
                       TGraph *calibrationGraphChosen = NULL;
+                      float centralW = -1;
+                      float beginW = -1;
+                      float endW = -1;
 
                       if(!calcDoiResWithCalibration) // only if it's not calcDoiResWithCalibration, because in that case we load the calibration TGraph from another file
                       {
@@ -1620,7 +1665,7 @@ int main (int argc, char** argv)
 
                         sname << "Cumulative W histogram Corrected - Crystal " << CurrentCrystal->GetID();
                         // 		    var << "(ch" << channel << "/(" << SumChannels << ")) >> " << sname.str();
-                        TH1F* cumulativeW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1);
+                        TH1F* cumulativeW = new TH1F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax);
                         cumulativeW->GetXaxis()->SetTitle("W");
                         double sumPdf = 0;
                         // 		    std::ofstream wfile;
@@ -1670,6 +1715,11 @@ int main (int argc, char** argv)
                         wzgraph->SetName(sname.str().c_str());
                         wzgraph->GetXaxis()->SetTitle("Z [mm]");
                         wzgraph->GetYaxis()->SetTitle("W");
+                        centralW = wzgraph->Eval(crystalz/2.0);
+                        beginW = wzgraph->Eval(crystalz - 0.01);
+                        endW = wzgraph->Eval(0.01);
+                        // std::cout << beginW << "\t" << endW << std::endl;
+
                         sname.str("");
 
                         CurrentCrystal->SetWZgraph(wzgraph);
@@ -1701,6 +1751,238 @@ int main (int argc, char** argv)
                         }
                         CurrentCrystal->SetCalibrationGraph(calibGraph);
                         calibrationGraphChosen = calibGraph;
+                      }
+
+
+                      if( (digitizerType == 1) || (digitizerType == 2)) //only for digitizers with timing capabilities
+                      {
+                        // basic CTR with respect to an external tagging crystal, cutting on photopeak of this crystal
+                        // var.str("");
+                        // sname.str("");
+                        sname << "Basic CTR - Crystal " << CurrentCrystal->GetID();
+                        var << "t" << channel << "- TaggingTimeStamp  >> " << sname.str();
+                        // std::cout << sname.str() << std::endl
+                                  // << var.str()   << std::endl
+                                  // << CrystalCut+PhotopeakEnergyCut << std::endl;
+
+                        TH1F* aSpectrum = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                        tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                        aSpectrum->GetXaxis()->SetTitle("Time [S]");
+                        aSpectrum->GetYaxis()->SetTitle("N");
+                        CurrentCrystal->SetDeltaTimeWRTTagging(aSpectrum);
+                        var.str("");
+                        sname.str("");
+
+                        // scatter plot of the above delta and w (which correlates to doi)
+                        sname << "Delta T vs. W - Crystal " << CurrentCrystal->GetID();
+                        var << "t" << channel << " - TaggingTimeStamp :FloodZ >> " << sname.str() ;
+                        TH2F* spectrumCrystalDeltaTvsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,CTRbins,CTRmin,CTRmax);
+                        tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                        spectrumCrystalDeltaTvsW->GetXaxis()->SetTitle("W");
+                        spectrumCrystalDeltaTvsW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                        CurrentCrystal->SetDeltaTvsW(spectrumCrystalDeltaTvsW);
+                        var.str("");
+                        sname.str("");
+
+                        // spectrumCrystalDeltaTvsW->FitSlicesY(0, 0, -1, 0, "QNRG5S");
+                        // sname << spectrumCrystalDeltaTvsW->GetName() << "_1";
+                        // TH1D *spectrumCrystalDeltaTvsW_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesY is called, holding the TH1F of the mean values
+                        // sname.str("");
+                        // sname << "linearFit CTR - Crystal " << CurrentCrystal->GetID();
+                        // TF1 *linearFitCTR = new TF1(sname.str().c_str(),  "[0]*x + [1]",histo3Dmin,histo3Dmax);
+                        // spectrumCrystalDeltaTvsW_1->Fit(sname.str().c_str(),"QR");
+                        // CurrentCrystal->SetDeltaTvsWSlice(spectrumCrystalDeltaTvsW_1);
+                        // CurrentCrystal->SetDeltaTvsWFit(linearFitCTR);
+                        // var.str("");
+                        // sname.str("");
+
+                        //get a TGraph
+                        std::vector<float> delta_X;
+                        std::vector<float> W_Y;
+                        std::vector<float> rmsBasic_Y;
+
+                        //get a TGraph from FitSlicesY
+                        // for(int iBin = 0; iBin < spectrumCrystalDeltaTvsW_1->GetNbinsX() ; iBin++)
+                        // {
+                        //   delta_X.push_back(spectrumCrystalDeltaTvsW_1->GetBinCenter(iBin+1));
+                        //   W_Y.push_back(spectrumCrystalDeltaTvsW_1->GetBinContent(iBin+1));
+                        // }
+
+
+                        //Tgraph from mean and rms of "slices"
+                        for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
+                        {
+                          TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                          var << "t" << channel << " - TaggingTimeStamp  >> tempHisto " << sname.str() ;
+                          std::stringstream sCut;
+                          sCut << "FloodZ > " << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "&& FloodZ < "  << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                          TCut wCut = sCut.str().c_str();
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                          delta_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                          W_Y.push_back(tempHisto->GetMean());
+                          rmsBasic_Y.push_back(tempHisto->GetRMS());
+                          // std::cout << iBin << "\t"
+                          //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                          //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                          //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
+                          var.str("");
+                        }
+
+
+                        TGraph *graphDeltaW = new TGraph(delta_X.size(),&delta_X[0],&W_Y[0]);
+                        sname.str("");
+                        sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                        graphDeltaW->SetTitle(sname.str().c_str());
+                        graphDeltaW->SetName(sname.str().c_str());
+                        graphDeltaW->GetXaxis()->SetTitle("W");
+                        graphDeltaW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                        sname.str("");
+                        CurrentCrystal->SetGraphDeltaW(graphDeltaW);
+
+                        TGraph *graphDeltaRMS = new TGraph(delta_X.size(),&delta_X[0],&rmsBasic_Y[0]);
+                        sname.str("");
+                        sname << "RMS DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                        graphDeltaRMS->SetTitle(sname.str().c_str());
+                        graphDeltaRMS->SetName(sname.str().c_str());
+                        graphDeltaRMS->GetXaxis()->SetTitle("W");
+                        graphDeltaRMS->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                        sname.str("");
+                        CurrentCrystal->SetGraphDeltaRMS(graphDeltaRMS);
+
+                        //calc w for z=(crystalz/2)
+
+                        // float centralCTR = linearFitCTR->GetParameter(0)*centralW + linearFitCTR->GetParameter(1);
+                        // std::cout << "centralCTR = " << centralCTR << std::endl;
+                        // sname << "CTR central correction - Crystal " << CurrentCrystal->GetID();
+                        // var << "((t" << channel << " - ((" << linearFitCTR->GetParameter(0) << "* FloodZ) + " << linearFitCTR->GetParameter(1) << ") - ("<< centralCTR <<")) - TaggingTimeStamp) >> " << sname.str() ;
+                        // std::cout << "var = " << var.str() << std::endl;
+                        // TH1F* spectrumCTRcentralCorrection = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                        // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                        // spectrumCTRcentralCorrection->GetXaxis()->SetTitle("Time [S]");
+                        // spectrumCTRcentralCorrection->GetYaxis()->SetTitle("N");
+                        // CurrentCrystal->SetCTRcentralCorrection(spectrumCTRcentralCorrection);
+                        // var.str("");
+                        // sname.str("");
+
+                        // plots for the neighbour channels (channels, NOT crystals!) of T cry - T neighbour
+                        // one for each neighbour
+                        for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
+                        {
+                          // histogram of tCry - tNeighbour
+                          sname <<  "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID();
+                          var << "t" << neighbours[iNeig] << " - t" << channel << " >> " << sname.str() ;
+                          TH1F* spectrumDeltaTcryTneig = new TH1F(sname.str().c_str(),sname.str().c_str(),DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                          spectrumDeltaTcryTneig->GetXaxis()->SetTitle("Time [S]");
+                          spectrumDeltaTcryTneig->GetYaxis()->SetTitle("N");
+                          var.str("");
+                          sname.str("");
+
+                          sname << "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID() << " vs. W";
+                          var << "t" << neighbours[iNeig] << " - t" << channel << ":FloodZ >> " << sname.str() ;
+                          TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                          spectrumCrystalDeltaT2vsW->GetXaxis()->SetTitle("W");
+                          sname.str("");
+                          sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
+                          spectrumCrystalDeltaT2vsW->GetYaxis()->SetTitle(sname.str().c_str());
+                          var.str("");
+                          sname.str("");
+
+                          std::vector<float> delay_X;
+                          std::vector<float> Wcoord_Y;
+                          std::vector<float> rms_Y;
+
+
+                          //get TGraphs from building N th1f, in the range defined by beginW and endW previously found
+                          // the range beginw-endW is spilt in WrangeBinsForTiming parts,
+                          for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
+                          {
+                            TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                            var << "t" << neighbours[iNeig] << " - t" << channel << " >> tempHisto";
+                            std::stringstream sCut;
+                            sCut << "FloodZ > " << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "&& FloodZ < "  << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                            TCut wCut = sCut.str().c_str();
+                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+
+                            delay_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                            Wcoord_Y.push_back(tempHisto->GetMean());
+                            rms_Y.push_back(tempHisto->GetRMS());
+                            // std::cout << iBin << "\t"
+                            //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                            //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                            //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
+                            var.str("");
+                          }
+
+                          // Fit Slice method to derive the correction graphs above.
+                          // in this case we use FitSlicesY to get directly the fit of a slice (possibly the sum of more slices in w) using a function that is gauss+exp
+                          // spectrumCrystalDeltaT2vsW->FitSlicesY(0, 0, -1, 0, "QNR");
+                          // sname << spectrumCrystalDeltaT2vsW->GetName() << "_1";
+                          // TH1D *spectrumCrystalDeltaT2vsW_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesY is called, holding the TH1F of the mean values
+                          // sname.str("");
+                          // sname << spectrumCrystalDeltaT2vsW->GetName() << "_2";
+                          // TH1D *spectrumCrystalDeltaT2vsW_2 = (TH1D*)gDirectory->Get(sname.str().c_str());
+                          // sname.str("");
+                          //
+                          // for(int iBin = 0; iBin < spectrumCrystalDeltaT2vsW_1->GetNbinsX() ; iBin++)
+                          // {
+                          //   if(spectrumCrystalDeltaT2vsW_2->GetBinContent(iBin) )
+                          //   delay_X.push_back( spectrumCrystalDeltaT2vsW_1->GetBinCenter(iBin) );
+                          //   Wcoord_Y.push_back( spectrumCrystalDeltaT2vsW_1->GetBinContent(iBin) );
+                          //   var.str("");
+                          // }
+
+                          TGraph *graphDelayW = new TGraph(delay_X.size(),&delay_X[0],&Wcoord_Y[0]);
+                          sname.str("");
+                          sname << "Graph Delay ch_" << neighbours[iNeig];
+                          // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                          graphDelayW->SetTitle(sname.str().c_str());
+                          graphDelayW->SetName(sname.str().c_str());
+                          graphDelayW->GetXaxis()->SetTitle("W");
+                          sname.str("");
+                          sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
+                          graphDelayW->GetYaxis()->SetTitle(sname.str().c_str());
+                          sname.str("");
+
+
+                          TGraph *graphDelayRMS = new TGraph(delay_X.size(),&delay_X[0],&rms_Y[0]);
+                          sname.str("");
+                          sname << "RMS Graph Delay ch_" << neighbours[iNeig];
+                          // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                          graphDelayRMS->SetTitle(sname.str().c_str());
+                          graphDelayRMS->SetName(sname.str().c_str());
+                          graphDelayRMS->GetXaxis()->SetTitle("W");
+                          sname.str("");
+                          sname << "RMS (T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << "), [S]";
+                          graphDelayRMS->GetYaxis()->SetTitle(sname.str().c_str());
+                          sname.str("");
+
+
+
+
+                          int plotPos = -1;
+                          for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                          {
+                            for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                            {
+                              if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                              {
+                                plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                              }
+                            }
+                          }
+
+                          if(plotPos != -1)
+                          {
+                            CurrentCrystal->AddDeltaTcryTneig(spectrumDeltaTcryTneig,plotPos);
+                            CurrentCrystal->AddDeltaT2vsW(spectrumCrystalDeltaT2vsW,plotPos);;
+                            CurrentCrystal->AddGraphDelayW(graphDelayW,plotPos);
+                            CurrentCrystal->AddGraphDelayRMS(graphDelayRMS,plotPos);
+                          }
+                        }
+
+
                       }
 
 
@@ -1830,7 +2112,7 @@ int main (int argc, char** argv)
 
                           sname << "Real Z vs. W - Crystal " << CurrentCrystal->GetID();
                           var << "-(RealZ-" << CurrentCrystal->GetDimensionZ()/2.0 << "):FloodZ >> " << sname.str();
-                          TH2F* spectrum2dSimDOIplot = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,0,1,RealZBins,0,CurrentCrystal->GetDimensionZ());
+                          TH2F* spectrum2dSimDOIplot = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,RealZBins,0,CurrentCrystal->GetDimensionZ());
                           nPoints = tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut ,"COLZ");
                           spectrum2dSimDOIplot->GetXaxis()->SetTitle("W");
                           spectrum2dSimDOIplot->GetYaxis()->SetTitle("Z");
@@ -1924,9 +2206,13 @@ int main (int argc, char** argv)
     TCanvas* RawCanvas = new TCanvas("RawSpectra","Rawspectra",1200,800);
     TCanvas* TriggerCanvas = new TCanvas("TriggerSpectra","TriggerSpectra",1200,800);
     TCanvas* FloodHistoCanvas = new TCanvas("FloodHisto","FloodHisto",800,800);
+    // TCanvas* TimeCanvas = new TCanvas("TimeCanvas","TimeCanvas",1200,800);
+    // TCanvas* DeltaTimeCanvas= new TCanvas("DeltaTimeCanvas","DeltaTimeCanvas",1200,800);
     // TCanvas* FloodSeparatedCanvas = new TCanvas("FloodSeparatedCanvas","FloodSeparatedCanvas",800,800);
     TCanvas* FloodHisto3DCanvas = new TCanvas("FloodHisto3D","FloodHisto3D",800,800);
     RawCanvas->Divide(nmppcx,nmppcy);
+    // TimeCanvas->Divide(nmppcx,nmppcy);
+    // DeltaTimeCanvas->Divide(nmppcx,nmppcy);
     TriggerCanvas->Divide(nmppcx,nmppcy);
     FloodHistoCanvas->Divide(nmppcx,nmppcy);
     FloodHisto3DCanvas->Divide(nmppcx,nmppcy);
@@ -2059,6 +2345,13 @@ int main (int argc, char** argv)
             {
               RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());
               mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw();
+              // if(digitizerType == 1 || digitizerType == 2)
+              // {
+              //   TimeCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());
+              //   mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTimeSpectrum()->Draw();
+                // DeltaTimeCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());
+                // mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDeltaTimeWRTTagging()->Draw();
+              // }
               TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());
               mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrum()->Draw();
               mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetTriggerSpectrumHighlighted()->SetFillColor(3);
@@ -2370,7 +2663,7 @@ int main (int argc, char** argv)
 
         }
 
-        if(usingTaggingBench | calcDoiResWithCalibration)
+        if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming)
         {
           C_TaggingCrystalSpectrum->cd();
           TaggingCrystalSpectrum->Draw();
@@ -2381,9 +2674,24 @@ int main (int argc, char** argv)
         }
 
         RawCanvas->Write();
+        // if((digitizerType == 1) || (digitizerType == 2))
+        // {
+        //   TimeCanvas->Write();
+        //   // DeltaTimeCanvas->Write();
+        // }
         TriggerCanvas->Write();
         BigSpectraCanvas->Write();
+        if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming) module[iModule][jModule]->GetTaggingPhotopeakCut().Write();
         if(lightYieldComputation) BigLYCanvas->Write();
+
+        if(smearTaggingTime)
+        {
+          std::stringstream sseed;
+          sseed << module[iModule][jModule]->GetSeed();
+          TNamed SeedD("Seed",sseed.str().c_str());
+          SeedD.Write();
+        }
+
 
 
         //       C_global = new TCanvas("C_global","C_global",800,800);
@@ -2652,7 +2960,7 @@ int main (int argc, char** argv)
                         C_spectrum->SetName(CurrentCrystal->GetHistoW()->GetName());
                         C_spectrum->cd();
                         CurrentCrystal->GetHistoW()->Draw();
-                        if(usingTaggingBench | calcDoiResWithCalibration) CurrentCrystal->GetHistoWfit()->Draw("same");
+                        if(usingTaggingBench || calcDoiResWithCalibration) CurrentCrystal->GetHistoWfit()->Draw("same");
                         C_spectrum->Write();
                         delete C_spectrum;
 
@@ -2727,6 +3035,175 @@ int main (int argc, char** argv)
                         C_spectrum->Write();
                         delete C_spectrum;
 
+                        if(digitizerType == 1 || digitizerType == 2)
+                        {
+                          //delta time wrt tagging
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetDeltaTimeWRTTagging()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                          // delta time vs w
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetDeltaTvsW()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetCTRcentralCorrection()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetCTRcentralCorrection()->Draw();
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                          C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          C_spectrum->SetName("Delta Tcry - TNeig");
+                          C_spectrum->Divide(nmppcx,nmppcy);
+                          //first plot the Delta Tcry - Ttagging for this crystal
+                          C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                          CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTcryTneig().size() ; iNeig++)
+                          {
+                            C_spectrum->cd(CurrentCrystal->GetDeltaTcryTneig()[iNeig].canvasPosition);
+                            CurrentCrystal->GetDeltaTcryTneig()[iNeig].spectrum->Draw();
+                          }
+                          C_spectrum->Write();
+                          delete C_spectrum;
+
+                          C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          C_spectrum->SetName("Delta Tcry - TNeig vs W");
+                          C_spectrum->Divide(nmppcx,nmppcy);
+                          //first plot the Delta Tcry - Ttagging for this crystal
+                          C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                          CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsW().size() ; iNeig++)
+                          {
+                            C_spectrum->cd(CurrentCrystal->GetDeltaT2vsW()[iNeig].canvasPosition);
+                            CurrentCrystal->GetDeltaT2vsW()[iNeig].spectrum->Draw("COLZ");
+                          }
+                          C_spectrum->Write();
+                          delete C_spectrum;
+
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName("Slice Fit Delta Tcry - TNeig vs W");
+                          // C_spectrum->Divide(nmppcx,nmppcy);
+                          //first plot the Delta Tcry - Ttagging for this crystal
+                          // C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetDeltaTvsWSlice()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetDeltaTvsWSlice()->Draw();
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaW()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetGraphDeltaW()->Draw("AL");
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                          // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaRMS()->GetName());
+                          // C_spectrum->cd();
+                          // CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+
+
+
+                          // CurrentCrystal->GetDeltaTvsWFit()->Draw("same");
+                          // for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaSlice().size() ; iNeig++)
+                          // {
+                          //   // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+                          //
+                          //
+                          //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          //   C_spectrum->SetName(CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->GetName());
+                          //   C_spectrum->cd();
+                          //   CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->Draw();
+                          //   C_spectrum->Write();
+                          //   delete C_spectrum;
+                          //
+                          //
+                          //   // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                          // }
+
+                          C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          C_spectrum->SetName("Correction Graphs");
+                          C_spectrum->Divide(nmppcx,nmppcy);
+                          C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                          CurrentCrystal->GetGraphDeltaW()->Draw("AL");
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                          {
+                            // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            // C_spectrum->SetName(CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->GetName());
+                            C_spectrum->cd(CurrentCrystal->GetGraphDelayW()[iNeig].canvasPosition);
+                            CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Draw("AL");
+                            // C_spectrum->Write();
+                            // delete C_spectrum;
+
+
+                            // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                          }
+                          C_spectrum->Write();
+                          delete C_spectrum;
+
+
+
+
+                          C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                          C_spectrum->SetName("RMS Correction Graphs");
+                          C_spectrum->Divide(nmppcx,nmppcy);
+                          C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                          CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayRMS().size() ; iNeig++)
+                          {
+                            // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+
+
+                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            // C_spectrum->SetName(CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->GetName());
+                            C_spectrum->cd(CurrentCrystal->GetGraphDelayRMS()[iNeig].canvasPosition);
+                            CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Draw("AL");
+                            // C_spectrum->Write();
+                            // delete C_spectrum;
+
+
+                            // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                          }
+                          C_spectrum->Write();
+                          delete C_spectrum;
+
+
+                          TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("TimeCorrection");
+                          corrDir->cd();
+                          CurrentCrystal->GetGraphDeltaW()->Write();
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                          {
+                            CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Write();
+                          }
+                          CurrentCrystal->GetGraphDeltaRMS()->Write();
+                          for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                          {
+                            CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Write();
+                          }
+                          corrDir->cd("..");
+
+                          // C_spectrum->Write();
+                          // delete C_spectrum;
+
+                        }
+
+
+
                         if(!calcDoiResWithCalibration)
                         {
                           //pdf
@@ -2792,7 +3269,7 @@ int main (int argc, char** argv)
                         // CurrentCrystal->GetOneHisto()->Write();
 
 
-                        if(usingTaggingBench | calcDoiResWithCalibration)
+                        if(usingTaggingBench || calcDoiResWithCalibration)
                         {
                           if(calcDoiResWithDelta)
                           {
@@ -2806,6 +3283,11 @@ int main (int argc, char** argv)
                           }
                         }
 
+                        std::stringstream sChNum;
+                        sChNum << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+
+                        TNamed ChNum("ChNum",sChNum.str().c_str());
+                        ChNum.Write();
 
 
 
