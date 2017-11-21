@@ -50,6 +50,7 @@ InputFile::InputFile (ConfigFile& config)
   usingTaggingBench           = config.read<bool>("usingTaggingBench",0);
   taggingForTiming            = config.read<bool>("taggingForTiming",0);
   taggingCrystalChannel       = config.read<int>("taggingCrystalChannel",16);
+  taggingCrystalTimingChannel = config.read<int>("taggingCrystalTimingChannel",16);
   usingRealSimData            = config.read<bool>("usingRealSimData");
   correctingSaturation        = config.read<bool>("correctingSaturation");
   saturationRun               = config.read<bool>("saturationRun",0);
@@ -83,6 +84,25 @@ InputFile::InputFile (ConfigFile& config)
   smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
   sigmaTimeTag  = config.read<float>("SigmaTimeTag",30.0); // sigma for the smearing of tagging time [ps]. it's the time resolution of an hypothetical external short crystal + fast sipm - default = 30.0, which corresponds to Hamamatsu MPPC + 2x2x3 m3 LSO-Ca codoped crystal (100ps FWHM CTR, see Mythra poster)
   randGen = new TRandom3(0);
+
+  if(digitizerType == 1 || digitizerType == 2)
+  {
+    timingCh_s                 = config.read<std::string>("timing","0");
+    if(timingCh_s.compare("0") == 0)
+    {
+      std::cout << "Using same digitizer channels ordering for timing channels" << std::endl;
+      timingCh_s = digitizer_s;
+
+    }
+    config.split( timingCh_f, timingCh_s, "," );
+    for(unsigned int i = 0 ; i < timingCh_f.size() ; i++)
+    {
+      config.trim(timingCh_f[i]);
+      timingCh.push_back(atoi(timingCh_f[i].c_str()));
+    }
+  }
+
+
 
   //split them using the config file class
   config.split( digitizer_f, digitizer_s, "," );
@@ -158,6 +178,10 @@ InputFile::InputFile (ConfigFile& config)
   {
     assert(digitizer.size() == saturation.size());
   }
+  if(digitizerType == 1 || digitizerType == 2)
+  {
+    assert(digitizer.size() == timingCh.size());
+  }
 
   //on or off for modular analysis
   mppcOFF_s                      = config.read<std::string>("mppcOFF","");
@@ -211,6 +235,10 @@ InputFile::InputFile (ConfigFile& config)
   {
     detector_t det;
     det.digitizerChannel = digitizer[i];
+    if(digitizerType == 1 || digitizerType == 2)
+    {
+      det.timingChannel = timingCh[i];
+    }
     det.label            = mppc_label[i];
     //convert saturation data to ADC channels, if necessary
     if(correctingSaturation)
@@ -392,12 +420,20 @@ InputFile::InputFile (ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << " Channels configuration " << std::endl;
   std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNeighbour channels" << std::endl;
+  std::cout << "ADC input\tTime Ch\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNeighbour channels" << std::endl;
   std::cout << "------------------------" << std::endl;
   for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
-    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t"
-              <<  detector[i].label << "\t"
+    std::cout << "Channel[" << detector[i].digitizerChannel << "] = \t";
+    if(digitizerType == 1 || digitizerType == 2)
+    {
+      std::cout <<  detector[i].timingChannel << "\t";
+    }
+    else
+    {
+      std::cout <<  "\t" << "\t";
+    }
+    std::cout <<  detector[i].label << "\t"
               << detector[i].plotPosition << "\t"
               << detector[i].xPosition << "\t"
               << detector[i].yPosition << "\t"
@@ -587,10 +623,6 @@ void InputFile::FillEvent()
     {
       if(j == detector[iDet].digitizerChannel)
       {
-        //timing part
-        TreeTimeStamp[iDet] = (Float_t) ChainTimeStamp[j];
-
-
         //charge part
         Float_t ADCminusPedestal = ChainAdcChannel[j] - detector[iDet].pedestal;
         // std::cout << ADCminusPedestal << std::endl;
@@ -612,12 +644,20 @@ void InputFile::FillEvent()
           TriggerID = iDet;
         }
       }
+      if(j == detector[iDet].timingChannel)
+      {
+        //timing part
+        TreeTimeStamp[iDet] = (Float_t) ChainTimeStamp[j];
+      }
     }
     if(usingTaggingBench || taggingForTiming)
     {
       if( j == taggingCrystalChannel)
       {
         TreeTagging = (Float_t) (ChainAdcChannel[j] - pedestalTag); // no saturation correction for the tagging crystal..
+      }
+      if( j == taggingCrystalTimingChannel)
+      {
         TaggingTimeStamp = (Float_t) ChainTimeStamp[j];//timing part
       }
     }

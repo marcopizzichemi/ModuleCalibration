@@ -82,12 +82,19 @@ private:
   std::vector <std::string>      saturation_f;                       // tokenization of above strings
   std::vector <std::string>      pedestal_f;                         // tokenization of above strings
   std::vector <int>              digitizer;                          // above tokenized string transformed in the proper variable types
+
+
   std::vector <int>              pedestal;                          // above tokenized string transformed in the proper variable types
   std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
   std::vector <int>              plotPositions;                      // above tokenized string transformed in the proper variable types
   std::vector <float>            xPositions;                         // above tokenized string transformed in the proper variable types
   std::vector <float>            yPositions;                         // above tokenized string transformed in the proper variable types
   std::vector <float>            saturation;                         // above tokenized string transformed in the proper variable types
+
+  std::string                    timingCh_s;
+  std::vector <std::string>      timingCh_f;
+  std::vector <int>              timingCh;                          // above tokenized string
+
   std::string                    **crystal_s;                        // array of string, one for each crystal input by the user in the config file
   std::vector <std::string>      crystal_f;                          // tokenized version
   std::string                    digitizerDoi_s;                        // input string of the digitizer key from config file
@@ -114,6 +121,7 @@ private:
   bool                           usingAllChannels;
   bool                           wAllChannels;
   int                            taggingCrystalChannel;              // channel of the tagging crystal, only for DOI bench data
+  int                            taggingCrystalTimingChannel;
   double                         nclock;                             // number of clock samples that will be ignored. clock is the digitizer clock (so 1 sample = 16ns for DT5740)
   int                            *translateCh;                       // translates adc channels to analysis channels
   double                         crystalx;                           // dimension of crystal in x [mm]
@@ -201,6 +209,7 @@ private:
   struct detector_t
   {
     int digitizerChannel;
+    int timingChannel;
     std::string label;
     int i;
     int j;
