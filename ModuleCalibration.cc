@@ -1098,7 +1098,7 @@ int main (int argc, char** argv)
                           TSpectrum *s;
                           s = new TSpectrum(20);
                           // 		Input[i].SumSpectraCanvas->cd(j+1);
-                          Int_t CrystalPeaksN = s->Search(spectrumWhereToSearch,1,"nobackground",0.3);
+                          Int_t CrystalPeaksN = s->Search(spectrumWhereToSearch,1,"nobackground goff",0.3);
                           Float_t *CrystalPeaks = s->GetPositionX();
                           Float_t *CrystalPeaksY = s->GetPositionY();
                           // float saturationPeakFraction
