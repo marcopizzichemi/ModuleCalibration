@@ -2823,12 +2823,7 @@ int main (int argc, char** argv)
                         C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                         C_spectrum->SetName(CurrentCrystal->GetSingleChargeSpectrum()->GetName());
                         C_spectrum->cd();
-                        CurrentCrystal->GetSingleChargeSpectrum()->Draw();
-                        std::vector<TF1*> saturationFits = CurrentCrystal->GetSaturationFits();
-                        for(unsigned int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
-                        {
-                          saturationFits[iSaturation]->Draw("same");
-                        }
+                        CurrentCrystal->GetSingleChargeSpectrum()->Draw();        
                         C_spectrum->Write();
                         delete C_spectrum;
 
@@ -2860,6 +2855,14 @@ int main (int argc, char** argv)
                         C_spectrum->SetName(CurrentCrystal->GetInvestigatedSpectrum()->GetName());
                         C_spectrum->cd();
                         CurrentCrystal->GetInvestigatedSpectrum()->Draw();
+                        std::vector<TF1*> saturationFits = CurrentCrystal->GetSaturationFits();
+                        if(!backgroundSaturationRun)
+                        {
+                          for(unsigned int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
+                          {
+                            saturationFits[iSaturation]->Draw("same");
+                          }
+                        }
                         // std::vector<TF1*> saturationFits = CurrentCrystal->GetSaturationFits();
                         // for(int iSaturation = 0; iSaturation < saturationFits.size(); iSaturation++)
                         // {
