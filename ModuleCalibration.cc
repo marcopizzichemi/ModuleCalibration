@@ -238,15 +238,16 @@ int main (int argc, char** argv)
   float histoSumChargeMax    = config.read<float>("histoSumChargeMax",0);         // max in the histograms of charge for saturationRun
   float histoSumChargeBin    = config.read<float>("histoSumChargeBin",0);         // max in the histograms of charge for saturationRun
 
+  float saturationPeakFractionLow    = config.read<float>("saturationPeakFractionLow",0.06);         // lower limit for saturation peak fitting, expressed in fraction of peak position. limit will be = (peak - peak*saturationPeakFractionLow)
+  float saturationPeakFractionHigh    = config.read<float>("saturationPeakFractionHigh",0.06);         // upper limit for saturation peak fitting, expressed in fraction of peak position. limit will be = (peak + peak*saturationPeakFractionHigh)
   bool performSaturationPeakSearch          = config.read<bool>("performSaturationPeakSearch",1);    //perform of nor satuartion peak search
   bool backgroundSaturationRun              = config.read<bool>("backgroundSaturationRun",0);
   // set output file name
   std::string outputFileName = config.read<std::string>("output");
   std::string digitizer_s   = config.read<std::string>("digitizer");
   std::string saturationPeakEnergy_s = config.read<std::string>("saturationPeakEnergy","");
-  std::string saturationPeakSigma_s = config.read<std::string>("saturationPeakSigma","");
-  // std::string saturationPeakMin_s = config.read<std::string>("saturationPeakMin","");
-  // std::string saturationPeakMax_s = config.read<std::string>("saturationPeakMax","");
+  std::string saturationPeakMin_s = config.read<std::string>("saturationPeakMin","");
+  std::string saturationPeakMax_s = config.read<std::string>("saturationPeakMax","");
   std::string loadAnalysisTreeName         = config.read<std::string>("loadAnalysisTreeName","0");       // look for input analysis ttree in config file. if no input, it will produced by this program
   std::string saveAnalysisTreeName         = config.read<std::string>("saveAnalysisTreeName","0");       // look for filename to save analysis ttree in config file. if no filename, analysis tree won't be saved
   bool saveAnalysisTree          = config.read<bool>("saveAnalysisTree",0);            // choice to save or not the analysis TTree, in a file (name chosen above)
@@ -274,14 +275,7 @@ int main (int argc, char** argv)
   float TaggingPhotopeakSigmasMax = config.read<float>("TaggingPhotopeakSigmasMin",2.0);     // how many sigmas far from mean is the upper bound of cut on Tagging photopeak  - default = 2.0
   int WrangeBinsForTiming = config.read<int>("WrangeBinsForTiming",10);
   bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
-  float sigmaSearchedPeaks = config.read<float>("sigmaSearchedPeaks",2); //ONLY for the Search function of TSpectrum: sigma of peaks searched in saturation runs. it SHOULD be expressed in bins, but honestly the TSpectrum manual is not very clear about it. See https://root.cern.ch/root/html534/guides/spectrum/Spectrum.pdf  - default = 2
-  float thresholdPeaks = config.read<float>("thresholdPeaks",0.4); // threshold for search of peaks in saturation runs: peaks with amplitude less than threshold*highest_peak are discarded.  0<threshold<1. See https://root.cern.ch/root/html522/TSpectrum.html#TSpectrum:Search
-  float searchWindowMin = config.read<float>("searchWindowMin",0); // lower bound of window where to look for peak(s) in saturation runs. if = -1, it's the lower bound of the spectrum - default = -1
-  float searchWindowMax = config.read<float>("searchWindowMax",0); // upper bound of window where to look for peak(s) in saturation runs. if = -1, it's the upper bound of the spectrum - default = -1
 
-  std::string saturationSigmaFractionLow_s    = config.read<std::string>("saturationSigmaFractionLow","");         // distance from peak position of lower limit for saturation peak fitting, expressed in fraction of sigma. limit will be = (peak - sigma*saturationPeakFractionLow) - default = 1
-  std::string saturationSigmaFractionHigh_s    = config.read<std::string>("saturationSigmaFractionHigh","");         // distance from peak position of upper limit for saturation peak fitting, expressed in fraction of peak position. limit will be = (peak + sigma*saturationPeakFractionHigh) - default = 1
-  bool subtractBackground = config.read<bool>("subtractBackground",1); // allow TSpectrum to estimate and subtract the background while searching for peaks
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -461,56 +455,40 @@ int main (int argc, char** argv)
     {
       histoSumChargeBin = histoSingleChargeBin;
     }
-    if(searchWindowMax == 0)// set same as
-    {
-      searchWindowMax = histoSingleChargeMax;
-    }
 
     //read the config file to set the search areas for peaks
     // std::string                 saturationPeakEnergy_s,saturationPeakMin_s,saturationPeakMax_s;
-    std::vector <std::string>   saturationPeakEnergy_f,saturationPeakSigma_f;
-    std::vector <std::string>   saturationSigmaFractionLow_f,saturationSigmaFractionHigh_f;
-    std::vector <float>         saturationPeakEnergy,saturationPeakSigma,saturationSigmaFractionLow,saturationSigmaFractionHigh;
+    std::vector <std::string>   saturationPeakEnergy_f,saturationPeakMin_f,saturationPeakMax_f;
+    std::vector <float>         saturationPeakEnergy,saturationPeakMin,saturationPeakMax;
 
     config.split( saturationPeakEnergy_f, saturationPeakEnergy_s, "," );
-    config.split( saturationPeakSigma_f, saturationPeakSigma_s, "," );
-    config.split( saturationSigmaFractionLow_f, saturationSigmaFractionLow_s, "," );
-    config.split( saturationSigmaFractionHigh_f, saturationSigmaFractionHigh_s, "," );
-    // config.split( saturationPeakMax_f, saturationPeakMax_s, "," );
+    config.split( saturationPeakMin_f, saturationPeakMin_s, "," );
+    config.split( saturationPeakMax_f, saturationPeakMax_s, "," );
     for(unsigned int i = 0 ; i < saturationPeakEnergy_f.size() ; i++)
     {
       config.trim(saturationPeakEnergy_f[i]);
       saturationPeakEnergy.push_back(atof(saturationPeakEnergy_f[i].c_str()));
     }
-    for(unsigned int i = 0 ; i < saturationPeakSigma_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakMin_f.size() ; i++)
     {
-      config.trim(saturationPeakSigma_f[i]);
-      saturationPeakSigma.push_back(atof(saturationPeakSigma_f[i].c_str()));
+      config.trim(saturationPeakMin_f[i]);
+      saturationPeakMin.push_back(atof(saturationPeakMin_f[i].c_str()));
     }
-    for(unsigned int i = 0 ; i < saturationSigmaFractionLow_f.size() ; i++)
+    for(unsigned int i = 0 ; i < saturationPeakMax_f.size() ; i++)
     {
-      config.trim(saturationSigmaFractionLow_f[i]);
-      saturationSigmaFractionLow.push_back(atof(saturationSigmaFractionLow_f[i].c_str()));
+      config.trim(saturationPeakMax_f[i]);
+      saturationPeakMax.push_back(atof(saturationPeakMax_f[i].c_str()));
     }
-    for(unsigned int i = 0 ; i < saturationSigmaFractionHigh_f.size() ; i++)
-    {
-      config.trim(saturationSigmaFractionHigh_f[i]);
-      saturationSigmaFractionHigh.push_back(atof(saturationSigmaFractionHigh_f[i].c_str()));
-    }
-
-
     // store data in saturationPeak vector of struct
     for(unsigned int i = 0 ; i < saturationPeakEnergy.size() ; i++)
     {
       SaturationPeak_t tempPeak;
       tempPeak.energy  = saturationPeakEnergy[i];
-      tempPeak.sigma = saturationPeakSigma[i];
-      tempPeak.fractionLow = saturationSigmaFractionLow[i];
-      tempPeak.fractionHigh = saturationSigmaFractionHigh[i];
+      tempPeak.peakMin = saturationPeakMin[i];
+      tempPeak.peakMax = saturationPeakMax[i];
       saturationPeak.push_back(tempPeak);
     }
   }
-  std::cout << std::endl;
 
   std::vector<inputDoi_t> inputDoi;
   inputDoi_t tempInputDoi(pointsFromDoi);
@@ -1100,184 +1078,72 @@ int main (int argc, char** argv)
 
                       if(backgroundSaturationRun)
                       {
-                        spectrumWhereToSearch = (TH1F*) NotNeighboursSingleCharge->Clone();
-
+                        spectrumWhereToSearch = NotNeighboursSingleCharge;
                       }
                       else
                       {
-                        spectrumWhereToSearch = (TH1F*) spectrumSingleCharge->Clone();
+                        spectrumWhereToSearch = spectrumSingleCharge;
                       }
                       // in background saturation runs, in fact, the spectrum where to search is the trigger spectrum without any crystal consideration, where the 202 Kev and 307 Kev peaks
                       // are much more clear. otherwise the single channel spectrum cut on the events in the crystal is used
-
-                      //sort the energy of sources. they should be sorted already as input, but you never know..
-                      std::sort(saturationPeak.begin(),saturationPeak.end(),compareByEnergy);
-
-                      // -----------------------
                       if(performSaturationPeakSearch)
                       {
-                        std::vector<Peaks_t> peaks;
-
-                        spectrumWhereToSearch->SetName("Searched Spectrum");
                         float maxPeakHight = 0;
-                        unsigned int peaksToSearch = saturationPeak.size();
-                        TF1 **satGauss;
-                        satGauss = new TF1*[saturationPeak.size()];
-
-                        spectrumWhereToSearch->GetXaxis()->SetRangeUser(searchWindowMin,searchWindowMax);
-                        TSpectrum *s;
-
-                        s = new TSpectrum(peaksToSearch);
-                        //find the sigma for Search function
-                        //it SHOULD be expressed in bins, but honestly the TSpectrum manual is not very clear about it. See https://root.cern.ch/root/html534/guides/spectrum/Spectrum.pdf
-                        // so we need convetion to bins
-                        // float sigmaForSearch = 0.0;
-                        // for(unsigned int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
-                        // {
-                        //   sigmaForSearch += saturationPeak[iSaturation].sigma;
-                        //   // std::cout << sigmaForSearch << std::endl;
-                        // }
-                        // sigmaForSearch = sigmaForSearch / saturationPeak.size();
-                        // // std::cout << sigmaForSearch << std::endl;
-                        // // std::cout << chargeBinningADC << std::endl;
-                        // sigmaForSearch = round(sigmaForSearch/(histoSingleChargeMax/histoSingleChargeBin));  // this is the average sigma of peaks, expressed in bins, rounded to lower integer
-
-                        // std::cout << sigmaForSearch << std::endl;
-
-                        Int_t CrystalPeaksN;
-                        if(subtractBackground)
+                        for(unsigned int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
                         {
-                          CrystalPeaksN = s->Search(spectrumWhereToSearch,sigmaSearchedPeaks,"goff",thresholdPeaks);
+                          sname << "Peak " << saturationPeak[iSaturation].energy << " KeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+
+                          spectrumWhereToSearch->GetXaxis()->SetRangeUser(saturationPeak[iSaturation].peakMin,saturationPeak[iSaturation].peakMax);
+
+                          TSpectrum *s;
+                          s = new TSpectrum(20);
+                          // 		Input[i].SumSpectraCanvas->cd(j+1);
+                          Int_t CrystalPeaksN = s->Search(spectrumWhereToSearch,1,"nobackground goff",0.3);
+                          Float_t *CrystalPeaks = s->GetPositionX();
+                          Float_t *CrystalPeaksY = s->GetPositionY();
+                          // float saturationPeakFraction
+                          //delete s;
+                          // float distPeak = INFINITY;
+                          float maxPeak = 0.0;
+                          int peakID = 0;
+                          for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
+                          {
+                            // if( fabs(CrystalPeaks[peakCounter] - 0.5*(saturationPeak[iSaturation].peakMin+saturationPeak[iSaturation].peakMax)) < distPeak)//take closest peak to the center of search range selected by the user
+                            if(CrystalPeaksY[peakCounter] > maxPeak)
+                            {
+                              // distPeak = CrystalPeaks[peakCounter];
+                              maxPeak = CrystalPeaksY[peakCounter];
+                              peakID = peakCounter;
+                            }
+                          }
+
+
+                          TF1 *satGauss = new TF1(sname.str().c_str(),  "gaus",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
+                          satGauss->SetParameter(1,CrystalPeaks[peakID]);
+                          satGauss->SetParameter(0,CrystalPeaksY[peakID]);
+                          spectrumWhereToSearch->Fit(sname.str().c_str(),"Q","",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
+                          gaussFitSaturation.push_back(satGauss);
+                          saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
+                                         << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
+                                         << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetJ() << "\t"
+                                         << CurrentCrystal->GetID() << "\t"
+                                         << CurrentCrystal->GetI() << "\t"
+                                         << CurrentCrystal->GetJ() << "\t"
+                                         << saturationPeak[iSaturation].energy << "\t"
+                                         << satGauss->GetParameter(1) << "\t"
+                                         << satGauss->GetParError(1)
+                                         << std::endl;
+                          spectrumWhereToSearch->GetXaxis()->SetRangeUser(0,histoSingleChargeMax);
+                          if(CrystalPeaksY[peakID] > maxPeakHight )
+                          {
+                            maxPeakHight = CrystalPeaksY[peakID];
+                          }
+
+                          sname.str("");
                         }
-                        else
-                        {
-                          CrystalPeaksN = s->Search(spectrumWhereToSearch,sigmaSearchedPeaks,"nobackground goff",thresholdPeaks);
-                        }
-
-                        Float_t *CrystalPeaks = s->GetPositionX();
-                        Float_t *CrystalPeaksY = s->GetPositionY();
-
-                        //also sort the x
-                        for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
-                        {
-                          Peaks_t tempPeak;
-                          tempPeak.x = CrystalPeaks[peakCounter];  // temp value of x, before fit
-                          tempPeak.y = CrystalPeaksY[peakCounter];
-                          // tempPeak.sx = satGauss[peakCounter]->GetParError(1);
-                          // tempPeak.fit = satGauss[peakCounter];
-                          peaks.push_back(tempPeak);
-                        }
-                        std::sort(peaks.begin(),peaks.end(),compareByX);
-
-                        for (unsigned int peakCounter = 0 ; peakCounter < peaks.size() ; peakCounter++ )
-                        {
-                          // std::cout << CrystalPeaks[peakCounter] << " " << CrystalPeaksY[peakCounter] << std::endl;
-                           sname << "Peak " << saturationPeak[peakCounter].energy << " KeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-                           satGauss[peakCounter] = new TF1(sname.str().c_str(),
-                                                           "gaus",
-                                                           CrystalPeaks[peakCounter]-saturationPeak[peakCounter].sigma*saturationPeak[peakCounter].fractionLow,CrystalPeaks[peakCounter]+saturationPeak[peakCounter].sigma*saturationPeak[peakCounter].fractionHigh);
-                           satGauss[peakCounter]->SetParameter(1,peaks[peakCounter].x);
-                           satGauss[peakCounter]->SetParameter(0,peaks[peakCounter].y);
-                           satGauss[peakCounter]->SetLineColor(kRed);
-                           spectrumWhereToSearch->Fit(sname.str().c_str(),
-                                                      "NQ",
-                                                      "",
-                                                      CrystalPeaks[peakCounter]-saturationPeak[peakCounter].sigma*saturationPeak[peakCounter].fractionLow,CrystalPeaks[peakCounter]+saturationPeak[peakCounter].sigma*saturationPeak[peakCounter].fractionHigh);
-
-                           peaks[peakCounter].x = satGauss[peakCounter]->GetParameter(1);
-                           peaks[peakCounter].sx = satGauss[peakCounter]->GetParError(1);
-                           peaks[peakCounter].fit = satGauss[peakCounter];
-                           peaks[peakCounter].energy = saturationPeak[peakCounter].energy;
-
-                           saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
-                                          << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
-                                          << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetJ() << "\t"
-                                          << CurrentCrystal->GetID() << "\t"
-                                          << CurrentCrystal->GetI() << "\t"
-                                          << CurrentCrystal->GetJ() << "\t"
-                                          << peaks[peakCounter].energy << "\t"
-                                          << peaks[peakCounter].x << "\t"
-                                          << peaks[peakCounter].sx
-                                          << std::endl;
-                           gaussFitSaturation.push_back(satGauss[peakCounter]);
-                           if(peaks[peakCounter].y > maxPeakHight )
-                           {
-                             maxPeakHight = peaks[peakCounter].y;
-                           }
-                           sname.str("");
-
-                        }
-                        spectrumWhereToSearch->GetXaxis()->SetRangeUser(0,histoSingleChargeMax);
                         spectrumWhereToSearch->GetYaxis()->SetRangeUser(0,maxPeakHight*2.0);
-
                         CurrentCrystal->SetSaturationFits(gaussFitSaturation);
-
-
-
-
-
-
-
-                        // //---------------------
-                        // for(unsigned int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
-                        // {
-                        //   sname << "Peak " << saturationPeak[iSaturation].energy << " KeV - Crystal " << CurrentCrystal->GetID() << " - MPPC " <<  mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-                        //
-                        //   spectrumWhereToSearch->GetXaxis()->SetRangeUser(saturationPeak[iSaturation].peakMin,saturationPeak[iSaturation].peakMax);
-                        //
-                        //   TSpectrum *s;
-                        //   s = new TSpectrum(20);
-                        //   // 		Input[i].SumSpectraCanvas->cd(j+1);
-                        //   Int_t CrystalPeaksN = s->Search(spectrumWhereToSearch,sigmaSearchedPeaks,"goff",thresholdPeaks);
-                        //   Float_t *CrystalPeaks = s->GetPositionX();
-                        //   Float_t *CrystalPeaksY = s->GetPositionY();
-                        //   // float saturationPeakFraction
-                        //   //delete s;
-                        //   // float distPeak = INFINITY;
-                        //   float maxPeak = 0.0;
-                        //   int peakID = 0;
-                        //   for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
-                        //   {
-                        //     // if( fabs(CrystalPeaks[peakCounter] - 0.5*(saturationPeak[iSaturation].peakMin+saturationPeak[iSaturation].peakMax)) < distPeak)//take closest peak to the center of search range selected by the user
-                        //     if(CrystalPeaksY[peakCounter] > maxPeak)
-                        //     {
-                        //       // distPeak = CrystalPeaks[peakCounter];
-                        //       maxPeak = CrystalPeaksY[peakCounter];
-                        //       peakID = peakCounter;
-                        //     }
-                        //   }
-                        //
-                        //
-                        //   TF1 *satGauss = new TF1(sname.str().c_str(),  "gaus",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
-                        //   satGauss->SetParameter(1,CrystalPeaks[peakID]);
-                        //   satGauss->SetParameter(0,CrystalPeaksY[peakID]);
-                        //   spectrumWhereToSearch->Fit(sname.str().c_str(),"Q","",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
-                        //   gaussFitSaturation.push_back(satGauss);
-                        //   saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
-                        //                  << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
-                        //                  << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetJ() << "\t"
-                        //                  << CurrentCrystal->GetID() << "\t"
-                        //                  << CurrentCrystal->GetI() << "\t"
-                        //                  << CurrentCrystal->GetJ() << "\t"
-                        //                  << saturationPeak[iSaturation].energy << "\t"
-                        //                  << satGauss->GetParameter(1) << "\t"
-                        //                  << satGauss->GetParameter(2)
-                        //                  << std::endl;
-                        //   spectrumWhereToSearch->GetXaxis()->SetRangeUser(0,histoSingleChargeMax);
-                        //   if(CrystalPeaksY[peakID] > maxPeakHight )
-                        //   {
-                        //     maxPeakHight = CrystalPeaksY[peakID];
-                        //   }
-                        //
-                        //   sname.str("");
-                        // }
-                        // //---------------------
-
-
                       }
-
-
-
                       CurrentCrystal->SetInvestigatedSpectrum(spectrumWhereToSearch);
                       CurrentCrystal->SetSingleChargeSpectrum(spectrumSingleCharge);
 

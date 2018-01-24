@@ -49,27 +49,6 @@ public:
 struct SaturationPeak_t
 {
   float energy;
-  float sigma;
-  float fractionLow;
-  float fractionHigh;
-  // float peakMax;
+  float peakMin;
+  float peakMax;
 };
-
-struct Peaks_t
-{
-  float x;
-  float y;
-  float sx;
-  float energy;
-  TF1* fit;
-};
-
-bool compareByX(const Peaks_t &a,const Peaks_t  &b)
-{
-  return a.x < b.x;
-}
-
-bool compareByEnergy(const SaturationPeak_t &a,const SaturationPeak_t  &b)
-{
-  return a.energy < b.energy;
-}
