@@ -584,7 +584,7 @@ int main (int argc, char** argv)
         //find peak in the tagging crystal
         TSpectrum *sTagCrystal;
         sTagCrystal = new TSpectrum(1);
-        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
+        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"goff",0.5);
         Float_t *TagCrystalPeaks  = sTagCrystal->GetPositionX();
         Float_t *TagCrystalPeaksY = sTagCrystal->GetPositionY();
         // float saturationPeakFraction
@@ -730,7 +730,7 @@ int main (int argc, char** argv)
             {
               TSpectrum *sTrigger;
               sTrigger = new TSpectrum(20);
-              Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"",0.2);
+              Int_t TriggerCrystalPeaksN    = sTrigger->Search(spectrumTrigger,2,"goff",0.2);
               Float_t *TriggerCrystalPeaks  = sTrigger->GetPositionX();
               // Float_t *TriggerCrystalPeaksY = sTrigger->GetPositionY();
               //delete s;
@@ -1078,16 +1078,17 @@ int main (int argc, char** argv)
 
                       if(backgroundSaturationRun)
                       {
-                        spectrumWhereToSearch = NotNeighboursSingleCharge;
+                        spectrumWhereToSearch = (TH1F*) NotNeighboursSingleCharge->Clone();
                       }
                       else
                       {
-                        spectrumWhereToSearch = spectrumSingleCharge;
+                        spectrumWhereToSearch = (TH1F*) spectrumSingleCharge->Clone();
                       }
                       // in background saturation runs, in fact, the spectrum where to search is the trigger spectrum without any crystal consideration, where the 202 Kev and 307 Kev peaks
                       // are much more clear. otherwise the single channel spectrum cut on the events in the crystal is used
                       if(performSaturationPeakSearch)
                       {
+                        spectrumWhereToSearch->SetName("Investigated Spectrum");
                         float maxPeakHight = 0;
                         for(unsigned int iSaturation = 0 ; iSaturation < saturationPeak.size(); iSaturation++)
                         {
@@ -1121,7 +1122,7 @@ int main (int argc, char** argv)
                           TF1 *satGauss = new TF1(sname.str().c_str(),  "gaus",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
                           satGauss->SetParameter(1,CrystalPeaks[peakID]);
                           satGauss->SetParameter(0,CrystalPeaksY[peakID]);
-                          spectrumWhereToSearch->Fit(sname.str().c_str(),"Q","",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
+                          spectrumWhereToSearch->Fit(sname.str().c_str(),"QN","",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
                           gaussFitSaturation.push_back(satGauss);
                           saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
                                          << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
