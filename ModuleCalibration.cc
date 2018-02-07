@@ -1817,10 +1817,21 @@ int main (int argc, char** argv)
                           //Tgraph from mean and rms of "slices"
                           for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
                           {
-                            TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                            TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,CTRmin,CTRmax);
                             var << "t" << channel << " - TaggingTimeStamp  >> tempHisto " << sname.str() ;
                             std::stringstream sCut;
-                            sCut << "FloodZ > " << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "&& FloodZ < "  << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                            sCut << "FloodZ > "
+                                 << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
+                                 << " && FloodZ < "
+                                 << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming)
+                                 << " && (t"
+                                 << channel
+                                 << " - TaggingTimeStamp) > "
+                                 << CTRmin
+                                 << " && (t"
+                                 << channel
+                                 << " - TaggingTimeStamp) < "
+                                 << CTRmax;
                             TCut wCut = sCut.str().c_str();
                             tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
                             delta_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
@@ -1906,7 +1917,12 @@ int main (int argc, char** argv)
                               TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
                               var << "t" << neighbours[iNeig] << " - t" << channel << " >> tempHisto";
                               std::stringstream sCut;
-                              sCut << "FloodZ > " << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "&& FloodZ < "  << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                              sCut << "FloodZ > "
+                                   << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
+                                   << "&& FloodZ < "
+                                   << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming)
+                                   << "&& (t" << neighbours[iNeig] << " - t" << channel << ") > " << DeltaTimeMin
+                                   << "&& (t" << neighbours[iNeig] << " - t" << channel << ") < " << DeltaTimeMax;
                               TCut wCut = sCut.str().c_str();
                               tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
 
