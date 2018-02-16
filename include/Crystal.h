@@ -138,6 +138,9 @@ private:
   std::vector<multiGraphDelayW_t> graphDelayW;
   std::vector<multiGraphDelayRMS_t> graphDelayRMS;
 
+  std::vector<TH2F*> TvsQHistos;
+  std::vector<TH1F*> DeltaTHistos;
+
 public:
   Crystal();                                 ///< default constructor
   Crystal(const Crystal &obj);               ///< copy constructor
@@ -239,7 +242,9 @@ public:
   std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
   std::vector<multiDeltaSlice_t>           GetDeltaSlice(){return slicesDelta;};
   std::vector<multiGraphDelayW_t>          GetGraphDelayW(){return graphDelayW;};
-  std::vector<multiGraphDelayRMS_t>          GetGraphDelayRMS(){return graphDelayRMS;};
+  std::vector<multiGraphDelayRMS_t>        GetGraphDelayRMS(){return graphDelayRMS;};
+  std::vector<TH2F*>                       GetTvsQHistos(){return TvsQHistos;};
+  std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
 
   TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
 
@@ -319,6 +324,8 @@ public:
   void                 Analyze();
   void                 SetGraphDeltaW(TGraph* aGraph){graphDeltaW = aGraph;};
   void                 SetGraphDeltaRMS(TGraph* aGraph){graphDeltaRMS = aGraph;};
+  void                 AddDeltaTHistos(TH1F* aHisto){DeltaTHistos.push_back(aHisto);};
+  void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)

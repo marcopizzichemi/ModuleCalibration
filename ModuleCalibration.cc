@@ -275,7 +275,8 @@ int main (int argc, char** argv)
   float TaggingPhotopeakSigmasMax = config.read<float>("TaggingPhotopeakSigmasMin",2.0);     // how many sigmas far from mean is the upper bound of cut on Tagging photopeak  - default = 2.0
   int WrangeBinsForTiming = config.read<int>("WrangeBinsForTiming",10);
   bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
-
+  float tagFitLowerFraction = config.read<float>("tagFitLowerFraction",0.06);  // enRes = 2.355*sigma/peak --> sigma = enRes*Peak/2.355   EnRes about 0.15 -->  sigma = 0.06* peak  -> limits -1sigma +2 sigma
+  float tagFitUpperFraction = config.read<float>("tagFitUpperFraction",0.12);
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -602,10 +603,10 @@ int main (int argc, char** argv)
             peakID = peakCounter;
           }
         }
-        TF1 *gaussTag = new TF1("gaussTag", "gaus");
+        TF1 *gaussTag = new TF1("gaussTag", "gaus",TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
         gaussTag->SetParameter(1,TagCrystalPeaks[peakID]);
         gaussTag->SetParameter(0,TagCrystalPeaksY[peakID]);
-        TaggingCrystalSpectrum->Fit("gaussTag","Q","",TagCrystalPeaks[peakID] - 0.075*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + 0.075*TagCrystalPeaks[peakID]);
+        TaggingCrystalSpectrum->Fit("gaussTag","QR","",TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingSpectrumMin,taggingSpectrumMax);
         //define a TCut for this peak
         double tagPhotopeakMin = gaussTag->GetParameter(1) - TaggingPhotopeakSigmasMin*gaussTag->GetParameter(2);
@@ -1817,13 +1818,21 @@ int main (int argc, char** argv)
                           //Tgraph from mean and rms of "slices"
                           for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
                           {
-                            TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,CTRmin,CTRmax);
-                            var << "t" << channel << " - TaggingTimeStamp  >> tempHisto " << sname.str() ;
+
+                            // first do an "amplitude" vs. ctr histo, for this w range, and use it to correct
+                            // the CTRs for of this slice before generating the spectrum from which to extract the
+                            // delta_X and rmsBasic_Y
+
+                            // define the Limits and mid point for this w slice
+                            Float_t wLowerLimit = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
+                            Float_t wUpperLimit = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                            Float_t midW        = beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming);
+                            //write the TCut for this data
                             std::stringstream sCut;
                             sCut << "FloodZ > "
-                                 << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
+                                 << wLowerLimit
                                  << " && FloodZ < "
-                                 << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming)
+                                 << wUpperLimit
                                  << " && (t"
                                  << channel
                                  << " - TaggingTimeStamp) > "
@@ -1833,8 +1842,31 @@ int main (int argc, char** argv)
                                  << " - TaggingTimeStamp) < "
                                  << CTRmax;
                             TCut wCut = sCut.str().c_str();
+
+                            sname.str("");
+
+
+
+                            // // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                            // sname << "T_vs_Q_" << iBin << " - Crystal " << CurrentCrystal->GetID();
+                            // TH2F *TvsQ = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax,CTRbins,CTRmin,CTRmax);
+                            // var << "t" << channel << " - TaggingTimeStamp : ch" << channel <<  " >>  " << sname.str() ;
+                            // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                            // // ------- END OF MODS FOR AMPL CORRECTION
+
+
+
+
+
+                            var.str("");
+                            sname.str("");
+                            sname << "DeltaT_" << iBin << " - Crystal " << CurrentCrystal->GetID();
+                            TH1F *tempHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                            var << "t" << channel << " - TaggingTimeStamp  >> " << sname.str() ;
+
+
                             tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
-                            delta_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                            delta_X.push_back(midW);
                             W_Y.push_back(tempHisto->GetMean());
                             rmsBasic_Y.push_back(tempHisto->GetRMS());
                             // std::cout << iBin << "\t"
@@ -1842,6 +1874,17 @@ int main (int argc, char** argv)
                             //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
                             //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
                             var.str("");
+                            sname.str("");
+
+
+                            // // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                            // CurrentCrystal->AddTvsQHistos(TvsQ);
+                            // CurrentCrystal->AddDeltaTHistos(tempHisto);
+                            // // ------- END OF MODS FOR AMPL CORRECTION
+
+
+
+
                           }
 
 
@@ -3112,6 +3155,28 @@ int main (int argc, char** argv)
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
+
+
+
+                            // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                            // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetTvsQHistos().size() ; iW++)
+                            // {
+                            //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                            //   C_spectrum->SetName(CurrentCrystal->GetTvsQHistos()[iW]->GetName());
+                            //   CurrentCrystal->GetTvsQHistos()[iW]->Draw("COLZ");
+                            //   C_spectrum->Write();
+                            //   delete C_spectrum;
+                            // }
+                            // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetDeltaTHistos().size() ; iW++)
+                            // {
+                            //   // CurrentCrystal->GetDeltaTHistos()[iW].Write();
+                            //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            //   C_spectrum->SetName(CurrentCrystal->GetDeltaTHistos()[iW]->GetName());
+                            //   CurrentCrystal->GetDeltaTHistos()[iW]->Draw();
+                            //   C_spectrum->Write();
+                            //   delete C_spectrum;
+                            // }
+                            // ------ END OF MODS FOR AMPL CORRECTION
 
                             // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                             // C_spectrum->SetName("Slice Fit Delta Tcry - TNeig vs W");
