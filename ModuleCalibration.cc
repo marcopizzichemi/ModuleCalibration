@@ -277,6 +277,7 @@ int main (int argc, char** argv)
   bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
   float tagFitLowerFraction = config.read<float>("tagFitLowerFraction",0.06);  // enRes = 2.355*sigma/peak --> sigma = enRes*Peak/2.355   EnRes about 0.15 -->  sigma = 0.06* peak  -> limits -1sigma +2 sigma
   float tagFitUpperFraction = config.read<float>("tagFitUpperFraction",0.12);
+  bool timingCorrection = config.read<bool>("timingCorrection",0);// perform or not the timing correction (for example, it could make no sense to perform it in polished arrays)
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -1802,247 +1803,252 @@ int main (int argc, char** argv)
                           // var.str("");
                           // sname.str("");
 
-                          //get a TGraph
-                          std::vector<float> delta_X;
-                          std::vector<float> W_Y;
-                          std::vector<float> rmsBasic_Y;
-
-                          //get a TGraph from FitSlicesY
-                          // for(int iBin = 0; iBin < spectrumCrystalDeltaTvsW_1->GetNbinsX() ; iBin++)
-                          // {
-                          //   delta_X.push_back(spectrumCrystalDeltaTvsW_1->GetBinCenter(iBin+1));
-                          //   W_Y.push_back(spectrumCrystalDeltaTvsW_1->GetBinContent(iBin+1));
-                          // }
-
-
-                          //Tgraph from mean and rms of "slices"
-                          for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
+                          if(timingCorrection)
                           {
 
-                            // first do an "amplitude" vs. ctr histo, for this w range, and use it to correct
-                            // the CTRs for of this slice before generating the spectrum from which to extract the
-                            // delta_X and rmsBasic_Y
+                            //get a TGraph
+                            std::vector<float> delta_X;
+                            std::vector<float> W_Y;
+                            std::vector<float> rmsBasic_Y;
 
-                            // define the Limits and mid point for this w slice
-                            Float_t wLowerLimit = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
-                            Float_t wUpperLimit = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
-                            Float_t midW        = beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming);
-                            //write the TCut for this data
-                            std::stringstream sCut;
-                            sCut << "FloodZ > "
-                                 << wLowerLimit
-                                 << " && FloodZ < "
-                                 << wUpperLimit
-                                 << " && (t"
-                                 << channel
-                                 << " - TaggingTimeStamp) > "
-                                 << CTRmin
-                                 << " && (t"
-                                 << channel
-                                 << " - TaggingTimeStamp) < "
-                                 << CTRmax;
-                            TCut wCut = sCut.str().c_str();
-
-                            sname.str("");
+                            //get a TGraph from FitSlicesY
+                            // for(int iBin = 0; iBin < spectrumCrystalDeltaTvsW_1->GetNbinsX() ; iBin++)
+                            // {
+                            //   delta_X.push_back(spectrumCrystalDeltaTvsW_1->GetBinCenter(iBin+1));
+                            //   W_Y.push_back(spectrumCrystalDeltaTvsW_1->GetBinContent(iBin+1));
+                            // }
 
 
-
-                            // // ------- BEGIN OF MODS FOR AMPL CORRECTION
-                            // sname << "T_vs_Q_" << iBin << " - Crystal " << CurrentCrystal->GetID();
-                            // TH2F *TvsQ = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax,CTRbins,CTRmin,CTRmax);
-                            // var << "t" << channel << " - TaggingTimeStamp : ch" << channel <<  " >>  " << sname.str() ;
-                            // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
-                            // // ------- END OF MODS FOR AMPL CORRECTION
-
-
-
-
-
-                            var.str("");
-                            sname.str("");
-                            sname << "DeltaT_" << iBin << " - Crystal " << CurrentCrystal->GetID();
-                            TH1F *tempHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
-                            var << "t" << channel << " - TaggingTimeStamp  >> " << sname.str() ;
-
-
-                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
-                            delta_X.push_back(midW);
-                            W_Y.push_back(tempHisto->GetMean());
-                            rmsBasic_Y.push_back(tempHisto->GetRMS());
-                            // std::cout << iBin << "\t"
-                            //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
-                            //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
-                            //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
-                            var.str("");
-                            sname.str("");
-
-
-                            // // ------- BEGIN OF MODS FOR AMPL CORRECTION
-                            // CurrentCrystal->AddTvsQHistos(TvsQ);
-                            // CurrentCrystal->AddDeltaTHistos(tempHisto);
-                            // // ------- END OF MODS FOR AMPL CORRECTION
-
-
-
-
-                          }
-
-
-                          TGraph *graphDeltaW = new TGraph(delta_X.size(),&delta_X[0],&W_Y[0]);
-                          sname.str("");
-                          sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
-                          graphDeltaW->SetTitle(sname.str().c_str());
-                          graphDeltaW->SetName(sname.str().c_str());
-                          graphDeltaW->GetXaxis()->SetTitle("W");
-                          graphDeltaW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
-                          sname.str("");
-                          CurrentCrystal->SetGraphDeltaW(graphDeltaW);
-
-                          TGraph *graphDeltaRMS = new TGraph(delta_X.size(),&delta_X[0],&rmsBasic_Y[0]);
-                          sname.str("");
-                          sname << "RMS DeltaW Graph - Crystal " << CurrentCrystal->GetID();
-                          graphDeltaRMS->SetTitle(sname.str().c_str());
-                          graphDeltaRMS->SetName(sname.str().c_str());
-                          graphDeltaRMS->GetXaxis()->SetTitle("W");
-                          graphDeltaRMS->GetYaxis()->SetTitle("T crystal - T tagging [S]");
-                          sname.str("");
-                          CurrentCrystal->SetGraphDeltaRMS(graphDeltaRMS);
-
-                          //calc w for z=(crystalz/2)
-
-                          // float centralCTR = linearFitCTR->GetParameter(0)*centralW + linearFitCTR->GetParameter(1);
-                          // std::cout << "centralCTR = " << centralCTR << std::endl;
-                          // sname << "CTR central correction - Crystal " << CurrentCrystal->GetID();
-                          // var << "((t" << channel << " - ((" << linearFitCTR->GetParameter(0) << "* FloodZ) + " << linearFitCTR->GetParameter(1) << ") - ("<< centralCTR <<")) - TaggingTimeStamp) >> " << sname.str() ;
-                          // std::cout << "var = " << var.str() << std::endl;
-                          // TH1F* spectrumCTRcentralCorrection = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
-                          // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
-                          // spectrumCTRcentralCorrection->GetXaxis()->SetTitle("Time [S]");
-                          // spectrumCTRcentralCorrection->GetYaxis()->SetTitle("N");
-                          // CurrentCrystal->SetCTRcentralCorrection(spectrumCTRcentralCorrection);
-                          // var.str("");
-                          // sname.str("");
-
-                          // plots for the neighbour channels (channels, NOT crystals!) of T cry - T neighbour
-                          // one for each neighbour
-                          for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
-                          {
-                            // histogram of tCry - tNeighbour
-                            sname <<  "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID();
-                            var << "t" << neighbours[iNeig] << " - t" << channel << " >> " << sname.str() ;
-                            TH1F* spectrumDeltaTcryTneig = new TH1F(sname.str().c_str(),sname.str().c_str(),DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
-                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
-                            spectrumDeltaTcryTneig->GetXaxis()->SetTitle("Time [S]");
-                            spectrumDeltaTcryTneig->GetYaxis()->SetTitle("N");
-                            var.str("");
-                            sname.str("");
-
-                            sname << "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID() << " vs. W";
-                            var << "t" << neighbours[iNeig] << " - t" << channel << ":FloodZ >> " << sname.str() ;
-                            TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
-                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
-                            spectrumCrystalDeltaT2vsW->GetXaxis()->SetTitle("W");
-                            sname.str("");
-                            sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
-                            spectrumCrystalDeltaT2vsW->GetYaxis()->SetTitle(sname.str().c_str());
-                            var.str("");
-                            sname.str("");
-
-                            std::vector<float> delay_X;
-                            std::vector<float> Wcoord_Y;
-                            std::vector<float> rms_Y;
-
-
-                            //get TGraphs from building N th1f, in the range defined by beginW and endW previously found
-                            // the range beginw-endW is spilt in WrangeBinsForTiming parts,
+                            //Tgraph from mean and rms of "slices"
                             for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
                             {
-                              TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
-                              var << "t" << neighbours[iNeig] << " - t" << channel << " >> tempHisto";
+
+                              // first do an "amplitude" vs. ctr histo, for this w range, and use it to correct
+                              // the CTRs for of this slice before generating the spectrum from which to extract the
+                              // delta_X and rmsBasic_Y
+
+                              // define the Limits and mid point for this w slice
+                              Float_t wLowerLimit = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
+                              Float_t wUpperLimit = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+                              Float_t midW        = beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming);
+                              //write the TCut for this data
                               std::stringstream sCut;
                               sCut << "FloodZ > "
-                                   << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
-                                   << "&& FloodZ < "
-                                   << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming)
-                                   << "&& (t" << neighbours[iNeig] << " - t" << channel << ") > " << DeltaTimeMin
-                                   << "&& (t" << neighbours[iNeig] << " - t" << channel << ") < " << DeltaTimeMax;
+                              << wLowerLimit
+                              << " && FloodZ < "
+                              << wUpperLimit
+                              << " && (t"
+                              << channel
+                              << " - TaggingTimeStamp) > "
+                              << CTRmin
+                              << " && (t"
+                              << channel
+                              << " - TaggingTimeStamp) < "
+                              << CTRmax;
                               TCut wCut = sCut.str().c_str();
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
 
-                              delay_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
-                              Wcoord_Y.push_back(tempHisto->GetMean());
-                              rms_Y.push_back(tempHisto->GetRMS());
+                              sname.str("");
+
+
+
+                              // // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                              // sname << "T_vs_Q_" << iBin << " - Crystal " << CurrentCrystal->GetID();
+                              // TH2F *TvsQ = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax,CTRbins,CTRmin,CTRmax);
+                              // var << "t" << channel << " - TaggingTimeStamp : ch" << channel <<  " >>  " << sname.str() ;
+                              // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                              // // ------- END OF MODS FOR AMPL CORRECTION
+
+
+
+
+
+                              var.str("");
+                              sname.str("");
+                              sname << "DeltaT_" << iBin << " - Crystal " << CurrentCrystal->GetID();
+                              TH1F *tempHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                              var << "t" << channel << " - TaggingTimeStamp  >> " << sname.str() ;
+
+
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                              delta_X.push_back(midW);
+                              W_Y.push_back(tempHisto->GetMean());
+                              rmsBasic_Y.push_back(tempHisto->GetRMS());
                               // std::cout << iBin << "\t"
                               //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
                               //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
                               //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
                               var.str("");
+                              sname.str("");
+
+
+                              // // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                              // CurrentCrystal->AddTvsQHistos(TvsQ);
+                              // CurrentCrystal->AddDeltaTHistos(tempHisto);
+                              // // ------- END OF MODS FOR AMPL CORRECTION
+
+
+
+
                             }
 
-                            // Fit Slice method to derive the correction graphs above.
-                            // in this case we use FitSlicesY to get directly the fit of a slice (possibly the sum of more slices in w) using a function that is gauss+exp
-                            // spectrumCrystalDeltaT2vsW->FitSlicesY(0, 0, -1, 0, "QNR");
-                            // sname << spectrumCrystalDeltaT2vsW->GetName() << "_1";
-                            // TH1D *spectrumCrystalDeltaT2vsW_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesY is called, holding the TH1F of the mean values
+
+                            TGraph *graphDeltaW = new TGraph(delta_X.size(),&delta_X[0],&W_Y[0]);
+                            sname.str("");
+                            sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                            graphDeltaW->SetTitle(sname.str().c_str());
+                            graphDeltaW->SetName(sname.str().c_str());
+                            graphDeltaW->GetXaxis()->SetTitle("W");
+                            graphDeltaW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                            sname.str("");
+                            CurrentCrystal->SetGraphDeltaW(graphDeltaW);
+
+                            TGraph *graphDeltaRMS = new TGraph(delta_X.size(),&delta_X[0],&rmsBasic_Y[0]);
+                            sname.str("");
+                            sname << "RMS DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                            graphDeltaRMS->SetTitle(sname.str().c_str());
+                            graphDeltaRMS->SetName(sname.str().c_str());
+                            graphDeltaRMS->GetXaxis()->SetTitle("W");
+                            graphDeltaRMS->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                            sname.str("");
+                            CurrentCrystal->SetGraphDeltaRMS(graphDeltaRMS);
+
+                            //calc w for z=(crystalz/2)
+
+                            // float centralCTR = linearFitCTR->GetParameter(0)*centralW + linearFitCTR->GetParameter(1);
+                            // std::cout << "centralCTR = " << centralCTR << std::endl;
+                            // sname << "CTR central correction - Crystal " << CurrentCrystal->GetID();
+                            // var << "((t" << channel << " - ((" << linearFitCTR->GetParameter(0) << "* FloodZ) + " << linearFitCTR->GetParameter(1) << ") - ("<< centralCTR <<")) - TaggingTimeStamp) >> " << sname.str() ;
+                            // std::cout << "var = " << var.str() << std::endl;
+                            // TH1F* spectrumCTRcentralCorrection = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                            // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                            // spectrumCTRcentralCorrection->GetXaxis()->SetTitle("Time [S]");
+                            // spectrumCTRcentralCorrection->GetYaxis()->SetTitle("N");
+                            // CurrentCrystal->SetCTRcentralCorrection(spectrumCTRcentralCorrection);
+                            // var.str("");
                             // sname.str("");
-                            // sname << spectrumCrystalDeltaT2vsW->GetName() << "_2";
-                            // TH1D *spectrumCrystalDeltaT2vsW_2 = (TH1D*)gDirectory->Get(sname.str().c_str());
-                            // sname.str("");
-                            //
-                            // for(int iBin = 0; iBin < spectrumCrystalDeltaT2vsW_1->GetNbinsX() ; iBin++)
-                            // {
-                            //   if(spectrumCrystalDeltaT2vsW_2->GetBinContent(iBin) )
-                            //   delay_X.push_back( spectrumCrystalDeltaT2vsW_1->GetBinCenter(iBin) );
-                            //   Wcoord_Y.push_back( spectrumCrystalDeltaT2vsW_1->GetBinContent(iBin) );
-                            //   var.str("");
-                            // }
 
-                            TGraph *graphDelayW = new TGraph(delay_X.size(),&delay_X[0],&Wcoord_Y[0]);
-                            sname.str("");
-                            sname << "Graph Delay ch_" << neighbours[iNeig];
-                            // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
-                            graphDelayW->SetTitle(sname.str().c_str());
-                            graphDelayW->SetName(sname.str().c_str());
-                            graphDelayW->GetXaxis()->SetTitle("W");
-                            sname.str("");
-                            sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
-                            graphDelayW->GetYaxis()->SetTitle(sname.str().c_str());
-                            sname.str("");
-
-
-                            TGraph *graphDelayRMS = new TGraph(delay_X.size(),&delay_X[0],&rms_Y[0]);
-                            sname.str("");
-                            sname << "RMS Graph Delay ch_" << neighbours[iNeig];
-                            // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
-                            graphDelayRMS->SetTitle(sname.str().c_str());
-                            graphDelayRMS->SetName(sname.str().c_str());
-                            graphDelayRMS->GetXaxis()->SetTitle("W");
-                            sname.str("");
-                            sname << "RMS (T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << "), [S]";
-                            graphDelayRMS->GetYaxis()->SetTitle(sname.str().c_str());
-                            sname.str("");
-
-
-
-
-                            int plotPos = -1;
-                            for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                            // plots for the neighbour channels (channels, NOT crystals!) of T cry - T neighbour
+                            // one for each neighbour
+                            for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
                             {
-                              for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                              // histogram of tCry - tNeighbour
+                              sname <<  "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID();
+                              var << "t" << neighbours[iNeig] << " - t" << channel << " >> " << sname.str() ;
+                              TH1F* spectrumDeltaTcryTneig = new TH1F(sname.str().c_str(),sname.str().c_str(),DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                              spectrumDeltaTcryTneig->GetXaxis()->SetTitle("Time [S]");
+                              spectrumDeltaTcryTneig->GetYaxis()->SetTitle("N");
+                              var.str("");
+                              sname.str("");
+
+                              sname << "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID() << " vs. W";
+                              var << "t" << neighbours[iNeig] << " - t" << channel << ":FloodZ >> " << sname.str() ;
+                              TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                              spectrumCrystalDeltaT2vsW->GetXaxis()->SetTitle("W");
+                              sname.str("");
+                              sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
+                              spectrumCrystalDeltaT2vsW->GetYaxis()->SetTitle(sname.str().c_str());
+                              var.str("");
+                              sname.str("");
+
+                              std::vector<float> delay_X;
+                              std::vector<float> Wcoord_Y;
+                              std::vector<float> rms_Y;
+
+
+                              //get TGraphs from building N th1f, in the range defined by beginW and endW previously found
+                              // the range beginw-endW is spilt in WrangeBinsForTiming parts,
+                              for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
                               {
-                                if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                                TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                                var << "t" << neighbours[iNeig] << " - t" << channel << " >> tempHisto";
+                                std::stringstream sCut;
+                                sCut << "FloodZ > "
+                                << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
+                                << "&& FloodZ < "
+                                << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming)
+                                << "&& (t" << neighbours[iNeig] << " - t" << channel << ") > " << DeltaTimeMin
+                                << "&& (t" << neighbours[iNeig] << " - t" << channel << ") < " << DeltaTimeMax;
+                                TCut wCut = sCut.str().c_str();
+                                tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+
+                                delay_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                                Wcoord_Y.push_back(tempHisto->GetMean());
+                                rms_Y.push_back(tempHisto->GetRMS());
+                                // std::cout << iBin << "\t"
+                                //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                                //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
+                                //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
+                                var.str("");
+                              }
+
+                              // Fit Slice method to derive the correction graphs above.
+                              // in this case we use FitSlicesY to get directly the fit of a slice (possibly the sum of more slices in w) using a function that is gauss+exp
+                              // spectrumCrystalDeltaT2vsW->FitSlicesY(0, 0, -1, 0, "QNR");
+                              // sname << spectrumCrystalDeltaT2vsW->GetName() << "_1";
+                              // TH1D *spectrumCrystalDeltaT2vsW_1 = (TH1D*)gDirectory->Get(sname.str().c_str()); // _1 is the TH1D automatically created by ROOT when FitSlicesY is called, holding the TH1F of the mean values
+                              // sname.str("");
+                              // sname << spectrumCrystalDeltaT2vsW->GetName() << "_2";
+                              // TH1D *spectrumCrystalDeltaT2vsW_2 = (TH1D*)gDirectory->Get(sname.str().c_str());
+                              // sname.str("");
+                              //
+                              // for(int iBin = 0; iBin < spectrumCrystalDeltaT2vsW_1->GetNbinsX() ; iBin++)
+                              // {
+                              //   if(spectrumCrystalDeltaT2vsW_2->GetBinContent(iBin) )
+                              //   delay_X.push_back( spectrumCrystalDeltaT2vsW_1->GetBinCenter(iBin) );
+                              //   Wcoord_Y.push_back( spectrumCrystalDeltaT2vsW_1->GetBinContent(iBin) );
+                              //   var.str("");
+                              // }
+
+                              TGraph *graphDelayW = new TGraph(delay_X.size(),&delay_X[0],&Wcoord_Y[0]);
+                              sname.str("");
+                              sname << "Graph Delay ch_" << neighbours[iNeig];
+                              // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                              graphDelayW->SetTitle(sname.str().c_str());
+                              graphDelayW->SetName(sname.str().c_str());
+                              graphDelayW->GetXaxis()->SetTitle("W");
+                              sname.str("");
+                              sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
+                              graphDelayW->GetYaxis()->SetTitle(sname.str().c_str());
+                              sname.str("");
+
+
+                              TGraph *graphDelayRMS = new TGraph(delay_X.size(),&delay_X[0],&rms_Y[0]);
+                              sname.str("");
+                              sname << "RMS Graph Delay ch_" << neighbours[iNeig];
+                              // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
+                              graphDelayRMS->SetTitle(sname.str().c_str());
+                              graphDelayRMS->SetName(sname.str().c_str());
+                              graphDelayRMS->GetXaxis()->SetTitle("W");
+                              sname.str("");
+                              sname << "RMS (T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << "), [S]";
+                              graphDelayRMS->GetYaxis()->SetTitle(sname.str().c_str());
+                              sname.str("");
+
+
+
+
+                              int plotPos = -1;
+                              for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                              {
+                                for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
                                 {
-                                  plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                                  if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                                  {
+                                    plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                                  }
                                 }
                               }
-                            }
 
-                            if(plotPos != -1)
-                            {
-                              CurrentCrystal->AddDeltaTcryTneig(spectrumDeltaTcryTneig,plotPos);
-                              CurrentCrystal->AddDeltaT2vsW(spectrumCrystalDeltaT2vsW,plotPos);;
-                              CurrentCrystal->AddGraphDelayW(graphDelayW,plotPos);
-                              CurrentCrystal->AddGraphDelayRMS(graphDelayRMS,plotPos);
+                              if(plotPos != -1)
+                              {
+                                CurrentCrystal->AddDeltaTcryTneig(spectrumDeltaTcryTneig,plotPos);
+                                CurrentCrystal->AddDeltaT2vsW(spectrumCrystalDeltaT2vsW,plotPos);;
+                                CurrentCrystal->AddGraphDelayW(graphDelayW,plotPos);
+                                CurrentCrystal->AddGraphDelayRMS(graphDelayRMS,plotPos);
+                              }
+
                             }
                           }
                         }
@@ -3127,165 +3133,183 @@ int main (int argc, char** argv)
                             // CurrentCrystal->GetCTRcentralCorrection()->Draw();
                             // C_spectrum->Write();
                             // delete C_spectrum;
-
-                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("Delta Tcry - TNeig");
-                            C_spectrum->Divide(nmppcx,nmppcy);
-                            //first plot the Delta Tcry - Ttagging for this crystal
-                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
-                            CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTcryTneig().size() ; iNeig++)
+                            if(timingCorrection) // only if timing correction is performed
                             {
-                              C_spectrum->cd(CurrentCrystal->GetDeltaTcryTneig()[iNeig].canvasPosition);
-                              CurrentCrystal->GetDeltaTcryTneig()[iNeig].spectrum->Draw();
-                            }
-                            C_spectrum->Write();
-                            delete C_spectrum;
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              C_spectrum->SetName("Delta Tcry - TNeig");
+                              C_spectrum->Divide(nmppcx,nmppcy);
+                              //first plot the Delta Tcry - Ttagging for this crystal
+                              C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                              CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTcryTneig().size() ; iNeig++)
+                              {
+                                C_spectrum->cd(CurrentCrystal->GetDeltaTcryTneig()[iNeig].canvasPosition);
+                                CurrentCrystal->GetDeltaTcryTneig()[iNeig].spectrum->Draw();
+                              }
+                              C_spectrum->Write();
+                              delete C_spectrum;
 
-                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("Delta Tcry - TNeig vs W");
-                            C_spectrum->Divide(nmppcx,nmppcy);
-                            //first plot the Delta Tcry - Ttagging for this crystal
-                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
-                            CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsW().size() ; iNeig++)
-                            {
-                              C_spectrum->cd(CurrentCrystal->GetDeltaT2vsW()[iNeig].canvasPosition);
-                              CurrentCrystal->GetDeltaT2vsW()[iNeig].spectrum->Draw("COLZ");
-                            }
-                            C_spectrum->Write();
-                            delete C_spectrum;
-
-
-
-                            // ------- BEGIN OF MODS FOR AMPL CORRECTION
-                            // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetTvsQHistos().size() ; iW++)
-                            // {
-                            //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-                            //   C_spectrum->SetName(CurrentCrystal->GetTvsQHistos()[iW]->GetName());
-                            //   CurrentCrystal->GetTvsQHistos()[iW]->Draw("COLZ");
-                            //   C_spectrum->Write();
-                            //   delete C_spectrum;
-                            // }
-                            // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetDeltaTHistos().size() ; iW++)
-                            // {
-                            //   // CurrentCrystal->GetDeltaTHistos()[iW].Write();
-                            //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            //   C_spectrum->SetName(CurrentCrystal->GetDeltaTHistos()[iW]->GetName());
-                            //   CurrentCrystal->GetDeltaTHistos()[iW]->Draw();
-                            //   C_spectrum->Write();
-                            //   delete C_spectrum;
-                            // }
-                            // ------ END OF MODS FOR AMPL CORRECTION
-
-                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            // C_spectrum->SetName("Slice Fit Delta Tcry - TNeig vs W");
-                            // C_spectrum->Divide(nmppcx,nmppcy);
-                            //first plot the Delta Tcry - Ttagging for this crystal
-                            // C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
-
-                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            // C_spectrum->SetName(CurrentCrystal->GetDeltaTvsWSlice()->GetName());
-                            // C_spectrum->cd();
-                            // CurrentCrystal->GetDeltaTvsWSlice()->Draw();
-                            // C_spectrum->Write();
-                            // delete C_spectrum;
-
-                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaW()->GetName());
-                            // C_spectrum->cd();
-                            // CurrentCrystal->GetGraphDeltaW()->Draw("AL");
-                            // C_spectrum->Write();
-                            // delete C_spectrum;
-
-                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaRMS()->GetName());
-                            // C_spectrum->cd();
-                            // CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
-                            // C_spectrum->Write();
-                            // delete C_spectrum;
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              C_spectrum->SetName("Delta Tcry - TNeig vs W");
+                              C_spectrum->Divide(nmppcx,nmppcy);
+                              //first plot the Delta Tcry - Ttagging for this crystal
+                              C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                              CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsW().size() ; iNeig++)
+                              {
+                                C_spectrum->cd(CurrentCrystal->GetDeltaT2vsW()[iNeig].canvasPosition);
+                                CurrentCrystal->GetDeltaT2vsW()[iNeig].spectrum->Draw("COLZ");
+                              }
+                              C_spectrum->Write();
+                              delete C_spectrum;
 
 
 
+                              // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                              // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetTvsQHistos().size() ; iW++)
+                              // {
+                              //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                              //   C_spectrum->SetName(CurrentCrystal->GetTvsQHistos()[iW]->GetName());
+                              //   CurrentCrystal->GetTvsQHistos()[iW]->Draw("COLZ");
+                              //   C_spectrum->Write();
+                              //   delete C_spectrum;
+                              // }
+                              // for(unsigned int iW = 0 ; iW < CurrentCrystal->GetDeltaTHistos().size() ; iW++)
+                              // {
+                              //   // CurrentCrystal->GetDeltaTHistos()[iW].Write();
+                              //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              //   C_spectrum->SetName(CurrentCrystal->GetDeltaTHistos()[iW]->GetName());
+                              //   CurrentCrystal->GetDeltaTHistos()[iW]->Draw();
+                              //   C_spectrum->Write();
+                              //   delete C_spectrum;
+                              // }
+                              // ------ END OF MODS FOR AMPL CORRECTION
 
-                            // CurrentCrystal->GetDeltaTvsWFit()->Draw("same");
-                            // for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaSlice().size() ; iNeig++)
-                            // {
-                            //   // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
-                            //
-                            //
-                            //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            //   C_spectrum->SetName(CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->GetName());
-                            //   C_spectrum->cd();
-                            //   CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->Draw();
-                            //   C_spectrum->Write();
-                            //   delete C_spectrum;
-                            //
-                            //
-                            //   // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
-                            // }
-
-                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("Correction Graphs");
-                            C_spectrum->Divide(nmppcx,nmppcy);
-                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
-                            CurrentCrystal->GetGraphDeltaW()->Draw("AL");
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
-                            {
-                              // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
                               // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                              // C_spectrum->SetName(CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->GetName());
-                              C_spectrum->cd(CurrentCrystal->GetGraphDelayW()[iNeig].canvasPosition);
-                              CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Draw("AL");
+                              // C_spectrum->SetName("Slice Fit Delta Tcry - TNeig vs W");
+                              // C_spectrum->Divide(nmppcx,nmppcy);
+                              //first plot the Delta Tcry - Ttagging for this crystal
+                              // C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+
+                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              // C_spectrum->SetName(CurrentCrystal->GetDeltaTvsWSlice()->GetName());
+                              // C_spectrum->cd();
+                              // CurrentCrystal->GetDeltaTvsWSlice()->Draw();
+                              // C_spectrum->Write();
+                              // delete C_spectrum;
+
+                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaW()->GetName());
+                              // C_spectrum->cd();
+                              // CurrentCrystal->GetGraphDeltaW()->Draw("AL");
+                              // C_spectrum->Write();
+                              // delete C_spectrum;
+
+                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              // C_spectrum->SetName(CurrentCrystal->GetGraphDeltaRMS()->GetName());
+                              // C_spectrum->cd();
+                              // CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
                               // C_spectrum->Write();
                               // delete C_spectrum;
 
 
-                              // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+
+
+                              // CurrentCrystal->GetDeltaTvsWFit()->Draw("same");
+                              // for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaSlice().size() ; iNeig++)
+                              // {
+                              //   // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+                              //
+                              //
+                              //   C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              //   C_spectrum->SetName(CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->GetName());
+                              //   C_spectrum->cd();
+                              //   CurrentCrystal->GetDeltaSlice()[iNeig].spectrum->Draw();
+                              //   C_spectrum->Write();
+                              //   delete C_spectrum;
+                              //
+                              //
+                              //   // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                              // }
+
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              C_spectrum->SetName("Correction Graphs");
+                              C_spectrum->Divide(nmppcx,nmppcy);
+                              C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                              CurrentCrystal->GetGraphDeltaW()->Draw("AL");
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                              {
+                                // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+                                // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                                // C_spectrum->SetName(CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->GetName());
+                                C_spectrum->cd(CurrentCrystal->GetGraphDelayW()[iNeig].canvasPosition);
+                                CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Draw("AL");
+                                // C_spectrum->Write();
+                                // delete C_spectrum;
+
+
+                                // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                              }
+                              C_spectrum->Write();
+                              delete C_spectrum;
+
+
+
+
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              C_spectrum->SetName("RMS Correction Graphs");
+                              C_spectrum->Divide(nmppcx,nmppcy);
+                              C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                              CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayRMS().size() ; iNeig++)
+                              {
+                                // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+
+
+                                // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                                // C_spectrum->SetName(CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->GetName());
+                                C_spectrum->cd(CurrentCrystal->GetGraphDelayRMS()[iNeig].canvasPosition);
+                                CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Draw("AL");
+                                // C_spectrum->Write();
+                                // delete C_spectrum;
+
+
+                                // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                              }
+                              C_spectrum->Write();
+                              delete C_spectrum;
+
+
+                              TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("TimeCorrection");
+                              corrDir->cd();
+                              CurrentCrystal->GetGraphDeltaW()->Write();
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                              {
+                                CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Write();
+                              }
+                              CurrentCrystal->GetGraphDeltaRMS()->Write();
+                              for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                              {
+                                CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Write();
+                              }
+                              corrDir->cd("..");
                             }
-                            C_spectrum->Write();
-                            delete C_spectrum;
-
-
-
-
-                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("RMS Correction Graphs");
-                            C_spectrum->Divide(nmppcx,nmppcy);
-                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
-                            CurrentCrystal->GetGraphDeltaRMS()->Draw("AL");
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayRMS().size() ; iNeig++)
+                            else // otherwise plot only the CTR plot
                             {
-                              // C_spectrum->cd(CurrentCrystal->GetDeltaSlice()[iNeig].canvasPosition);
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                              C_spectrum->SetName(CurrentCrystal->GetDeltaTimeWRTTagging()->GetName());
+                              CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                              C_spectrum->Write();
+                              delete C_spectrum;
 
-
-                              // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                              // C_spectrum->SetName(CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->GetName());
-                              C_spectrum->cd(CurrentCrystal->GetGraphDelayRMS()[iNeig].canvasPosition);
-                              CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Draw("AL");
-                              // C_spectrum->Write();
-                              // delete C_spectrum;
-
-
-                              // CurrentCrystal->GetDeltaSlice()[iNeig].fit->Draw("same");
+                              C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                              C_spectrum->SetName(CurrentCrystal->GetDeltaTvsW()->GetName());
+                              CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                              C_spectrum->Write();
+                              delete C_spectrum;
                             }
-                            C_spectrum->Write();
-                            delete C_spectrum;
 
 
-                            TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("TimeCorrection");
-                            corrDir->cd();
-                            CurrentCrystal->GetGraphDeltaW()->Write();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
-                            {
-                              CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Write();
-                            }
-                            CurrentCrystal->GetGraphDeltaRMS()->Write();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
-                            {
-                              CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Write();
-                            }
-                            corrDir->cd("..");
 
                             // C_spectrum->Write();
                             // delete C_spectrum;
