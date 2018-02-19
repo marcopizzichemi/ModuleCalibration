@@ -277,7 +277,7 @@ int main (int argc, char** argv)
   bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
   float tagFitLowerFraction = config.read<float>("tagFitLowerFraction",0.06);  // enRes = 2.355*sigma/peak --> sigma = enRes*Peak/2.355   EnRes about 0.15 -->  sigma = 0.06* peak  -> limits -1sigma +2 sigma
   float tagFitUpperFraction = config.read<float>("tagFitUpperFraction",0.12);
-  bool timingCorrection = config.read<bool>("timingCorrection",0);// perform or not the timing correction (for example, it could make no sense to perform it in polished arrays)
+  bool timingCorrection = config.read<bool>("timingCorrection",1);// perform or not the timing correction (for example, it could make no sense to perform it in polished arrays) - deafult = 1
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
