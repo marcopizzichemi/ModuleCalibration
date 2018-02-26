@@ -10,6 +10,7 @@
 #include "TProfile.h"
 #include "TTree.h"
 #include "TCut.h"
+#include "Detector.h"
 
 class Module;
 class Mppc;

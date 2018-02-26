@@ -16,6 +16,7 @@
 #include "Module.h"
 #include "Mppc.h"
 #include "TRandom3.h"
+// #include "Detector.h"
 
 
 /** @brief Class that controls the input files
@@ -206,24 +207,24 @@ private:
   float sigmaTimeTag;                                                // sigma for the smearing of tagging time [ps]. it's the time resolution of an hypothetical external short crystal + fast sipm - default = 30.0, which corresponds to Hamamatsu MPPC + 2x2x3 m3 LSO-Ca codoped crystal (100ps FWHM CTR, see Mythra poster)
   TRandom3 *randGen;
 
-  struct detector_t
-  {
-    int digitizerChannel;
-    int timingChannel;
-    std::string label;
-    int i;
-    int j;
-    float saturation;
-    int plotPosition;
-    float xPosition;
-    float yPosition;
-    float pedestal;
-    int OnForDOI;
-    bool isNeighbour;
-    std::vector<int> neighbourChannels;
-    bool OnForModular;
-    //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
-  };
+  // struct detector_t
+  // {
+  //   int digitizerChannel;
+  //   int timingChannel;
+  //   std::string label;
+  //   int i;
+  //   int j;
+  //   float saturation;
+  //   int plotPosition;
+  //   float xPosition;
+  //   float yPosition;
+  //   float pedestal;
+  //   int OnForDOI;
+  //   bool isNeighbour;
+  //   std::vector<int> neighbourChannels;
+  //   bool OnForModular;
+  //   //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }
+  // };
 
   std::vector<detector_t> detector;
 

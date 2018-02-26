@@ -969,6 +969,14 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
       module[iModule][jModule]->SetChildrenJ(nmppcy);
       module[iModule][jModule]->SetSeed(randGen->GetSeed());
 
+      std::vector<int> moduleChannels;
+      for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+      {
+        moduleChannels.push_back(detector[iDet].digitizerChannel);
+      }
+      module[iModule][jModule]->SetChannels(moduleChannels);
+      module[iModule][jModule]->SetDetector(detector);
+
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
         for(int jMppc = 0; jMppc < nmppcy ; jMppc++)

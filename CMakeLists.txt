@@ -19,7 +19,7 @@ include(FindROOT.cmake)
 # The extension is already found.  Any number of sources could be listed here.
 
 set(INCLUDE_DIRECTORIES
-${ROOT_INCLUDE_DIR} 
+${ROOT_INCLUDE_DIR}
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})
@@ -96,4 +96,4 @@ endforeach()
 install(TARGETS ModuleCalibration DESTINATION bin)
 set(CMAKE_BUILD_TYPE Release)
 # set (CMAKE_CXX_FLAGS "-Wvla -Wsign-compare")
-set (CMAKE_CXX_FLAGS "-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wno-variadic-macros -pipe -std=c++98")
+set (CMAKE_CXX_FLAGS "-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wno-variadic-macros -pipe -std=c++11 -fopenmp")
