@@ -440,7 +440,7 @@ Crystal* Mppc::GetCrystal(int pi, int pj)
 
 
 
-bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int div*/,int ncrystalsx,int ncrystalsy)
+bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy,std::vector<TString> FloodXYZ)
 {
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
    * It works like this:
@@ -722,7 +722,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
     TCanvas *C_contours[numbOfCrystals];
     TCanvas *C_graph[numbOfCrystals];
     TString plane[2] = {"zx","zy"};
-    TString varX[2] = {"FloodX","FloodY"};
+    TString varX[2] = {FloodXYZ[0],FloodXYZ[1]};
     Double_t contours[2] = {0.5,1}; //fixed level to get the all the points
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
@@ -775,7 +775,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external/*, int histo3DchannelBin, int
         name << "cutg_" << iCut << "_" << iMasks << "_" << this->GetLabel();
         cutg[iCut][iMasks] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
         cutg[iCut][iMasks]->SetVarX(varX[iCut]);
-        cutg[iCut][iMasks]->SetVarY("FloodZ");
+        cutg[iCut][iMasks]->SetVarY(FloodXYZ[2]);
 
       }
     }

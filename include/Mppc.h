@@ -149,7 +149,7 @@ public:
   void                   FindProjectionPlane();                          ///< Finds the best projection plane for this mppc
 
   void                   MakeRotatedFlood();
-  bool                   FindCrystalCuts(TCutG**** cutg/*,int histo3DchannelBin, int div*/,int nofcrystalsx,int nofcrystalsy);///< Finds the density volumes that represents the crystals
+  bool                   FindCrystalCuts(TCutG**** cutg,int nofcrystalsx,int nofcrystalsy,std::vector<TString> FloodXYZ);///< Finds the density volumes that represents the crystals
 
   void                   SetNeighbours(std::vector<int> aVec){neighbours = aVec;};
   std::vector<int>       GetNeighbours(){return neighbours;};

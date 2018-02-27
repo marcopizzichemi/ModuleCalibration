@@ -84,3 +84,10 @@ TBranch      *bsimTaggingTime;                                              // b
 TBranch      *bCrystalsHit;                                        // branches for above data
 TBranch      *bNumbOfInteractions;                                 // branches for above data
 TBranch      *bTotalCryEnergy;                                     //
+
+
+struct multi_channel_t
+{
+  int detectorIndex;
+  std::string string;
+};

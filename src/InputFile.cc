@@ -60,6 +60,7 @@ InputFile::InputFile (ConfigFile& config)
   xPositions_s                = config.read<std::string>("xPositions");
   yPositions_s                = config.read<std::string>("yPositions");
   pedestal_s                  = config.read<std::string>("pedestal","0");
+  noise_s                     = config.read<std::string>("noise","0");
   if(correctingSaturation)
   {
     saturation_s                = config.read<std::string>("saturation");
@@ -168,11 +169,30 @@ InputFile::InputFile (ConfigFile& config)
     }
   }
 
+  if (noise_s.compare("0") == 0) // default pedestal key, means that all pedestals are set to 0 automatically
+  {
+    for(unsigned int i = 0; i <  digitizer.size(); i++)
+    {
+      noise.push_back(0.0);
+    }
+  }
+  else
+  {
+    config.split( noise_f, noise_s, "," );
+    for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
+    {
+      config.trim(noise_f[i]);
+      noise.push_back(atof(noise_f[i].c_str()));
+    }
+  }
+
+
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) &&
           (digitizer.size() == plotPositions.size()) &&
           (digitizer.size() == xPositions.size()) &&
           (digitizer.size() == yPositions.size()) &&
+          (digitizer.size() == noise.size()) &&
           (digitizer.size() == pedestal.size()));
   if(correctingSaturation)
   {
@@ -256,7 +276,21 @@ InputFile::InputFile (ConfigFile& config)
     det.plotPosition     = plotPositions[i];
     det.xPosition        = xPositions[i];
     det.yPosition        = yPositions[i];
-    det.pedestal         = pedestal[i];
+
+    //also pedestals and noise need to be corrected for saturation!
+    if(correctingSaturation)
+    {
+      // TreeAdcChannel[iDet] = (Float_t) (-detector[iDet].saturation * TMath::Log(1.0 - ( (ADCminusPedestal)/((Float_t) detector[iDet].saturation) )));
+      det.pedestal = (float) (-det.saturation * TMath::Log(1.0 - ( (pedestal[i])/((Float_t) det.saturation) )));
+      det.noise    = (float) (-det.saturation * TMath::Log(1.0 - ( (noise[i])/((Float_t) det.saturation) )));
+    }
+    else
+    {
+      det.pedestal         = pedestal[i];
+      det.noise            = noise[i];
+    }
+
+
     det.OnForDOI         = 0;
 
     det.OnForModular     = true;
@@ -420,7 +454,7 @@ InputFile::InputFile (ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << " Channels configuration " << std::endl;
   std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tTime Ch\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNeighbour channels" << std::endl;
+  std::cout << "ADC input\tTime Ch\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNoise[ADC ch]\tNeighbour channels" << std::endl;
   std::cout << "------------------------" << std::endl;
   for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
@@ -437,7 +471,8 @@ InputFile::InputFile (ConfigFile& config)
               << detector[i].plotPosition << "\t"
               << detector[i].xPosition << "\t"
               << detector[i].yPosition << "\t"
-              << detector[i].pedestal << "\t\t\t";
+              << detector[i].pedestal << "\t\t\t"
+              << detector[i].noise << "\t\t\t";
     for(unsigned int iNeighbour = 0; iNeighbour < detector[i].neighbourChannels.size(); iNeighbour++)
         std::cout << detector[i].neighbourChannels[iNeighbour] << " ";
     std::cout << std::endl;

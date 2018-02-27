@@ -10,8 +10,8 @@ struct detector_t
   float xPosition;
   float yPosition;
   float pedestal;
+  float noise;
   int OnForDOI;
-  bool isNeighbour;
   std::vector<int> neighbourChannels;
   bool OnForModular;
   //     bool operator<(const masks_t& rhs) const { meanx < rhs.meanx; }

@@ -52,6 +52,7 @@ private:
   std::string                    yPositions_s;                       // input string of the yPositions key from config file
   std::string                    saturation_s;                       // input string of the saturation key from config file
   std::string                    pedestal_s;                       // input string of the saturation key from config file
+  std::string                    noise_s;
   std::string                    mppcOFF_s;
   std::vector <std::string>      mppcOFF_f;
   std::vector <std::string>      mppcOFF;
@@ -82,10 +83,12 @@ private:
   std::vector <std::string>      yPositions_f;                       // tokenization of above strings
   std::vector <std::string>      saturation_f;                       // tokenization of above strings
   std::vector <std::string>      pedestal_f;                         // tokenization of above strings
+  std::vector <std::string>      noise_f;                         // tokenization of above strings
   std::vector <int>              digitizer;                          // above tokenized string transformed in the proper variable types
 
 
   std::vector <int>              pedestal;                          // above tokenized string transformed in the proper variable types
+  std::vector <int>              noise;                          // above tokenized string transformed in the proper variable types
   std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
   std::vector <int>              plotPositions;                      // above tokenized string transformed in the proper variable types
   std::vector <float>            xPositions;                         // above tokenized string transformed in the proper variable types
