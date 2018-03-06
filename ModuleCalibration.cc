@@ -91,7 +91,8 @@
 #include <cmath>
 #include <assert.h>
 #include <cstddef>
-#include <thread>
+// #include <thread>
+#include <getopt.h>
 
 #include "ConfigFile.h"
 #include "InputFile.h"
@@ -102,7 +103,7 @@
 #include "ModuleCalibration.h"
 // #include "Detector.h"
 
-#include <omp.h>
+// #include <omp.h>
 //test
 
 #define ENERGY_RESOLUTION 0.12
@@ -362,6 +363,7 @@ int main (int argc, char** argv)
   std::string PWDstring(cwd);
   // std::cout << cwd << std::endl;
 
+  ROOT::v5::TFormula::SetMaxima(10000,10000,10000);
 
   // list of all input files
   std::stringstream InputFiles;
@@ -714,10 +716,21 @@ int main (int argc, char** argv)
       // // //END of DEBUG OUTPUT
 
       std::vector<int> allModuleChID;
+      std::vector<float> saturationData;
+      std::vector<float> pedestalData;
+      std::vector<int> detChData;
       for(unsigned int iDet = 0; iDet < detector.size() ; iDet++)
       {
         allModuleChID.push_back(iDet); //dummy... we need to get all the indexes of detector[] that identify all the channels in the array, and of course these are all the indexes of the detector[] vector.
+        detChData.push_back(detector[iDet].digitizerChannel);
+        saturationData.push_back(detector[iDet].saturation);
+        pedestalData.push_back(detector[iDet].pedestal);
       }
+
+      module[iModule][jModule]->SetDetChData(detChData);
+      module[iModule][jModule]->SetSaturationData(saturationData);
+      module[iModule][jModule]->SetPedestalData(pedestalData);
+
 
       // //DEBUG OUTPUT
       // std::cout << std::endl;
@@ -827,6 +840,10 @@ int main (int argc, char** argv)
         // 	delete sTagCrystal;
         delete gaussTag;
         // 	std::cout << " done" << std::endl;
+
+
+        //save tagging crystal timing channel
+        module[iModule][jModule]->SetTaggingTimingChannel(taggingCrystalTimingChannel);
       }
 
       sname << "Flood Histogram 3D - Module " << module[iModule][jModule]->GetName();
@@ -835,6 +852,8 @@ int main (int argc, char** argv)
       spectrum3dModule->GetYaxis()->SetTitle("V");
       spectrum3dModule->GetZaxis()->SetTitle("W");
       sname.str("");
+
+
 
 
       // if(usingRealSimData)
@@ -1493,6 +1512,14 @@ int main (int argc, char** argv)
                     CurrentCrystal->SetZXCut(cutg[0][iCry][jCry]);
                     CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
 
+                    //get charge ch numbers used for w
+                    std::vector<int> channelsNumRelevantForW;
+                    for(unsigned int iRel = 0; iRel < relevantForW.size(); iRel++)
+                    {
+                      channelsNumRelevantForW.push_back(relevantForW[iRel].detectorIndex);
+                    }
+
+                    CurrentCrystal->SetRelevantForW(channelsNumRelevantForW);
 
                     // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
                     // it can be either all channels selected as input
@@ -2372,6 +2399,8 @@ int main (int argc, char** argv)
                           // basic CTR with respect to an external tagging crystal, cutting on photopeak of this crystal
                           // var.str("");
                           // sname.str("");
+                          CurrentCrystal->SetTimingChannel(detector[thisChannelID].timingChannel);
+
                           sname << "Basic CTR - Crystal " << CurrentCrystal->GetID();
                           var << "t" << detector[thisChannelID].timingChannel
                               << "- t" << taggingCrystalTimingChannel
@@ -2415,8 +2444,12 @@ int main (int argc, char** argv)
                           // var.str("");
                           // sname.str("");
 
+
+
                           if(timingCorrection)
                           {
+
+                            // std::vector<int> DelayTimingChannelsNum;
 
                             //get a TGraph
                             std::vector<float> delta_X;
@@ -2544,6 +2577,9 @@ int main (int argc, char** argv)
 
                             // plots for the neighbour channels (channels, NOT crystals!) of T cry - T neighbour
                             // one for each neighbour
+
+                            std::vector<int> DelayTimingChannelsNum;
+
                             for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
                             {
                               //get the timingChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
@@ -2555,6 +2591,10 @@ int main (int argc, char** argv)
                                   iNeighTimingChannel = detector[iDet].timingChannel;
                                 }
                               }
+
+                              DelayTimingChannelsNum.push_back(iNeighTimingChannel);
+
+
                               // histogram of tCry - tNeighbour
                               sname <<  "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID();
                               var << "t" << iNeighTimingChannel
@@ -2639,7 +2679,7 @@ int main (int argc, char** argv)
 
                               TGraph *graphDelayW = new TGraph(delay_X.size(),&delay_X[0],&Wcoord_Y[0]);
                               sname.str("");
-                              sname << "Graph Delay ch_" << neighbours[iNeig];
+                              sname << "Graph Delay ch_" << neighbours[iNeig] << "_t_" << iNeighTimingChannel;
                               // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
                               graphDelayW->SetTitle(sname.str().c_str());
                               graphDelayW->SetName(sname.str().c_str());
@@ -2652,7 +2692,7 @@ int main (int argc, char** argv)
 
                               TGraph *graphDelayRMS = new TGraph(delay_X.size(),&delay_X[0],&rms_Y[0]);
                               sname.str("");
-                              sname << "RMS Graph Delay ch_" << neighbours[iNeig];
+                              sname << "RMS Graph Delay ch_" << neighbours[iNeig ]<< "_t_" << iNeighTimingChannel;
                               // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
                               graphDelayRMS->SetTitle(sname.str().c_str());
                               graphDelayRMS->SetName(sname.str().c_str());
@@ -2686,6 +2726,7 @@ int main (int argc, char** argv)
                               }
 
                             }
+                            CurrentCrystal->SetDelayTimingChannels(DelayTimingChannelsNum);
                           }
                         }
                       }
@@ -5058,6 +5099,13 @@ int main (int argc, char** argv)
         TaggingCrystalSpectrum->Draw();
         TriggerSpectrumHighlight->Draw("same");
         C_TaggingCrystalSpectrum->Write();
+
+        std::stringstream TagNum;
+        TagNum.str("");
+        TagNum << module[iModule][jModule]->GetTaggingTimingChannel();
+        TNamed tNum("taggingCrystalTimingChannel",TagNum.str().c_str());
+        tNum.Write();
+        TagNum.str("");
       }
       //
       RawCanvas->Write();
@@ -5073,6 +5121,13 @@ int main (int argc, char** argv)
         TNamed SeedD("Seed",sseed.str().c_str());
         SeedD.Write();
       }
+
+      std::vector<int> detChData = module[iModule][jModule]->GetDetChData();
+      std::vector<float> saturationData = module[iModule][jModule]->GetSaturationData();
+      std::vector<float> pedestalData = module[iModule][jModule]->GetPedestalData();
+      gDirectory->WriteObject(&detChData, "channels");
+      gDirectory->WriteObject(&saturationData, "saturation");
+      gDirectory->WriteObject(&pedestalData, "pedestal");
       //
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -5116,6 +5171,17 @@ int main (int argc, char** argv)
            // mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawChargeSpectrum()->Draw();
            // C_spectrum->Write();
            // delete C_spectrum;
+
+           //write digitizerChannel for this crystal
+           // std::stringstream sChNum;
+           // sChNum << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+           // TNamed ChNum("digitizerChannel",sChNum.str().c_str());
+           // ChNum.Write();
+           //
+           // sChNum.str("");
+           // sChNum << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetSaturation();
+           // TNamed satTnamed("saturation",sChNum.str().c_str());
+           // satTnamed.Write();
 
 
             //prepare a Canvas for the nxn 3D cuts
@@ -5374,8 +5440,19 @@ int main (int argc, char** argv)
 
                         if(digitizerType == 1 || digitizerType == 2)
                         {
+                          //write timingChannel for this crystal
+                          std::stringstream sChNum;
+                          sChNum.str("");
+                          sChNum << CurrentCrystal->GetTimingChannel();
+                          TNamed tCryNum("timingChannel",sChNum.str().c_str());
+                          tCryNum.Write();
+                          sChNum.str("");
+
+
                           if(timingCorrection) // only if timing correction is performed
                           {
+
+
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                             C_spectrum->SetName("Delta Tcry - TNeig");
                             C_spectrum->Divide(nmppcx,nmppcy);
@@ -5445,6 +5522,9 @@ int main (int argc, char** argv)
                             {
                               CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Write();
                             }
+                            //write time Channels for neighbouring crystals
+                            std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
+                            gDirectory->WriteObject(&DelayTimingChannelsNum, "delayTimingChannels");
                             corrDir->cd("..");
                           }
                           else // otherwise plot only the CTR plot
@@ -5525,11 +5605,19 @@ int main (int argc, char** argv)
                         }
                       }
 
+                      //write digitizerChannel for this crystal
                       std::stringstream sChNum;
                       sChNum << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
-
-                      TNamed ChNum("ChNum",sChNum.str().c_str());
+                      TNamed ChNum("digitizerChannel",sChNum.str().c_str());
                       ChNum.Write();
+
+                      //write charge channels used for W calculation for this crystal
+                      std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
+                      gDirectory->WriteObject(&channelsNumRelevantForW, "channelsNumRelevantForW");
+
+
+
+
 
                       // // compton calibration
                       // if(comptonAnalysis)
@@ -5607,6 +5695,10 @@ int main (int argc, char** argv)
                 }
               }
             }
+
+
+
+
       //
             directory[iModule+jModule][(iMppc+jMppc)+1][0]->cd();
       //

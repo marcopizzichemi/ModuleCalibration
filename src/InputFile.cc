@@ -1080,6 +1080,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
           mppc[mppcI][mppcJ]->SetChildrenJ(ncrystalsy);
           mppc[mppcI][mppcJ]->SetPosition(detector[detID].xPosition,detector[detID].yPosition,0);
           mppc[mppcI][mppcJ]->SetDigitizerChannel(detector[detID].digitizerChannel);
+          mppc[mppcI][mppcJ]->SetSaturation(detector[detID].saturation);
           mppc[mppcI][mppcJ]->SetCanvasPosition(detector[detID].plotPosition);
           mppc[mppcI][mppcJ]->SetParentName(module[iModule][jModule]->GetName());
 

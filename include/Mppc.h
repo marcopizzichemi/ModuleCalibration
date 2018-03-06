@@ -25,6 +25,8 @@ private:
   double                 ThetaWU;                ///< angle from w to u in radiants
   double                 ThetaWV;                ///< angle from w to v in radiants
   double                 specificWthreshold;     ///< clusterLevelPrecision for this MPPC
+  float                  saturation;
+
 
   int                    histo3DchannelBin;
   float                  histo3Dmin;
@@ -110,6 +112,8 @@ public:
   void                   SetRawSpectrum(TH1F* aHisto){RawSpectrum = aHisto;};
   TH1F*                  GetTriggerSpectrum(){return TriggerSpectrum;};
   void                   SetTriggerSpectrum(TH1F* aHisto){TriggerSpectrum = aHisto;};
+  void                   SetSaturation(float aNum){saturation = aNum;};
+  float                  GetSaturation(){return saturation;};
 
   TH1F*                  GetRawChargeSpectrum(){return RawChargeSpectrum;};
   void                   SetRawChargeSpectrum(TH1F* aHisto){RawChargeSpectrum = aHisto;};

@@ -58,6 +58,7 @@ private:
   TH3I***              ComptonCalibationHistogram;
   std::vector<TH3I*>   ListOfComptonHisto;
 
+
   TH3I*                oneHisto;
   TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
@@ -103,6 +104,9 @@ private:
   double               wEnd;                 ///< end of w histogram after fitting with theta function
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
   double               averageDoiResolution;
+  std::vector<int>     channelsNumRelevantForW;
+  std::vector<int>     DelayTimingChannelsNum;
+  int                  timingChannel;
 
   struct multiSpectrum_t
   {
@@ -178,6 +182,8 @@ public:
   TGraph2D***          GetConvertedComptonCalibration(){return ConvertedComptonCalibation;};
   TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
   TH3I***              GetComptonCalibrationHistogram(){return ComptonCalibationHistogram;};
+  int                  GetTimingChannel(){return timingChannel;};
+
 
   TH3I*                GetOneHisto(){return oneHisto;};
   TGraph*              GetWZgraph(){return wzgraph;};
@@ -237,6 +243,8 @@ public:
   TGraph*              GetGraphDeltaW(){return graphDeltaW;};
   TGraph*              GetGraphDeltaRMS(){return graphDeltaRMS;};
 
+  std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
+  std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
   std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
   std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
   std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
@@ -326,6 +334,9 @@ public:
   void                 SetGraphDeltaRMS(TGraph* aGraph){graphDeltaRMS = aGraph;};
   void                 AddDeltaTHistos(TH1F* aHisto){DeltaTHistos.push_back(aHisto);};
   void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
+  void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
+  void                 SetTimingChannel(int aNum){timingChannel = aNum;};
+  void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)

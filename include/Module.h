@@ -12,8 +12,13 @@ class Module : public Element
 private:
   std::vector<Element*>  vMppc;
   std::vector<int> channels;
+  std::vector<int> detChData;
+  std::vector<float> saturationData;
+  std::vector<float> pedestalData;
+
   UInt_t seed;
   std::vector<detector_t> detector;
+  int taggingCrystalTimingChannel;
 
 public:
   Module(); // default constructor
@@ -24,11 +29,22 @@ public:
   void                   SetDetector(std::vector<detector_t> aDetector){detector = aDetector;};
   std::vector<detector_t>   GetDetector(){return detector;};
   void                   SetChannels(std::vector<int> aVec){channels = aVec;};
+  void                   SetTaggingTimingChannel (int aNum){taggingCrystalTimingChannel = aNum;};
   std::vector<int>       GetChannels(){return channels;};
+
+  void                   SetDetChData(std::vector<int> aVec){detChData = aVec;};
+  void                   SetSaturationData(std::vector<float> aVec){saturationData = aVec;};
+  void                   SetPedestalData(std::vector<float> aVec){pedestalData = aVec;};
+
+  std::vector<int>       GetDetChData(){return detChData;};
+  std::vector<float>     GetSaturationData(){return saturationData;};
+  std::vector<float>     GetPedestalData(){return pedestalData;};
+
   int                    GetMppcsNumber(){return vMppc.size();};
   Mppc*                  GetMppc(int pi, int pj);
   void                   SetSeed(UInt_t aSeed){seed = aSeed;};
   UInt_t                 GetSeed(){return seed;};
+  int                    GetTaggingTimingChannel(){return taggingCrystalTimingChannel;};
 
   void PrintGlobal();
   void PrintSpecific();
