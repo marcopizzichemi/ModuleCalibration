@@ -144,6 +144,7 @@ private:
 
   std::vector<TH2F*> TvsQHistos;
   std::vector<TH1F*> DeltaTHistos;
+  std::vector<TH1F*> DelayHistos;
 
 public:
   Crystal();                                 ///< default constructor
@@ -253,6 +254,7 @@ public:
   std::vector<multiGraphDelayRMS_t>        GetGraphDelayRMS(){return graphDelayRMS;};
   std::vector<TH2F*>                       GetTvsQHistos(){return TvsQHistos;};
   std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
+  std::vector<TH1F*>                       GetDelayHistos(){return DelayHistos;};
 
   TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
 
@@ -333,6 +335,7 @@ public:
   void                 SetGraphDeltaW(TGraph* aGraph){graphDeltaW = aGraph;};
   void                 SetGraphDeltaRMS(TGraph* aGraph){graphDeltaRMS = aGraph;};
   void                 AddDeltaTHistos(TH1F* aHisto){DeltaTHistos.push_back(aHisto);};
+  void                 AddDelayTHistos(TH1F* aHisto){DelayHistos.push_back(aHisto);};
   void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};

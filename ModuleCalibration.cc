@@ -294,7 +294,7 @@ int main (int argc, char** argv)
   int adcChannels = config.read<int>("digitizerTotalCh");// number of output channels in the adc in use (32 for the CAEN DT5740)
   float noiseSigmas =  config.read<float>("noiseSigmas",1.0); // how many sigmas of noise far from "0" to cut the dataset
   int taggingCrystalTimingChannel  = config.read<int>("taggingCrystalTimingChannel",16);     // input timing channel where the tagging crystal information is stored                - default = 16
-
+  float marginWZgraph = config.read<float>("marginWZgraph",0.1); // distance from crystal limit for calculation of beginW and endW
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -2095,6 +2095,8 @@ int main (int argc, char** argv)
                           CurrentCrystal->SetSlicesMean(spectrum2d_1);
                           CurrentCrystal->SetSlicesMeanFit(linearCrystal);
                           sname.str("");
+
+
                         }
 
                         // 		spectrum2dADCversusW->SetName(sname.str().c_str());
@@ -2258,6 +2260,19 @@ int main (int argc, char** argv)
                       var.str("");
                       sname.str("");
 
+
+                      // if(correctingForDOI)
+                      // {
+                      //   // alternative method, even more mayhem
+                      //   // manually split the 2d wistogram in slices and fit the individual slices, finding the
+                      //   // photopeak. this does not require the w20percCut
+                      //
+                      //
+                      //
+                      //
+                      //
+                      // }
+
                       // w histogram with energy cut on the corrected spectrum and
                       // fit the w histogram with the thetaFunction -> m and q of correlation line
                       // fit on the rise of w function with gaussian -> sigma w
@@ -2354,8 +2369,8 @@ int main (int argc, char** argv)
                         wzgraph->GetXaxis()->SetTitle("Z [mm]");
                         wzgraph->GetYaxis()->SetTitle("W");
                         centralW = wzgraph->Eval(crystalz/2.0);
-                        beginW = wzgraph->Eval(crystalz - 0.01);
-                        endW = wzgraph->Eval(0.01);
+                        beginW = wzgraph->Eval(crystalz - marginWZgraph);
+                        endW = wzgraph->Eval(marginWZgraph);
                         // std::cout << beginW << "\t" << endW << std::endl;
 
                         sname.str("");
@@ -2452,9 +2467,9 @@ int main (int argc, char** argv)
                             // std::vector<int> DelayTimingChannelsNum;
 
                             //get a TGraph
-                            std::vector<float> delta_X;
-                            std::vector<float> W_Y;
-                            std::vector<float> rmsBasic_Y;
+                            std::vector<float> delta_X,delta_X_core;
+                            std::vector<float> W_Y,W_Y_core;
+                            std::vector<float> rmsBasic_Y,rmsBasic_Y_core;
 
                             //get a TGraph from FitSlicesY
                             // for(int iBin = 0; iBin < spectrumCrystalDeltaTvsW_1->GetNbinsX() ; iBin++)
@@ -2463,10 +2478,13 @@ int main (int argc, char** argv)
                             //   W_Y.push_back(spectrumCrystalDeltaTvsW_1->GetBinContent(iBin+1));
                             // }
 
-
+                            std::cout << "Performing timing correction analysis"  << std::endl;
+                            std::cout << "Analyzing interaction crystal..."  << std::endl;
                             //Tgraph from mean and rms of "slices"
-                            for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
+                            // std::cout << beginW << "\t" << endW << std::endl;
+                            for(int iBin = 0; iBin < WrangeBinsForTiming; iBin++) // -1 and +1 are put to include the w limits
                             {
+                              // std::cout << "W Slice" << iBin << std::endl;
 
                               // first do an "amplitude" vs. ctr histo, for this w range, and use it to correct
                               // the CTRs for of this slice before generating the spectrum from which to extract the
@@ -2476,6 +2494,11 @@ int main (int argc, char** argv)
                               Float_t wLowerLimit = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
                               Float_t wUpperLimit = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
                               Float_t midW        = beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming);
+
+                              // std::cout << iBin << "\t"
+                              //           << wLowerLimit << "\t"
+                              //           << wUpperLimit << "\t"
+                              //           << midW << std::endl;
                               //write the TCut for this data
                               std::stringstream sCut;
                               sCut << FloodZ.str() << " > "
@@ -2518,26 +2541,37 @@ int main (int argc, char** argv)
 
 
                               tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
-                              delta_X.push_back(midW);
-                              W_Y.push_back(tempHisto->GetMean());
-                              rmsBasic_Y.push_back(tempHisto->GetRMS());
-                              // std::cout << iBin << "\t"
-                              //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
-                              //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
-                              //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
-                              var.str("");
-                              sname.str("");
 
+                              TF1* crystalball  = new TF1("crystalball","crystalball");
+                              crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
+                              tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
 
+                              delta_X_core.push_back(midW);
+                              W_Y_core.push_back(crystalball->GetParameter(1));
+                              rmsBasic_Y_core.push_back(crystalball->GetParameter(2));
                               // // ------- BEGIN OF MODS FOR AMPL CORRECTION
                               // CurrentCrystal->AddTvsQHistos(TvsQ);
-                              // CurrentCrystal->AddDeltaTHistos(tempHisto);
+                              CurrentCrystal->AddDeltaTHistos(tempHisto);
+                              var.str("");
+                              sname.str("");
                               // // ------- END OF MODS FOR AMPL CORRECTION
 
-
-
-
                             }
+
+                            //add beginning and end points
+                            delta_X.push_back(0.0);
+                            W_Y.push_back(W_Y_core[0]);
+                            rmsBasic_Y.push_back(rmsBasic_Y_core[0]);
+                            for(unsigned int iCore = 0; iCore < delta_X_core.size(); iCore++)
+                            {
+                              delta_X.push_back(delta_X_core[iCore]);
+                              W_Y.push_back(W_Y_core[iCore]);
+                              rmsBasic_Y.push_back(rmsBasic_Y_core[iCore]);
+                            }
+                            delta_X.push_back(1.0);
+                            W_Y.push_back(W_Y_core[delta_X_core.size()-1]);
+                            rmsBasic_Y.push_back(rmsBasic_Y_core[delta_X_core.size()-1]);
+
 
 
                             TGraph *graphDeltaW = new TGraph(delta_X.size(),&delta_X[0],&W_Y[0]);
@@ -2582,6 +2616,7 @@ int main (int argc, char** argv)
 
                             for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
                             {
+
                               //get the timingChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
                               int iNeighTimingChannel;
                               for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
@@ -2591,6 +2626,10 @@ int main (int argc, char** argv)
                                   iNeighTimingChannel = detector[iDet].timingChannel;
                                 }
                               }
+
+                              std::cout << "Analyzing neighboring channel "
+                                        << iNeig+1 << "/"
+                                        << neighbours.size() << "... " << std::endl;
 
                               DelayTimingChannelsNum.push_back(iNeighTimingChannel);
 
@@ -2620,19 +2659,24 @@ int main (int argc, char** argv)
                               var.str("");
                               sname.str("");
 
-                              std::vector<float> delay_X;
-                              std::vector<float> Wcoord_Y;
-                              std::vector<float> rms_Y;
+                              std::vector<float> delay_X,delay_X_core;
+                              std::vector<float> Wcoord_Y,Wcoord_Y_core;
+                              std::vector<float> rms_Y,rms_Y_core;
 
 
                               //get TGraphs from building N th1f, in the range defined by beginW and endW previously found
                               // the range beginw-endW is spilt in WrangeBinsForTiming parts,
-                              for(int iBin = -1; iBin < WrangeBinsForTiming+1; iBin++) // -1 and +1 are put to include the w limits
+                              for(int iBin = 0; iBin < WrangeBinsForTiming; iBin++) // -1 and +1 are put to include the w limits
                               {
-                                TH1F *tempHisto = new TH1F("tempHisto","tempHisto",DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                                // std::cout << "W Slice" << iBin << std::endl;
+                                var.str("");
+                                sname.str("");
+                                sname << "Delay ch_" << neighbours[iNeig] << "_t_" << iNeighTimingChannel << "_w_" << iBin;
+
+                                TH1F *tempHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
                                 var << "t" << iNeighTimingChannel
                                     << " - t" << detector[thisChannelID].timingChannel
-                                    << " >> tempHisto";
+                                    << " >> " << sname.str().c_str();
                                 std::stringstream sCut;
                                 sCut << FloodZ.str() << " > "
                                      << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
@@ -2648,16 +2692,64 @@ int main (int argc, char** argv)
                                      << ") < " << DeltaTimeMax;
                                 TCut wCut = sCut.str().c_str();
                                 tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                                TF1* crystalball  = new TF1("crystalball","crystalball");
+                                crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
+                                tempHisto->Fit(crystalball,"Q","",DeltaTimeMin,DeltaTimeMax);
 
-                                delay_X.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
-                                Wcoord_Y.push_back(tempHisto->GetMean());
-                                rms_Y.push_back(tempHisto->GetRMS());
+
+                                delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                                Wcoord_Y_core.push_back(crystalball->GetParameter(1));
+                                rms_Y_core.push_back(crystalball->GetParameter(2));
+                                CurrentCrystal->AddDelayTHistos(tempHisto);
+                                var.str("");
+                                sname.str("");
+
+
+
+                                // var.str("");
+                                // sname.str("");
+                                // sname << "DeltaT_" << iBin << " - Crystal " << CurrentCrystal->GetID();
+                                // TH1F *tempHisto = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                                // var << "t" << detector[thisChannelID].timingChannel
+                                //     << "- t" << taggingCrystalTimingChannel
+                                //     << "  >> "
+                                //     << sname.str() ;
+                                //
+                                //
+                                // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                                //
+                                // TF1* crystalball  = new TF1("crystalball","crystalball");
+                                // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
+                                // tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
+                                //
+                                // delta_X_core.push_back(midW);
+                                // W_Y_core.push_back(crystalball->GetParameter(1));
+                                // rmsBasic_Y_core.push_back(crystalball->GetParameter(2));
+                                // // // ------- BEGIN OF MODS FOR AMPL CORRECTION
+                                // // CurrentCrystal->AddTvsQHistos(TvsQ);
+                                // CurrentCrystal->AddDeltaTHistos(tempHisto);
+                                // var.str("");
+                                // sname.str("");
                                 // std::cout << iBin << "\t"
                                 //           << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming) << "\t"
                                 //           << beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming) << "\t"
                                 //           << beginW +  (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) << std::endl;
-                                var.str("");
+                                //
                               }
+
+                              //add beginning and end points
+                              delay_X.push_back(0.0);
+                              Wcoord_Y.push_back(Wcoord_Y_core[0]);
+                              rms_Y.push_back(rms_Y_core[0]);
+                              for(unsigned int iCore = 0; iCore < delay_X_core.size(); iCore++)
+                              {
+                                delay_X.push_back(delay_X_core[iCore]);
+                                Wcoord_Y.push_back(Wcoord_Y_core[iCore]);
+                                rms_Y.push_back(rms_Y_core[iCore]);
+                              }
+                              delay_X.push_back(1.0);
+                              Wcoord_Y.push_back(Wcoord_Y_core[delay_X_core.size()-1]);
+                              rms_Y.push_back(rms_Y_core[delay_X_core.size()-1]);
 
                               // Fit Slice method to derive the correction graphs above.
                               // in this case we use FitSlicesY to get directly the fit of a slice (possibly the sum of more slices in w) using a function that is gauss+exp
@@ -5510,18 +5602,43 @@ int main (int argc, char** argv)
                             C_spectrum->Write();
                             delete C_spectrum;
 
+                            //create TimeCorrection folder
                             TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("TimeCorrection");
                             corrDir->cd();
+
+                            // //create the w subfolders
+                            // for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
+                            // {
+                            //
+                            // }
+
+                            //write delta graphs to file
                             CurrentCrystal->GetGraphDeltaW()->Write();
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
                             {
                               CurrentCrystal->GetGraphDelayW()[iNeig].spectrum->Write();
                             }
+
+                            //write delta RMS graphs to file
                             CurrentCrystal->GetGraphDeltaRMS()->Write();
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetGraphDelayW().size() ; iNeig++)
                             {
                               CurrentCrystal->GetGraphDelayRMS()[iNeig].spectrum->Write();
                             }
+
+                            //save also the individual histograms
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTHistos().size() ; iNeig++)
+                            {
+                              CurrentCrystal->GetDeltaTHistos()[iNeig]->Write();
+                            }
+
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDelayHistos().size() ; iNeig++)
+                            {
+                              CurrentCrystal->GetDelayHistos()[iNeig]->Write();
+                            }
+
+
+
                             //write time Channels for neighbouring crystals
                             std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
                             gDirectory->WriteObject(&DelayTimingChannelsNum, "delayTimingChannels");
