@@ -248,6 +248,20 @@ InputFile::InputFile (ConfigFile& config)
   //sort the position vectors
   std::sort (xPositionsSorted.begin(),xPositionsSorted.end());
   std::sort (yPositionsSorted.begin(),yPositionsSorted.end());
+//   //DEBUG
+//   std::cout << "xPositionsSorted" <<std::endl;
+//   for(unsigned int iPosSort = 0; iPosSort < xPositionsSorted.size() ; iPosSort++)
+//   {
+//     std::cout << xPositionsSorted[iPosSort] << "\t";
+//   }
+//   std::cout << std::endl;
+//   std::cout << "yPositionsSorted" <<std::endl;
+//   for(unsigned int iPosSort = 0; iPosSort < yPositionsSorted.size() ; iPosSort++)
+//   {
+//     std::cout << yPositionsSorted[iPosSort] << "\t";
+//   }
+//   std::cout << std::endl;
+
 
 
 
@@ -301,19 +315,26 @@ InputFile::InputFile (ConfigFile& config)
     //find I and J
     int posI = -1;
     int posJ = -1;
+    std::cout << det.label << "\t" << det.digitizerChannel << "\t" << det.xPosition << "\t" << det.yPosition << std::endl;
     for(unsigned int pos = 0 ; pos < xPositionsSorted.size(); pos++)
     {
       if(det.xPosition == xPositionsSorted[pos])
       {
         posI = pos;
       }
+    }
+    for(unsigned int pos = 0 ; pos < yPositionsSorted.size(); pos++)
+    {
       if(det.yPosition == yPositionsSorted[pos])
       {
         posJ = pos;
       }
     }
+
     det.i = posI;
     det.j = posJ;
+//     //DEBUG
+//     std::cout << det.label << "\t" << det.digitizerChannel << "\t" << det.i << "\t" << det.j << std::endl;
     detector.push_back(det);
   }
 
@@ -1110,7 +1131,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
               sname << iModule << "." << jModule << "-" << iMppc << "." << jMppc << "-" << iCry << "." << jCry;
               crystal[cryI][cryJ]->SetExtendedID(sname.str().c_str());
               sname.str("");
-              crystal[cryI][cryJ]->SetID(cryI*ncrystalsx*nmppcx + cryJ);          // assign an ID  //----
+              crystal[cryI][cryJ]->SetID(cryI*ncrystalsy*nmppcy + cryJ);          // assign an ID  //----
 
               crystal[cryI][cryJ]->SetIsOnForModular(true);
               for(unsigned int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
