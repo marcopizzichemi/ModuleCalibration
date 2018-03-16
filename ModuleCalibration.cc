@@ -106,8 +106,8 @@
 // #include <omp.h>
 //test
 
-#define ENERGY_RESOLUTION 0.12
-#define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.25
+#define ENERGY_RESOLUTION 0.07
+#define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.12
 
 
 
@@ -209,8 +209,8 @@ int main (int argc, char** argv)
   int histo2DchannelBin         = config.read<int>("histo2DchannelBin",250);            // number of bins of the 2D flood histograms, for single channels
   int histo2DglobalBins         = config.read<int>("histo2DglobalBins",1000);            // number of bins of the 2D flood histograms, for entire module
   int histo3DglobalBins         = config.read<int>("histo3DglobalBins",100);            // number of bins of the 3D flood histograms, for entire module
-  int taggingPeakMin            = config.read<int>("taggingPeakMin",8000);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
-  int taggingPeakMax            = config.read<int>("taggingPeakMax",12000);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  int taggingPeakMin            = config.read<int>("taggingPeakMin",0);          // min range of tagging crystal photopeak, in ADC channels - to help TSpectrum
+  int taggingPeakMax            = config.read<int>("taggingPeakMax",0);         // max range of tagging crystal photopeak, in ADC channels - to help TSpectrum
   // int clusterLevelPrecision     = config.read<int>("clusterLevelPrecision",10);     // precision of the level search when separating the cluster of 3D points
   float taggingPosition         = config.read<float>("taggingPosition",0);            // position of the tagging bench in mm
   bool usingTaggingBench        = config.read<bool>("usingTaggingBench",0);           // true if the input is using tagging bench, false if not
@@ -295,6 +295,7 @@ int main (int argc, char** argv)
   float noiseSigmas =  config.read<float>("noiseSigmas",1.0); // how many sigmas of noise far from "0" to cut the dataset
   int taggingCrystalTimingChannel  = config.read<int>("taggingCrystalTimingChannel",16);     // input timing channel where the tagging crystal information is stored                - default = 16
   float marginWZgraph = config.read<float>("marginWZgraph",0.1); // distance from crystal limit for calculation of beginW and endW
+  float tagCrystalPeakResolutionFWHM = config.read<float>("tagCrystalPeakResolutionFWHM",0.07);
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -768,6 +769,14 @@ int main (int argc, char** argv)
 
       if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming)//trigger spectrum
       {
+        if(taggingPeakMax == 0)
+        {
+          taggingPeakMax = taggingSpectrumMax;
+        }
+        if(taggingPeakMin == 0)
+        {
+          taggingPeakMin = taggingSpectrumMin;
+        }
 
         std::stringstream tagStream;
         tagStream << "ch" << taggingCrystalChannel; // if using original files
@@ -787,8 +796,8 @@ int main (int argc, char** argv)
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingPeakMin,taggingPeakMax);
         //find peak in the tagging crystal
         TSpectrum *sTagCrystal;
-        sTagCrystal = new TSpectrum(1);
-        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"goff",0.5);
+        sTagCrystal = new TSpectrum(5);
+        Int_t TagCrystalPeaksN = sTagCrystal->Search(TaggingCrystalSpectrum,1,"",0.5);
         Double_t *TagCrystalPeaks  = sTagCrystal->GetPositionX();
         Double_t *TagCrystalPeaksY = sTagCrystal->GetPositionY();
         // float saturationPeakFraction
@@ -798,6 +807,8 @@ int main (int argc, char** argv)
         int peakID = 0;
         for (int peakCounter = 0 ; peakCounter < TagCrystalPeaksN ; peakCounter++ )
         {
+          // //DEBUG
+          // std::cout << peakCounter << "\t" << TagCrystalPeaks[peakCounter] << "\t" << TagCrystalPeaksY[peakCounter] << std::endl;
           // if( fabs(CrystalPeaks[peakCounter] - 0.5*(saturationPeak[iSaturation].peakMin+saturationPeak[iSaturation].peakMax)) < distPeak)//take closest peak to the center of search range selected by the user
           if(TagCrystalPeaksY[peakCounter] > maxPeak)
           {
@@ -806,10 +817,37 @@ int main (int argc, char** argv)
             peakID = peakCounter;
           }
         }
-        TF1 *gaussTag = new TF1("gaussTag", "gaus",TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
-        gaussTag->SetParameter(1,TagCrystalPeaks[peakID]);
-        gaussTag->SetParameter(0,TagCrystalPeaksY[peakID]);
-        TaggingCrystalSpectrum->Fit("gaussTag","QR","",TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
+        // //DEBUG
+        // std::cout << "chosen " << peakID << "\t" << TagCrystalPeaks[peakID] << "\t" << TagCrystalPeaksY[peakID] << std::endl;
+        TF1 *gaussTag = new TF1("gaussTag",
+                                "gaus",
+                                TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],
+                                TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
+
+
+        // TF1 *gaussTag = new TF1("gaussTag",
+        //                         "gaus",
+        //                         taggingPeakMin,
+        //                         taggingPeakMax);
+
+        gaussTag->SetParameter(0,TagCrystalPeaksY[peakID]); // heigth
+        gaussTag->SetParameter(1,TagCrystalPeaks[peakID]); //mean
+        gaussTag->SetParameter(2,(tagCrystalPeakResolutionFWHM*TagCrystalPeaks[peakID])/2.355); // sigma
+        //
+
+        // TaggingCrystalSpectrum->Fit("gaussTag",
+        //                             "Q",
+        //                             "",
+        //                             taggingPeakMin,
+        //                             taggingPeakMax);
+
+        TaggingCrystalSpectrum->Fit("gaussTag",
+                                    "Q",
+                                    "",
+                                    TagCrystalPeaks[peakID] - tagFitLowerFraction*TagCrystalPeaks[peakID],
+                                    TagCrystalPeaks[peakID] + tagFitUpperFraction*TagCrystalPeaks[peakID]);
+        // // DEBUG
+        // std::cout << "fit pars " << gaussTag->GetParameter(1) << "\t" << gaussTag->GetParameter(2) << std::endl;
         TaggingCrystalSpectrum->GetXaxis()->SetRangeUser(taggingSpectrumMin,taggingSpectrumMax);
         //define a TCut for this peak
         double tagPhotopeakMin = gaussTag->GetParameter(1) - TaggingPhotopeakSigmasMin*gaussTag->GetParameter(2);
@@ -1817,7 +1855,7 @@ int main (int argc, char** argv)
                         TSpectrum *s;
                         s = new TSpectrum(20);
                         // 		Input[i].SumSpectraCanvas->cd(j+1);
-                        Int_t CrystalPeaksN = s->Search(spectrumLY,2,"goff",0.5);
+                        Int_t CrystalPeaksN = s->Search(spectrumLY,1,"",0.5);
                         Double_t *CrystalPeaks = s->GetPositionX();
                         Double_t *CrystalPeaksY = s->GetPositionY();
                         //delete s;
@@ -1825,6 +1863,7 @@ int main (int argc, char** argv)
                         int peakID = 0;
                         for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
                         {
+
                           if(CrystalPeaks[peakCounter] > maxPeak)
                           {
                             maxPeak = CrystalPeaks[peakCounter];
@@ -1835,21 +1874,21 @@ int main (int argc, char** argv)
                         if (energyResolution == 0)
                         {
                           if (correctingSaturation)
-                          energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
+                            energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
                           else
-                          energyResolution = ENERGY_RESOLUTION;
+                            energyResolution = ENERGY_RESOLUTION;
                         }
                         float par0 = CrystalPeaksY[peakID];
                         float par1 = CrystalPeaks[peakID];
                         float par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
-                        float fitmin = par1-1.5*par2;
-                        float fitmax = par1+1.8*par2;
+                        float fitmin = par1-1.0*par2;
+                        float fitmax = par1+1.0*par2;
                         sname << "gaussLY - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                         TF1 *gauss = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",fitmin,fitmax);
                         gauss->SetParameter(0,par0);
                         gauss->SetParameter(1,par1);
                         gauss->SetParameter(2,par2);
-                        spectrumLY->Fit(sname.str().c_str(),"Q","",fitmin,fitmax);
+                        spectrumLY->Fit(gauss,"Q","",fitmin,fitmax);
                         //store the mean and sigma in the crystal
                         if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
                         CurrentCrystal->SetLY(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
@@ -1879,21 +1918,23 @@ int main (int argc, char** argv)
                         //delete s;
                         float maxPeak = 0.0;
                         int peakID = 0;
-                        for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ )
+                        for (int peakCounter = 0 ; peakCounter < CrystalPeaksN ; peakCounter++ ) //highest peak?
                         {
-                          if(CrystalPeaks[peakCounter] > maxPeak)
+                          // std::cout << peakCounter << "\t" << CrystalPeaks[peakCounter] << "\t" << CrystalPeaksY[peakCounter] << std::endl;
+                          if(CrystalPeaksY[peakCounter] > maxPeak)
                           {
-                            maxPeak = CrystalPeaks[peakCounter];
+                            maxPeak = CrystalPeaksY[peakCounter];
                             peakID = peakCounter;
                           }
                         }
+                        // std::cout << "chosen " << peakID << "\t" << CrystalPeaks[peakID] << "\t" << CrystalPeaksY[peakID] << std::endl;
                         //fit the spectra - TODO use the gaussian plus fermi?
                         if (energyResolution == 0)
                         {
                           if (correctingSaturation)
-                          energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
+                            energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
                           else
-                          energyResolution = ENERGY_RESOLUTION;
+                            energyResolution = ENERGY_RESOLUTION;
                         }
                         Float_t par0 = CrystalPeaksY[peakID];
                         Float_t par1 = CrystalPeaks[peakID];
@@ -1911,7 +1952,9 @@ int main (int argc, char** argv)
                         gauss->SetParameter(0,par0);
                         gauss->SetParameter(1,par1);
                         gauss->SetParameter(2,par2);
-                        spectrumCharge->Fit(sname.str().c_str(),"Q","",fitmin,fitmax);
+
+                        spectrumCharge->Fit(gauss,"Q","",fitmin,fitmax);
+                        // std::cout << "pars " << par0 << "\t" << par1 << "\t" << par2 << std::endl;
 
                         if(usingTaggingBench && TagEdgeCalculation)
                         {
@@ -1928,7 +1971,7 @@ int main (int argc, char** argv)
                         }
                         //store the mean and sigma in the crystal
                         if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
-                        CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
+                          CurrentCrystal->SetPhotopeak(gauss->GetParameter(1),std::abs(gauss->GetParameter(2)));
                         CurrentCrystal->SetFit(gauss);
                         // 		std::cout << "Photopeak Mean for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakPosition() << std::endl;
                         // 		std::cout << "Photopeak Sigma for crystal " << CurrentCrystal->GetID() << " = " << CurrentCrystal->GetPhotopeakSigma() << std::endl;
@@ -2127,11 +2170,11 @@ int main (int argc, char** argv)
 
                           spectrumChargeCorrected->GetXaxis()->SetRangeUser(peakSearchRangeMin,peakSearchRangeMax);
                           TSpectrum *s_corr;
-                          s_corr = new TSpectrum(20);
+                          s_corr = new TSpectrum(5);
                           // 		Input[i].SumSpectraCanvas->cd(j+1);
 
 
-                          Int_t CrystalPeaksN_corr = s_corr->Search(spectrumChargeCorrected,2,"goff",0.5);
+                          Int_t CrystalPeaksN_corr = s_corr->Search(spectrumChargeCorrected,1,"",0.5);
                           Double_t *CrystalPeaks_corr =  s_corr->GetPositionX();
                           Double_t *CrystalPeaksY_corr = s_corr->GetPositionY();
                           // 		  delete s_corr;
@@ -2142,7 +2185,7 @@ int main (int argc, char** argv)
                           for (int peakCounter = 0 ; peakCounter < CrystalPeaksN_corr ; peakCounter++ )
                           {
                             //DEBUG
-                            // std::cout << peakCounter << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
+                            std::cout << peakCounter << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
                             // if( (CrystalPeaks_corr[peakCounter] >= peakSearchRangeMin) && (CrystalPeaks_corr[peakCounter] <= peakSearchRangeMax) ) //look for the 511 peak only in the selected range (which could be all histogram if nothing is set)
                             // {
                             if(CrystalPeaksY_corr[peakCounter] > maxPeak_corr) // then look for tallest peak in the range
@@ -2153,8 +2196,8 @@ int main (int argc, char** argv)
                             // }
                           }
                           //DEBUG
-                          // std::cout << "FINAL - " << CurrentCrystal->GetID() << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
-                          spectrumChargeCorrected->GetXaxis()->SetRangeUser(1,histo1Dmax);
+                          std::cout << "chosen - " << peakID_corr << " " << CrystalPeaks_corr[peakID_corr] << " " << CrystalPeaksY_corr[peakID_corr] << std::endl;
+
                           //std::cout << CrystalPeaks[0] << std::endl;
                           //std::cout << CrystalPeaksY[0] << std::endl;
                           //fit the spectra - TODO use the gaussian plus fermi?
@@ -2162,15 +2205,15 @@ int main (int argc, char** argv)
                           if (energyResolution == 0)
                           {
                             if (correctingSaturation)
-                            energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
+                              energyResolution = ENERGY_RESOLUTION_SATURATION_CORRECTION;
                             else
-                            energyResolution = ENERGY_RESOLUTION;
+                              energyResolution = ENERGY_RESOLUTION;
                           }
                           float par0_corr = CrystalPeaksY_corr[peakID_corr];
                           float par1_corr = CrystalPeaks_corr[peakID_corr];
                           float par2_corr = (CrystalPeaks_corr[peakID_corr]*energyResolution)/2.35;
-                          float fitmin_corr = par1_corr-1.4*par2_corr;
-                          float fitmax_corr = par1_corr+1.5*par2_corr;
+                          float fitmin_corr = par1_corr-1.2*par2_corr;
+                          float fitmax_corr = par1_corr+1.2*par2_corr;
 
                           //DEBUG
                           // std::cout << fitmin_corr << " " << fitmax_corr << std::endl;
@@ -2180,10 +2223,13 @@ int main (int argc, char** argv)
                           gauss_corr->SetParameter(0,par0_corr);
                           gauss_corr->SetParameter(1,par1_corr);
                           gauss_corr->SetParameter(2,par2_corr);
-                          spectrumChargeCorrected->Fit(sname.str().c_str(),"Q","",fitmin_corr,fitmax_corr);
+                          spectrumChargeCorrected->Fit(gauss_corr,"Q","",fitmin_corr,fitmax_corr);
+
+                          spectrumChargeCorrected->GetXaxis()->SetRangeUser(1,histo1Dmax);
+
                           //store the mean and sigma in the crystal
                           if(gauss_corr->GetParameter(1) > 0) // otherwise the fit was very wrong..)
-                          CurrentCrystal->SetPhotopeakCorrected(gauss_corr->GetParameter(1),std::abs(gauss_corr->GetParameter(2)));
+                            CurrentCrystal->SetPhotopeakCorrected(gauss_corr->GetParameter(1),std::abs(gauss_corr->GetParameter(2)));
                           // 		  else
                           // 		    CurrentCrystal->SetPhotopeakCorrected(1,1);
                           CurrentCrystal->SetFitCorrected(gauss_corr);
