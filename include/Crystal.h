@@ -43,6 +43,8 @@ private:
   TH1F*                doiResWithCalibration;
   TH1F*                CTRcentralCorrection;
   TH1F*                DeltaTimeWRTTagging;
+  TH1F*                LScentralSpectrum;
+  // TH1F*                LSSpectrum;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
   //   TH1D*                FitSlicesSimDOIplot;  ///< FitSlicesY of the Real Z vs. W plot
@@ -107,6 +109,10 @@ private:
   std::vector<int>     channelsNumRelevantForW;
   std::vector<int>     DelayTimingChannelsNum;
   int                  timingChannel;
+  std::vector<int>     tChannelsForPolishedCorrection;
+  std::vector<double>  meanForPolishedCorrection;
+  std::vector<double>  fwhmForPolishedCorrection;
+
 
   struct multiSpectrum_t
   {
@@ -137,7 +143,9 @@ private:
 
 
   std::vector<multiSpectrum_t>   deltaTcryTneig;
+  std::vector<multiSpectrum_t>   LSSpectra;
   std::vector<multiScatter_t>   deltaT2vsW;
+  std::vector<multiScatter_t>   deltaT2vsCH;
   std::vector<multiDeltaSlice_t> slicesDelta;
   std::vector<multiGraphDelayW_t> graphDelayW;
   std::vector<multiGraphDelayRMS_t> graphDelayRMS;
@@ -184,6 +192,8 @@ public:
   TGraphDelaunay***    GetInterpolationGraph(){return interpolationGraph;};
   TH3I***              GetComptonCalibrationHistogram(){return ComptonCalibationHistogram;};
   int                  GetTimingChannel(){return timingChannel;};
+  TH1F*                GetLScentralSpectrum(){return LScentralSpectrum;};
+  // TH1F*                GetLSSpectrum(){return LSSpectrum;};
 
 
   TH3I*                GetOneHisto(){return oneHisto;};
@@ -246,15 +256,23 @@ public:
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
+
+  std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
+  std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
+  std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
+
+
   std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
   std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
   std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
+  std::vector<multiScatter_t>              GetDeltaT2vsCH(){return deltaT2vsCH;};
   std::vector<multiDeltaSlice_t>           GetDeltaSlice(){return slicesDelta;};
   std::vector<multiGraphDelayW_t>          GetGraphDelayW(){return graphDelayW;};
   std::vector<multiGraphDelayRMS_t>        GetGraphDelayRMS(){return graphDelayRMS;};
   std::vector<TH2F*>                       GetTvsQHistos(){return TvsQHistos;};
   std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
   std::vector<TH1F*>                       GetDelayHistos(){return DelayHistos;};
+  std::vector<multiSpectrum_t>             GetLSSpectra(){return LSSpectra;};
 
   TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
 
@@ -340,6 +358,10 @@ public:
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
   void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
+  void                 SetTChannelsForPolishedCorrection(std::vector<int> aVect){tChannelsForPolishedCorrection = aVect;};
+  void                 SetMeanForPolishedCorrection(std::vector<double> aVect){meanForPolishedCorrection = aVect;};
+  void                 SetFwhmForPolishedCorrection(std::vector<double> aVect){fwhmForPolishedCorrection = aVect;};
+  void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
@@ -356,6 +378,15 @@ public:
     tempSpectrum.spectrum = aHisto;
     deltaT2vsW.push_back(tempSpectrum);
   };
+
+  void                 AddDeltaT2vsCH(TH2F* aHisto,int aPos)
+  {
+    multiScatter_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    deltaT2vsCH.push_back(tempSpectrum);
+  };
+
   // void                 AddSlicesDelta(TH1D* aHisto,TF1* aFit,int aPos)
   void                 AddSlicesDelta(TH1D* aHisto,int aPos)
   {
@@ -381,6 +412,14 @@ public:
     tempDelta.spectrum       = aGraph;
     // tempDelta.fit            = aFit;
     graphDelayRMS.push_back(tempDelta);
+  }
+
+  void AddLSSpectrum(TH1F* aHisto,int aPos)
+  {
+    multiSpectrum_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    LSSpectra.push_back(tempSpectrum);
   }
 
 

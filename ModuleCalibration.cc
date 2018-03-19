@@ -110,6 +110,58 @@
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.12
 
 
+void extractFromCrystalBall(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double* res)
+{
+  //first, dummy gaussian fit
+  TCanvas *cTemp  = new TCanvas("temp","temp");
+  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+  histo->Fit(gaussDummy,"QN");
+
+  double f1min = histo->GetXaxis()->GetXmin();
+  double f1max = histo->GetXaxis()->GetXmax();
+  // std::cout << f1min << " " << f1max << std::endl;
+  TF1* f1  = new TF1("f1","crystalball");
+  f1->SetLineColor(kBlack);
+  f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
+  double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+  double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  if(fitMin < f1min)
+  {
+    fitMin = f1min;
+  }
+  if(fitMax > f1max)
+  {
+    fitMax = f1max;
+  }
+  histo->Fit(f1,"Q","",fitMin,fitMax);
+  double min,max,min10,max10;
+  // int divs = 3000;
+  double step = (f1max-f1min)/divs;
+  // is [0] the max of the function???
+  for(int i = 0 ; i < divs ; i++)
+  {
+    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/2.0) )
+    {
+      min = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/2.0) )
+    {
+      max = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/10.0) )
+    {
+      min10 = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/10.0) )
+    {
+      max10 = f1min + (i+0.5)*step;
+    }
+  }
+  res[0] = f1->GetParameter(1);  // res[0] is mean
+  res[1] = max-min;              // res[1] is FWHM
+  delete cTemp;
+}
+
 
 // Double_t thetaFunction(Double_t *x, Double_t *par);
 
@@ -949,7 +1001,38 @@ int main (int argc, char** argv)
             int channel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
             std::cout << "Generating spectra for MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " ..." << std::endl;
 
-            // this channel ID, i.e. the index of the array of struct detector[] that corresponds to this MPPC
+
+            //------------------------------------------//
+            // CREATION OF STRINGS FOR PLOTTING         //
+            //------------------------------------------//
+            // in order to compute all th plots on the fly, it is necessary to put together the proper strings to pass to the draw commands
+            // this has to include also the saturation correction, the pedestal position and the noise
+            // furthermore, we need to prepare some collection of elements for the channels that are relevant for computation of energy, u-v coordinates and w coordinates
+            // it all starts from the detector array, produced and filled by the InputFile.cc part of the program. Declaration is in ./include/Detector.h
+            // this vector of struct holds an entry for each mppc. each entry has data on the mppc. In particular, the digitizer (aka charge) channel number and
+            // the timing channel number, a vector with the digitizer channel numbers of all the neighbour channels, and the info on saturation, pedestal and noise
+            // The steps are the following (more explainations written just before each step below):
+
+            // 1. Get the index of this MPPC in the detector array                                                                 ---> thisChannelID
+            // 2. Get the indexes of the neighbour MPPCs in the detector array                                                     ---> neighbourChID[]
+            // 3. Translate indexes into strings, taking also into account saturation (if requested), pedestals and noise          ---> thisChannel
+            //                                                                                                                     ---> neighbourChannels
+            //                                                                                                                     ---> allChannels
+            // 4. Generate the TriggerChannel condition                                                                            ---> TriggerChannel
+            // 5. Get the relevant channels for this MPPC                                                                          ---> relevantForUV
+            //                                                                                                                     ---> relevantForW
+            //                                                                                                                     ---> relevantForEnRes
+            // 6. Compose the FloodX and FloodY strings                                                                            ---> FloodX
+            //                                                                                                                     ---> FloodY
+            // 7. Compose the FloodZ string                                                                                        ---> FloodZ
+            // 8. Compose an additional trigger condition, cutting the noise                                                       ---> relevantForNoiseCut
+            //                                                                                                                     ---> noiseCut
+            //                                                                                                                     ---> summed to CutTrigger
+
+
+            // 1. Get the index of this MPPC in the detector array
+            //    Simply, run on all the entries of detector array and get the one where detector[i].digitizerChannel == mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel()
+            //    ---> thisChannelID
             int thisChannelID;
             // get mppc channel ID in detector[]
             for(unsigned int iDet = 0; iDet < detector.size(); iDet++) // run on all detector[] entries
@@ -965,12 +1048,11 @@ int main (int argc, char** argv)
             //           << "thisChannelID                              = " << thisChannelID << std::endl;
             // // end of debug
 
-            // do the same for neighbour channels IDs
+
+            // 2. Get the indexes of the neighbour MPPCs in the detector array
+            //    Same logic as in 1., run on all entries on detector[] and store in vector neighbourChID
+            //    ---> neighbourChID[]
             std::vector<int> neighbourChID;
-            // get mppc channel ID in detector struct
-            // get the struct for this channel --> detector[thisChannelID]
-            // this contains a std::vector with the digitizerChannels of the MPPCs that are neighbours to this one
-            // loop on this std::vector
             for(unsigned int iNeigh = 0; iNeigh < detector[thisChannelID].neighbourChannels.size(); iNeigh++)
             {
               // for each entry, look for the index in detector[] that corresponds to the entry value
@@ -993,8 +1075,17 @@ int main (int argc, char** argv)
             // std::cout << std::endl;
             // // end of DEBUG
 
-            // and we already have the IDs of all channels, in allModuleChID vector
 
+            // 3. Translate indexes into strings, taking also into account saturation (if requested), pedestals and noise
+            //    Two info need to be stored together:
+            //           a) the channel ID (i.e. the digitizer channel)
+            //           b) the complete string that will be passed to the Draw command
+            //    So it is necessary to create a multi_channel_t struct, with these two entries (see definition above)
+            //    Then, 3 arrays of this multi_channel_t elements are created:
+            //    ---> thisChannel        = holds the string and digitizerChannel for this MPPC, so it's not a vector but one struct
+            //    ---> neighbourChannels  = vector holding the string and digitizerChannel for each of the neighbour channels to this MPPC
+            //    ---> allChannels        = vector holding the string and digitizerChannel for all channels in this MPPC array
+            //    The 3 arrays will be used in step 4. and 5.
             multi_channel_t thisChannel;
             std::vector<multi_channel_t> neighbourChannels;
             std::vector<multi_channel_t> allChannels;
@@ -1115,10 +1206,12 @@ int main (int argc, char** argv)
               // std::cout << std::endl;
             }
 
-            // define the TriggerChannel condition. As stated before, this is now done on the original data
-            // the idea is:
-            // TriggerChannel     = "max(ch0,max(ch1,...max(chN))) == chI", for I == mppc channel and 0...N are all the channels in this module
-            // here there is no distinction between all/neighbour channles, of course
+
+
+
+            // 4. Generate the TriggerChannel condition
+            //    the idea is:        TriggerChannel     = "max(ch0,max(ch1,...max(chN))) == chI", for I == mppc channel and 0...N are all the channels in this module
+            //    in this case the MPPC channels involved are all the channels, so the allChannels array
             std::stringstream TriggerChannel;
             int parenthesisCounter = 0;
             for(unsigned int iDet = 0; iDet < allChannels.size()-1; iDet++)
@@ -1263,27 +1356,25 @@ int main (int argc, char** argv)
             // mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetRawChargeSpectrum(spectrumRawCharge);
 
 
+            // 5. Get the relevant channels for this MPPC
+            //    Relevant channels are split in 3
+            //    5.1. relevant for u-v coordinates
+            //    5.2. relevant for w coordinate
+            //    5.3. relevant for energy resolution (or better for sum spectrum)
+            //    The 3 conditions are controlled by the corresponding config file keys
+            //    5.1. usingAllChannels  -> 0 = just neighbour channels
+            //                         -> 1 = all channels in the module
+            //    5.2. wAllChannels      -> 0 = just neighbour channels
+            //                         -> 1 = all channels in the module
+            //    5.3. usingAllChannelsForEnergySpectra  -> 0 = just neighbour channels
+            //                                         -> 1 = all channels in the module
+            //    Remember that the string for the channels, already including the saturation correction if any, have been created in step 3.
+            //    multi_channel_t thisChannel;
+            //    std::vector<multi_channel_t> neighbourChannels;
+            //    std::vector<multi_channel_t> allChannels;
 
 
-
-            // get the relevant channels for this MPPC
-            // relevant channels are split in 3
-            // 1. relevant for u-v coordinates
-            // 2. relevant for w coordinate
-            // 3. relevant for energy resolution (or better for sum spectrum)
-            // the 3 conditions are controlled by the corresponding config file keys
-            // 1. usingAllChannels  -> 0 = just neighbour channels
-            //                      -> 1 = all channels in the module
-            // 2. wAllChannels      -> 0 = just neighbour channels
-            //                      -> 1 = all channels in the module
-            // 3. usingAllChannelsForEnergySpectra  -> 0 = just neighbour channels
-            //                                      -> 1 = all channels in the module
-            // remember that the string for the channels, already including the saturation correction if any, are in
-            // multi_channel_t thisChannel;
-            // std::vector<multi_channel_t> neighbourChannels;
-            // std::vector<multi_channel_t> allChannels;
-
-            // 1. relevant for u-v coordinates
+            // 5.1. relevant for u-v coordinates
             std::vector<multi_channel_t> relevantForUV;
             if(usingAllChannels) // all channels used for u-v
             {
@@ -1301,7 +1392,8 @@ int main (int argc, char** argv)
               }
             }
 
-            // 2. relevant for w coordinate
+
+            // 5.2. relevant for w coordinate
             std::vector<multi_channel_t> relevantForW;
             if(wAllChannels)// all channels used for w
             {
@@ -1319,7 +1411,8 @@ int main (int argc, char** argv)
               }
             }
 
-            // 3. relevant for energy resolution
+
+            // 5.3. relevant for energy resolution
             std::vector<multi_channel_t> relevantForEnRes;
             if(usingAllChannelsForEnergySpectra) // all channels used for energy spectra
             {
@@ -1338,15 +1431,12 @@ int main (int argc, char** argv)
             }
 
 
-            // compose the FloodX and FloodY strings
+            // 6. Compose the FloodX and FloodY strings
+            //    Standard Anger logic of charges (corrected by saturation and pedestal) with mppc position, for the channels defined as relevant for u-v
             std::stringstream FloodX;
             std::stringstream FloodY;
-
-
             FloodX << "(" ;
             FloodY << "(" ;
-
-
             for(unsigned int iRel = 0 ; iRel < relevantForUV.size() - 1; iRel++)
             {
               FloodX << "("
@@ -1364,8 +1454,6 @@ int main (int argc, char** argv)
                    << relevantForUV[relevantForUV.size() - 1].string << "*(" << detector[relevantForUV[relevantForUV.size() - 1].detectorIndex].yPosition
                    << "))";
             FloodY << ") / (" ;
-
-
             for(unsigned int iRel = 0 ; iRel < relevantForUV.size() - 1; iRel++)
             {
               FloodX << "("
@@ -1384,7 +1472,9 @@ int main (int argc, char** argv)
                    << ")";
             FloodY << ")";
 
-            // compose the FloodZ string
+
+            // 7. Compose the FloodZ string
+            //    Ratio of charge of this mppc versus charges of the relevant mppcs for w computation. all charges are corrected by saturation and pedestal
             std::stringstream FloodZ;
             FloodZ << "( "<< thisChannel.string << ") / (";
             for(unsigned int iRel = 0 ; iRel < relevantForW.size() - 1; iRel++)
@@ -1398,19 +1488,11 @@ int main (int argc, char** argv)
                    << ")";
             FloodZ << ")";
 
-            // //DEBUG
-            // std::cout << FloodX.str() << std::endl;
-            // std::cout << std::endl;
-            // std::cout << FloodY.str() << std::endl;
-            // std::cout << std::endl;
-            // std::cout << FloodZ.str() << std::endl;
 
-
-
-            // introduce another trigger condition, that will be added to CutTrigger
-            // the idea is to ignore events when the charge recorded by one of the detectors involved is == 0
-            // ((ch12 > 0)+ (ch11>0) + (ch0>0)+ (ch4>0) + (ch7>0) +(ch10>0) +(ch13>0) +(ch14>0)+ (ch15>0)) > 8
-            // the channels involved are defined as the biggest collection between relevantForUV and relevantForW
+            // 8. Compose an additional trigger condition, cutting the noise
+            //    the idea is to ignore events when the charge recorded by one of the detectors involved is == 0
+            //    ((ch12 > 0)+ (ch11>0) + (ch0>0)+ (ch4>0) + (ch7>0) +(ch10>0) +(ch13>0) +(ch14>0)+ (ch15>0)) > 8
+            //    the channels involved are defined as the biggest collection between relevantForUV and relevantForW
             std::vector<multi_channel_t> relevantForNoiseCut;
             if(relevantForUV.size() > relevantForW.size())
             {
@@ -2014,6 +2096,77 @@ int main (int argc, char** argv)
                       //-----------------------------------------------------------------------
                       CurrentCrystal->SetSpectrum(spectrumCharge);
                       //
+
+                      // Light sharing plot
+                      // draw a NxN canvas with light collected in all channles involved for energy calculation, when trigger channel is in photopeak
+                      sname << "Light collected on MPPC "
+                            << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()
+                            << " for photoelectric event in crystal "
+                            << CurrentCrystal->GetID();
+                      var << thisChannel.string.c_str() << " >> " << sname.str();
+                      TH1F* LScentralSpectrum = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                      tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                      LScentralSpectrum->GetXaxis()->SetTitle("ADC Channels");
+                      LScentralSpectrum->GetYaxis()->SetTitle("N");
+                      CurrentCrystal->SetLScentralSpectrum(LScentralSpectrum);
+                      sname.str("");
+                      var.str("");
+
+                      // now run on the neighbour channels that are involved in the energy res calculation, and plot
+                      // the charge deposited when central mmpc is in photopeak
+                      for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
+                      {
+                        //find the ID of this neighbour in the detector index
+                        int iNeighDet;
+                        for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+                        {
+                          if(detector[iDet].digitizerChannel == neighbours[iNeig])
+                          {
+                            iNeighDet = iDet;
+                          }
+                        }
+                        int  neighID = 0;
+                        for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
+                        {
+                          if( detector[iNeighDet].digitizerChannel == neighbourChannels[iNeigh].detectorIndex)
+                          {
+                            neighID = iNeigh;
+                          }
+                        }
+
+                        // Light sharing plot
+                        sname << "Light collected on MPPC "
+                              << detector[iNeighDet].label
+                              << " for photoelectric event in crystal "
+                              << CurrentCrystal->GetID();
+                        var << neighbourChannels[neighID].string.c_str() << " >> " << sname.str();
+                        TH1F* LSSpectrum = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                        tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                        LSSpectrum->GetXaxis()->SetTitle("ADC Channels");
+                        LSSpectrum->GetYaxis()->SetTitle("N");
+                        sname.str("");
+                        var.str("");
+
+                        int plotPos = -1;
+                        for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                        {
+                          for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                          {
+                            if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                            {
+                              plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                            }
+                          }
+                        }
+                        if(plotPos != -1)
+                        {
+                          CurrentCrystal->AddLSSpectrum(LSSpectrum,plotPos);
+                        }
+                      }
+
+
+
+
                       //w histogram with cut on crystal events, xyz and trigger channel and cut on photopeak
                       //if it's a background run, it won't cut on photopeak (since there will be none and the string will be empty)
                       sname << "W histogram - Crystal " << CurrentCrystal->GetID();
@@ -2033,29 +2186,14 @@ int main (int argc, char** argv)
                       double wmin = spectrumHistoW->GetBinCenter(bin3);
                       double wmax = spectrumHistoW->GetBinCenter(bin4);
                       //DEBUG
-                      // 		    std::cout << bin3 << " " << bin4 << " " << wmin << " " << wmax << std::endl;
                       meanW20 = (wmax + wmin) / 2.0;
-                      // 		    double WhalfWidth  = (wmax-wmin)/2.0;
                       wbin3 = wmin + (wmax-wmin)*energyCorrectionMin;
                       wbin4 = wmin + (wmax-wmin)*energyCorrectionMax;
-                      // 		    wbin3 = meanW20 - energyCorrectionMin*WhalfWidth;
-                      // 		    wbin4 = meanW20 + 0.25*WhalfWidth;
                       std::stringstream ssCut20w;
                       ssCut20w << "(" << FloodZ.str() << ") > " << spectrumHistoW->GetBinCenter(bin3) << " && " << "(" << FloodZ.str() << ") < "<<  spectrumHistoW->GetBinCenter(bin4);
                       TCut w20percCut = ssCut20w.str().c_str();  //cut for w to get only the "relevant" part - TODO find a reasonable way to define this
-
-
-                      // 		//DEBUG
-                      // 		std::cout << bin3 << " " << bin4 << " " << spectrumHistoW->GetBinCenter(bin3) << " " << spectrumHistoW->GetBinCenter(bin4) << " " << meanW20 << std::endl;
-
                       CurrentCrystal->SetW20percCut(w20percCut);
-                      // 		double width20perc =spectrumHistoW->GetBinCenter(bin4) - spectrumHistoW->GetBinCenter(bin3);
-                      // 		double fwhm = spectrumHistoW->GetBinCenter(bin2) - spectrumHistoW->GetBinCenter(bin1);
-                      // 		double rms = spectrumHistoW->GetRMS();
                       CurrentCrystal->SetHistoW(spectrumHistoW);
-                      // 		CurrentCrystal->SetHistoWfwhm(fwhm);
-                      // 		CurrentCrystal->SetHistoWrms(rms);
-                      // 		CurrentCrystal->SetHistoWwidth20perc(width20perc);
                       var.str("");
                       sname.str("");
                       //
@@ -2348,12 +2486,7 @@ int main (int argc, char** argv)
                       var.str("");
                       sname.str("");
 
-
                       CurrentCrystal->SetHistoWCorrected(spectrumHistoWCorrected);
-
-
-
-
 
                       TGraph *calibrationGraphChosen = NULL;
                       float centralW = -1;
@@ -2473,6 +2606,14 @@ int main (int argc, char** argv)
                       {
                         if( (digitizerType == 1) || (digitizerType == 2)) //only for digitizers with timing capabilities
                         {
+                          //prepare three std::vector, timingChannel, meanDelta and sigmaTiming
+                          // they will hold the t channel number, mean difference in t and sigma from crystalball fits
+
+                          std::vector<int> tChannelsForPolishedCorrection;
+                          std::vector<double> meanForPolishedCorrection;
+                          std::vector<double> fwhmForPolishedCorrection;
+
+
                           // basic CTR with respect to an external tagging crystal, cutting on photopeak of this crystal
                           // var.str("");
                           // sname.str("");
@@ -2490,22 +2631,89 @@ int main (int argc, char** argv)
                           tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
                           aSpectrum->GetXaxis()->SetTitle("Time [S]");
                           aSpectrum->GetYaxis()->SetTitle("N");
-                          CurrentCrystal->SetDeltaTimeWRTTagging(aSpectrum);
+
                           var.str("");
                           sname.str("");
 
-                          // scatter plot of the above delta and w (which correlates to doi)
+                          //do a preliminary fit with gauss
+                          // TCanvas *cTemp  = new TCanvas("temp","temp");
+                          // TF1 *gaussDummyBasic = new TF1("gaussDummy","gaus");
+                          // aSpectrum->Fit(gaussDummyBasic,"QN");
+                          //
+
+                          //
+                          // double f1min = aSpectrum->GetXaxis()->GetXmin();
+                          // double f1max = aSpectrum->GetXaxis()->GetXmax();
+                          // // std::cout << f1min << " " << f1max << std::endl;
+                          // TF1* f1  = new TF1("f1","crystalball");
+                          // f1->SetLineColor(kRed);
+                          // f1->SetParameters(gaussDummyBasic->GetParameter(0),gaussDummyBasic->GetParameter(1),gaussDummyBasic->GetParameter(2),1,3);
+                          // double fitMin = gaussDummyBasic->GetParameter(1)
+                          //                 - fitPercMin*(gaussDummyBasic->GetParameter(2));
+                          // double fitMax = gaussDummyBasic->GetParameter(1)
+                          //                 + fitPercMax*(gaussDummyBasic->GetParameter(2));
+                          // if(fitMin < f1min)
+                          // {
+                          //   fitMin = f1min;
+                          // }
+                          // if(fitMax > f1max)
+                          // {
+                          //   fitMax = f1max;
+                          // }
+                          // aSpectrum->Fit(f1,"Q","",fitMin,fitMax);
+                          double fitPercMin = 5.0;
+                          double fitPercMax = 6.0;
+                          int divisions = 10000;
+                          double res[2];
+                          extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
+                          meanForPolishedCorrection.push_back(res[0]);
+                          fwhmForPolishedCorrection.push_back(res[1]);
+
+                          CurrentCrystal->SetDeltaTimeWRTTagging(aSpectrum);
+
+                          // scatter plot of the above delta and w (which correlates to doi in depolished matrix)
                           sname << "Delta T vs. W - Crystal " << CurrentCrystal->GetID();
                           var << "t" << detector[thisChannelID].timingChannel
                               << "- t" << taggingCrystalTimingChannel
                               << " : "
                               << FloodZ.str()
                               << " >> " << sname.str() ;
-                          TH2F* spectrumCrystalDeltaTvsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,CTRbins,CTRmin,CTRmax);
+                          // limits of the 2d histo are derived from W histo and ctr histo
+                          TH2F* spectrumCrystalDeltaTvsW = new TH2F(sname.str().c_str(),sname.str().c_str(),
+                                                                    wHistogramsBins,
+                                                                    spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),
+                                                                    spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                                                                    CTRbins,
+                                                                    aSpectrum->GetMean() - 3.0*aSpectrum->GetRMS(),
+                                                                    aSpectrum->GetMean() + 3.0*aSpectrum->GetRMS());
                           tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
                           spectrumCrystalDeltaTvsW->GetXaxis()->SetTitle("W");
                           spectrumCrystalDeltaTvsW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
                           CurrentCrystal->SetDeltaTvsW(spectrumCrystalDeltaTvsW);
+                          var.str("");
+                          sname.str("");
+
+                          //delta t vs "amplitude" (i.e. total charge deposited) - so far it makes sense only for polished crystals
+                          sname << "Delta T vs. ch" << detector[thisChannelID].digitizerChannel << " - Crystal " << CurrentCrystal->GetID();
+                          var << "t" << detector[thisChannelID].timingChannel
+                              << "- t" << taggingCrystalTimingChannel
+                              << " : "
+                              << thisChannel.string
+                              << " >> " << sname.str() ;
+                          TH2F* spectrumCrystalDeltaTvsCH = new TH2F(sname.str().c_str(),sname.str().c_str(),
+                                                                     histo1Dbins,
+                                                                     LScentralSpectrum->GetMean() - 3.0*LScentralSpectrum->GetRMS(),
+                                                                     LScentralSpectrum->GetMean() + 3.0*LScentralSpectrum->GetRMS(),
+                                                                     CTRbins,
+                                                                     aSpectrum->GetMean() - 3.0*aSpectrum->GetRMS(),
+                                                                     aSpectrum->GetMean() + 3.0*aSpectrum->GetRMS());
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                          sname.str("");
+                          sname << "ch" << detector[thisChannelID].digitizerChannel << " [ADC channels]";
+                          spectrumCrystalDeltaTvsCH->GetXaxis()->SetTitle(sname.str().c_str());
+                          spectrumCrystalDeltaTvsCH->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                          CurrentCrystal->SetDeltaTvsCH(spectrumCrystalDeltaTvsCH);
                           var.str("");
                           sname.str("");
 
@@ -2526,19 +2734,14 @@ int main (int argc, char** argv)
                           if(timingCorrectionForPolished)
                           {
 
+
+
                             // std::vector<int> DelayTimingChannelsNum;
 
                             //get a TGraph
                             std::vector<float> delta_X,delta_X_core;
                             std::vector<float> W_Y,W_Y_core;
                             std::vector<float> rmsBasic_Y,rmsBasic_Y_core;
-
-                            //get a TGraph from FitSlicesY
-                            // for(int iBin = 0; iBin < spectrumCrystalDeltaTvsW_1->GetNbinsX() ; iBin++)
-                            // {
-                            //   delta_X.push_back(spectrumCrystalDeltaTvsW_1->GetBinCenter(iBin+1));
-                            //   W_Y.push_back(spectrumCrystalDeltaTvsW_1->GetBinContent(iBin+1));
-                            // }
 
                             std::cout << "Performing timing correction analysis"  << std::endl;
                             std::cout << "Analyzing interaction crystal..."  << std::endl;
@@ -2553,9 +2756,7 @@ int main (int argc, char** argv)
                               // std::cout << beginW << "\t" << endW << std::endl;
                               for(int iBin = 0; iBin < WrangeBinsForTiming; iBin++) // -1 and +1 are put to include the w limits
                               {
-                                // first do an "amplitude" vs. ctr histo, for this w range, and use it to correct
-                                // the CTRs for of this slice before generating the spectrum from which to extract the
-                                // delta_X and rmsBasic_Y
+                                //slicing of central crystal ctr vs w
 
                                 // define the Limits and mid point for this w slice
                                 Float_t wLowerLimit = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
@@ -2590,13 +2791,22 @@ int main (int argc, char** argv)
 
                                 tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
 
-                                TF1* crystalball  = new TF1("crystalball","crystalball");
-                                crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
-                                tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
+                                double fitPercMin = 5.0;
+                                double fitPercMax = 6.0;
+                                int divisions = 10000;
+                                double res[2];
+                                extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                // tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
+                                // meanForPolishedCorrection.push_back(res[0]);
+                                // fwhmForPolishedCorrection.push_back(res[1]);
+
+                                // TF1* crystalball  = new TF1("crystalball","crystalball");
+                                // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
+                                // tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
 
                                 delta_X_core.push_back(midW);
-                                W_Y_core.push_back(crystalball->GetParameter(1));
-                                rmsBasic_Y_core.push_back(crystalball->GetParameter(2));
+                                W_Y_core.push_back(res[0]);
+                                rmsBasic_Y_core.push_back(res[1]);
                                 // // ------- BEGIN OF MODS FOR AMPL CORRECTION
                                 // CurrentCrystal->AddTvsQHistos(TvsQ);
                                 CurrentCrystal->AddDeltaTHistos(tempHisto);
@@ -2653,13 +2863,15 @@ int main (int argc, char** argv)
                             std::vector<int> DelayTimingChannelsNum;
                             for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
                             {
-                              //get the timingChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
+                              //get the timingChannel and digitizerChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
                               int iNeighTimingChannel;
+                              int iNeighDigitizerChannel;
                               for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
                               {
                                 if(detector[iDet].digitizerChannel == neighbours[iNeig])
                                 {
                                   iNeighTimingChannel = detector[iDet].timingChannel;
+                                  iNeighDigitizerChannel = detector[iDet].digitizerChannel;
                                 }
                               }
 
@@ -2679,6 +2891,49 @@ int main (int argc, char** argv)
                               tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
                               spectrumDeltaTcryTneig->GetXaxis()->SetTitle("Time [S]");
                               spectrumDeltaTcryTneig->GetYaxis()->SetTitle("N");
+
+                              //do a preliminary fit with gauss
+                              // TCanvas *cTemp  = new TCanvas("temp","temp");
+                              // TF1 *gaussDummyBasicNeigh = new TF1("gaussDummyBasicNeigh","gaus");
+                              // spectrumDeltaTcryTneig->Fit(gaussDummyBasicNeigh,"QN");
+                              //
+                              // double fitPercMin = 5.0;
+                              // double fitPercMax = 6.0;
+                              //
+                              // double f1min = spectrumDeltaTcryTneig->GetXaxis()->GetXmin();
+                              // double f1max = spectrumDeltaTcryTneig->GetXaxis()->GetXmax();
+                              // // std::cout << f1min << " " << f1max << std::endl;
+                              // TF1* f1  = new TF1("f1","crystalball");
+                              // f1->SetLineColor(kRed);
+                              // f1->SetParameters(gaussDummyBasicNeigh->GetParameter(0),gaussDummyBasicNeigh->GetParameter(1),gaussDummyBasicNeigh->GetParameter(2),1,3);
+                              // double fitMin = gaussDummyBasicNeigh->GetParameter(1)
+                              //                 - fitPercMin*(gaussDummyBasicNeigh->GetParameter(2));
+                              // double fitMax = gaussDummyBasicNeigh->GetParameter(1)
+                              //                 + fitPercMax*(gaussDummyBasicNeigh->GetParameter(2));
+                              // if(fitMin < f1min)
+                              // {
+                              //   fitMin = f1min;
+                              // }
+                              // if(fitMax > f1max)
+                              // {
+                              //   fitMax = f1max;
+                              // }
+
+                              double fitPercMin = 5.0;
+                              double fitPercMax = 6.0;
+                              int divisions = 10000;
+                              double res[2];
+                              extractFromCrystalBall(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
+                              tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                              meanForPolishedCorrection.push_back(res[0]);
+                              fwhmForPolishedCorrection.push_back(res[1]);
+
+
+
+                              // spectrumDeltaTcryTneig->Fit(f1,"Q","",fitMin,fitMax);
+
+
+
                               var.str("");
                               sname.str("");
 
@@ -2686,12 +2941,79 @@ int main (int argc, char** argv)
                               var << "t" << iNeighTimingChannel
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << ":" << FloodZ.str() <<" >> " << sname.str() ;
-                              TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
+                              TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),
+                                                                         sname.str().c_str(),
+                                                                         wHistogramsBins,
+                                                                         spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                                                                         DeltaTimeBins,
+                                                                         spectrumDeltaTcryTneig->GetMean() - 3.0*spectrumDeltaTcryTneig->GetRMS(),spectrumDeltaTcryTneig->GetMean() + 3.0*spectrumDeltaTcryTneig->GetRMS());
                               tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
                               spectrumCrystalDeltaT2vsW->GetXaxis()->SetTitle("W");
                               sname.str("");
                               sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
                               spectrumCrystalDeltaT2vsW->GetYaxis()->SetTitle(sname.str().c_str());
+                              var.str("");
+                              sname.str("");
+
+
+                              int  neighID = 0;
+                              for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
+                              {
+                                if( detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel == iNeighDigitizerChannel)
+                                {
+                                  neighID = iNeigh;
+                                }
+                              }
+
+                              //---------------------------------------------//
+                              // Save plots                                  //
+                              //---------------------------------------------//
+                              int plotPos = -1;
+                              for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                              {
+                                for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                                {
+                                  if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                                  {
+                                    plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                                  }
+                                }
+                              }
+
+                              // histogram of delta t versus "amplitude" (total charge deposited) - so far it makes sense only for polished crystals
+                              sname << "T_Channel_" << neighbours[iNeig] << " - T_Crystal_" << CurrentCrystal->GetID() << " vs. ch" << iNeighDigitizerChannel;
+                              var << "t" << iNeighTimingChannel
+                                  << " - t" << detector[thisChannelID].timingChannel
+                                  << ":"    << neighbourChannels[neighID].string <<" >> " << sname.str() ;
+                              //get the limits from the corresponding light sharing plot
+                              double lsMin;
+                              double lsMax;
+                              for(unsigned int iLS = 0 ; iLS < CurrentCrystal->GetLSSpectra().size() ; iLS++)
+                              {
+                                if(CurrentCrystal->GetLSSpectra()[iLS].canvasPosition == plotPos)
+                                {
+                                  lsMin = CurrentCrystal->GetLSSpectra()[iLS].spectrum->GetMean() -
+                                          3.0 * CurrentCrystal->GetLSSpectra()[iLS].spectrum->GetRMS();
+                                  lsMax = CurrentCrystal->GetLSSpectra()[iLS].spectrum->GetMean() +
+                                          3.0 * CurrentCrystal->GetLSSpectra()[iLS].spectrum->GetRMS();
+                                }
+                              }
+
+
+                              TH2F* spectrumCrystalDeltaT2vsCH = new TH2F(sname.str().c_str(),sname.str().c_str(),
+                                                                          histo1Dbins,
+                                                                          lsMin,
+                                                                          lsMax,
+                                                                          DeltaTimeBins,
+                                                                          spectrumDeltaTcryTneig->GetMean() - 3.0*spectrumDeltaTcryTneig->GetRMS(),spectrumDeltaTcryTneig->GetMean() + 3.0*spectrumDeltaTcryTneig->GetRMS());
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                              spectrumCrystalDeltaT2vsCH->GetXaxis()->SetTitle("W");
+                              sname.str("");
+                              sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
+                              spectrumCrystalDeltaT2vsCH->GetYaxis()->SetTitle(sname.str().c_str());
+                              sname.str("");
+                              sname << "Ch"<< iNeighDigitizerChannel << " [ADC channels]";
+                              spectrumCrystalDeltaT2vsCH->GetXaxis()->SetTitle(sname.str().c_str());
                               var.str("");
                               sname.str("");
 
@@ -2731,14 +3053,52 @@ int main (int argc, char** argv)
                                   << ") < " << DeltaTimeMax;
                                   TCut wCut = sCut.str().c_str();
                                   tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
-                                  TF1* crystalball  = new TF1("crystalball","crystalball");
-                                  crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
-                                  tempHisto->Fit(crystalball,"Q","",DeltaTimeMin,DeltaTimeMax);
+
+                                  //do a preliminary fit with gauss
+                                  // TCanvas *cTemp  = new TCanvas("temp","temp");
+                                  // TF1 *gaussDummyBasicCorr = new TF1("gaussDummyBasicCorr","gaus");
+                                  // tempHisto->Fit(gaussDummyBasicCorr,"QN");
+                                  //
+                                  // double fitPercMin = 5.0;
+                                  // double fitPercMax = 6.0;
+                                  //
+                                  // double f1min = tempHisto->GetXaxis()->GetXmin();
+                                  // double f1max = tempHisto->GetXaxis()->GetXmax();
+                                  // // std::cout << f1min << " " << f1max << std::endl;
+                                  // TF1* crystalball  = new TF1("f1","crystalball");
+                                  // crystalball->SetLineColor(kRed);
+                                  // crystalball->SetParameters(gaussDummyBasicCorr->GetParameter(0),gaussDummyBasicCorr->GetParameter(1),gaussDummyBasicCorr->GetParameter(2),1,3);
+                                  // double fitMin = gaussDummyBasicCorr->GetParameter(1)
+                                  //                 - fitPercMin*(gaussDummyBasicCorr->GetParameter(2));
+                                  // double fitMax = gaussDummyBasicCorr->GetParameter(1)
+                                  //                 + fitPercMax*(gaussDummyBasicCorr->GetParameter(2));
+                                  // if(fitMin < f1min)
+                                  // {
+                                  //   fitMin = f1min;
+                                  // }
+                                  // if(fitMax > f1max)
+                                  // {
+                                  //   fitMax = f1max;
+                                  // }
+                                  // tempHisto->Fit(crystalball,"Q","",fitMin,fitMax);
+
+                                  // TF1* crystalball  = new TF1("crystalball","crystalball");
+                                  // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
+                                  // tempHisto->Fit(crystalball,"Q","",DeltaTimeMin,DeltaTimeMax);
+
+                                  double fitPercMin = 5.0;
+                                  double fitPercMax = 6.0;
+                                  int divisions = 10000;
+                                  double res[2];
+                                  extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                  // tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                  // meanForPolishedCorrection.push_back(res[0]);
+                                  // fwhmForPolishedCorrection.push_back(res[1]);
 
 
                                   delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
-                                  Wcoord_Y_core.push_back(crystalball->GetParameter(1));
-                                  rms_Y_core.push_back(crystalball->GetParameter(2));
+                                  Wcoord_Y_core.push_back(res[0]);
+                                  rms_Y_core.push_back(res[1]);
                                   CurrentCrystal->AddDelayTHistos(tempHisto);
                                   var.str("");
                                   sname.str("");
@@ -2784,25 +3144,13 @@ int main (int argc, char** argv)
                               }
 
 
-                              //---------------------------------------------//
-                              // Save plots                                  //
-                              //---------------------------------------------//
-                              int plotPos = -1;
-                              for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
-                              {
-                                for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
-                                {
-                                  if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
-                                  {
-                                    plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
-                                  }
-                                }
-                              }
+
 
                               if(plotPos != -1)
                               {
                                 CurrentCrystal->AddDeltaTcryTneig(spectrumDeltaTcryTneig,plotPos);
                                 CurrentCrystal->AddDeltaT2vsW(spectrumCrystalDeltaT2vsW,plotPos);
+                                CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
                                 if(timingCorrection)
                                 {
                                   CurrentCrystal->AddGraphDelayW(graphDelayW,plotPos);
@@ -2811,6 +3159,10 @@ int main (int argc, char** argv)
                               }
                             }
                             CurrentCrystal->SetDelayTimingChannels(DelayTimingChannelsNum);
+
+                            CurrentCrystal->SetTChannelsForPolishedCorrection(tChannelsForPolishedCorrection);
+                            CurrentCrystal->SetMeanForPolishedCorrection(meanForPolishedCorrection);
+                            CurrentCrystal->SetFwhmForPolishedCorrection(fwhmForPolishedCorrection);
                           }
                         }
                       }
@@ -5430,6 +5782,20 @@ int main (int argc, char** argv)
                       }
                       C_spectrum->Write();
                       delete C_spectrum;
+
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName("Light Sharing");
+                      C_spectrum->Divide(nmppcx,nmppcy);
+                      //first plot the Delta Tcry - Ttagging for this crystal
+                      C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                      CurrentCrystal->GetLScentralSpectrum()->Draw();
+                      for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLSSpectra().size() ; iNeig++)
+                      {
+                        C_spectrum->cd(CurrentCrystal->GetLSSpectra()[iNeig].canvasPosition);
+                        CurrentCrystal->GetLSSpectra()[iNeig].spectrum->Draw();
+                      }
+                      C_spectrum->Write();
+                      delete C_spectrum;
                       //
                       if(lightYieldComputation)
                       {
@@ -5568,6 +5934,20 @@ int main (int argc, char** argv)
                             C_spectrum->Write();
                             delete C_spectrum;
 
+                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            C_spectrum->SetName("Delta Tcry - TNeig vs CH");
+                            C_spectrum->Divide(nmppcx,nmppcy);
+                            //first plot the Delta Tcry - Ttagging for this crystal
+                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                            CurrentCrystal->GetDeltaTvsCH()->Draw("COLZ");
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsCH().size() ; iNeig++)
+                            {
+                              C_spectrum->cd(CurrentCrystal->GetDeltaT2vsCH()[iNeig].canvasPosition);
+                              CurrentCrystal->GetDeltaT2vsCH()[iNeig].spectrum->Draw("COLZ");
+                            }
+                            C_spectrum->Write();
+                            delete C_spectrum;
+
                             if(timingCorrection)
                             {
                               C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
@@ -5641,6 +6021,18 @@ int main (int argc, char** argv)
                               gDirectory->WriteObject(&DelayTimingChannelsNum, "delayTimingChannels");
                               corrDir->cd("..");
                             }
+
+                            // std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
+                            // std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
+                            // std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
+
+                            std::vector<int> tChannelsForPolishedCorrection = CurrentCrystal->GetTChannelsForPolishedCorrection();
+                            gDirectory->WriteObject(&tChannelsForPolishedCorrection, "tChannelsForPolishedCorrection");
+                            std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
+                            gDirectory->WriteObject(&meanForPolishedCorrection, "meanForPolishedCorrection");
+                            std::vector<double> fwhmForPolishedCorrection = CurrentCrystal->GetFwhmForPolishedCorrection();
+                            gDirectory->WriteObject(&fwhmForPolishedCorrection, "fwhmForPolishedCorrection");
+
                           }
                           else // otherwise plot only the CTR plot
                           {
@@ -5655,6 +6047,14 @@ int main (int argc, char** argv)
                             CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
                             C_spectrum->Write();
                             delete C_spectrum;
+
+                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                            C_spectrum->SetName(CurrentCrystal->GetDeltaTvsCH()->GetName());
+                            CurrentCrystal->GetDeltaTvsCH()->Draw("COLZ");
+                            C_spectrum->Write();
+                            delete C_spectrum;
+
+
                           }
                         }
                       }

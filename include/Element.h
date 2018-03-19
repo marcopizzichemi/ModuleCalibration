@@ -77,6 +77,7 @@ protected:
   // TH1F*                DeltaTimeWRTTagging;
   TH2F*                deltaTvsW;
   TH1D*                deltaTvsWSlice;
+  TH2F*                deltaTvsCH;
   TF1*                 deltaTvsWFit;
   TCut                 taggingPhotopeakCut;
 
@@ -111,6 +112,7 @@ public:
   TH1F*                GetTimeSpectrum()                         {return TimeSpectrum;};
   // TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
   TH2F*                GetDeltaTvsW()                            {return deltaTvsW;};
+  TH2F*                GetDeltaTvsCH()                           {return deltaTvsCH;};
   TH1D*                GetDeltaTvsWSlice()                       {return deltaTvsWSlice;}
   TF1*                 GetDeltaTvsWFit()                         {return deltaTvsWFit;};
   TCut                 GetTaggingPhotopeakCut()                  {return taggingPhotopeakCut;};
@@ -150,11 +152,9 @@ public:
   // void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};
   void                 SetDeltaTvsW(TH2F* aHisto)                 {deltaTvsW = aHisto;};
   void                 SetDeltaTvsWFit(TF1* aFit)                 {deltaTvsWFit = aFit;};
-  void                 SetDeltaTvsWSlice(TH1D* aHisto)              {deltaTvsWSlice = aHisto;};
-  //   void                 SetFloodMap2DSeparated(TH2F aHisto)       {FloodMap2DSeparated = aHisto;};
-  //   void                 SetSphericalMap(TH2F aHisto)              {SphericalMap = aHisto;};
-  //   void                 SetCylindricalXMap(TH2F aHisto)           {CylindricalXMap = aHisto;};
-  //   void                 SetCylindricalYMap(TH2F aHisto)           {CylindricalYMap = aHisto;};
+  void                 SetDeltaTvsWSlice(TH1D* aHisto)            {deltaTvsWSlice = aHisto;};
+  void                 SetDeltaTvsCH(TH2F* aHisto)                {deltaTvsCH = aHisto;};
+
   void                 SetFloodMap3D(TH3I* aHisto)                {FloodMap3D = aHisto;};
   void                 SetFloodMap3DSeparation(TH3I* aHisto)                {FloodMap3DSeparation = aHisto;};
   //   void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};
