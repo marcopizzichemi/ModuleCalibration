@@ -203,14 +203,33 @@ InputFile::InputFile (ConfigFile& config)
     assert(digitizer.size() == timingCh.size());
   }
 
-  //on or off for modular analysis
-  mppcOFF_s                      = config.read<std::string>("mppcOFF","");
-  config.split( mppcOFF_f, mppcOFF_s, "," );
-  for(unsigned int i = 0 ; i < mppcOFF_f.size() ; i++)
+  // parallel analysis
+  // override mppcOFF and crystal OFF if given
+  std::string parallelMPPC = config.read<std::string>("parallelMPPC","0");
+  if (parallelMPPC.compare("0") == 0) // if key not given, standard behaviour with mppcOFF
   {
-    config.trim(mppcOFF_f[i]);
-    mppcOFF.push_back(mppcOFF_f[i]);
+    //on or off for modular analysis
+    mppcOFF_s                      = config.read<std::string>("mppcOFF","");
+    config.split( mppcOFF_f, mppcOFF_s, "," );
+    for(unsigned int i = 0 ; i < mppcOFF_f.size() ; i++)
+    {
+      config.trim(mppcOFF_f[i]);
+      mppcOFF.push_back(mppcOFF_f[i]);
+    }
   }
+  else
+  {
+    // put all MPPCs off except for the one given by parallelMPPC
+   for(unsigned int i = 0 ; i < mppc_label.size() ; i++)
+    {
+      if(mppc_label[i].compare(parallelMPPC) != 0 )
+      {
+        mppcOFF.push_back(mppc_label[i]);
+      }
+    }
+  }
+
+
 
 
   std::vector<float> xPositionsSorted;
@@ -402,12 +421,51 @@ InputFile::InputFile (ConfigFile& config)
   }
 
 
-  crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
-  config.split( crystalOFF_f, crystalOFF_s, "," );
-  for(unsigned int i = 0 ; i < crystalOFF_f.size() ; i++)
+
+
+
+  // parallel analysis
+  // override crystalOFF
+  int parallelCrystal = config.read<int>("parallelCrystal",-1);
+  if (parallelCrystal == -1) // if key not given, standard behaviour with crystalOFF
   {
-    config.trim(crystalOFF_f[i]);
-    crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
+    //on or off for modular analysis
+    crystalOFF_s                      = config.read<std::string>("crystalOFF","-1");
+    config.split( crystalOFF_f, crystalOFF_s, "," );
+    for(unsigned int i = 0 ; i < crystalOFF_f.size() ; i++)
+    {
+      config.trim(crystalOFF_f[i]);
+      crystalOFF.push_back(atoi(crystalOFF_f[i].c_str()));
+    }
+  }
+  else
+  {
+    // put all crystals off except for the one given by parallelCrystal
+    for(int iModule = 0; iModule < nmodulex ; iModule++)
+    {
+      for(int jModule = 0; jModule < nmoduley ; jModule++)
+      {
+        for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+        {
+          for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+          {
+            for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+            {
+              for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+              {
+                int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
+                int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
+                int cryNum = cryI*ncrystalsy*nmppcy + cryJ;
+                if(parallelCrystal != cryNum )
+                {
+                  crystalOFF.push_back(cryNum);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // global 3d plots variables for single mppcs
@@ -1136,7 +1194,7 @@ void InputFile::FillElements(Module*** module,Mppc*** mppc,Crystal*** crystal)
               crystal[cryI][cryJ]->SetIsOnForModular(true);
               for(unsigned int modCounter = 0; modCounter < crystalOFF.size(); modCounter++)
               {
-                if(crystalOFF[modCounter] == (cryI*ncrystalsx*nmppcx + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
+                if(crystalOFF[modCounter] == (cryI*ncrystalsy*nmppcy + cryJ) ) crystal[cryI][cryJ]->SetIsOnForModular(false);
               }
 
               crystal[cryI][cryJ]->SetI(cryI);
