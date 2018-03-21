@@ -5342,6 +5342,12 @@ int main (int argc, char** argv)
                 crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillStyle(3001);
                 crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->SetFillColor(kBlue);
                 crystal[iCrystal][jCrystal]->GetCorrectedSpectrum()->Draw();
+
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrumCorrected()->SetFillStyle(3001);
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrumCorrected()->SetFillColor(kGreen);
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrumCorrected()->Draw("same");
+
+
               }
               else
               {
