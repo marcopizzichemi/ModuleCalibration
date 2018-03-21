@@ -1828,7 +1828,7 @@ int main (int argc, char** argv)
                       {
                         std::stringstream sneigh2;
                         sneigh2.str("");
-                        sneigh2 << "TriggerChannel != " <<   neighbourChannels[iRel].string;
+                        sneigh2 << TriggerChannel.str() <<" != " <<   neighbourChannels[iRel].string;
                         NotNeighbours += sneigh2.str().c_str();
                       }
                       var << thisChannel.string
