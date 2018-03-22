@@ -2633,8 +2633,21 @@ int main (int argc, char** argv)
                           // << var.str()   << std::endl
                           // << CrystalCut+PhotopeakEnergyCut << std::endl;
 
+                          // Always esclude from production of calibration histograms the events where the timing channels involved in the plot are both = 0
+                          // these cuts won't need to be exported to the calibration file explicitly because their absence is reflected in the resulting histograms
+                          // when Analyzing a dataset based on a calibration data, of course this dataset will have to be filtered to exclude explicitly these events
+                          // although they probably self exclude because of the other cuts
+
+                          TCut noZerosCut;
+                          std::stringstream sNoZerosCut;
+                          // noZerosCut for Basic CTR
+                          sNoZerosCut <<  "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                      << "t" << taggingCrystalTimingChannel << "!= 0)";
+                          noZerosCut = sNoZerosCut.str().c_str();
+                          sNoZerosCut.str("");
+
                           TH1F* aSpectrum = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
-                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
                           aSpectrum->GetXaxis()->SetTitle("Time [S]");
                           aSpectrum->GetYaxis()->SetTitle("N");
 
@@ -2685,6 +2698,13 @@ int main (int argc, char** argv)
                               << " : "
                               << FloodZ.str()
                               << " >> " << sname.str() ;
+
+                          //noZerosCut
+                          sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                      << "t" << taggingCrystalTimingChannel << "!= 0)";
+                          noZerosCut = sNoZerosCut.str().c_str();
+                          sNoZerosCut.str("");
+
                           // limits of the 2d histo are derived from W histo and ctr histo
                           TH2F* spectrumCrystalDeltaTvsW = new TH2F(sname.str().c_str(),sname.str().c_str(),
                                                                     wHistogramsBins,
@@ -2693,7 +2713,7 @@ int main (int argc, char** argv)
                                                                     CTRbins,
                                                                     aSpectrum->GetMean() - 3.0*aSpectrum->GetRMS(),
                                                                     aSpectrum->GetMean() + 3.0*aSpectrum->GetRMS());
-                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                           spectrumCrystalDeltaTvsW->GetXaxis()->SetTitle("W");
                           spectrumCrystalDeltaTvsW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
                           CurrentCrystal->SetDeltaTvsW(spectrumCrystalDeltaTvsW);
@@ -2707,6 +2727,12 @@ int main (int argc, char** argv)
                               << " : "
                               << thisChannel.string
                               << " >> " << sname.str() ;
+                          //noZerosCut
+                          sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                      << "t" << taggingCrystalTimingChannel << "!= 0)";
+                          noZerosCut = sNoZerosCut.str().c_str();
+                          sNoZerosCut.str("");
+
                           TH2F* spectrumCrystalDeltaTvsCH = new TH2F(sname.str().c_str(),sname.str().c_str(),
                                                                      histo1Dbins,
                                                                      LScentralSpectrum->GetMean() - 3.0*LScentralSpectrum->GetRMS(),
@@ -2714,7 +2740,7 @@ int main (int argc, char** argv)
                                                                      CTRbins,
                                                                      aSpectrum->GetMean() - 3.0*aSpectrum->GetRMS(),
                                                                      aSpectrum->GetMean() + 3.0*aSpectrum->GetRMS());
-                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                           sname.str("");
                           sname << "ch" << detector[thisChannelID].digitizerChannel << " [ADC channels]";
                           spectrumCrystalDeltaTvsCH->GetXaxis()->SetTitle(sname.str().c_str());
@@ -2784,6 +2810,12 @@ int main (int argc, char** argv)
                                 << CTRmax;
                                 TCut wCut = sCut.str().c_str();
 
+                                //noZerosCut
+                                sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                            << "t" << taggingCrystalTimingChannel << "!= 0)";
+                                noZerosCut = sNoZerosCut.str().c_str();
+                                sNoZerosCut.str("");
+
                                 sname.str("");
 
                                 var.str("");
@@ -2795,7 +2827,7 @@ int main (int argc, char** argv)
                                 << "  >> "
                                 << sname.str() ;
 
-                                tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                                tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut+noZerosCut);
 
                                 double fitPercMin = 5.0;
                                 double fitPercMax = 6.0;
@@ -2893,8 +2925,14 @@ int main (int argc, char** argv)
                               var << "t" << iNeighTimingChannel
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << " >> " << sname.str() ;
+                              //noZerosCut
+                              sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                          << "t" << iNeighTimingChannel << "!= 0)";
+                              noZerosCut = sNoZerosCut.str().c_str();
+                              sNoZerosCut.str("");
+
                               TH1F* spectrumDeltaTcryTneig = new TH1F(sname.str().c_str(),sname.str().c_str(),DeltaTimeBins,DeltaTimeMin,DeltaTimeMax);
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut);
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
                               spectrumDeltaTcryTneig->GetXaxis()->SetTitle("Time [S]");
                               spectrumDeltaTcryTneig->GetYaxis()->SetTitle("N");
 
@@ -2947,13 +2985,18 @@ int main (int argc, char** argv)
                               var << "t" << iNeighTimingChannel
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << ":" << FloodZ.str() <<" >> " << sname.str() ;
+                              //noZerosCut
+                              sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                          << "t" << iNeighTimingChannel << "!= 0)";
+                              noZerosCut = sNoZerosCut.str().c_str();
+                              sNoZerosCut.str("");
                               TH2F* spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),
                                                                          sname.str().c_str(),
                                                                          wHistogramsBins,
                                                                          spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
                                                                          DeltaTimeBins,
                                                                          spectrumDeltaTcryTneig->GetMean() - 3.0*spectrumDeltaTcryTneig->GetRMS(),spectrumDeltaTcryTneig->GetMean() + 3.0*spectrumDeltaTcryTneig->GetRMS());
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                               spectrumCrystalDeltaT2vsW->GetXaxis()->SetTitle("W");
                               sname.str("");
                               sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
@@ -2991,6 +3034,11 @@ int main (int argc, char** argv)
                               var << "t" << iNeighTimingChannel
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << ":"    << neighbourChannels[neighID].string <<" >> " << sname.str() ;
+                              //noZerosCut
+                              sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                          << "t" << iNeighTimingChannel << "!= 0)";
+                              noZerosCut = sNoZerosCut.str().c_str();
+                              sNoZerosCut.str("");
                               //get the limits from the corresponding light sharing plot
                               double lsMin;
                               double lsMax;
@@ -3012,7 +3060,7 @@ int main (int argc, char** argv)
                                                                           lsMax,
                                                                           DeltaTimeBins,
                                                                           spectrumDeltaTcryTneig->GetMean() - 3.0*spectrumDeltaTcryTneig->GetRMS(),spectrumDeltaTcryTneig->GetMean() + 3.0*spectrumDeltaTcryTneig->GetRMS());
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut,"COLZ");
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                               spectrumCrystalDeltaT2vsCH->GetXaxis()->SetTitle("W");
                               sname.str("");
                               sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
@@ -3044,6 +3092,13 @@ int main (int argc, char** argv)
                                   var << "t" << iNeighTimingChannel
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << " >> " << sname.str().c_str();
+
+                                  //noZerosCut
+                                  sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                                              << "t" << iNeighTimingChannel << "!= 0)";
+                                  noZerosCut = sNoZerosCut.str().c_str();
+                                  sNoZerosCut.str("");
+
                                   std::stringstream sCut;
                                   sCut << FloodZ.str() << " > "
                                   << beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming)
@@ -3058,7 +3113,7 @@ int main (int argc, char** argv)
                                   << " - t" << detector[thisChannelID].timingChannel
                                   << ") < " << DeltaTimeMax;
                                   TCut wCut = sCut.str().c_str();
-                                  tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut);
+                                  tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut+noZerosCut);
 
                                   //do a preliminary fit with gauss
                                   // TCanvas *cTemp  = new TCanvas("temp","temp");
