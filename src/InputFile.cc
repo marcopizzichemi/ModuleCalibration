@@ -440,6 +440,69 @@ InputFile::InputFile (ConfigFile& config)
   }
   else
   {
+    //find the mppc connected to the chosen crystal
+    std::string mppcWhereCrystalIs;
+    for(int iModule = 0; iModule < nmodulex ; iModule++)
+    {
+      for(int jModule = 0; jModule < nmoduley ; jModule++)
+      {
+        for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+        {
+          for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+          {
+            //calc I and J
+            int mppcI = (iModule*nmppcx)+iMppc;
+            int mppcJ = (jModule*nmppcy)+jMppc;
+
+            //find corresponding detector
+            int detID = 0;
+            for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+            {
+              if(detector[iDet].i == mppcI && detector[iDet].j == mppcJ)
+              detID = iDet;
+            }
+
+            // find the crystal connected
+
+            for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+            {
+              for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+              {
+                int cryI = (iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry);
+                int cryJ = (jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry);
+                int crystalID = (cryI*ncrystalsy*nmppcy + cryJ);
+                if(crystalID == parallelCrystal)
+                {
+                  mppcWhereCrystalIs = detector[detID].label;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    std::cout << "------- "<< mppcWhereCrystalIs << std::endl;
+    // put all mppcs off except the one where the crystal is
+    // for(unsigned int i = 0 ; i < mppc_label.size() ; i++)
+    // {
+    //   if(mppc_label[i].compare(mppcWhereCrystalIs) != 0 )
+    //   {
+    //     mppcOFF.push_back(mppc_label[i]);
+    //   }
+    // }
+    for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+    {
+      if(detector[iDet].label !=mppcWhereCrystalIs)
+      {
+        detector[iDet].OnForModular = false;
+      }
+
+    }
+    for(unsigned int i = 0 ; i < detector.size() ; i++)
+    {
+      std::cout << detector[i].label << "\t" << detector[i].OnForModular << std::endl;
+    }
+    std::cout << std::endl;
     // put all crystals off except for the one given by parallelCrystal
     for(int iModule = 0; iModule < nmodulex ; iModule++)
     {

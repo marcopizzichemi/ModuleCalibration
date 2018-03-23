@@ -445,7 +445,13 @@ int main (int argc, char** argv)
   //set outputFileName
   // change name if parallel keys are given
   std::string parallelOutput = config.read<std::string>("parallelOutput","0");
+
   if (parallelOutput.compare("0") != 0)
+  {
+    outputFileName = parallelOutput;
+  }
+  int parallelCrystal = config.read<int>("parallelCrystal",-1);
+  if (parallelCrystal != -1)
   {
     outputFileName = parallelOutput;
   }
