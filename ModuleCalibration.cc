@@ -110,6 +110,69 @@
 #define ENERGY_RESOLUTION_SATURATION_CORRECTION 0.12
 
 
+
+void extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double* res)
+{
+  TCanvas *cTemp  = new TCanvas("temp","temp");
+  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+  histo->Fit(gaussDummy,"QN");
+
+  double f1min = histo->GetXaxis()->GetXmin();
+  double f1max = histo->GetXaxis()->GetXmax();
+
+
+  TF1* f1  = new TF1("f1","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
+  f1->SetLineColor(kBlack);
+  f1->SetParName(0,"N");
+  f1->SetParName(1,"Mean");
+  f1->SetParName(2,"Sigma");
+  f1->SetParName(3,"tau");
+  // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
+  f1->SetParameter(0,gaussDummy->GetParameter(0));
+  f1->SetParameter(1,gaussDummy->GetParameter(1));
+  f1->SetParameter(2,gaussDummy->GetParameter(2));
+  // f1->SetParameter(3,);
+  double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+  double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  if(fitMin < f1min)
+  {
+    fitMin = f1min;
+  }
+  if(fitMax > f1max)
+  {
+    fitMax = f1max;
+  }
+  histo->Fit(f1,"Q","",fitMin,fitMax);
+  double min,max,min10,max10;
+  // int divs = 3000;
+  double step = (f1max-f1min)/divs;
+  // is [0] the max of the function???
+  for(int i = 0 ; i < divs ; i++)
+  {
+    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/2.0) )
+    {
+      min = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/2.0) )
+    {
+      max = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/10.0) )
+    {
+      min10 = f1min + (i+0.5)*step;
+    }
+    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/10.0) )
+    {
+      max10 = f1min + (i+0.5)*step;
+    }
+  }
+  res[0] = f1->GetParameter(1);  // res[0] is mean
+  res[1] = max-min;              // res[1] is FWHM
+  delete cTemp;
+
+}
+
+
 void extractFromCrystalBall(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double* res)
 {
   //first, dummy gaussian fit
@@ -351,6 +414,7 @@ int main (int argc, char** argv)
   float tagCrystalPeakResolutionFWHM = config.read<float>("tagCrystalPeakResolutionFWHM",0.07);
   float photopeakFitRangeMin = config.read<float>("photopeakFitRangeMin",1.2);
   float photopeakFitRangeMax = config.read<float>("photopeakFitRangeMax",1.2);
+  int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -2690,7 +2754,16 @@ int main (int argc, char** argv)
                           double fitPercMax = 6.0;
                           int divisions = 10000;
                           double res[2];
-                          extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+
+                          if(TimeCorrectionFitFunction == 0)
+                          {
+                            extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          }
+                          else
+                          {
+                            extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          }
+
                           tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
                           meanForPolishedCorrection.push_back(res[0]);
                           fwhmForPolishedCorrection.push_back(res[1]);
@@ -2839,7 +2912,16 @@ int main (int argc, char** argv)
                                 double fitPercMax = 6.0;
                                 int divisions = 10000;
                                 double res[2];
-                                extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+
+                                if(TimeCorrectionFitFunction == 0)
+                                {
+                                  extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                }
+                                else
+                                {
+                                  extractWithGaussAndExp(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                }
+
                                 // tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
                                 // meanForPolishedCorrection.push_back(res[0]);
                                 // fwhmForPolishedCorrection.push_back(res[1]);
@@ -2973,7 +3055,17 @@ int main (int argc, char** argv)
                               double fitPercMax = 6.0;
                               int divisions = 10000;
                               double res[2];
-                              extractFromCrystalBall(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
+
+                              if(TimeCorrectionFitFunction == 0)
+                              {
+                                extractFromCrystalBall(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
+                              }
+                              else
+                              {
+                                extractWithGaussAndExp(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
+                              }
+
+
                               tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
                               meanForPolishedCorrection.push_back(res[0]);
                               fwhmForPolishedCorrection.push_back(res[1]);
@@ -3157,7 +3249,15 @@ int main (int argc, char** argv)
                                   double fitPercMax = 6.0;
                                   int divisions = 10000;
                                   double res[2];
-                                  extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                  if(TimeCorrectionFitFunction == 0)
+                                  {
+                                    extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                  }
+                                  else
+                                  {
+                                    extractWithGaussAndExp(tempHisto,fitPercMin,fitPercMax,divisions,res);
+                                  }
+                                  // extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
                                   // tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
                                   // meanForPolishedCorrection.push_back(res[0]);
                                   // fwhmForPolishedCorrection.push_back(res[1]);
@@ -5415,6 +5515,10 @@ int main (int argc, char** argv)
                 crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillStyle(3001);
                 crystal[iCrystal][jCrystal]->GetSpectrum()->SetFillColor(kBlue);
                 crystal[iCrystal][jCrystal]->GetSpectrum()->Draw();
+
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrum()->SetFillStyle(3001);
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrum()->SetFillColor(kGreen);
+                crystal[iCrystal][jCrystal]->GetHighlightedSpectrum()->Draw("same");
               }
             }
           }
