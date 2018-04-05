@@ -415,8 +415,8 @@ int main (int argc, char** argv)
   float photopeakFitRangeMin = config.read<float>("photopeakFitRangeMin",1.2);
   float photopeakFitRangeMax = config.read<float>("photopeakFitRangeMax",1.2);
   int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
-  bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // applu or not the noise cut - default = 1 (true)
-
+  bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
+  bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -1684,6 +1684,8 @@ int main (int argc, char** argv)
             //const int numbOfCrystals = 4;
             cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
             int right_ncrystalsx;
+
+
             if(usingTaggingBench)
             { //with tagging crystal setup, use only one row of crystals
               right_ncrystalsx =1;
@@ -1701,17 +1703,25 @@ int main (int argc, char** argv)
               }
             }
             bool found = false;
-            if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
+            if(apply3Dcut)
             {
-              if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+              if(usingTaggingBench) //if it's a tagging bench run, check first if the mppc is on for DOI bench measurement
               {
-                found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,1,ncrystalsy,FloodXYZ);
+                if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
+                {
+                  found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,1,ncrystalsy,FloodXYZ);
+                }
+              }
+              else
+              {
+                found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,ncrystalsx,ncrystalsy,FloodXYZ);
               }
             }
-            else
+            else // do not apply 3d cut. of course this makes sens only when just one crystal is considered
             {
-              found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,ncrystalsx,ncrystalsy,FloodXYZ);
+              found = true;
             }
+
 
             // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
             for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
@@ -1726,8 +1736,12 @@ int main (int argc, char** argv)
                     Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
                     CurrentCrystal->SetCrystalOn(true);
                     //store the cutg in the crystal
-                    CurrentCrystal->SetZXCut(cutg[0][iCry][jCry]);
-                    CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
+                    if(apply3Dcut)
+                    {
+                      CurrentCrystal->SetZXCut(cutg[0][iCry][jCry]);
+                      CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
+                    }
+
 
                     //get charge ch numbers used for w
                     std::vector<int> channelsNumRelevantForW;
@@ -1810,7 +1824,15 @@ int main (int argc, char** argv)
                     // CutTrigger = 3. and 4. and 5.
                     // CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName() = 6.
 
-                    TCut CrystalCut = BasicCut + CutTrigger + CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName();
+                    TCut CrystalCut = BasicCut + CutTrigger;
+
+                    if(apply3Dcut)
+                    {
+                      CrystalCut += CurrentCrystal->GetZXCut()->GetName();
+                      CrystalCut += CurrentCrystal->GetZYCut()->GetName();
+                    }
+
+
 
                     // a 3d historgram for this crystal, mainly to check the 3d cut
                     sname << "Flood Histogram 3D - Crystal " << CurrentCrystal->GetID();
@@ -6282,8 +6304,13 @@ int main (int argc, char** argv)
                         delete C_spectrum;
                       }
 
-                      CurrentCrystal->GetZYCut()->Write();
-                      CurrentCrystal->GetZXCut()->Write();
+                      if(apply3Dcut)
+                      {
+                        CurrentCrystal->GetZYCut()->Write();
+                        CurrentCrystal->GetZXCut()->Write();
+                      }
+
+
                       CurrentCrystal->GetCrystalCut().Write();
                       CurrentCrystal->GetCrystalCutWithoutCutG().Write();
                       CurrentCrystal->GetPhotopeakEnergyCut().Write();
