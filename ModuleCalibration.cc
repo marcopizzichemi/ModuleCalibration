@@ -415,6 +415,7 @@ int main (int argc, char** argv)
   float photopeakFitRangeMin = config.read<float>("photopeakFitRangeMin",1.2);
   float photopeakFitRangeMax = config.read<float>("photopeakFitRangeMax",1.2);
   int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
+  bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // applu or not the noise cut - default = 1 (true)
 
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
@@ -1598,7 +1599,11 @@ int main (int argc, char** argv)
 
             TCut CutNoise = noiseCut.str().c_str();
             // to make things easier, we add this directly to the CutTrigger. FIXME Not a clean solution, but ehi...
-            CutTrigger += CutNoise;
+            if(applyNoiseCut)
+            {
+              CutTrigger += CutNoise;
+            }
+
 
 
             //standard 2d plot
