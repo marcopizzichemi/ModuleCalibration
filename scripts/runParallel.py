@@ -53,9 +53,9 @@ def main(argv):
 
    args = parser.parse_args()
 
-   threads = 0
-   if args.threads == None:
-       args.threads = 8
+   # threads = 0
+   # if args.threads == None:
+   #     args.threads = 8
    if args.histoMin == None:
        args.histoMin = -15e-9
    if args.histoMax == None:
