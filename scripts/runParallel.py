@@ -99,7 +99,7 @@ def main(argv):
    print (elementslist)
 
    processList = []
-   create config files and processes
+   # create config files and processes
    for i in elementslist:
        # print(i)
        fOutName = fInName[0:len(fInName)-4] + "_" + i + ".cfg"
