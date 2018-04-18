@@ -77,11 +77,13 @@ def main(argv):
        print ("ERROR: you cannot provide both --mppcs and --crystals options! Aborting ")
        sys.exit()
    if (args.mppcs == None) and (args.crystals != None):
-       elements = args.crystals
+       # elements = args.crystals
+       elementslist =  args.crystals.split(",")
        paraStr = "parallelCrystal = "
 
    if (args.mppcs != None) and (args.crystals == None):
        elements = args.mppcs
+       elementslist =  args.mppcs.split(",")
        paraStr = "parallelMPPC = "
    #print values
    print ("Config file        = %s" % args.config )
@@ -94,7 +96,8 @@ def main(argv):
    with open(fInName, 'r') as myfile:
      original = myfile.read()
 
-   elementslist = elements.split(",")
+
+
    processList = []
    # create config files and processes
    for i in elementslist:
