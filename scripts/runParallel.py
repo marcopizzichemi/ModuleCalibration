@@ -12,25 +12,25 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,files,mppc,histoMin,histoMax,histoBins,fitPercMin,fitPercMax):
+def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax):
     """thread worker function"""
     # value = 1
     filesMod = files + "*"
     cmd = ['ModuleCalibration','-c', name, filesMod]
     # cmd = "ModuleCalibration -c " + name + " " + prefix
-    print ("Running calibration on MPPC %s..." %mppc )
-    logName = 'log_pOutput_' + mppc + '.log'
+    print ("Running calibration on Element %s..." %element )
+    logName = 'log_pOutput_' + element + '.log'
     log = open(logName, 'w')
     subprocess.Popen(cmd,stdout = log,stderr=None).wait()
 
     # print (cmd)
-    print ("MPPC %s calibration done" %mppc )
-    print ("Running time analysis on MPPC %s..." %mppc )
-    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + mppc + '.root', '-c' , 'pOutput_' + mppc + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    print ("Element %s calibration done" %element )
+    print ("Running time analysis on Element %s..." %element )
+    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + element + '.root', '-c' , 'pOutput_' + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
     # print (cmd)
-    print ("MPPC %s time analysis done" %mppc )
+    print ("Element %s time analysis done" %element )
 
     return
 
@@ -40,15 +40,16 @@ def main(argv):
 
    #parsing args
    parser = argparse.ArgumentParser(description='Python script to start analysis in parallel')
-   parser.add_argument('-c','--config' , help='Config file',required=True)
-   parser.add_argument('-m','--mppcs'   , help='MPPC analyzed',required=True)
-   parser.add_argument('-f','--files' , help='File prefix',required=True)
-   parser.add_argument('-t','--threads' , help='Number of parallel threads',required=False)
-   parser.add_argument('-a','--histoMin' , help='Number of parallel threads',required=False)
-   parser.add_argument('-b','--histoMax' , help='Number of parallel threads',required=False)
-   parser.add_argument('-d','--histoBins' , help='Number of parallel threads',required=False)
-   parser.add_argument('-e','--fitPercMin' , help='Number of parallel threads',required=False)
-   parser.add_argument('-g','--fitPercMax' , help='Number of parallel threads',required=False)
+   parser.add_argument('-c','--config'     , help='Config file'               ,required=True )
+   parser.add_argument('-m','--mppcs'      , help='MPPC analyzed'             ,required=False)
+   parser.add_argument('-r','--crystals'   , help='Crystals analyzed'         ,required=False)
+   parser.add_argument('-f','--files'      , help='File prefix'               ,required=True )
+   # parser.add_argument('-t','--threads'    , help='Number of parallel threads',required=False)
+   parser.add_argument('-a','--histoMin'   , help='Min of CTR histograms [s] - default = -15e-9',required=False)
+   parser.add_argument('-b','--histoMax'   , help='Max of CTR histograms [s] - default = 15e-9',required=False)
+   parser.add_argument('-d','--histoBins'  , help='Number of bins in CTR histograms - default = 300',required=False)
+   parser.add_argument('-e','--fitPercMin' , help='Lower bound of CTR fit, in numb of sigmas - default = 6.0',required=False)
+   parser.add_argument('-g','--fitPercMax' , help='Upper bound of CTR fit, in numb of sigmas - default = 5.0',required=False)
 
    args = parser.parse_args()
 
@@ -66,10 +67,26 @@ def main(argv):
    if args.fitPercMax == None:
        args.fitPercMax = 5.0
 
+   elements = ""
+   paraStr = ""
+
+   if (args.mppcs == None) && (args.crystals == None):
+       print ("ERROR: you need to provide one option between --mppcs or --crystals !!! Aborting ")
+       sys.exit()
+   if (args.mppcs != None) && (args.crystals != None):
+       print ("ERROR: you cannot provide both --mppcs and --crystals options! Aborting ")
+       sys.exit()
+   if (args.mppcs == None) && (args.crystals != None):
+       elements = args.crystals
+       paraStr = "parallelCrystal = "
+
+   if (args.mppcs != None) && (args.crystals == None):
+       elements = args.mppcs
+       paraStr = "parallelMPPC = "
    #print values
-   print ("Config file       = %s" % args.config )
-   print ("MPPC analyzed     = %s" % args.mppcs )
-   print ("File prefix       = %s" % args.files )
+   print ("Config file        = %s" % args.config )
+   print ("Elements analyzed  = %s" % elements )
+   print ("File prefix        = %s" % args.files )
    print ("")
    # print ("Number of threads = %s" % args.threads )
 
@@ -77,14 +94,14 @@ def main(argv):
    with open(fInName, 'r') as myfile:
      original = myfile.read()
 
-   mppclist = args.mppcs.split(",")
+   elementslist = elements.split(",")
    processList = []
    # create config files and processes
-   for i in mppclist:
+   for i in elementslist:
        # print(i)
        fOutName = fInName[0:len(fInName)-4] + "_" + i + ".cfg"
        fOut = open(fOutName,"w")
-       paraStr = "parallelMPPC = " + i
+       paraStr = paraStr + i
        outputFilePrefix = "parallelOutput = pOutput_" + i
        fOut.write("### Parallelized analysis ###\n")
        fOut.write(paraStr)
