@@ -68,7 +68,7 @@ def main(argv):
        args.fitPercMax = 5.0
 
    elements = ""
-   paraStr = ""
+   BaseParaStr = ""
 
    if (args.mppcs == None) and (args.crystals == None):
        print ("ERROR: you need to provide one option between --mppcs or --crystals !!! Aborting ")
@@ -77,14 +77,14 @@ def main(argv):
        print ("ERROR: you cannot provide both --mppcs and --crystals options! Aborting ")
        sys.exit()
    if (args.mppcs == None) and (args.crystals != None):
-       # elements = args.crystals
+       elements = args.crystals
        elementslist =  args.crystals.split(",")
-       paraStr = "parallelCrystal = "
+       BaseParaStr = "parallelCrystal = "
 
    if (args.mppcs != None) and (args.crystals == None):
        elements = args.mppcs
        elementslist =  args.mppcs.split(",")
-       paraStr = "parallelMPPC = "
+       BaseParaStr = "parallelMPPC = "
    #print values
    print ("Config file        = %s" % args.config )
    print ("Elements analyzed  = %s" % elements )
@@ -96,15 +96,15 @@ def main(argv):
    with open(fInName, 'r') as myfile:
      original = myfile.read()
 
-
+   print (elementslist)
 
    processList = []
-   # create config files and processes
+   create config files and processes
    for i in elementslist:
        # print(i)
        fOutName = fInName[0:len(fInName)-4] + "_" + i + ".cfg"
        fOut = open(fOutName,"w")
-       paraStr = paraStr + i
+       paraStr = BaseParaStr + i
        outputFilePrefix = "parallelOutput = pOutput_" + i
        fOut.write("### Parallelized analysis ###\n")
        fOut.write(paraStr)
