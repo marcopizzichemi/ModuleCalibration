@@ -70,17 +70,17 @@ def main(argv):
    elements = ""
    paraStr = ""
 
-   if (args.mppcs == None) && (args.crystals == None):
+   if (args.mppcs == None) and (args.crystals == None):
        print ("ERROR: you need to provide one option between --mppcs or --crystals !!! Aborting ")
        sys.exit()
-   if (args.mppcs != None) && (args.crystals != None):
+   if (args.mppcs != None) and (args.crystals != None):
        print ("ERROR: you cannot provide both --mppcs and --crystals options! Aborting ")
        sys.exit()
-   if (args.mppcs == None) && (args.crystals != None):
+   if (args.mppcs == None) and (args.crystals != None):
        elements = args.crystals
        paraStr = "parallelCrystal = "
 
-   if (args.mppcs != None) && (args.crystals == None):
+   if (args.mppcs != None) and (args.crystals == None):
        elements = args.mppcs
        paraStr = "parallelMPPC = "
    #print values
