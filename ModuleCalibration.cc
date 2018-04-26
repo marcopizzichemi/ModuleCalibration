@@ -131,7 +131,7 @@ void extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, int
   f1->SetParameter(0,gaussDummy->GetParameter(0));
   f1->SetParameter(1,gaussDummy->GetParameter(1));
   f1->SetParameter(2,gaussDummy->GetParameter(2));
-  // f1->SetParameter(3,);
+  f1->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
   double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
   double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
   if(fitMin < f1min)
