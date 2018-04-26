@@ -12,7 +12,7 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name):
+def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func):
     """thread worker function"""
     # value = 1
     filesMod = files + "*"
@@ -26,7 +26,7 @@ def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,
     # print (cmd)
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
-    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
     # print (cmd)
@@ -51,12 +51,16 @@ def main(argv):
    parser.add_argument('-e','--fitPercMin' , help='Lower bound of CTR fit, in numb of sigmas - default = 6.0',required=False)
    parser.add_argument('-g','--fitPercMax' , help='Upper bound of CTR fit, in numb of sigmas - default = 5.0',required=False)
    parser.add_argument('-o','--output'     , help='Prefix of output file - default = pOutput_',required=False)
+   parser.add_argument('-y','--func'       , help='Function for time fit. 0 = crystalball, 1 = gauss+exp   - default = 0',required=False)
    args = parser.parse_args()
 
    # threads = 0
    # if args.threads == None:
    #     args.threads = 8
    prefix_name = "pOutput_"
+   func = 0
+   if args.func != None:
+       func = args.func
    if args.output != None:
        prefix_name = args.output
    if args.histoMin == None:
@@ -119,7 +123,7 @@ def main(argv):
        fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.files,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name))
+       proc = multiprocessing.Process(target=worker, args=(fOutName,args.files,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func))
        processList.append(proc)
 
    #start processes
