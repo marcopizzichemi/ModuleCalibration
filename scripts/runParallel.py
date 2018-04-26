@@ -50,12 +50,15 @@ def main(argv):
    parser.add_argument('-d','--histoBins'  , help='Number of bins in CTR histograms - default = 300',required=False)
    parser.add_argument('-e','--fitPercMin' , help='Lower bound of CTR fit, in numb of sigmas - default = 6.0',required=False)
    parser.add_argument('-g','--fitPercMax' , help='Upper bound of CTR fit, in numb of sigmas - default = 5.0',required=False)
-
+   parser.add_argument('-o','--output'     , help='Prefix of output file - default = pOutput_',required=False)
    args = parser.parse_args()
 
    # threads = 0
    # if args.threads == None:
    #     args.threads = 8
+   prefix_name = "pOutput_"
+   if args.output != None:
+       prefix_name = args.output
    if args.histoMin == None:
        args.histoMin = -15e-9
    if args.histoMax == None:
@@ -98,6 +101,8 @@ def main(argv):
 
    print (elementslist)
 
+
+
    processList = []
    # create config files and processes
    for i in elementslist:
@@ -105,7 +110,7 @@ def main(argv):
        fOutName = fInName[0:len(fInName)-4] + "_" + i + ".cfg"
        fOut = open(fOutName,"w")
        paraStr = BaseParaStr + i
-       outputFilePrefix = "parallelOutput = pOutput_" + i
+       outputFilePrefix = "parallelOutput = " + prefix_name + i
        fOut.write("### Parallelized analysis ###\n")
        fOut.write(paraStr)
        fOut.write("\n")
