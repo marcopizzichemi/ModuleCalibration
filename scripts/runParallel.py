@@ -19,6 +19,7 @@ def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,
     cmd = ['ModuleCalibration','-c', name, filesMod]
     # cmd = "ModuleCalibration -c " + name + " " + prefix
     print ("Running calibration on Element %s..." %element )
+    print (cmd)
     logName = 'log_' + prefix_name + element + '.log'
     log = open(logName, 'w')
     subprocess.Popen(cmd,stdout = log,stderr=None).wait()
@@ -27,6 +28,7 @@ def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
     cmd = ['timeAnalysis','-i', files,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    print (cmd)
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
     # print (cmd)
