@@ -12,21 +12,21 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax):
+def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name):
     """thread worker function"""
     # value = 1
     filesMod = files + "*"
     cmd = ['ModuleCalibration','-c', name, filesMod]
     # cmd = "ModuleCalibration -c " + name + " " + prefix
     print ("Running calibration on Element %s..." %element )
-    logName = 'log_pOutput_' + element + '.log'
+    logName = 'log_' + prefix_name + element + '.log'
     log = open(logName, 'w')
     subprocess.Popen(cmd,stdout = log,stderr=None).wait()
 
     # print (cmd)
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
-    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + element + '.root', '-c' , 'pOutput_' + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
     # print (cmd)
@@ -119,7 +119,7 @@ def main(argv):
        fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.files,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax))
+       proc = multiprocessing.Process(target=worker, args=(fOutName,args.files,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name))
        processList.append(proc)
 
    #start processes
