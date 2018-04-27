@@ -143,8 +143,10 @@ private:
 
 
   std::vector<multiSpectrum_t>   deltaTcryTneig;
+  std::vector<multiSpectrum_t>   likelihood;
   std::vector<multiSpectrum_t>   LSSpectra;
   std::vector<multiScatter_t>   deltaT2vsW;
+  std::vector<multiScatter_t>   likelihoodDelta;
   std::vector<multiScatter_t>   deltaT2vsCH;
   std::vector<multiDeltaSlice_t> slicesDelta;
   std::vector<multiGraphDelayW_t> graphDelayW;
@@ -265,6 +267,8 @@ public:
   std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
   std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
   std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
+  std::vector<multiSpectrum_t>             GetLikelihood(){return likelihood;};
+  std::vector<multiScatter_t>              GetLikelihoodDelta(){return likelihoodDelta;};
   std::vector<multiScatter_t>              GetDeltaT2vsCH(){return deltaT2vsCH;};
   std::vector<multiDeltaSlice_t>           GetDeltaSlice(){return slicesDelta;};
   std::vector<multiGraphDelayW_t>          GetGraphDelayW(){return graphDelayW;};
@@ -371,6 +375,23 @@ public:
     tempSpectrum.spectrum = aHisto;
     deltaTcryTneig.push_back(tempSpectrum);
   };
+
+  void                 AddLikelihood(TH1F* aHisto,int aPos)
+  {
+    multiSpectrum_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    likelihood.push_back(tempSpectrum);
+  };
+
+  void                 AddLikelihoodDelta(TH2F* aHisto,int aPos)
+  {
+    multiScatter_t tempSpectrum;
+    tempSpectrum.canvasPosition = aPos;
+    tempSpectrum.spectrum = aHisto;
+    likelihoodDelta.push_back(tempSpectrum);
+  };
+
   void                 AddDeltaT2vsW(TH2F* aHisto,int aPos)
   {
     multiScatter_t tempSpectrum;

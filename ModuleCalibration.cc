@@ -120,7 +120,6 @@ void extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, int
   double f1min = histo->GetXaxis()->GetXmin();
   double f1max = histo->GetXaxis()->GetXmax();
 
-
   TF1* f1  = new TF1("f1","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
   f1->SetLineColor(kBlack);
   f1->SetParName(0,"N");
@@ -143,27 +142,20 @@ void extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, int
     fitMax = f1max;
   }
   histo->Fit(f1,"Q","",fitMin,fitMax);
-  double min,max,min10,max10;
+  double min,max;
   // int divs = 3000;
   double step = (f1max-f1min)/divs;
+  double funcMax = f1->GetMaximum(fitMin,fitMax);
   // is [0] the max of the function???
   for(int i = 0 ; i < divs ; i++)
   {
-    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/2.0) )
+    if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
     {
       min = f1min + (i+0.5)*step;
     }
-    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/2.0) )
+    if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
     {
       max = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/10.0) )
-    {
-      min10 = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/10.0) )
-    {
-      max10 = f1min + (i+0.5)*step;
     }
   }
   res[0] = f1->GetParameter(1);  // res[0] is mean
@@ -197,27 +189,20 @@ void extractFromCrystalBall(TH1F* histo,double fitPercMin,double fitPercMax, int
     fitMax = f1max;
   }
   histo->Fit(f1,"Q","",fitMin,fitMax);
-  double min,max,min10,max10;
+  double min,max;
   // int divs = 3000;
   double step = (f1max-f1min)/divs;
+  double funcMax = f1->GetMaximum(fitMin,fitMax);
   // is [0] the max of the function???
   for(int i = 0 ; i < divs ; i++)
   {
-    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/2.0) )
+    if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
     {
       min = f1min + (i+0.5)*step;
     }
-    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/2.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/2.0) )
+    if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
     {
       max = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) < f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) > f1->GetParameter(0)/10.0) )
-    {
-      min10 = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) > f1->GetParameter(0)/10.0) && (f1->Eval(f1min + (i+1)*step) < f1->GetParameter(0)/10.0) )
-    {
-      max10 = f1min + (i+0.5)*step;
     }
   }
   res[0] = f1->GetParameter(1);  // res[0] is mean
@@ -417,6 +402,7 @@ int main (int argc, char** argv)
   int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
   bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
+  bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -2866,6 +2852,118 @@ int main (int argc, char** argv)
                           // CurrentCrystal->SetDeltaTvsWFit(linearFitCTR);
                           // var.str("");
                           // sname.str("");
+
+
+
+
+
+                          if(likelihoodCorrection)
+                          {
+                            for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
+                            {
+                              //get the timingChannel and digitizerChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
+                              int iNeighTimingChannel;
+                              int iNeighDigitizerChannel;
+                              for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+                              {
+                                if(detector[iDet].digitizerChannel == neighbours[iNeig])
+                                {
+                                  iNeighTimingChannel = detector[iDet].timingChannel;
+                                  iNeighDigitizerChannel = detector[iDet].digitizerChannel;
+                                }
+                              }
+
+                              std::cout << "Likelihood: analyzing neighboring channel "
+                              << iNeig+1 << "/"
+                              << neighbours.size() << "... " << std::endl;
+                              //
+                              // histogram of tCry - tNeighbour
+                              sname <<  "T_Channel_" << neighbours[iNeig] << " - T_tag" ;
+                              var << "t" << iNeighTimingChannel
+                              << " - t" << taggingCrystalTimingChannel
+                              << " >> " << sname.str() ;
+                              //noZerosCut
+                              sNoZerosCut << "(t" << iNeighTimingChannel << "!= 0) && ("
+                              << "t" << taggingCrystalTimingChannel << "!= 0)";
+                              noZerosCut = sNoZerosCut.str().c_str();
+                              sNoZerosCut.str("");
+
+                              int LikelihoodBins = 100;
+                              double LikelihoodTimeMin = -15e-9;
+                              double LikelihoodTimeMax = 15e-9;
+
+                              TH1F* spectrumLikelihood = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax+4e-9);
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
+                              spectrumLikelihood->GetXaxis()->SetTitle("Time [S]");
+                              spectrumLikelihood->GetYaxis()->SetTitle("N");
+
+
+                              var.str("");
+                              sname.str("");
+
+                              sname << "T_Channel_" << neighbours[iNeig] << " - T_tag" << " vs. W";
+                              var << "t" << iNeighTimingChannel
+                                  << " - t" << taggingCrystalTimingChannel
+                                  << ":" << FloodZ.str() <<" >> " << sname.str() ;
+                              //noZerosCut
+                              sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
+                                          << "t" << iNeighTimingChannel << "!= 0)";
+                              noZerosCut = sNoZerosCut.str().c_str();
+                              sNoZerosCut.str("");
+                              TH2F* likelihoodDelta = new TH2F(sname.str().c_str(),
+                                                                         sname.str().c_str(),
+                                                                         wHistogramsBins,
+                                                                         spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                                                                         LikelihoodBins,
+                                                                         spectrumLikelihood->GetMean() - 3.0*spectrumLikelihood->GetRMS(),spectrumLikelihood->GetMean() + 3.0*spectrumLikelihood->GetRMS());
+                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                              likelihoodDelta->GetXaxis()->SetTitle("W");
+                              sname.str("");
+                              sname << "T_channel_"<< neighbours[iNeig] << " - T_tag, [S]";
+                              likelihoodDelta->GetYaxis()->SetTitle(sname.str().c_str());
+                              var.str("");
+                              sname.str("");
+
+
+                              int  neighID = 0;
+                              for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
+                              {
+                                if( detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel == iNeighDigitizerChannel)
+                                {
+                                  neighID = iNeigh;
+                                }
+                              }
+
+                              //---------------------------------------------//
+                              // Save plots                                  //
+                              //---------------------------------------------//
+                              int plotPos = -1;
+                              for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                              {
+                                for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                                {
+                                  if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                                  {
+                                    plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                                  }
+                                }
+                              }
+
+
+                              if(plotPos != -1)
+                              {
+                                CurrentCrystal->AddLikelihood(spectrumLikelihood,plotPos);
+                                CurrentCrystal->AddLikelihoodDelta(likelihoodDelta,plotPos);
+                                // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
+
+                              }
+
+
+
+                            }
+
+
+                          }
 
 
 
@@ -6106,6 +6204,68 @@ int main (int argc, char** argv)
                           sChNum.str("");
 
 
+                          if(likelihoodCorrection)
+                          {
+                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            C_spectrum->SetName("Likelihood");
+                            C_spectrum->Divide(nmppcx,nmppcy);
+                            //first plot the Delta Tcry - Ttagging for this crystal
+                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                            CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihood().size() ; iNeig++)
+                            {
+                              C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
+                              CurrentCrystal->GetLikelihood()[iNeig].spectrum->Draw();
+                            }
+                            C_spectrum->Write();
+                            delete C_spectrum;
+
+                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            C_spectrum->SetName("Likelihood delta");
+                            C_spectrum->Divide(nmppcx,nmppcy);
+                            //first plot the Delta Tcry - Ttagging for this crystal
+                            C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
+                            CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihoodDelta().size() ; iNeig++)
+                            {
+                              C_spectrum->cd(CurrentCrystal->GetLikelihoodDelta()[iNeig].canvasPosition);
+                              CurrentCrystal->GetLikelihoodDelta()[iNeig].spectrum->Draw("COLZ");
+                            }
+                            C_spectrum->Write();
+                            delete C_spectrum;
+
+                            TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("LikelihoodCorrection");
+                            corrDir->cd();
+
+                            //write the plots separately
+                            CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihood().size() ; iNeig++)
+                            {
+                              // C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
+                              CurrentCrystal->GetLikelihood()[iNeig].spectrum->Write();
+                            }
+
+                            CurrentCrystal->GetDeltaTvsW()->Write();
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihoodDelta().size() ; iNeig++)
+                            {
+                              // C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
+                              CurrentCrystal->GetLikelihoodDelta()[iNeig].spectrum->Write();
+                            }
+
+
+
+
+
+
+
+                            corrDir->cd("..");
+
+
+
+
+                          }
+
+
                           if(timingCorrectionForPolished) // only if timing correction is performed
                           {
 
@@ -6151,6 +6311,12 @@ int main (int argc, char** argv)
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
+
+
+                            // if(likelihoodCorrection)
+                            // {
+                            //
+                            // }
 
                             if(timingCorrection)
                             {
