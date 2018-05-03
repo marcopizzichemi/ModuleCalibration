@@ -242,7 +242,7 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   TF1 *cb  = new TF1("cb","crystalball");
   cb->SetLineColor(kBlue);
   cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
+  TFitResultPtr rCb = histo->Fit(cb,"QS","",fitMin,fitMax);
 
   //fit with gauss + exp
   TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
@@ -256,7 +256,7 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   gexp->SetParameter(1,gaussDummy->GetParameter(1));
   gexp->SetParameter(2,gaussDummy->GetParameter(2));
   gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
+  TFitResultPtr rGexp = histo->Fit(gexp,"QS","",fitMin,fitMax);
 
 
   double chi2gexp = rGexp->Chi2();
@@ -267,33 +267,40 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   if(chi2gexp > chi2cb)
   {
     f1 = cb;
+    delete gexp;
   }
   else
   {
     f1 = gexp;
+    delete cb;
   }
-  f1->SetLineColor(kRed);
+  // f1->SetLineColor(kRed);
   // double f1min = histo->GetXaxis()->GetXmin();
   // double f1max = histo->GetXaxis()->GetXmax();
   // dummy re-fit just to draw the function and save it in the histogram...
-  histo->Fit(f1,"Q","",fitMin,fitMax);
-  double min,max;
-  double step = (f1max-f1min)/divs;
-  double funcMax = f1->GetMaximum(fitMin,fitMax);
-  // is [0] the max of the function???
-  for(int i = 0 ; i < divs ; i++)
-  {
-    if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-    {
-      min = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-    {
-      max = f1min + (i+0.5)*step;
-    }
-  }
-  res[0] = f1->GetParameter(1);  // res[0] is mean
-  res[1] = max-min;              // res[1] is FWHM
+  // histo->Fit(f1,"Q","",fitMin,fitMax);
+
+  // new version, get the histogram used to draw the f1 function and directly get mean and rms from it
+  // idiotic way but easier and faster. thanks ROOT
+
+
+  // double min,max;
+  // double step = (f1max-f1min)/divs;
+  // double funcMax = f1->GetMaximum(fitMin,fitMax);
+  // // is [0] the max of the function???
+  // for(int i = 0 ; i < divs ; i++)
+  // {
+  //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
+  //   {
+  //     min = f1min + (i+0.5)*step;
+  //   }
+  //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
+  //   {
+  //     max = f1min + (i+0.5)*step;
+  //   }
+  // }
+  res[0] = f1->GetHistogram()->GetMean();  // res[0] is mean
+  res[1] = f1->GetHistogram()->GetRMS();   // res[1] is now RMS
 }
 
 
@@ -493,6 +500,7 @@ int main (int argc, char** argv)
   bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
+  // bool noTimeFitting = = config.read<bool>("noTimeFitting",0); // avoid fitting of time function, just take
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -1158,7 +1166,7 @@ int main (int argc, char** argv)
             //------------------------------------------//
             // CREATION OF STRINGS FOR PLOTTING         //
             //------------------------------------------//
-            // in order to compute all th plots on the fly, it is necessary to put together the proper strings to pass to the draw commands
+            // in order to compute all the plots on the fly, it is necessary to put together the proper strings to pass to the draw commands
             // this has to include also the saturation correction, the pedestal position and the noise
             // furthermore, we need to prepare some collection of elements for the channels that are relevant for computation of energy, u-v coordinates and w coordinates
             // it all starts from the detector array, produced and filled by the InputFile.cc part of the program. Declaration is in ./include/Detector.h
@@ -1231,13 +1239,13 @@ int main (int argc, char** argv)
 
             // 3. Translate indexes into strings, taking also into account saturation (if requested), pedestals and noise
             //    Two info need to be stored together:
-            //           a) the channel ID (i.e. the digitizer channel)
+            //           a) the channel ID
             //           b) the complete string that will be passed to the Draw command
             //    So it is necessary to create a multi_channel_t struct, with these two entries (see definition above)
             //    Then, 3 arrays of this multi_channel_t elements are created:
-            //    ---> thisChannel        = holds the string and digitizerChannel for this MPPC, so it's not a vector but one struct
-            //    ---> neighbourChannels  = vector holding the string and digitizerChannel for each of the neighbour channels to this MPPC
-            //    ---> allChannels        = vector holding the string and digitizerChannel for all channels in this MPPC array
+            //    ---> thisChannel        = holds the string and ID for this MPPC, so it's not a vector but one struct
+            //    ---> neighbourChannels  = vector holding the string and ID for each of the neighbour channels to this MPPC
+            //    ---> allChannels        = vector holding the string and ID for all channels in this MPPC array
             //    The 3 arrays will be used in step 4. and 5.
             multi_channel_t thisChannel;
             std::vector<multi_channel_t> neighbourChannels;
