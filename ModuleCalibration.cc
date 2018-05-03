@@ -239,13 +239,13 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   }
 
   //fit with crystalball
-  TF1 *cb  = new TF1("cb","crystalball");
+  TF1 *cb  = new TF1("cb","crystalball",f1min,f1max);
   cb->SetLineColor(kBlue);
   cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  TFitResultPtr rCb = histo->Fit(cb,"QS","",fitMin,fitMax);
+  TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
 
   //fit with gauss + exp
-  TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
+  TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
   gexp->SetLineColor(kGreen);
   gexp->SetParName(0,"N");
   gexp->SetParName(1,"Mean");
@@ -256,7 +256,7 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   gexp->SetParameter(1,gaussDummy->GetParameter(1));
   gexp->SetParameter(2,gaussDummy->GetParameter(2));
   gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  TFitResultPtr rGexp = histo->Fit(gexp,"QS","",fitMin,fitMax);
+  TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
 
 
   double chi2gexp = rGexp->Chi2();
@@ -274,11 +274,11 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
     f1 = gexp;
     delete cb;
   }
-  // f1->SetLineColor(kRed);
+  f1->SetLineColor(kRed);
   // double f1min = histo->GetXaxis()->GetXmin();
   // double f1max = histo->GetXaxis()->GetXmax();
   // dummy re-fit just to draw the function and save it in the histogram...
-  // histo->Fit(f1,"Q","",fitMin,fitMax);
+  histo->Fit(f1,"Q","",fitMin,fitMax);
 
   // new version, get the histogram used to draw the f1 function and directly get mean and rms from it
   // idiotic way but easier and faster. thanks ROOT
