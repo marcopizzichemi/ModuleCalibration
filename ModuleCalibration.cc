@@ -501,6 +501,10 @@ int main (int argc, char** argv)
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
   // bool noTimeFitting = = config.read<bool>("noTimeFitting",0); // avoid fitting of time function, just take
+
+
+  float spectrumSearchMin = config.read<float>("spectrumSearchMin",1);
+  float spectrumSearchMax = config.read<float>("spectrumSearchMax",histo1Dmax);
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -2197,6 +2201,7 @@ int main (int argc, char** argv)
                         TSpectrum *s;
                         s = new TSpectrum(20);
                         // 		Input[i].SumSpectraCanvas->cd(j+1);
+                        spectrumCharge->GetXaxis()->SetRangeUser(spectrumSearchMin,spectrumSearchMax);
                         Int_t CrystalPeaksN = s->Search(spectrumCharge,2,"",0.5);
                         Double_t *CrystalPeaks =  s->GetPositionX();
                         Double_t *CrystalPeaksY = s->GetPositionY();
@@ -2221,6 +2226,7 @@ int main (int argc, char** argv)
                           else
                             energyResolution = ENERGY_RESOLUTION;
                         }
+                        spectrumCharge->GetXaxis()->SetRangeUser(1,histo1Dmax);
                         Float_t par0 = CrystalPeaksY[peakID];
                         Float_t par1 = CrystalPeaks[peakID];
                         Float_t par2 = (CrystalPeaks[peakID]*energyResolution)/2.35;
