@@ -258,49 +258,84 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
   TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
 
+  Int_t fitStatusCb = rCb;
+  Int_t fitStatusGexp = rGexp;
 
-  double chi2gexp = rGexp->Chi2();
-  double chi2cb   = rCb->Chi2();
+  double chi2gexp;
+  double chi2cb;
+
+  if(!fitStatusGexp)
+  {
+    chi2gexp = rGexp->Chi2();
+  }
+  if(!fitStatusCb)
+  {
+    chi2cb   = rCb->Chi2();
+  }
+
 
   //set function to measure
   TF1 *f1;
-  if(chi2gexp > chi2cb)
+  if(fitStatusGexp && fitStatusCb) // both fit didn't work, just set everything to 0
   {
-    f1 = cb;
-    delete gexp;
+    res[0] = 0;
+    res[1] = 0;
   }
   else
   {
-    f1 = gexp;
-    delete cb;
+    if(fitStatusGexp && !fitStatusCb) // only cb worked
+    {
+      f1 = cb;
+      delete gexp;
+
+    }
+    else if(!fitStatusGexp && fitStatusCb) // only gexp worked
+    {
+      f1 = gexp;
+      delete cb;
+    }
+    else // both worked
+    {
+      if(chi2gexp > chi2cb)
+      {
+        f1 = cb;
+        delete gexp;
+      }
+      else
+      {
+        f1 = gexp;
+        delete cb;
+      }
+    }
+
+    f1->SetLineColor(kRed);
+    // double f1min = histo->GetXaxis()->GetXmin();
+    // double f1max = histo->GetXaxis()->GetXmax();
+    // dummy re-fit just to draw the function and save it in the histogram...
+    histo->Fit(f1,"Q","",fitMin,fitMax);
+
+    // new version, get the histogram used to draw the f1 function and directly get mean and rms from it
+    // idiotic way but easier and faster. thanks ROOT
+
+
+    // double min,max;
+    // double step = (f1max-f1min)/divs;
+    // double funcMax = f1->GetMaximum(fitMin,fitMax);
+    // // is [0] the max of the function???
+    // for(int i = 0 ; i < divs ; i++)
+    // {
+    //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
+    //   {
+    //     min = f1min + (i+0.5)*step;
+    //   }
+    //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
+    //   {
+    //     max = f1min + (i+0.5)*step;
+    //   }
+    // }
+    res[0] = f1->GetHistogram()->GetMean();  // res[0] is mean
+    res[1] = f1->GetHistogram()->GetRMS();   // res[1] is now RMS
   }
-  f1->SetLineColor(kRed);
-  // double f1min = histo->GetXaxis()->GetXmin();
-  // double f1max = histo->GetXaxis()->GetXmax();
-  // dummy re-fit just to draw the function and save it in the histogram...
-  histo->Fit(f1,"Q","",fitMin,fitMax);
-
-  // new version, get the histogram used to draw the f1 function and directly get mean and rms from it
-  // idiotic way but easier and faster. thanks ROOT
-
-
-  // double min,max;
-  // double step = (f1max-f1min)/divs;
-  // double funcMax = f1->GetMaximum(fitMin,fitMax);
-  // // is [0] the max of the function???
-  // for(int i = 0 ; i < divs ; i++)
-  // {
-  //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-  //   {
-  //     min = f1min + (i+0.5)*step;
-  //   }
-  //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-  //   {
-  //     max = f1min + (i+0.5)*step;
-  //   }
-  // }
-  res[0] = f1->GetHistogram()->GetMean();  // res[0] is mean
-  res[1] = f1->GetHistogram()->GetRMS();   // res[1] is now RMS
 }
 
 
@@ -2872,8 +2907,9 @@ int main (int argc, char** argv)
                           int divisions = 10000;
                           double res[2];
 
-
+                          // std::cout << "debug 1" << std::endl;
                           extractCTR(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          // std::cout << "debug 1 - post" << std::endl;
 
                           // if(TimeCorrectionFitFunction == 0)
                           // {
@@ -3144,6 +3180,7 @@ int main (int argc, char** argv)
                                 double fitPercMax = 6.0;
                                 int divisions = 10000;
                                 double res[2];
+                                // std::cout << "debug 2" << std::endl;
                                 extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
 
                                 // if(TimeCorrectionFitFunction == 0)
@@ -3288,6 +3325,7 @@ int main (int argc, char** argv)
                               double fitPercMax = 6.0;
                               int divisions = 10000;
                               double res[2];
+                              // std::cout << "debug 3" << std::endl;
                               extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
 
                               // if(TimeCorrectionFitFunction == 0)
@@ -3483,6 +3521,7 @@ int main (int argc, char** argv)
                                   double fitPercMax = 6.0;
                                   int divisions = 10000;
                                   double res[2];
+                                  // std::cout << "debug 4" << std::endl;
                                   extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
                                   // if(TimeCorrectionFitFunction == 0)
                                   // {
