@@ -5690,6 +5690,7 @@ int main (int argc, char** argv)
       {
         if(crystal[iCrystal][jCrystal]->CrystalIsOn())
         {
+          crystal[iCrystal][jCrystal]->SetBigCanvasPosition(canvascounter);
           if(saturationRun)
           {
             if(backgroundSaturationRun)
@@ -6614,6 +6615,17 @@ int main (int argc, char** argv)
                       //write charge channels used for W calculation for this crystal
                       std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
                       gDirectory->WriteObject(&channelsNumRelevantForW, "channelsNumRelevantForW");
+
+                      //write position in tcanvas of big plots
+
+
+                      std::stringstream sCryPos;
+                      sCryPos << CurrentCrystal->GetBigCanvasPosition();
+                      TNamed CryPos("bigCanvasPosition",sCryPos.str().c_str());
+                      CryPos.Write();
+
+                      // std::vector<int> bigCanvasPosition = CurrentCrystal->GetBigCanvasPosition();
+                      // gDirectory->WriteObject(&bigCanvasPosition, "bigCanvasPosition");
 
 
 

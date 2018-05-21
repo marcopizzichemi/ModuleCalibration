@@ -107,6 +107,7 @@ private:
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
   double               averageDoiResolution;
   std::vector<int>     channelsNumRelevantForW;
+  int                  bigCanvasPosition;
   std::vector<int>     DelayTimingChannelsNum;
   int                  timingChannel;
   std::vector<int>     tChannelsForPolishedCorrection;
@@ -255,6 +256,7 @@ public:
   TH1F*                GetCTRcentralCorrection(){return CTRcentralCorrection;};
   TGraph*              GetGraphDeltaW(){return graphDeltaW;};
   TGraph*              GetGraphDeltaRMS(){return graphDeltaRMS;};
+  int                  GetBigCanvasPosition(){return bigCanvasPosition;};
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
@@ -366,6 +368,7 @@ public:
   void                 SetMeanForPolishedCorrection(std::vector<double> aVect){meanForPolishedCorrection = aVect;};
   void                 SetFwhmForPolishedCorrection(std::vector<double> aVect){fwhmForPolishedCorrection = aVect;};
   void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
+  void                 SetBigCanvasPosition(int aNum){bigCanvasPosition = aNum;};
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
