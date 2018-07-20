@@ -2282,18 +2282,18 @@ int main (int argc, char** argv)
                         spectrumCharge->Fit(gauss,"Q","",fitmin,fitmax);
                         // std::cout << "pars " << par0 << "\t" << par1 << "\t" << par2 << std::endl;
 
-                        if(usingTaggingBench && TagEdgeCalculation)
+                        if((usingTaggingBench || taggingForTiming ) && TagEdgeCalculation)
                         {
                           std::cout << "Crystal "
                                     << CurrentCrystal->GetID()
                                     << " - MPPC "
                                     << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()
-                                    << ", Ratio = "
+                                    << ", Ratio 1 = "
                                     << fabs(gauss->GetParameter(0)*
                                             gauss->GetParameter(2)*
                                             TMath::Sqrt(2.0*TMath::Pi())) /
-                                            tagPeakHgEntries
-                                    << std::endl;
+                                            tagPeakHgEntries;
+                                    // << std::endl;
                         }
                         //store the mean and sigma in the crystal
                         if(gauss->GetParameter(1) > 0) // otherwise the fit was very wrong..)
@@ -2318,6 +2318,11 @@ int main (int argc, char** argv)
                         spectrumChargeHighlighted->GetXaxis()->SetTitle("ADC Channels");
                         spectrumChargeHighlighted->GetYaxis()->SetTitle("N");
                         CurrentCrystal->SetHighlightedSpectrum(spectrumChargeHighlighted);
+
+                        if((usingTaggingBench || taggingForTiming ) && TagEdgeCalculation)
+                        {
+                          std::cout << ", Ratio 2 = " << spectrumChargeHighlighted->GetEntries() / tagPeakHgEntries << std::endl;
+                        }
                         var.str("");
                         sname.str("");
                       }
