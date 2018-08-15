@@ -533,6 +533,7 @@ int main (int argc, char** argv)
   float photopeakFitRangeMax = config.read<float>("photopeakFitRangeMax",1.2);
   int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
   bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
+  int noiseCutLevel = config.read<int>("noiseCutLevel",0); // number of channels that can be equal to 0 for an event to be accepted. So noiseCutLevel = 0 means ALL channels have to be different to 0 for an event to be accepted, 1 means that 1 channel can be 0, etc...
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
   // bool noTimeFitting = = config.read<bool>("noTimeFitting",0); // avoid fitting of time function, just take
@@ -1691,8 +1692,11 @@ int main (int argc, char** argv)
 
             // 8. Compose an additional trigger condition, cutting the noise
             //    the idea is to ignore events when the charge recorded by one of the detectors involved is == 0
-            //    ((ch12 > 0)+ (ch11>0) + (ch0>0)+ (ch4>0) + (ch7>0) +(ch10>0) +(ch13>0) +(ch14>0)+ (ch15>0)) > 8
-            //    the channels involved are defined as the biggest collection between relevantForUV and relevantForW
+            //    ((ch12 > 0)+ (ch11>0) + (ch0>0)+ (ch4>0) + (ch7>0) +(ch10>0) +(ch13>0) +(ch14>0)+ (ch15>0)) > N
+            //    N is defined as the number channels involved (i.e. the biggest collection between relevantForUV
+            //    and relevantForW) minus 1 minus the noiseCutLevel (noiseCutLevel is the number of channels that
+            //    can be equal to 0 for an event to be accepted. So noiseCutLevel = 0 means ALL channels have to
+            //    be different to 0 for an event to be accepted, 1 means that 1 channel can be 0, etc...)
             std::vector<multi_channel_t> relevantForNoiseCut;
             if(relevantForUV.size() > relevantForW.size())
             {
@@ -1716,7 +1720,7 @@ int main (int argc, char** argv)
                        << relevantForNoiseCut[relevantForNoiseCut.size() -1].string << " > "
                        << noiseSigmas * detector[relevantForNoiseCut[relevantForNoiseCut.size() -1].detectorIndex].noise
                        << ")";
-            noiseCut << ") > " << relevantForNoiseCut.size() -1;
+            noiseCut << ") > " << relevantForNoiseCut.size() - noiseCutLevel -1;
             // std::cout << noiseCut.str() << std::endl;
             // std::cout << std::endl;
 
