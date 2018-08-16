@@ -280,6 +280,8 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   {
     res[0] = 0;
     res[1] = 0;
+    res[2] = 0;
+    res[3] = 0;
   }
   else
   {
@@ -333,8 +335,17 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
     //     max = f1min + (i+0.5)*step;
     //   }
     // }
-    res[0] = f1->GetHistogram()->GetMean();  // res[0] is mean
-    res[1] = f1->GetHistogram()->GetRMS();   // res[1] is now RMS
+    res[0] = f1->GetHistogram()->GetMean();      // res[0] is mean
+    res[1] = f1->GetHistogram()->GetRMS();       // res[1] is now RMS
+    res[2] = f1->GetHistogram()->GetMeanError(); // res[2] is mean error
+    res[3] = f1->GetHistogram()->GetRMSError();  // res[3] is RMS error
+
+    // //DEBUG
+    // std::cout << f1->GetHistogram()->GetMean() << " "
+    //           << f1->GetParameter(1) << " "
+    //           << f1->GetHistogram()->GetRMS() << " "
+    //           << max - min
+    //           << std::endl;
   }
 }
 
@@ -2914,7 +2925,7 @@ int main (int argc, char** argv)
                           double fitPercMin = 5.0;
                           double fitPercMax = 6.0;
                           int divisions = 10000;
-                          double res[2];
+                          double res[4];
 
                           // std::cout << "debug 1" << std::endl;
                           extractCTR(aSpectrum,fitPercMin,fitPercMax,divisions,res);
@@ -3128,8 +3139,13 @@ int main (int argc, char** argv)
 
                             //get a TGraph
                             std::vector<float> delta_X,delta_X_core;
+                            std::vector<float> delta_X_error;
                             std::vector<float> W_Y,W_Y_core;
                             std::vector<float> rmsBasic_Y,rmsBasic_Y_core;
+                            std::vector<float> W_Y_core_error;
+                            std::vector<float> rmsBasic_Y_core_error;
+                            std::vector<float> W_Y_error;
+                            std::vector<float> rmsBasic_Y_error;
 
                             std::cout << "Performing timing correction analysis"  << std::endl;
                             std::cout << "Analyzing interaction crystal..."  << std::endl;
@@ -3188,7 +3204,7 @@ int main (int argc, char** argv)
                                 double fitPercMin = 5.0;
                                 double fitPercMax = 6.0;
                                 int divisions = 10000;
-                                double res[2];
+                                double res[4];
                                 // std::cout << "debug 2" << std::endl;
                                 extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
 
@@ -3209,9 +3225,21 @@ int main (int argc, char** argv)
                                 // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
                                 // tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
 
-                                delta_X_core.push_back(midW);
-                                W_Y_core.push_back(res[0]);
-                                rmsBasic_Y_core.push_back(res[1]);
+
+                                if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                {
+                                  // skip point
+                                }
+                                else
+                                {
+                                  delta_X_core.push_back(midW);
+                                  W_Y_core.push_back(res[0]);
+                                  rmsBasic_Y_core.push_back(res[1]);
+                                  W_Y_core_error.push_back(res[2]);
+                                  rmsBasic_Y_core_error.push_back(res[3]);
+                                }
+
+
                                 // // ------- BEGIN OF MODS FOR AMPL CORRECTION
                                 // CurrentCrystal->AddTvsQHistos(TvsQ);
                                 CurrentCrystal->AddDeltaTHistos(tempHisto);
@@ -3222,22 +3250,25 @@ int main (int argc, char** argv)
                               }
 
                               //add beginning and end points
-                              delta_X.push_back(0.0);
-                              W_Y.push_back(W_Y_core[0]);
-                              rmsBasic_Y.push_back(rmsBasic_Y_core[0]);
+                              // delta_X.push_back(0.0);
+                              // W_Y.push_back(W_Y_core[0]);
+                              // rmsBasic_Y.push_back(rmsBasic_Y_core[0]);
                               for(unsigned int iCore = 0; iCore < delta_X_core.size(); iCore++)
                               {
                                 delta_X.push_back(delta_X_core[iCore]);
+                                delta_X_error.push_back(0);
                                 W_Y.push_back(W_Y_core[iCore]);
                                 rmsBasic_Y.push_back(rmsBasic_Y_core[iCore]);
+                                W_Y_error.push_back(W_Y_core_error[iCore]);
+                                rmsBasic_Y_error.push_back(rmsBasic_Y_core_error[iCore]);
                               }
-                              delta_X.push_back(1.0);
-                              W_Y.push_back(W_Y_core[delta_X_core.size()-1]);
-                              rmsBasic_Y.push_back(rmsBasic_Y_core[delta_X_core.size()-1]);
+                              // delta_X.push_back(1.0);
+                              // W_Y.push_back(W_Y_core[delta_X_core.size()-1]);
+                              // rmsBasic_Y.push_back(rmsBasic_Y_core[delta_X_core.size()-1]);
 
 
 
-                              TGraph *graphDeltaW = new TGraph(delta_X.size(),&delta_X[0],&W_Y[0]);
+                              TGraphErrors *graphDeltaW = new TGraphErrors(delta_X.size(),&delta_X[0],&W_Y[0],&delta_X_error[0],&W_Y_error[0]);
                               sname.str("");
                               sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
                               graphDeltaW->SetTitle(sname.str().c_str());
@@ -3245,9 +3276,13 @@ int main (int argc, char** argv)
                               graphDeltaW->GetXaxis()->SetTitle("W");
                               graphDeltaW->GetYaxis()->SetTitle("T crystal - T tagging [S]");
                               sname.str("");
+
+                              //fit with straight line
+                              TF1 *deltaW_line = new TF1("deltaW_line",  "[0]*x + [1]",0,1);
+                              graphDeltaW->Fit(deltaW_line,"Q");
                               CurrentCrystal->SetGraphDeltaW(graphDeltaW);
 
-                              TGraph *graphDeltaRMS = new TGraph(delta_X.size(),&delta_X[0],&rmsBasic_Y[0]);
+                              TGraphErrors *graphDeltaRMS = new TGraphErrors(delta_X.size(),&delta_X[0],&rmsBasic_Y[0],&delta_X_error[0],&rmsBasic_Y_error[0]);
                               sname.str("");
                               sname << "RMS DeltaW Graph - Crystal " << CurrentCrystal->GetID();
                               graphDeltaRMS->SetTitle(sname.str().c_str());
@@ -3255,6 +3290,9 @@ int main (int argc, char** argv)
                               graphDeltaRMS->GetXaxis()->SetTitle("W");
                               graphDeltaRMS->GetYaxis()->SetTitle("T crystal - T tagging [S]");
                               sname.str("");
+                              //fit with straight line
+                              TF1 *deltaRMS_line = new TF1("deltaRMS_line",  "[0]*x + [1]",0,1);
+                              graphDeltaRMS->Fit(deltaRMS_line,"Q");
                               CurrentCrystal->SetGraphDeltaRMS(graphDeltaRMS);
                             }
 
@@ -3333,7 +3371,7 @@ int main (int argc, char** argv)
                               double fitPercMin = 5.0;
                               double fitPercMax = 6.0;
                               int divisions = 10000;
-                              double res[2];
+                              double res[4];
                               // std::cout << "debug 3" << std::endl;
                               extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
 
@@ -3453,8 +3491,13 @@ int main (int argc, char** argv)
                               std::vector<float> delay_X,delay_X_core;
                               std::vector<float> Wcoord_Y,Wcoord_Y_core;
                               std::vector<float> rms_Y,rms_Y_core;
-                              TGraph *graphDelayW;
-                              TGraph *graphDelayRMS;
+
+                              std::vector<float> delay_X_error,delay_X_core_error;
+                              std::vector<float> Wcoord_Y_error,Wcoord_Y_core_error;
+                              std::vector<float> rms_Y_error,rms_Y_core_error;
+
+                              TGraphErrors *graphDelayW;
+                              TGraphErrors *graphDelayRMS;
 
                               if(timingCorrection)
                               {
@@ -3529,7 +3572,7 @@ int main (int argc, char** argv)
                                   double fitPercMin = 5.0;
                                   double fitPercMax = 6.0;
                                   int divisions = 10000;
-                                  double res[2];
+                                  double res[4];
                                   // std::cout << "debug 4" << std::endl;
                                   extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
                                   // if(TimeCorrectionFitFunction == 0)
@@ -3546,29 +3589,46 @@ int main (int argc, char** argv)
                                   // fwhmForPolishedCorrection.push_back(res[1]);
 
 
-                                  delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
-                                  Wcoord_Y_core.push_back(res[0]);
-                                  rms_Y_core.push_back(res[1]);
+
+                                  if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                  {
+
+                                  }
+                                  else
+                                  {
+                                    delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                                    Wcoord_Y_core.push_back(res[0]);
+                                    rms_Y_core.push_back(res[1]);
+                                    Wcoord_Y_core_error.push_back(res[2]);
+                                    rms_Y_core_error.push_back(res[3]);
+                                  }
+
+
+
+
                                   CurrentCrystal->AddDelayTHistos(tempHisto);
                                   var.str("");
                                   sname.str("");
                                 }
 
                                 //add beginning and end points
-                                delay_X.push_back(0.0);
-                                Wcoord_Y.push_back(Wcoord_Y_core[0]);
-                                rms_Y.push_back(rms_Y_core[0]);
+                                // delay_X.push_back(0.0);
+                                // Wcoord_Y.push_back(Wcoord_Y_core[0]);
+                                // rms_Y.push_back(rms_Y_core[0]);
                                 for(unsigned int iCore = 0; iCore < delay_X_core.size(); iCore++)
                                 {
                                   delay_X.push_back(delay_X_core[iCore]);
+                                  delay_X_error.push_back(0);
                                   Wcoord_Y.push_back(Wcoord_Y_core[iCore]);
                                   rms_Y.push_back(rms_Y_core[iCore]);
+                                  Wcoord_Y_error.push_back(Wcoord_Y_core_error[iCore]);
+                                  rms_Y_error.push_back(rms_Y_core_error[iCore]);
                                 }
-                                delay_X.push_back(1.0);
-                                Wcoord_Y.push_back(Wcoord_Y_core[delay_X_core.size()-1]);
-                                rms_Y.push_back(rms_Y_core[delay_X_core.size()-1]);
+                                // delay_X.push_back(1.0);
+                                // Wcoord_Y.push_back(Wcoord_Y_core[delay_X_core.size()-1]);
+                                // rms_Y.push_back(rms_Y_core[delay_X_core.size()-1]);
 
-                                graphDelayW = new TGraph(delay_X.size(),&delay_X[0],&Wcoord_Y[0]);
+                                graphDelayW = new TGraphErrors(delay_X.size(),&delay_X[0],&Wcoord_Y[0],&delay_X_error[0],&Wcoord_Y_error[0]);
                                 sname.str("");
                                 sname << "Graph Delay ch_" << neighbours[iNeig] << "_t_" << iNeighTimingChannel;
                                 // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
@@ -3578,9 +3638,14 @@ int main (int argc, char** argv)
                                 sname.str("");
                                 sname << "T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << ", [S]";
                                 graphDelayW->GetYaxis()->SetTitle(sname.str().c_str());
+
+                                //fit with straight line
+                                TF1 *delayW_line = new TF1("delayW_line",  "[0]*x + [1]",0,1);
+                                graphDelayW->Fit(delayW_line,"Q");
+
                                 sname.str("");
 
-                                graphDelayRMS = new TGraph(delay_X.size(),&delay_X[0],&rms_Y[0]);
+                                graphDelayRMS = new TGraphErrors(delay_X.size(),&delay_X[0],&rms_Y[0],&delay_X_error[0],&rms_Y_error[0]);
                                 sname.str("");
                                 sname << "RMS Graph Delay ch_" << neighbours[iNeig ]<< "_t_" << iNeighTimingChannel;
                                 // sname << "DeltaW Graph - Crystal " << CurrentCrystal->GetID();
@@ -3590,6 +3655,11 @@ int main (int argc, char** argv)
                                 sname.str("");
                                 sname << "RMS (T_channel_"<< neighbours[iNeig] << " - T_crystal " << CurrentCrystal->GetID() << "), [S]";
                                 graphDelayRMS->GetYaxis()->SetTitle(sname.str().c_str());
+
+                                //fit with straight line
+                                TF1 *delayRMS_line = new TF1("delayRMS_line",  "[0]*x + [1]",0,1);
+                                graphDelayRMS->Fit(delayRMS_line,"Q");
+
                                 sname.str("");
                               }
 

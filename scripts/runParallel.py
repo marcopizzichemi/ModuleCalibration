@@ -12,11 +12,22 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func):
+def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection):
     """thread worker function"""
     # value = 1
-    filesMod = files + "*"
-    cmd = ['ModuleCalibration','-c', name, filesMod]
+
+    cmd = ['ModuleCalibration','-c', name]
+
+    # filesMod = ""
+    for i in filesCalib.split():
+        for file in os.listdir("./"):
+            if file.startswith(i):
+                cmd.append(file)
+    # print (filesMod)
+
+
+
+    # cmd = ['ModuleCalibration','-c', name, filesMod]
     # cmd = "ModuleCalibration -c " + name + " " + prefix
     print ("Running calibration on Element %s..." %element )
     print (cmd)
@@ -27,7 +38,10 @@ def worker(name,files,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,
     # print (cmd)
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
-    cmd = ['timeAnalysis','-i', files,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    if fitCorrection == 0:
+        cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    else:
+        cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax),'--fitCorrection' ]
     print (cmd)
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
@@ -42,11 +56,11 @@ def main(argv):
 
    #parsing args
    parser = argparse.ArgumentParser(description='Python script to start analysis in parallel')
-   parser.add_argument('-c','--config'     , help='Config file'               ,required=True )
-   parser.add_argument('-m','--mppcs'      , help='MPPC analyzed'             ,required=False)
-   parser.add_argument('-r','--crystals'   , help='Crystals analyzed'         ,required=False)
-   parser.add_argument('-f','--files'      , help='File prefix'               ,required=True )
-   # parser.add_argument('-t','--threads'    , help='Number of parallel threads',required=False)
+   parser.add_argument('-c','--config'     , help='Config file'                  ,required=True )
+   parser.add_argument('-m','--mppcs'      , help='MPPC analyzed'                ,required=False)
+   parser.add_argument('-r','--crystals'   , help='Crystals analyzed'            ,required=False)
+   parser.add_argument('-f','--filesCalib' , help='File prefix(es) for calibration'  ,required=True )
+   parser.add_argument('-l','--filesTime'  , help='File prefix time analysis'    ,required=True )
    parser.add_argument('-a','--histoMin'   , help='Min of CTR histograms [s] - default = -15e-9',required=False)
    parser.add_argument('-b','--histoMax'   , help='Max of CTR histograms [s] - default = 15e-9',required=False)
    parser.add_argument('-d','--histoBins'  , help='Number of bins in CTR histograms - default = 300',required=False)
@@ -54,6 +68,7 @@ def main(argv):
    parser.add_argument('-g','--fitPercMax' , help='Upper bound of CTR fit, in numb of sigmas - default = 5.0',required=False)
    parser.add_argument('-o','--output'     , help='Prefix of output file - default = pOutput_',required=False)
    parser.add_argument('-y','--func'       , help='Function for time fit. 0 = crystalball, 1 = gauss+exp   - default = 0',required=False)
+   parser.add_argument('-k','--fitCorrection'       , help='0 = no fit, 1 = use fit   - default = 0',required=False)
    args = parser.parse_args()
 
    # threads = 0
@@ -61,6 +76,10 @@ def main(argv):
    #     args.threads = 8
    prefix_name = "pOutput_"
    func = 0
+   fitCorrection = 0
+
+   if args.fitCorrection != None:
+       fitCorrection = args.fitCorrection
    if args.func != None:
        func = args.func
    if args.output != None:
@@ -95,9 +114,10 @@ def main(argv):
        elementslist =  args.mppcs.split(",")
        BaseParaStr = "parallelMPPC = "
    #print values
-   print ("Config file        = %s" % args.config )
-   print ("Elements analyzed  = %s" % elements )
-   print ("File prefix        = %s" % args.files )
+   print ("Config file                 = %s" % args.config )
+   print ("Elements analyzed           = %s" % elements )
+   print ("Calibration files prefix    = %s" % args.filesCalib )
+   print ("Time analysis files prefix  = %s" % args.filesTime )
    print ("")
    # print ("Number of threads = %s" % args.threads )
 
@@ -125,7 +145,7 @@ def main(argv):
        fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.files,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func))
+       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection))
        processList.append(proc)
 
    #start processes

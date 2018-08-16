@@ -80,8 +80,8 @@ private:
   TGraph*              calibrationGraph;
   TGraph*              doiResZ;
   TGraph*              wzgraph;
-  TGraph*              graphDeltaW;
-  TGraph*              graphDeltaRMS;
+  TGraphErrors*              graphDeltaW;
+  TGraphErrors*              graphDeltaRMS;
   TH1F*                simSigmaW;            ///< distribution of sigma W (sigma of gaussian fit of w histogram) for a simulation
   TGraphErrors*        simZvsW;              ///< Z energy deposition point versus peak position of W histogram for a simulation
   TF1*                 Fit;                  ///< fit function (it's a gaussian)
@@ -134,12 +134,12 @@ private:
   struct multiGraphDelayW_t
   {
     int canvasPosition;
-    TGraph* spectrum;
+    TGraphErrors* spectrum;
   };
   struct multiGraphDelayRMS_t
   {
     int canvasPosition;
-    TGraph* spectrum;
+    TGraphErrors* spectrum;
   };
 
 
@@ -254,8 +254,8 @@ public:
   int                  GetNumOfComptonHisto(){return ListOfComptonHisto.size();};
   TH1F*                GetCorrectedSpectrumSearchArea(){return CorrectedSpectrumSearchArea;};
   TH1F*                GetCTRcentralCorrection(){return CTRcentralCorrection;};
-  TGraph*              GetGraphDeltaW(){return graphDeltaW;};
-  TGraph*              GetGraphDeltaRMS(){return graphDeltaRMS;};
+  TGraphErrors*              GetGraphDeltaW(){return graphDeltaW;};
+  TGraphErrors*              GetGraphDeltaRMS(){return graphDeltaRMS;};
   int                  GetBigCanvasPosition(){return bigCanvasPosition;};
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
@@ -356,8 +356,8 @@ public:
   void                 SetSaturationFits(std::vector<TF1*> aVec){saturationFits = aVec;};
   void                 SetCTRcentralCorrection(TH1F* aHisto){CTRcentralCorrection = aHisto;};
   void                 Analyze();
-  void                 SetGraphDeltaW(TGraph* aGraph){graphDeltaW = aGraph;};
-  void                 SetGraphDeltaRMS(TGraph* aGraph){graphDeltaRMS = aGraph;};
+  void                 SetGraphDeltaW(TGraphErrors* aGraph){graphDeltaW = aGraph;};
+  void                 SetGraphDeltaRMS(TGraphErrors* aGraph){graphDeltaRMS = aGraph;};
   void                 AddDeltaTHistos(TH1F* aHisto){DeltaTHistos.push_back(aHisto);};
   void                 AddDelayTHistos(TH1F* aHisto){DelayHistos.push_back(aHisto);};
   void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
@@ -420,7 +420,7 @@ public:
     // tempDelta.fit            = aFit;
     slicesDelta.push_back(tempDelta);
   };
-  void                 AddGraphDelayW(TGraph* aGraph,int aPos)
+  void                 AddGraphDelayW(TGraphErrors* aGraph,int aPos)
   {
     multiGraphDelayW_t tempDelta;
     tempDelta.canvasPosition = aPos;
@@ -429,7 +429,7 @@ public:
     graphDelayW.push_back(tempDelta);
   };
 
-  void AddGraphDelayRMS(TGraph* aGraph,int aPos)
+  void AddGraphDelayRMS(TGraphErrors* aGraph,int aPos)
   {
     multiGraphDelayRMS_t tempDelta;
     tempDelta.canvasPosition = aPos;
