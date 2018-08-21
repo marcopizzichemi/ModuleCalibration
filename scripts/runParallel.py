@@ -104,7 +104,6 @@ def main(argv):
    if args.excludeChannels != None:
        excludeChannels = 1
 
-
    elements = ""
    BaseParaStr = ""
 
@@ -153,6 +152,12 @@ def main(argv):
        fOut.write(outputFilePrefix)
        fOut.write("\n")
        fOut.write("\n")
+       if(excludeChannels):
+           fOut.write("### Channels excluded from polished time correction, modification by timeAnalysis ###\n")
+           keyString = "excludeChannels = " + args.excludeChannels
+           fOut.write(keyString)
+           fOut.write("\n")
+           fOut.write("\n")
        fOut.write(original)
        fOut.close()
        proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels))

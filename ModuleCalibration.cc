@@ -552,6 +552,26 @@ int main (int argc, char** argv)
 
   float spectrumSearchMin = config.read<float>("spectrumSearchMin",1);
   float spectrumSearchMax = config.read<float>("spectrumSearchMax",histo1Dmax);
+
+  // channels to exclude from time correction (will affect only polished correction)
+  std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
+  std::vector<std::string> excludeChannels_f;
+  std::vector<int> excludeChannels;
+
+  config.split( excludeChannels_f, excludeChannels_s, "," );
+  for(unsigned int i = 0 ; i < excludeChannels_f.size() ; i++)
+  {
+    config.trim(excludeChannels_f[i]);
+    excludeChannels.push_back(atoi(excludeChannels_f[i].c_str()));
+  }
+
+  // for(unsigned int i = 0 ; i < excludeChannels.size() ; i++)
+  // {
+  //   std::cout << excludeChannels[i] << std::endl;
+  // }
+
+
+
   //----------------------------------------------------------//
   //  Load and save TTree                                     //
   //----------------------------------------------------------//
@@ -3385,9 +3405,26 @@ int main (int argc, char** argv)
                               // }
 
 
-                              tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
-                              meanForPolishedCorrection.push_back(res[0]);
-                              fwhmForPolishedCorrection.push_back(res[1]);
+
+                              //push this data only if the digi channel is not excluded by user
+                              bool acceptPolishedCorr = true;
+                              for(int iExcl = 0; iExcl < excludeChannels.size(); iExcl++)
+                              {
+                                if(iNeighDigitizerChannel == excludeChannels[iExcl])
+                                {
+                                  acceptPolishedCorr = false;
+                                }
+                              }
+
+                              if(acceptPolishedCorr)
+                              {
+                                tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                meanForPolishedCorrection.push_back(res[0]);
+                                fwhmForPolishedCorrection.push_back(res[1]);
+                              }
+
+
+
 
 
 
