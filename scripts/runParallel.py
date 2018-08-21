@@ -43,7 +43,7 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
     if fitCorrection == 1:
         cmd.append('--fitCorrection')
     if excludeChannels == 1:
-        cmd.append('--exclude_channels')
+        cmd.append('--exclude-channels')
         cmd.append(excludeChannelsList)
 
     print (cmd)
