@@ -12,7 +12,7 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection):
+def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection,excludeChannels,excludeChannelsList):
     """thread worker function"""
     # value = 1
 
@@ -38,10 +38,14 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
     # print (cmd)
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
-    if fitCorrection == 0:
-        cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
-    else:
-        cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax),'--fitCorrection' ]
+
+    cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    if fitCorrection == 1:
+        cmd.append('--fitCorrection')
+    if excludeChannels == 1:
+        cmd.append('--exclude_channels')
+        cmd.append(excludeChannelsList)
+
     print (cmd)
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
@@ -69,6 +73,7 @@ def main(argv):
    parser.add_argument('-o','--output'     , help='Prefix of output file - default = pOutput_',required=False)
    parser.add_argument('-y','--func'       , help='Function for time fit. 0 = crystalball, 1 = gauss+exp   - default = 0',required=False)
    parser.add_argument('-k','--fitCorrection'       , help='0 = no fit, 1 = use fit   - default = 0',required=False)
+   parser.add_argument('-j','--excludeChannels'       , help='csv list of channels to exclude from time corrections   - default = ""',required=False)
    args = parser.parse_args()
 
    # threads = 0
@@ -77,6 +82,8 @@ def main(argv):
    prefix_name = "pOutput_"
    func = 0
    fitCorrection = 0
+   excludeChannels = 0
+
 
    if args.fitCorrection != None:
        fitCorrection = args.fitCorrection
@@ -94,6 +101,9 @@ def main(argv):
        args.fitPercMin = 6.0
    if args.fitPercMax == None:
        args.fitPercMax = 5.0
+   if args.excludeChannels != None:
+       excludeChannels = 1
+
 
    elements = ""
    BaseParaStr = ""
@@ -145,7 +155,7 @@ def main(argv):
        fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection))
+       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels))
        processList.append(proc)
 
    #start processes
