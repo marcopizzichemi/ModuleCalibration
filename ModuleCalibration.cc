@@ -3080,7 +3080,6 @@ int main (int argc, char** argv)
                               spectrumLikelihood->GetXaxis()->SetTitle("Time [S]");
                               spectrumLikelihood->GetYaxis()->SetTitle("N");
 
-
                               var.str("");
                               sname.str("");
 
@@ -3094,11 +3093,11 @@ int main (int argc, char** argv)
                               noZerosCut = sNoZerosCut.str().c_str();
                               sNoZerosCut.str("");
                               TH2F* likelihoodDelta = new TH2F(sname.str().c_str(),
-                                                                         sname.str().c_str(),
-                                                                         wHistogramsBins,
-                                                                         spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
-                                                                         LikelihoodBins,
-                                                                         spectrumLikelihood->GetMean() - 3.0*spectrumLikelihood->GetRMS(),spectrumLikelihood->GetMean() + 3.0*spectrumLikelihood->GetRMS());
+                                                               sname.str().c_str(),
+                                                               wHistogramsBins,
+                                                               spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                                                               LikelihoodBins,
+                                                               spectrumLikelihood->GetMean() - 3.0*spectrumLikelihood->GetRMS(),spectrumLikelihood->GetMean() + 3.0*spectrumLikelihood->GetRMS());
                               tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                               likelihoodDelta->GetXaxis()->SetTitle("W");
                               sname.str("");
@@ -3106,7 +3105,6 @@ int main (int argc, char** argv)
                               likelihoodDelta->GetYaxis()->SetTitle(sname.str().c_str());
                               var.str("");
                               sname.str("");
-
 
                               int  neighID = 0;
                               for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
@@ -3131,21 +3129,13 @@ int main (int argc, char** argv)
                                   }
                                 }
                               }
-
-
                               if(plotPos != -1)
                               {
                                 CurrentCrystal->AddLikelihood(spectrumLikelihood,plotPos);
                                 CurrentCrystal->AddLikelihoodDelta(likelihoodDelta,plotPos);
                                 // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
-
                               }
-
-
-
                             }
-
-
                           }
 
 
