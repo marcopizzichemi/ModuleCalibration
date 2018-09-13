@@ -51,7 +51,7 @@
 void usage()
 {
   std::cout << "\t\t" << "[-i | --input]   <moduleCalibration file> " << std::endl
-            << "\t\t" << "[--all|--hostname|--pwd|--files--config]   - choice of info to be printed. At least one has to be chosen!"   << std::endl
+            << "\t\t" << "[--all|--hostname|--pwd|--files|--config|--command]   - choice of info to be printed. At least one has to be chosen!"   << std::endl
             << "\t\t" << "[-o | --output]  <output file>             - OPTIONAL: if no output file given, results will be print on screen> ] " << std::endl
             << "\t\t" << std::endl;
 }
@@ -75,6 +75,7 @@ int main (int argc, char** argv)
   bool includeHostname = false;
   bool includeFiles    = false;
   bool choiceMade      = false;
+  bool includeCommand  = false;
 
   static struct option longOptions[] =
   {
@@ -85,6 +86,7 @@ int main (int argc, char** argv)
       { "pwd", no_argument, 0, 0 },
       { "files", no_argument, 0, 0 },
       { "config", no_argument, 0, 0 },
+      { "command", no_argument, 0, 0 },
 			{ NULL, 0, 0, 0 }
 	};
 
@@ -126,6 +128,10 @@ int main (int argc, char** argv)
     }
     else if (c == 0 && optionIndex == 6){
       includeConfig = true;
+      choiceMade = true;
+    }
+    else if (c == 0 && optionIndex == 6){
+      includeCommand = true;
       choiceMade = true;
     }
 		else {
@@ -170,6 +176,15 @@ int main (int argc, char** argv)
       outFile << ((TNamed*) gDirectory->Get("ConfigFile"))->GetTitle() << std::endl;
       outFile << "---------------------------------------  END OF Configuration File -------------------------------------------------- " << std::endl;
     }
+
+    if(includeAll | includeCommand)
+    {
+      outFile << std::endl;
+      outFile << std::endl;
+      outFile << "------------------------------------------- Command line -------------------------------------------------- " << std::endl;
+      outFile << ((TNamed*) gDirectory->Get("Command"))->GetTitle() << std::endl;
+    }
+
     outFile.close();
   }
   else
@@ -198,6 +213,14 @@ int main (int argc, char** argv)
       std::cout << ((TNamed*) gDirectory->Get("ConfigFile"))->GetTitle() << std::endl;
       std::cout << "---------------------------------------  END OF Configuration File -------------------------------------------------- " << std::endl;
     }
+    if(includeAll | includeCommand)
+    {
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "------------------------------------------- Command line -------------------------------------------------- " << std::endl;
+      std::cout << ((TNamed*) gDirectory->Get("Command"))->GetTitle() << std::endl;
+    }
+
     std::cout << std::endl;
     std::cout << std::endl;
   }

@@ -109,6 +109,7 @@ private:
   std::vector<int>     channelsNumRelevantForW;
   int                  bigCanvasPosition;
   std::vector<int>     DelayTimingChannelsNum;
+  std::vector<int>     LikelihoodTimingChannelsNum;
   int                  timingChannel;
   std::vector<int>     tChannelsForPolishedCorrection;
   std::vector<double>  meanForPolishedCorrection;
@@ -154,8 +155,13 @@ private:
   std::vector<multiGraphDelayRMS_t> graphDelayRMS;
 
   std::vector<TH2F*> TvsQHistos;
+  std::vector<TH2F*> LikeHisto;
   std::vector<TH1F*> DeltaTHistos;
   std::vector<TH1F*> DelayHistos;
+  std::vector<TH1F*> CorrelationHisto;
+  std::vector<TH1F*> LikelihoodSliceDelay;
+  std::vector<TGraph*> GraphMuW;
+  std::vector<TF1*> FitMuW;
 
 public:
   Crystal();                                 ///< default constructor
@@ -260,6 +266,7 @@ public:
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
+  std::vector<int>    GetLikelihoodTimingChannels(){return LikelihoodTimingChannelsNum;};
 
   std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
   std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
@@ -278,9 +285,15 @@ public:
   std::vector<TH2F*>                       GetTvsQHistos(){return TvsQHistos;};
   std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
   std::vector<TH1F*>                       GetDelayHistos(){return DelayHistos;};
+  std::vector<TH1F*>                       GetCorrelationHisto(){return CorrelationHisto;};
+  std::vector<TH1F*>                       GetLikelihoodSliceDelay(){return LikelihoodSliceDelay;};
   std::vector<multiSpectrum_t>             GetLSSpectra(){return LSSpectra;};
+  std::vector<TH2F*>                       GetLikeHisto(){return LikeHisto;};
 
   TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
+
+  std::vector<TGraph*> GetGraphMuW(){return GraphMuW;};
+  std::vector<TF1*>    GetFitMuW(){return FitMuW;};
 
   void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
@@ -364,11 +377,17 @@ public:
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
   void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
+  void                 SetLikelihoodTimingChannels(std::vector<int> aVect){LikelihoodTimingChannelsNum = aVect;};
   void                 SetTChannelsForPolishedCorrection(std::vector<int> aVect){tChannelsForPolishedCorrection = aVect;};
   void                 SetMeanForPolishedCorrection(std::vector<double> aVect){meanForPolishedCorrection = aVect;};
   void                 SetFwhmForPolishedCorrection(std::vector<double> aVect){fwhmForPolishedCorrection = aVect;};
   void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
   void                 SetBigCanvasPosition(int aNum){bigCanvasPosition = aNum;};
+  void                 AddLikelihoodSliceDelay(TH1F* aHisto){LikelihoodSliceDelay.push_back(aHisto);};
+  void                 AddGraphMuW(TGraph* aGraph){GraphMuW.push_back(aGraph);};
+  void                 AddFitMuW(TF1* aFit){FitMuW.push_back(aFit);};
+  void                 AddCorrelationHisto(TH1F* aHisto){CorrelationHisto.push_back(aHisto);};
+  void                 AddLikeHisto(TH2F* aHisto){LikeHisto.push_back(aHisto);};
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
