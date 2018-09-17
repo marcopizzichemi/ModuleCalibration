@@ -44,6 +44,7 @@ private:
   TH1F*                CTRcentralCorrection;
   TH1F*                DeltaTimeWRTTagging;
   TH1F*                LScentralSpectrum;
+  TH2F*                CTRvsTimeSpectrum;
   // TH1F*                LSSpectrum;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
@@ -196,6 +197,7 @@ public:
   TH3I***              GetComptonCalibrationHistogram(){return ComptonCalibationHistogram;};
   int                  GetTimingChannel(){return timingChannel;};
   TH1F*                GetLScentralSpectrum(){return LScentralSpectrum;};
+  TH2F*                GetCTRvsTimeSpectrum(){return CTRvsTimeSpectrum;};
   // TH1F*                GetLSSpectrum(){return LSSpectrum;};
 
 
@@ -352,6 +354,7 @@ public:
   void                 SetSingleChargeSpectrum(TH1F *aHisto){singleChargeSpectrum = aHisto;};
   void                 SetSumChargeSpectrum(TH1F *aHisto){sumChargeSpectrum = aHisto;};
   void                 SetAMTChargeSpectrum(TH1F *aHisto){ATMChargeSpectrum = aHisto;};
+  void                 SetCTRvsTimeSpectrum(TH2F *aHisto){CTRvsTimeSpectrum = aHisto;};
   void                 SetInvestigatedSpectrum(TH1F *aHisto){investigatedSpectrum = aHisto;};
   void                 SetSaturationFits(std::vector<TF1*> aVec){saturationFits = aVec;};
   void                 SetCTRcentralCorrection(TH1F* aHisto){CTRcentralCorrection = aHisto;};

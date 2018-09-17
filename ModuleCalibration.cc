@@ -2916,6 +2916,27 @@ int main (int argc, char** argv)
                           var.str("");
                           sname.str("");
 
+
+
+
+                          // Basis CTR versus ExtendedTimeTag
+                          sname << "Basic CTR vs. ExtendedTimeTag - Crystal " << CurrentCrystal->GetID();
+                          var << "t" << detector[thisChannelID].timingChannel
+                              << "- t" << taggingCrystalTimingChannel
+                              << " : ExtendedTimeTag >> " << sname.str();
+
+                          //
+                          TH2F* CTRvsTimeSpectrum = new TH2F(sname.str().c_str(),sname.str().c_str(),1000,0,tree->GetMaximum("ExtendedTimeTag"),CTRbins,CTRmin,CTRmax);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                          CTRvsTimeSpectrum->GetXaxis()->SetTitle("ExtendedTimeTag [ns]");
+                          CTRvsTimeSpectrum->GetYaxis()->SetTitle("t-t_tag [s]");
+                          CurrentCrystal->SetCTRvsTimeSpectrum(CTRvsTimeSpectrum);
+
+
+                          var.str("");
+                          sname.str("");
+
+
                           //do a preliminary fit with gauss
                           // TCanvas *cTemp  = new TCanvas("temp","temp");
                           // TF1 *gaussDummyBasic = new TF1("gaussDummy","gaus");
@@ -6524,6 +6545,12 @@ int main (int argc, char** argv)
 
                           if(timingCorrectionForPolished) // only if timing correction is performed
                           {
+
+                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                            C_spectrum->SetName("CTR vs. ExtendedTimeTag");
+                            CurrentCrystal->GetCTRvsTimeSpectrum()->Draw("COLZ");
+                            C_spectrum->Write();
+                            delete C_spectrum;
 
 
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
