@@ -2695,9 +2695,11 @@ int main (int argc, char** argv)
 
 
                       // Histogram 2d of time evolution
+                      ULong64_t tStart = tree->GetMinimum("ExtendedTimeTag");
+                      ULong64_t tEnd = tree->GetMaximum("ExtendedTimeTag") - tree->GetMinimum("ExtendedTimeTag");
                       sname << "ADC channels vs. Time - Crystal " << CurrentCrystal->GetID();
-                      var << SumChannels << ":ExtendedTimeTag >> " << sname.str();
-                      TH2F* spectrum2dVersusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,tree->GetMinimum("ExtendedTimeTag"),tree->GetMaximum("ExtendedTimeTag"),histo1Dbins,0,histo1Dmax);
+                      var << SumChannels << ":(ExtendedTimeTag - "<< tStart << " ) >> " << sname.str();
+                      TH2F* spectrum2dVersusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tEnd,histo1Dbins,0,histo1Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
                       spectrum2dVersusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
                       spectrum2dVersusTime->GetYaxis()->SetTitle("ADC channels");
@@ -2707,8 +2709,8 @@ int main (int argc, char** argv)
 
                       // Time evolution for W
                       sname << "W vs. Time - Crystal " << CurrentCrystal->GetID();
-                      var << FloodZ.str() << ":ExtendedTimeTag >> " << sname.str();
-                      TH2F* spectrum2dWversusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,tree->GetMinimum("ExtendedTimeTag"),tree->GetMaximum("ExtendedTimeTag"),wHistogramsBins,histo3Dmin,histo3Dmax);
+                      var << FloodZ.str() << ":(ExtendedTimeTag - "<< tStart << " ) >> " << sname.str();
+                      TH2F* spectrum2dWversusTime = new TH2F(sname.str().c_str(),sname.str().c_str(),250,0,tEnd,wHistogramsBins,histo3Dmin,histo3Dmax);
                       tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
                       spectrum2dWversusTime->GetXaxis()->SetTitle("ExtendedTimeTag");
                       spectrum2dWversusTime->GetYaxis()->SetTitle("W");
@@ -2923,10 +2925,10 @@ int main (int argc, char** argv)
                           sname << "Basic CTR vs. ExtendedTimeTag - Crystal " << CurrentCrystal->GetID();
                           var << "t" << detector[thisChannelID].timingChannel
                               << "- t" << taggingCrystalTimingChannel
-                              << " : ExtendedTimeTag >> " << sname.str();
+                              << " :(ExtendedTimeTag - "<< tStart << " ) >> " << sname.str();
 
                           //
-                          TH2F* CTRvsTimeSpectrum = new TH2F(sname.str().c_str(),sname.str().c_str(),1000,tree->GetMinimum("ExtendedTimeTag"),tree->GetMaximum("ExtendedTimeTag"),CTRbins,CTRmin,CTRmax);
+                          TH2F* CTRvsTimeSpectrum = new TH2F(sname.str().c_str(),sname.str().c_str(),1000,0,tEnd,CTRbins,CTRmin,CTRmax);
                           tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
                           CTRvsTimeSpectrum->GetXaxis()->SetTitle("ExtendedTimeTag [ns]");
                           CTRvsTimeSpectrum->GetYaxis()->SetTitle("t-t_tag [s]");
