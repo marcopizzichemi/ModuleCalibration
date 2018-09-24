@@ -1192,13 +1192,13 @@ int main (int argc, char** argv)
 
         module[iModule][jModule]->SetTagVsExtTimeSpectrum(TagVsExtTimeSpectrum);
 
-        // tag vs ExtendedTimeTag
-        ULong64_t tStart2 = tree->GetMinimum("ExtendedTimeTag");
-        ULong64_t tEnd2 = tree->GetMaximum("ExtendedTimeTag") - tree->GetMinimum("ExtendedTimeTag");
+        // tag vs DeltaTimeTag
+        ULong64_t tStart2 = tree->GetMinimum("DeltaTimeTag");
+        ULong64_t tEnd2 = tree->GetMaximum("DeltaTimeTag") - tree->GetMinimum("DeltaTimeTag");
         // sname << "Tagging Spectrum vs. Time";
         var.str("");
         var << tagStream.str().c_str()
-            << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Delta Time" ;
+            << " :(DeltaTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Delta Time" ;
         TH2F* TagVsDeltaTimeSpectrum = new TH2F("Tagging Spectrum vs. Delta Time","Tagging Spectrum vs. Delta Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
         tree->Draw(var.str().c_str(),"");
         var.str("");
