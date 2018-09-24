@@ -19,7 +19,8 @@ private:
   UInt_t seed;
   std::vector<detector_t> detector;
   int taggingCrystalTimingChannel;
-  TH2F *TagVsTimeSpectrum;
+  TH2F *TagVsExtTimeSpectrum;
+  TH2F *TagVsDeltaTimeSpectrum;
 
 public:
   Module(); // default constructor
@@ -46,8 +47,11 @@ public:
   void                   SetSeed(UInt_t aSeed){seed = aSeed;};
   UInt_t                 GetSeed(){return seed;};
   int                    GetTaggingTimingChannel(){return taggingCrystalTimingChannel;};
-  void                   SetTagVsTimeSpectrum(TH2F* aHisto){TagVsTimeSpectrum = aHisto;};
-  TH2F*                  GetTagVsTimeSpectrum(){return TagVsTimeSpectrum;};
+  void                   SetTagVsExtTimeSpectrum(TH2F* aHisto){TagVsExtTimeSpectrum = aHisto;};
+  TH2F*                  GetTagVsExtTimeSpectrum(){return TagVsExtTimeSpectrum;};
+
+  void                   SetTagVsDeltaTimeSpectrum(TH2F* aHisto){TagVsDeltaTimeSpectrum = aHisto;};
+  TH2F*                  GetTagVsDeltaTimeSpectrum(){return TagVsDeltaTimeSpectrum;};
   void PrintGlobal();
   void PrintSpecific();
 };

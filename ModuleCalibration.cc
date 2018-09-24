@@ -1186,11 +1186,23 @@ int main (int argc, char** argv)
         // sname << "Tagging Spectrum vs. Time";
         var.str("");
         var << tagStream.str().c_str()
-            << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Time" ;
-        TH2F* TagVsTimeSpectrum = new TH2F("Tagging Spectrum vs. Time","Tagging Spectrum vs. Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+            << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Ext Time" ;
+        TH2F* TagVsExtTimeSpectrum = new TH2F("Tagging Spectrum vs. Ext Time","Tagging Spectrum vs. Ext Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
         tree->Draw(var.str().c_str(),"");
 
-        module[iModule][jModule]->SetTagVsTimeSpectrum(TagVsTimeSpectrum);
+        module[iModule][jModule]->SetTagVsExtTimeSpectrum(TagVsExtTimeSpectrum);
+
+        // tag vs ExtendedTimeTag
+        ULong64_t tStart2 = tree->GetMinimum("ExtendedTimeTag");
+        ULong64_t tEnd2 = tree->GetMaximum("ExtendedTimeTag") - tree->GetMinimum("ExtendedTimeTag");
+        // sname << "Tagging Spectrum vs. Time";
+        var.str("");
+        var << tagStream.str().c_str()
+            << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Delta Time" ;
+        TH2F* TagVsDeltaTimeSpectrum = new TH2F("Tagging Spectrum vs. Delta Time","Tagging Spectrum vs. Delta Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+        tree->Draw(var.str().c_str(),"");
+        var.str("");
+        module[iModule][jModule]->SetTagVsDeltaTimeSpectrum(TagVsDeltaTimeSpectrum);
 
 
         //save tagging crystal timing channel
@@ -6134,9 +6146,16 @@ int main (int argc, char** argv)
         C_TaggingCrystalSpectrum->Write();
 
         C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-        C_spectrum->SetName(module[iModule][jModule]->GetTagVsTimeSpectrum()->GetName());
+        C_spectrum->SetName(module[iModule][jModule]->GetTagVsExtTimeSpectrum()->GetName());
         C_spectrum->cd();
-        module[iModule][jModule]->GetTagVsTimeSpectrum()->Draw("COLZ");
+        module[iModule][jModule]->GetTagVsExtTimeSpectrum()->Draw("COLZ");
+        C_spectrum->Write();
+        delete C_spectrum;
+
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetTagVsDeltaTimeSpectrum()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetTagVsDeltaTimeSpectrum()->Draw("COLZ");
         C_spectrum->Write();
         delete C_spectrum;
 
