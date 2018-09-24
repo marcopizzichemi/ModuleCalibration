@@ -1198,8 +1198,8 @@ int main (int argc, char** argv)
         // sname << "Tagging Spectrum vs. Time";
         var.str("");
         var << tagStream.str().c_str()
-            << " :(DeltaTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Delta Time" ;
-        TH2F* TagVsDeltaTimeSpectrum = new TH2F("Tagging Spectrum vs. Delta Time","Tagging Spectrum vs. Delta Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+            << " :(DeltaTimeTag - "<< tStart2 << " ) >> Tagging Spectrum vs. Delta Time" ;
+        TH2F* TagVsDeltaTimeSpectrum = new TH2F("Tagging Spectrum vs. Delta Time","Tagging Spectrum vs. Delta Time",1000,0,tEnd2,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
         tree->Draw(var.str().c_str(),"");
         var.str("");
         module[iModule][jModule]->SetTagVsDeltaTimeSpectrum(TagVsDeltaTimeSpectrum);
