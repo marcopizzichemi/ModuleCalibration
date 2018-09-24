@@ -1180,6 +1180,19 @@ int main (int argc, char** argv)
         // 	std::cout << " done" << std::endl;
 
 
+        // tag vs ExtendedTimeTag
+        ULong64_t tStart = tree->GetMinimum("ExtendedTimeTag");
+        ULong64_t tEnd = tree->GetMaximum("ExtendedTimeTag") - tree->GetMinimum("ExtendedTimeTag");
+        // sname << "Tagging Spectrum vs. Time";
+        var.str("");
+        var << tagStream.str().c_str()
+            << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Time" ;
+        TH2F* TagVsTimeSpectrum = new TH2F("Tagging Spectrum vs. Time","Tagging Spectrum vs. Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+        tree->Draw(var.str().c_str(),"");
+
+        module[iModule][jModule]->SetTagVsTimeSpectrum(TagVsTimeSpectrum);
+
+
         //save tagging crystal timing channel
         module[iModule][jModule]->SetTaggingTimingChannel(taggingCrystalTimingChannel);
       }
@@ -6119,6 +6132,14 @@ int main (int argc, char** argv)
         TaggingCrystalSpectrum->Draw();
         TriggerSpectrumHighlight->Draw("same");
         C_TaggingCrystalSpectrum->Write();
+
+        C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+        C_spectrum->SetName(module[iModule][jModule]->GetTagVsTimeSpectrum()->GetName());
+        C_spectrum->cd();
+        module[iModule][jModule]->GetTagVsTimeSpectrum()->Draw("COLZ");
+        C_spectrum->Write();
+        delete C_spectrum;
+
 
         std::stringstream TagNum;
         TagNum.str("");

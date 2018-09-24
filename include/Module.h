@@ -19,6 +19,7 @@ private:
   UInt_t seed;
   std::vector<detector_t> detector;
   int taggingCrystalTimingChannel;
+  TH2F *TagVsTimeSpectrum;
 
 public:
   Module(); // default constructor
@@ -45,7 +46,8 @@ public:
   void                   SetSeed(UInt_t aSeed){seed = aSeed;};
   UInt_t                 GetSeed(){return seed;};
   int                    GetTaggingTimingChannel(){return taggingCrystalTimingChannel;};
-
+  void                   SetTagVsTimeSpectrum(TH2F* aHisto){TagVsTimeSpectrum = aHisto;};
+  TH2F*                  GetTagVsTimeSpectrum(){return TagVsTimeSpectrum;};
   void PrintGlobal();
   void PrintSpecific();
 };
