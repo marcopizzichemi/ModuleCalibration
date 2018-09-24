@@ -1188,6 +1188,8 @@ int main (int argc, char** argv)
         var << tagStream.str().c_str()
             << " :(ExtendedTimeTag - "<< tStart << " ) >> Tagging Spectrum vs. Ext Time" ;
         TH2F* TagVsExtTimeSpectrum = new TH2F("Tagging Spectrum vs. Ext Time","Tagging Spectrum vs. Ext Time",1000,0,tEnd,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+        TagVsExtTimeSpectrum->GetXaxis()->SetTitle("Time [ns]");
+        TagVsExtTimeSpectrum->GetYaxis()->SetTitle("[ADC channels]");
         tree->Draw(var.str().c_str(),"");
 
         module[iModule][jModule]->SetTagVsExtTimeSpectrum(TagVsExtTimeSpectrum);
@@ -1200,6 +1202,8 @@ int main (int argc, char** argv)
         var << tagStream.str().c_str()
             << " :(DeltaTimeTag - "<< tStart2 << " ) >> Tagging Spectrum vs. Delta Time" ;
         TH2F* TagVsDeltaTimeSpectrum = new TH2F("Tagging Spectrum vs. Delta Time","Tagging Spectrum vs. Delta Time",1000,0,tEnd2,taggingCrystalBins,taggingSpectrumMin,taggingSpectrumMax);
+        TagVsDeltaTimeSpectrum->GetXaxis()->SetTitle("Time [ns]");
+        TagVsDeltaTimeSpectrum->GetYaxis()->SetTitle("[ADC channels]");
         tree->Draw(var.str().c_str(),"");
         var.str("");
         module[iModule][jModule]->SetTagVsDeltaTimeSpectrum(TagVsDeltaTimeSpectrum);
