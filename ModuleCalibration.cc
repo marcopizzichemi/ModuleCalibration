@@ -2121,6 +2121,12 @@ int main (int argc, char** argv)
                           <<  ") >> " << sname.str();
                       TH1F* NotNeighboursSingleCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histoSingleChargeBin,0,histoSingleChargeMax);
                       // std::cout << NotNeighbours << std::endl;
+
+                      if(applyNoiseCut)
+                      {
+                        NotNeighbours += CutNoise;
+                      }
+
                       tree->Draw(var.str().c_str(),BasicCut+NotNeighbours);
                       NotNeighboursSingleCharge->GetXaxis()->SetTitle("Charge [C]");
                       NotNeighboursSingleCharge->GetYaxis()->SetTitle("N");
