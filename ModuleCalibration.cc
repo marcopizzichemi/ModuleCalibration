@@ -6405,10 +6405,14 @@ int main (int argc, char** argv)
                       C_spectrum->SetName(CurrentCrystal->GetSpectrum()->GetName());
                       C_spectrum->cd();
                       CurrentCrystal->GetSpectrum()->Draw();
+                      CurrentCrystal->GetSpectrum()->SetName("Sum spectrum");
+                      CurrentCrystal->GetSpectrum()->Write();
                       if(!backgroundRun)
                       {
                         CurrentCrystal->GetHighlightedSpectrum()->SetFillColor(3);
                         CurrentCrystal->GetHighlightedSpectrum()->Draw("same");
+                        CurrentCrystal->GetHighlightedSpectrum()->SetName("Sum spectrum highlighted");
+                        CurrentCrystal->GetHighlightedSpectrum()->Write();
                         CurrentCrystal->GetFit()->Draw("same");
                       }
                       C_spectrum->Write();
@@ -6420,10 +6424,13 @@ int main (int argc, char** argv)
                       //first plot the Delta Tcry - Ttagging for this crystal
                       C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                       CurrentCrystal->GetLScentralSpectrum()->Draw();
+                      CurrentCrystal->GetLScentralSpectrum()->SetName("Light collected in trigger crystal");
+                      CurrentCrystal->GetLScentralSpectrum()->Write();
                       for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLSSpectra().size() ; iNeig++)
                       {
                         C_spectrum->cd(CurrentCrystal->GetLSSpectra()[iNeig].canvasPosition);
                         CurrentCrystal->GetLSSpectra()[iNeig].spectrum->Draw();
+                        CurrentCrystal->GetLSSpectra()[iNeig].spectrum->Write();
                       }
                       C_spectrum->Write();
                       delete C_spectrum;
@@ -6611,6 +6618,8 @@ int main (int argc, char** argv)
                             //first plot the Delta Tcry - Ttagging for this crystal
                             C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
+                            CurrentCrystal->GetDeltaTimeWRTTagging()->SetName("Basic CTR histogram");
+                            CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTcryTneig().size() ; iNeig++)
                             {
                               C_spectrum->cd(CurrentCrystal->GetDeltaTcryTneig()[iNeig].canvasPosition);
