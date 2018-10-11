@@ -1934,7 +1934,7 @@ int main (int argc, char** argv)
                     std::vector<int> channelsNumRelevantForW;
                     for(unsigned int iRel = 0; iRel < relevantForW.size(); iRel++)
                     {
-                      channelsNumRelevantForW.push_back(relevantForW[iRel].detectorIndex);
+                      channelsNumRelevantForW.push_back(detector[relevantForW[iRel].detectorIndex].digitizerChannel);
                     }
 
                     CurrentCrystal->SetRelevantForW(channelsNumRelevantForW);
