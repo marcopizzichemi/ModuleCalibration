@@ -223,12 +223,44 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   // preliminary gauss fit
   TCanvas *cTemp  = new TCanvas("temp","temp");
   TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+  // resctrict the fitting range of gauss function
+
   gaussDummy->SetLineColor(kRed);
-  histo->Fit(gaussDummy,"QN");
+  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
   double f1min = histo->GetXaxis()->GetXmin();
   double f1max = histo->GetXaxis()->GetXmax();
-  double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-  double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  if(fitGaussMin < f1min)
+  {
+    fitGaussMin = f1min;
+  }
+  if(fitGaussMax > f1max)
+  {
+    fitGaussMax = f1max;
+  }
+  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+  Int_t fitStatusGauss= rGauss;
+
+  //NB fit results converted to int gives the fit status:
+  // fitStatusGauss == 0 -> fit OK
+  // fitStatusGauss != 0 -> fit FAILED
+
+  double fitMin;
+  double fitMax;
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    // use the histogram values
+    fitMin = fitGaussMin;
+    fitMax = fitGaussMax;
+  }
+  else
+  {
+    // use fit values
+    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  }
+
+  // chech that they are not outside the limits defined by user
   if(fitMin < f1min)
   {
     fitMin = f1min;
@@ -241,7 +273,16 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   //fit with crystalball
   TF1 *cb  = new TF1("cb","crystalball",f1min,f1max);
   cb->SetLineColor(kBlue);
-  cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    // use the histogram values
+    cb->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),1,3);
+  }
+  else
+  {
+    // use fit values
+    cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
+  }
   TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
 
   //fit with gauss + exp
@@ -252,10 +293,22 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   gexp->SetParName(2,"Sigma");
   gexp->SetParName(3,"tau");
   // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  gexp->SetParameter(0,gaussDummy->GetParameter(0));
-  gexp->SetParameter(1,gaussDummy->GetParameter(1));
-  gexp->SetParameter(2,gaussDummy->GetParameter(2));
-  gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    // use the histogram values
+    gexp->SetParameter(0,histo->GetEntries());
+    gexp->SetParameter(1,histo->GetMean());
+    gexp->SetParameter(2,histo->GetRMS());
+    gexp->SetParameter(3,histo->GetRMS()); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
+  }
+  else
+  {
+    // use fit values
+    gexp->SetParameter(0,gaussDummy->GetParameter(0));
+    gexp->SetParameter(1,gaussDummy->GetParameter(1));
+    gexp->SetParameter(2,gaussDummy->GetParameter(2));
+    gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
+  }
   TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
 
   Int_t fitStatusCb = rCb;
@@ -264,20 +317,26 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   double chi2gexp;
   double chi2cb;
 
-  if(!fitStatusGexp)
+  if(fitStatusGexp == 0) // if Gexp worked
   {
     chi2gexp = rGexp->Chi2();
   }
-  if(!fitStatusCb)
+  if(fitStatusCb == 0)// if cb worked
   {
     chi2cb   = rCb->Chi2();
   }
 
 
-  //set function to measure
+  //set function to measure ctr etc...
   TF1 *f1;
-  if(fitStatusGexp && fitStatusCb) // both fit didn't work, just set everything to 0
+  // std::cout << histo->GetName() << std::endl;
+  // std::cout << fitStatusGexp << " "
+  //           << fitStatusCb << " "
+  //           << fitStatusGauss << " "
+  //           << std::endl;
+  if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss != 0)) // all fit didn't work, just set everything to 0
   {
+    // std::cout << "None" << std::endl;
     res[0] = 0;
     res[1] = 0;
     res[2] = 0;
@@ -285,67 +344,58 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   }
   else
   {
-    if(fitStatusGexp && !fitStatusCb) // only cb worked
+    if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss == 0)) // only gauss worked
     {
-      f1 = cb;
+      // std::cout << "Gauss" << std::endl;
+      f1 = gaussDummy;
+      histo->Fit(f1,"Q","",fitGaussMin,fitGaussMax);
+      res[0] = f1->GetParameter(1);      // res[0] is mean
+      res[1] = f1->GetParameter(2);       // res[1] is now RMS
+      res[2] = f1->GetParError(1);    // res[2] is mean error
+      res[3] = f1->GetParError(2);  // res[3] is RMS error
       delete gexp;
-
-    }
-    else if(!fitStatusGexp && fitStatusCb) // only gexp worked
-    {
-      f1 = gexp;
       delete cb;
     }
-    else // both worked
+    else // one between gexp and cb worked
     {
-      if(chi2gexp > chi2cb)
+      if((fitStatusGexp  != 0) && (fitStatusCb == 0)) // only cb worked
       {
+        // std::cout << "cb" << std::endl;
         f1 = cb;
+        histo->Fit(f1,"Q","",fitMin,fitMax);
         delete gexp;
+
       }
-      else
+      else if((fitStatusGexp  == 0) && (fitStatusCb != 0)) // only gexp worked
       {
+        // std::cout << "gexp" << std::endl;
         f1 = gexp;
+        histo->Fit(f1,"Q","",fitMin,fitMax);
         delete cb;
       }
+      else // both worked
+      {
+        if(chi2gexp > chi2cb)
+        {
+          // std::cout << "cb better than gexp" << std::endl;
+          f1 = cb;
+          histo->Fit(f1,"Q","",fitMin,fitMax);
+          delete gexp;
+        }
+        else
+        {
+          // std::cout << "gexp better than cb" << std::endl;
+          f1 = gexp;
+          histo->Fit(f1,"Q","",fitMin,fitMax);
+          delete cb;
+        }
+      }
+      // f1->SetLineColor(kRed);
+      res[0] = f1->GetHistogram()->GetMean();      // res[0] is mean
+      res[1] = f1->GetHistogram()->GetRMS();       // res[1] is now RMS
+      res[2] = f1->GetHistogram()->GetMeanError(); // res[2] is mean error
+      res[3] = f1->GetHistogram()->GetRMSError();  // res[3] is RMS error
     }
-
-    f1->SetLineColor(kRed);
-    // double f1min = histo->GetXaxis()->GetXmin();
-    // double f1max = histo->GetXaxis()->GetXmax();
-    // dummy re-fit just to draw the function and save it in the histogram...
-    histo->Fit(f1,"Q","",fitMin,fitMax);
-
-    // new version, get the histogram used to draw the f1 function and directly get mean and rms from it
-    // idiotic way but easier and faster. thanks ROOT
-
-
-    // double min,max;
-    // double step = (f1max-f1min)/divs;
-    // double funcMax = f1->GetMaximum(fitMin,fitMax);
-    // // is [0] the max of the function???
-    // for(int i = 0 ; i < divs ; i++)
-    // {
-    //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-    //   {
-    //     min = f1min + (i+0.5)*step;
-    //   }
-    //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-    //   {
-    //     max = f1min + (i+0.5)*step;
-    //   }
-    // }
-    res[0] = f1->GetHistogram()->GetMean();      // res[0] is mean
-    res[1] = f1->GetHistogram()->GetRMS();       // res[1] is now RMS
-    res[2] = f1->GetHistogram()->GetMeanError(); // res[2] is mean error
-    res[3] = f1->GetHistogram()->GetRMSError();  // res[3] is RMS error
-
-    // //DEBUG
-    // std::cout << f1->GetHistogram()->GetMean() << " "
-    //           << f1->GetParameter(1) << " "
-    //           << f1->GetHistogram()->GetRMS() << " "
-    //           << max - min
-    //           << std::endl;
   }
 }
 
@@ -3018,9 +3068,18 @@ int main (int argc, char** argv)
                           //   extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
                           // }
 
-                          tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
-                          meanForPolishedCorrection.push_back(res[0]);
-                          fwhmForPolishedCorrection.push_back(res[1]);
+                          if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                          {
+
+                          }
+                          else
+                          {
+                            tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
+                            meanForPolishedCorrection.push_back(res[0]);
+                            fwhmForPolishedCorrection.push_back(res[1]);
+                          }
+
+
 
                           CurrentCrystal->SetDeltaTimeWRTTagging(aSpectrum);
 
@@ -3466,9 +3525,17 @@ int main (int argc, char** argv)
 
                               if(acceptPolishedCorr)
                               {
-                                tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
-                                meanForPolishedCorrection.push_back(res[0]);
-                                fwhmForPolishedCorrection.push_back(res[1]);
+                                if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0)
+                                {
+
+                                }
+                                else
+                                {
+                                  tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                  meanForPolishedCorrection.push_back(res[0]);
+                                  fwhmForPolishedCorrection.push_back(res[1]);
+                                }
+
                               }
 
 

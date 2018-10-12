@@ -30,7 +30,8 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
     # cmd = ['ModuleCalibration','-c', name, filesMod]
     # cmd = "ModuleCalibration -c " + name + " " + prefix
     print ("Running calibration on Element %s..." %element )
-    print (cmd)
+    cmdString = ' '.join(cmd)
+    print (cmdString)
     logName = 'log_' + prefix_name + element + '.log'
     log = open(logName, 'w')
     subprocess.Popen(cmd,stdout = log,stderr=None).wait()
@@ -46,7 +47,9 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
         cmd.append('--exclude-channels')
         cmd.append(excludeChannelsList)
 
-    print (cmd)
+    cmdString = ""
+    cmdString = ' '.join(cmd)
+    print (cmdString)
     subprocess.Popen(cmd,stdout = log,stderr=log).wait()
     log.close()
     # print (cmd)
@@ -86,7 +89,7 @@ def main(argv):
 
 
    if args.fitCorrection != None:
-       fitCorrection = args.fitCorrection
+       fitCorrection = int(args.fitCorrection)
    if args.func != None:
        func = args.func
    if args.output != None:
