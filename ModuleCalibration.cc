@@ -349,10 +349,10 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
       // std::cout << "Gauss" << std::endl;
       f1 = gaussDummy;
       histo->Fit(f1,"Q","",fitGaussMin,fitGaussMax);
-      res[0] = f1->GetParameter(1);      // res[0] is mean
-      res[1] = f1->GetParameter(2);       // res[1] is now RMS
-      res[2] = f1->GetParError(1);    // res[2] is mean error
-      res[3] = f1->GetParError(2);  // res[3] is RMS error
+      res[0] = f1->GetParameter(1);
+      res[1] = f1->GetParameter(2);
+      res[2] = f1->GetParError(1);
+      res[3] = f1->GetParError(2);
       delete gexp;
       delete cb;
     }
@@ -391,10 +391,10 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
         }
       }
       // f1->SetLineColor(kRed);
-      res[0] = f1->GetHistogram()->GetMean();      // res[0] is mean
-      res[1] = f1->GetHistogram()->GetRMS();       // res[1] is now RMS
-      res[2] = f1->GetHistogram()->GetMeanError(); // res[2] is mean error
-      res[3] = f1->GetHistogram()->GetRMSError();  // res[3] is RMS error
+      res[0] = f1->GetParameter(1);
+      res[1] = f1->GetParameter(2);
+      res[2] = f1->GetParError(1);
+      res[3] = f1->GetParError(2);
     }
   }
 }
