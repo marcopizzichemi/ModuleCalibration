@@ -596,12 +596,16 @@ int main (int argc, char** argv)
   bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
   int noiseCutLevel = config.read<int>("noiseCutLevel",0); // number of channels that can be equal to 0 for an event to be accepted. So noiseCutLevel = 0 means ALL channels have to be different to 0 for an event to be accepted, 1 means that 1 channel can be 0, etc...
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
-  bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
+  // bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
   // bool noTimeFitting = = config.read<bool>("noTimeFitting",0); // avoid fitting of time function, just take
 
 
   float spectrumSearchMin = config.read<float>("spectrumSearchMin",1);
   float spectrumSearchMax = config.read<float>("spectrumSearchMax",histo1Dmax);
+
+  int neighCTRbins = config.read<int>("neighCTRbins",500); // number of bins in neighbour CTR plots - default = 500
+  float neighCTRmin = config.read<float>("neighCTRmin",-1e-9); // min  of neighbour CTR plots - default = -1e-9
+  float neighCTRmax = config.read<float>("neighCTRmax",10e-9); // max of neighbour CTR plots - default = 10e-9
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -2481,7 +2485,7 @@ int main (int argc, char** argv)
                         int  neighID = 0;
                         for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
                         {
-                          if( detector[iNeighDet].digitizerChannel == neighbourChannels[iNeigh].detectorIndex)
+                          if( detector[iNeighDet].digitizerChannel == detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel)
                           {
                             neighID = iNeigh;
                           }
@@ -3156,104 +3160,204 @@ int main (int argc, char** argv)
 
 
 
-
-                          if(likelihoodCorrection)
+                          // bool doDelta
+                          // if(likelihoodCorrection)
+                          // {
+                          for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
                           {
-                            for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
+                            //get the timingChannel and digitizerChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
+                            int iNeighTimingChannel;
+                            int iNeighDigitizerChannel;
+                            for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
                             {
-                              //get the timingChannel and digitizerChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
-                              int iNeighTimingChannel;
-                              int iNeighDigitizerChannel;
-                              for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+                              if(detector[iDet].digitizerChannel == neighbours[iNeig])
                               {
-                                if(detector[iDet].digitizerChannel == neighbours[iNeig])
-                                {
-                                  iNeighTimingChannel = detector[iDet].timingChannel;
-                                  iNeighDigitizerChannel = detector[iDet].digitizerChannel;
-                                }
-                              }
-
-                              std::cout << "Likelihood: analyzing neighboring channel "
-                              << iNeig+1 << "/"
-                              << neighbours.size() << "... " << std::endl;
-                              //
-                              // histogram of tCry - tNeighbour
-                              sname <<  "T_Channel_" << neighbours[iNeig] << " - T_tag" ;
-                              var << "t" << iNeighTimingChannel
-                              << " - t" << taggingCrystalTimingChannel
-                              << " >> " << sname.str() ;
-                              //noZerosCut
-                              sNoZerosCut << "(t" << iNeighTimingChannel << "!= 0) && ("
-                              << "t" << taggingCrystalTimingChannel << "!= 0)";
-                              noZerosCut = sNoZerosCut.str().c_str();
-                              sNoZerosCut.str("");
-
-                              int LikelihoodBins = 100;
-                              double LikelihoodTimeMin = -15e-9;
-                              double LikelihoodTimeMax = 15e-9;
-
-                              TH1F* spectrumLikelihood = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax+4e-9);
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
-                              spectrumLikelihood->GetXaxis()->SetTitle("Time [S]");
-                              spectrumLikelihood->GetYaxis()->SetTitle("N");
-
-                              var.str("");
-                              sname.str("");
-
-                              sname << "T_Channel_" << neighbours[iNeig] << " - T_tag" << " vs. W";
-                              var << "t" << iNeighTimingChannel
-                                  << " - t" << taggingCrystalTimingChannel
-                                  << ":" << FloodZ.str() <<" >> " << sname.str() ;
-                              //noZerosCut
-                              sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
-                                          << "t" << iNeighTimingChannel << "!= 0)";
-                              noZerosCut = sNoZerosCut.str().c_str();
-                              sNoZerosCut.str("");
-                              TH2F* likelihoodDelta = new TH2F(sname.str().c_str(),
-                                                               sname.str().c_str(),
-                                                               wHistogramsBins,
-                                                               spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
-                                                               LikelihoodBins,
-                                                               spectrumLikelihood->GetMean() - 3.0*spectrumLikelihood->GetRMS(),spectrumLikelihood->GetMean() + 3.0*spectrumLikelihood->GetRMS());
-                              tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
-                              likelihoodDelta->GetXaxis()->SetTitle("W");
-                              sname.str("");
-                              sname << "T_channel_"<< neighbours[iNeig] << " - T_tag, [S]";
-                              likelihoodDelta->GetYaxis()->SetTitle(sname.str().c_str());
-                              var.str("");
-                              sname.str("");
-
-                              int  neighID = 0;
-                              for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
-                              {
-                                if( detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel == iNeighDigitizerChannel)
-                                {
-                                  neighID = iNeigh;
-                                }
-                              }
-
-                              //---------------------------------------------//
-                              // Save plots                                  //
-                              //---------------------------------------------//
-                              int plotPos = -1;
-                              for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
-                              {
-                                for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
-                                {
-                                  if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
-                                  {
-                                    plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
-                                  }
-                                }
-                              }
-                              if(plotPos != -1)
-                              {
-                                CurrentCrystal->AddLikelihood(spectrumLikelihood,plotPos);
-                                CurrentCrystal->AddLikelihoodDelta(likelihoodDelta,plotPos);
-                                // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
+                                iNeighTimingChannel = detector[iDet].timingChannel;
+                                iNeighDigitizerChannel = detector[iDet].digitizerChannel;
                               }
                             }
+
+                            std::cout << "Neighboring CTRs: analyzing neighboring channel "
+                            << iNeig+1 << "/"
+                            << neighbours.size() << "... " << std::endl;
+                            //
+                            // histogram of tCry - tNeighbour
+                            sname <<  "T_Channel_" << neighbours[iNeig] << " - T_tag" ;
+                            var << "t" << iNeighTimingChannel
+                            << " - t" << taggingCrystalTimingChannel
+                            << " >> " << sname.str() ;
+                            //noZerosCut
+                            sNoZerosCut << "(t" << iNeighTimingChannel << "!= 0) && ("
+                            << "t" << taggingCrystalTimingChannel << "!= 0)";
+                            noZerosCut = sNoZerosCut.str().c_str();
+                            sNoZerosCut.str("");
+
+                            // int LikelihoodBins = 100;
+                            // double LikelihoodTimeMin = -15e-9;
+                            // double LikelihoodTimeMax = 15e-9;
+
+                            TH1F* spectrumNeighCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),neighCTRbins,neighCTRmin,neighCTRmax);
+                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
+                            spectrumNeighCTR->GetXaxis()->SetTitle("Time [S]");
+                            spectrumNeighCTR->GetYaxis()->SetTitle("N");
+
+                            var.str("");
+                            sname.str("");
+
+                            sname << "T_Channel_" << neighbours[iNeig] << " - T_tag" << " vs. W";
+                            var << "t" << iNeighTimingChannel
+                            << " - t" << taggingCrystalTimingChannel
+                            << ":" << FloodZ.str() <<" >> " << sname.str() ;
+                            //noZerosCut
+                            sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
+                            << "t" << iNeighTimingChannel << "!= 0)";
+                            noZerosCut = sNoZerosCut.str().c_str();
+                            sNoZerosCut.str("");
+
+                            TH2F* spectrumNeighCTRvsW = new TH2F(sname.str().c_str(),
+                            sname.str().c_str(),
+                            wHistogramsBins,
+                            spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                            neighCTRbins,
+                            spectrumNeighCTR->GetMean() - 3.0*spectrumNeighCTR->GetRMS(),spectrumNeighCTR->GetMean() + 3.0*spectrumNeighCTR->GetRMS());
+                            tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                            spectrumNeighCTRvsW->GetXaxis()->SetTitle("W");
+                            sname.str("");
+                            sname << "T_channel_"<< neighbours[iNeig] << " - T_tag, [S]";
+                            spectrumNeighCTRvsW->GetYaxis()->SetTitle(sname.str().c_str());
+                            var.str("");
+                            sname.str("");
+
+                            int  neighID = 0;
+                            for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
+                            {
+                              if( detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel == iNeighDigitizerChannel)
+                              {
+                                neighID = iNeigh;
+                              }
+                            }
+
+                            //---------------------------------------------//
+                            // Save plots                                  //
+                            //---------------------------------------------//
+                            int plotPos = -1;
+                            for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                            {
+                              for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                              {
+                                if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                                {
+                                  plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                                }
+                              }
+                            }
+                            if(plotPos != -1)
+                            {
+                              CurrentCrystal->AddNeighCTR(spectrumNeighCTR,plotPos);
+                              CurrentCrystal->AddsNeighCTRvsW(spectrumNeighCTRvsW,plotPos);
+                              // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
+                            }
                           }
+                          // }
+
+                          //OLD LIKELIHOOD
+                          // if(likelihoodCorrection)
+                          // {
+                          //   for(unsigned int iNeig = 0; iNeig < neighbours.size(); iNeig++)
+                          //   {
+                          //     //get the timingChannel and digitizerChannel from the neighbours[iNeig] value, i.e. the digitizerChannel of this iNeigh
+                          //     int iNeighTimingChannel;
+                          //     int iNeighDigitizerChannel;
+                          //     for(unsigned int iDet = 0; iDet < detector.size(); iDet++)
+                          //     {
+                          //       if(detector[iDet].digitizerChannel == neighbours[iNeig])
+                          //       {
+                          //         iNeighTimingChannel = detector[iDet].timingChannel;
+                          //         iNeighDigitizerChannel = detector[iDet].digitizerChannel;
+                          //       }
+                          //     }
+                          //
+                          //     std::cout << "Likelihood: analyzing neighboring channel "
+                          //     << iNeig+1 << "/"
+                          //     << neighbours.size() << "... " << std::endl;
+                          //     //
+                          //     // histogram of tCry - tNeighbour
+                          //     sname <<  "T_Channel_" << neighbours[iNeig] << " - T_tag" ;
+                          //     var << "t" << iNeighTimingChannel
+                          //     << " - t" << taggingCrystalTimingChannel
+                          //     << " >> " << sname.str() ;
+                          //     //noZerosCut
+                          //     sNoZerosCut << "(t" << iNeighTimingChannel << "!= 0) && ("
+                          //     << "t" << taggingCrystalTimingChannel << "!= 0)";
+                          //     noZerosCut = sNoZerosCut.str().c_str();
+                          //     sNoZerosCut.str("");
+                          //
+                          //     int LikelihoodBins = 100;
+                          //     double LikelihoodTimeMin = -15e-9;
+                          //     double LikelihoodTimeMax = 15e-9;
+                          //
+                          //     TH1F* spectrumLikelihood = new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax+4e-9);
+                          //     tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
+                          //     spectrumLikelihood->GetXaxis()->SetTitle("Time [S]");
+                          //     spectrumLikelihood->GetYaxis()->SetTitle("N");
+                          //
+                          //     var.str("");
+                          //     sname.str("");
+                          //
+                          //     sname << "T_Channel_" << neighbours[iNeig] << " - T_tag" << " vs. W";
+                          //     var << "t" << iNeighTimingChannel
+                          //         << " - t" << taggingCrystalTimingChannel
+                          //         << ":" << FloodZ.str() <<" >> " << sname.str() ;
+                          //     //noZerosCut
+                          //     sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
+                          //                 << "t" << iNeighTimingChannel << "!= 0)";
+                          //     noZerosCut = sNoZerosCut.str().c_str();
+                          //     sNoZerosCut.str("");
+                          //     TH2F* likelihoodDelta = new TH2F(sname.str().c_str(),
+                          //                                      sname.str().c_str(),
+                          //                                      wHistogramsBins,
+                          //                                      spectrumHistoW->GetMean() - 3.0*spectrumHistoW->GetRMS(),spectrumHistoW->GetMean() + 3.0*spectrumHistoW->GetRMS(),
+                          //                                      LikelihoodBins,
+                          //                                      spectrumLikelihood->GetMean() - 3.0*spectrumLikelihood->GetRMS(),spectrumLikelihood->GetMean() + 3.0*spectrumLikelihood->GetRMS());
+                          //     tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                          //     likelihoodDelta->GetXaxis()->SetTitle("W");
+                          //     sname.str("");
+                          //     sname << "T_channel_"<< neighbours[iNeig] << " - T_tag, [S]";
+                          //     likelihoodDelta->GetYaxis()->SetTitle(sname.str().c_str());
+                          //     var.str("");
+                          //     sname.str("");
+                          //
+                          //     int  neighID = 0;
+                          //     for(unsigned int iNeigh = 0; iNeigh < neighbourChannels.size(); iNeigh++)
+                          //     {
+                          //       if( detector[neighbourChannels[iNeigh].detectorIndex].digitizerChannel == iNeighDigitizerChannel)
+                          //       {
+                          //         neighID = iNeigh;
+                          //       }
+                          //     }
+                          //
+                          //     //---------------------------------------------//
+                          //     // Save plots                                  //
+                          //     //---------------------------------------------//
+                          //     int plotPos = -1;
+                          //     for(int iTimeMppc = 0 ; iTimeMppc < nmppcx ; iTimeMppc++)
+                          //     {
+                          //       for(int jTimeMppc = 0 ; jTimeMppc < nmppcy ; jTimeMppc++)
+                          //       {
+                          //         if(mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetDigitizerChannel() == neighbours[iNeig])
+                          //         {
+                          //           plotPos = mppc[(iModule*nmppcx)+iTimeMppc][(jModule*nmppcy)+jTimeMppc]->GetCanvasPosition();
+                          //         }
+                          //       }
+                          //     }
+                          //     if(plotPos != -1)
+                          //     {
+                          //       CurrentCrystal->AddLikelihood(spectrumLikelihood,plotPos);
+                          //       CurrentCrystal->AddLikelihoodDelta(likelihoodDelta,plotPos);
+                          //       // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
+                          //     }
+                          //   }
+                          // }
 
 
 
@@ -6607,52 +6711,50 @@ int main (int argc, char** argv)
                           sChNum.str("");
 
 
-                          if(likelihoodCorrection)
-                          {
+                          // if(likelihoodCorrection)
+                          // {
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("Likelihood");
+                            C_spectrum->SetName("Raw CTRs");
                             C_spectrum->Divide(nmppcx,nmppcy);
                             //first plot the Delta Tcry - Ttagging for this crystal
                             C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihood().size() ; iNeig++)
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetNeighCTR().size() ; iNeig++)
                             {
-                              C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
-                              CurrentCrystal->GetLikelihood()[iNeig].spectrum->Draw();
+                              C_spectrum->cd(CurrentCrystal->GetNeighCTR()[iNeig].canvasPosition);
+                              CurrentCrystal->GetNeighCTR()[iNeig].spectrum->Draw();
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
 
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
-                            C_spectrum->SetName("Likelihood delta");
+                            C_spectrum->SetName("Raw CTRs vs W");
                             C_spectrum->Divide(nmppcx,nmppcy);
                             //first plot the Delta Tcry - Ttagging for this crystal
                             C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                             CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihoodDelta().size() ; iNeig++)
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetNeighCTRvsW().size() ; iNeig++)
                             {
-                              C_spectrum->cd(CurrentCrystal->GetLikelihoodDelta()[iNeig].canvasPosition);
-                              CurrentCrystal->GetLikelihoodDelta()[iNeig].spectrum->Draw("COLZ");
+                              C_spectrum->cd(CurrentCrystal->GetNeighCTRvsW()[iNeig].canvasPosition);
+                              CurrentCrystal->GetNeighCTRvsW()[iNeig].spectrum->Draw("COLZ");
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
 
-                            TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("LikelihoodCorrection");
+                            TDirectory *corrDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("RawCTRs");
                             corrDir->cd();
 
                             //write the plots separately
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihood().size() ; iNeig++)
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetNeighCTR().size() ; iNeig++)
                             {
-                              // C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
-                              CurrentCrystal->GetLikelihood()[iNeig].spectrum->Write();
+                              CurrentCrystal->GetNeighCTR()[iNeig].spectrum->Write();
                             }
 
                             CurrentCrystal->GetDeltaTvsW()->Write();
-                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetLikelihoodDelta().size() ; iNeig++)
+                            for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetNeighCTRvsW().size() ; iNeig++)
                             {
-                              // C_spectrum->cd(CurrentCrystal->GetLikelihood()[iNeig].canvasPosition);
-                              CurrentCrystal->GetLikelihoodDelta()[iNeig].spectrum->Write();
+                              CurrentCrystal->GetNeighCTRvsW()[iNeig].spectrum->Write();
                             }
 
 
@@ -6666,7 +6768,7 @@ int main (int argc, char** argv)
 
 
 
-                          }
+                          // }
 
 
                           if(timingCorrectionForPolished) // only if timing correction is performed
