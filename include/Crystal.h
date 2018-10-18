@@ -114,6 +114,7 @@ private:
   std::vector<int>     tChannelsForPolishedCorrection;
   std::vector<double>  meanForPolishedCorrection;
   std::vector<double>  fwhmForPolishedCorrection;
+  std::vector<correction_t>         correction;
 
 
   struct multiSpectrum_t
@@ -267,6 +268,8 @@ public:
   std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
   std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
 
+  std::vector<correction_t> GetCorrection(){return correction;};
+
 
   std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
   std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
@@ -373,6 +376,8 @@ public:
   void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
   void                 SetBigCanvasPosition(int aNum){bigCanvasPosition = aNum;};
 
+  void                 AddCorrection(correction_t aCorrection){correction.push_back(aCorrection);};
+
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
   {
@@ -390,7 +395,7 @@ public:
     neighCTR.push_back(tempSpectrum);
   };
 
-  void                 AddsNeighCTRvsW(TH2F* aHisto,int aPos)
+  void                 AddNeighCTRvsW(TH2F* aHisto,int aPos)
   {
     multiScatter_t tempSpectrum;
     tempSpectrum.canvasPosition = aPos;

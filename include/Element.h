@@ -11,6 +11,7 @@
 #include "TTree.h"
 #include "TCut.h"
 #include "Detector.h"
+#include "Correction.h"
 
 class Module;
 class Mppc;

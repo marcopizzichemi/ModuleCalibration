@@ -214,8 +214,190 @@
 //   return r->Chi2();
 // }
 
+void extractWithEMG(TH1F* histo,double fitPercMin,double fitPercMax,double* res)
+{
+  // std::cout << "aaaaa" << std::endl;
+  // preliminary gauss fit
+  TCanvas *cTemp  = new TCanvas("temp","temp");
+  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+  // resctrict the fitting range of gauss function
 
-void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double* res)
+  gaussDummy->SetLineColor(kRed);
+  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
+  double f1min = histo->GetXaxis()->GetXmin();
+  double f1max = histo->GetXaxis()->GetXmax();
+  if(fitGaussMin < f1min)
+  {
+    fitGaussMin = f1min;
+  }
+  if(fitGaussMax > f1max)
+  {
+    fitGaussMax = f1max;
+  }
+  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+  Int_t fitStatusGauss= rGauss;
+
+  //NB fit results converted to int gives the fit status:
+  // fitStatusGauss == 0 -> fit OK
+  // fitStatusGauss != 0 -> fit FAILED
+
+  double fitMin;
+  double fitMax;
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    // use the histogram values
+    fitMin = fitGaussMin;
+    fitMax = fitGaussMax;
+  }
+  else
+  {
+    // use fit values
+    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  }
+
+  // chech that they are not outside the limits defined by user
+  if(fitMin < f1min)
+  {
+    fitMin = f1min;
+  }
+  if(fitMax > f1max)
+  {
+    fitMax = f1max;
+  }
+
+  //define the standard gauss plus exp and the same but with inverted sign for x and mu
+  //the standard definition should be equivalent to the classical definition of the Exponentially Modified Gaussian function
+  TF1* gexp      = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
+  gexp->SetLineColor(kGreen);
+  gexp->SetParName(0,"N");
+  gexp->SetParName(1,"mu");
+  gexp->SetParName(2,"Sigma");
+  gexp->SetParName(3,"tau");
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    gexp->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
+  }
+  else
+  {
+    // use fit values
+    gexp->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
+  }
+  TFitResultPtr r_gexp = histo->Fit(gexp,"QS","",fitMin,fitMax);
+
+  TF1* gexp_inv  = new TF1("gexp_inv","[0]/sqrt(2)*exp([2]^2/2/[3]^2-((-x)-(-[1]))/[3])*(1-TMath::Erf(((-[1])-(-x)+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
+  gexp_inv->SetLineColor(kBlue);
+  gexp_inv->SetParName(0,"N");
+  gexp_inv->SetParName(1,"mu");
+  gexp_inv->SetParName(2,"Sigma");
+  gexp_inv->SetParName(3,"tau");
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    gexp_inv->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
+  }
+  else
+  {
+    // use fit values
+    gexp_inv->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
+  }
+  TFitResultPtr r_gexp_inv = histo->Fit(gexp_inv,"QS","",fitMin,fitMax);
+
+  //try both, see what fits better
+
+  Int_t fitStatusGexp = r_gexp;
+  Int_t fitStatusGexp_inv = r_gexp_inv;
+
+  double chi2gexp;
+  double chi2gexp_inv;
+
+  if(fitStatusGexp == 0) // if gexp worked
+  {
+    chi2gexp = r_gexp->Chi2();
+  }
+  if(fitStatusGexp_inv == 0)// if gexp_inv worked
+  {
+    chi2gexp_inv   = r_gexp_inv->Chi2();
+  }
+
+  // now remember:
+  // mean = mu + tau
+  // sig = sqrt(Sigma^2 + tau^2)
+  // and errors from error propagation
+  // (meanErr)^2 = errMu^2 + errTau^2
+
+  float mean = 0.0;
+  float sigma = 0.0;
+  float meanErr = 0.0;
+  float sigmaErr = 0.0;
+  TF1 *fitFunction = NULL;
+
+  if(fitStatusGexp == 0 && fitStatusGexp_inv != 0) //if gexp worked and gexp_inv didn't worked
+  {
+    // fit again just to draw it
+    // histo->Fit(gexp,"Q","",fitMin,fitMax);
+    // delete the other function
+    // delete gexp_inv;
+    fitFunction = gexp;
+  }
+  else
+  {
+    if(fitStatusGexp != 0 && fitStatusGexp_inv == 0) //if gexp didn't worked and gexp_inv worked
+    {
+      // delete gexp;
+      fitFunction = gexp_inv;
+    }
+    else // both worked or nothing worked
+    {
+      if(fitStatusGexp == 0 && fitStatusGexp_inv == 0)
+      {
+        if(chi2gexp > chi2gexp_inv) // gexp_inv better than gexp
+        {
+          // delete gexp;
+          fitFunction = gexp_inv;
+        }
+        else // gexp better than gexp_inv
+        {
+          // delete gexp_inv;
+          fitFunction = gexp;
+        }
+      }
+      else  // nothing worked
+      {
+        // leave values untouched
+        // delete all func
+        delete gexp_inv;
+        delete gexp;
+      }
+    }
+  }
+
+
+  if(fitFunction == NULL)
+  {
+    res[0] = 0;
+    res[1] = 0;
+    res[2] = 0;
+    res[3] = 0;
+  }
+  else
+  {
+    histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re fit just to store only the good one
+    mean = fitFunction->GetParameter(1) + fitFunction->GetParameter(3);
+    sigma = TMath::Sqrt( TMath::Power(fitFunction->GetParameter(2),2) + TMath::Power(fitFunction->GetParameter(3),2));
+    meanErr = TMath::Sqrt( TMath::Power(fitFunction->GetParError(1),2) + TMath::Power(fitFunction->GetParError(3),2));
+    sigmaErr = TMath::Sqrt( ( TMath::Power(fitFunction->GetParameter(2),2) + TMath::Power(fitFunction->GetParameter(3),2)) * ( TMath::Power(fitFunction->GetParameter(2)*fitFunction->GetParError(2),2) + TMath::Power(fitFunction->GetParameter(3)*fitFunction->GetParError(3),2) ) );
+
+    res[0] = mean;
+    res[1] = sigma;
+    res[2] = meanErr;
+    res[3] = sigmaErr;
+  }
+}
+
+
+
+void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, double* res)
 {
   // TF1 *gexp;
   // TF1 *cb;
@@ -606,6 +788,9 @@ int main (int argc, char** argv)
   int neighCTRbins = config.read<int>("neighCTRbins",500); // number of bins in neighbour CTR plots - default = 500
   float neighCTRmin = config.read<float>("neighCTRmin",-1e-9); // min  of neighbour CTR plots - default = -1e-9
   float neighCTRmax = config.read<float>("neighCTRmax",10e-9); // max of neighbour CTR plots - default = 10e-9
+
+  bool lowStat = config.read<bool>("lowStat",0); // if low statistics, apply fits to slices - default 0 (false)
+  bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -1983,6 +2168,10 @@ int main (int argc, char** argv)
                       CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
                     }
 
+                    //prepare the struct element that will be save into the output file
+                    correction_t correction;
+                    // correction
+
 
                     //get charge ch numbers used for w
                     std::vector<int> channelsNumRelevantForW;
@@ -3054,34 +3243,58 @@ int main (int argc, char** argv)
                           //   fitMax = f1max;
                           // }
                           // aSpectrum->Fit(f1,"Q","",fitMin,fitMax);
-                          double fitPercMin = 5.0;
-                          double fitPercMax = 6.0;
-                          int divisions = 10000;
-                          double res[4];
 
-                          // std::cout << "debug 1" << std::endl;
-                          extractCTR(aSpectrum,fitPercMin,fitPercMax,divisions,res);
-                          // std::cout << "debug 1 - post" << std::endl;
-
-                          // if(TimeCorrectionFitFunction == 0)
-                          // {
-                          //   extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
-                          // }
-                          // else
-                          // {
-                          //   extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
-                          // }
-
-                          if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                          if(lowStat)
                           {
+                            double fitPercMin = 5.0;
+                            double fitPercMax = 6.0;
+                            // int divisions = 10000;
+                            double res[4];
+
+                            // std::cout << "debug 1" << std::endl;
+
+                            if(gexp)
+                            {
+                              extractWithEMG(aSpectrum,fitPercMin,fitPercMax,res);
+                            }
+                            else
+                            {
+                              extractCTR(aSpectrum,fitPercMin,fitPercMax,res);
+                            }
+
+
+
+                            // std::cout << "debug 1 - post" << std::endl;
+
+                            // if(TimeCorrectionFitFunction == 0)
+                            // {
+                            //   extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                            // }
+                            // else
+                            // {
+                            //   extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                            // }
+
+                            if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                            {
+
+                            }
+                            else
+                            {
+                              tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
+                              meanForPolishedCorrection.push_back(res[0]);
+                              fwhmForPolishedCorrection.push_back(res[1]);
+                            }
 
                           }
                           else
                           {
                             tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
-                            meanForPolishedCorrection.push_back(res[0]);
-                            fwhmForPolishedCorrection.push_back(res[1]);
+                            meanForPolishedCorrection.push_back(aSpectrum->GetMean());
+                            fwhmForPolishedCorrection.push_back(aSpectrum->GetRMS());
+
                           }
+
 
 
 
@@ -3254,7 +3467,7 @@ int main (int argc, char** argv)
                             if(plotPos != -1)
                             {
                               CurrentCrystal->AddNeighCTR(spectrumNeighCTR,plotPos);
-                              CurrentCrystal->AddsNeighCTRvsW(spectrumNeighCTRvsW,plotPos);
+                              CurrentCrystal->AddNeighCTRvsW(spectrumNeighCTRvsW,plotPos);
                               // CurrentCrystal->AddDeltaT2vsCH(spectrumCrystalDeltaT2vsCH,plotPos);
                             }
                           }
@@ -3434,41 +3647,45 @@ int main (int argc, char** argv)
 
                                 double fitPercMin = 5.0;
                                 double fitPercMax = 6.0;
-                                int divisions = 10000;
+                                // int divisions = 10000;
                                 double res[4];
                                 // std::cout << "debug 2" << std::endl;
-                                extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
 
-                                // if(TimeCorrectionFitFunction == 0)
-                                // {
-                                //   extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                // }
-                                // else
-                                // {
-                                //   extractWithGaussAndExp(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                // }
-
-                                // tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
-                                // meanForPolishedCorrection.push_back(res[0]);
-                                // fwhmForPolishedCorrection.push_back(res[1]);
-
-                                // TF1* crystalball  = new TF1("crystalball","crystalball");
-                                // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
-                                // tempHisto->Fit(crystalball,"Q","",CTRmin,CTRmax);
-
-
-                                if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                if(lowStat)
                                 {
-                                  // skip point
+                                  if(gexp)
+                                  {
+                                    extractWithEMG(tempHisto,fitPercMin,fitPercMax,res);
+                                  }
+                                  else
+                                  {
+                                    extractCTR(tempHisto,fitPercMin,fitPercMax,res);
+                                  }
+
+                                  if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                  {
+                                    // skip point
+                                  }
+                                  else
+                                  {
+                                    delta_X_core.push_back(midW);
+                                    W_Y_core.push_back(res[0]);
+                                    rmsBasic_Y_core.push_back(res[1]);
+                                    W_Y_core_error.push_back(res[2]);
+                                    rmsBasic_Y_core_error.push_back(res[3]);
+                                  }
                                 }
                                 else
                                 {
                                   delta_X_core.push_back(midW);
-                                  W_Y_core.push_back(res[0]);
-                                  rmsBasic_Y_core.push_back(res[1]);
-                                  W_Y_core_error.push_back(res[2]);
-                                  rmsBasic_Y_core_error.push_back(res[3]);
+                                  W_Y_core.push_back(tempHisto->GetMean());
+                                  rmsBasic_Y_core.push_back(tempHisto->GetRMS());
+                                  W_Y_core_error.push_back(tempHisto->GetMeanError());
+                                  rmsBasic_Y_core_error.push_back(tempHisto->GetRMSError());
                                 }
+
+
+
 
 
                                 // // ------- BEGIN OF MODS FOR AMPL CORRECTION
@@ -3601,20 +3818,9 @@ int main (int argc, char** argv)
 
                               double fitPercMin = 5.0;
                               double fitPercMax = 6.0;
-                              int divisions = 10000;
+                              // int divisions = 10000;
                               double res[4];
                               // std::cout << "debug 3" << std::endl;
-                              extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
-
-                              // if(TimeCorrectionFitFunction == 0)
-                              // {
-                              //   extractFromCrystalBall(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
-                              // }
-                              // else
-                              // {
-                              //   extractWithGaussAndExp(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,divisions,res);
-                              // }
-
 
 
                               //push this data only if the digi channel is not excluded by user
@@ -3629,16 +3835,35 @@ int main (int argc, char** argv)
 
                               if(acceptPolishedCorr)
                               {
-                                if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0)
+                                if(lowStat)
                                 {
+                                  if(gexp)
+                                  {
+                                    extractWithEMG(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,res);
+                                  }
+                                  else
+                                  {
+                                    extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,res);
+                                  }
 
+                                  if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0)
+                                  {
+
+                                  }
+                                  else
+                                  {
+                                    tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                    meanForPolishedCorrection.push_back(res[0]);
+                                    fwhmForPolishedCorrection.push_back(res[1]);
+                                  }
                                 }
                                 else
                                 {
                                   tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
-                                  meanForPolishedCorrection.push_back(res[0]);
-                                  fwhmForPolishedCorrection.push_back(res[1]);
+                                  meanForPolishedCorrection.push_back(spectrumDeltaTcryTneig->GetMean());
+                                  fwhmForPolishedCorrection.push_back(spectrumDeltaTcryTneig->GetRMS());
                                 }
+
 
                               }
 
@@ -3827,37 +4052,43 @@ int main (int argc, char** argv)
 
                                   double fitPercMin = 5.0;
                                   double fitPercMax = 6.0;
-                                  int divisions = 10000;
+                                  // int divisions = 10000;
                                   double res[4];
-                                  // std::cout << "debug 4" << std::endl;
-                                  extractCTR(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                  // if(TimeCorrectionFitFunction == 0)
-                                  // {
-                                  //   extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                  // }
-                                  // else
-                                  // {
-                                  //   extractWithGaussAndExp(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                  // }
-                                  // extractFromCrystalBall(tempHisto,fitPercMin,fitPercMax,divisions,res);
-                                  // tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
-                                  // meanForPolishedCorrection.push_back(res[0]);
-                                  // fwhmForPolishedCorrection.push_back(res[1]);
 
-
-
-                                  if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                  if(lowStat)
                                   {
+                                    if(gexp)
+                                    {
+                                      extractWithEMG(tempHisto,fitPercMin,fitPercMax,res);
+                                    }
+                                    else
+                                    {
+                                      extractCTR(tempHisto,fitPercMin,fitPercMax,res);
+                                    }
 
+                                    if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
+                                    {
+
+                                    }
+                                    else
+                                    {
+                                      delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
+                                      Wcoord_Y_core.push_back(res[0]);
+                                      rms_Y_core.push_back(res[1]);
+                                      Wcoord_Y_core_error.push_back(res[2]);
+                                      rms_Y_core_error.push_back(res[3]);
+                                    }
                                   }
                                   else
                                   {
                                     delay_X_core.push_back( beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming) );
-                                    Wcoord_Y_core.push_back(res[0]);
-                                    rms_Y_core.push_back(res[1]);
-                                    Wcoord_Y_core_error.push_back(res[2]);
-                                    rms_Y_core_error.push_back(res[3]);
+                                    Wcoord_Y_core.push_back(tempHisto->GetMean());
+                                    rms_Y_core.push_back(tempHisto->GetRMS());
+                                    Wcoord_Y_core_error.push_back(tempHisto->GetMeanError());
+                                    rms_Y_core_error.push_back(tempHisto->GetRMSError());
                                   }
+                                  // std::cout << "debug 4" << std::endl;
+
 
 
 
@@ -6369,6 +6600,14 @@ int main (int argc, char** argv)
       gDirectory->WriteObject(&detChData, "channels");
       gDirectory->WriteObject(&saturationData, "saturation");
       gDirectory->WriteObject(&pedestalData, "pedestal");
+
+      //write marginWZgraph for this module
+      std::stringstream sMargin;
+      sMargin.str("");
+      sMargin << marginWZgraph;
+      TNamed tMargin("marginWZgraph",sMargin.str().c_str());
+      tMargin.Write();
+      sMargin.str("");
       //
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -6781,6 +7020,12 @@ int main (int argc, char** argv)
                             delete C_spectrum;
 
 
+
+                            //save all single plots
+                            TDirectory *plotsDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("Plots");
+
+
+
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                             C_spectrum->SetName("Delta Tcry - TNeig");
                             C_spectrum->Divide(nmppcx,nmppcy);
@@ -6789,10 +7034,16 @@ int main (int argc, char** argv)
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
                             CurrentCrystal->GetDeltaTimeWRTTagging()->SetName("Basic CTR histogram");
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
+                            plotsDir->cd();
+                            CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
+                            plotsDir->cd("..");
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaTcryTneig().size() ; iNeig++)
                             {
                               C_spectrum->cd(CurrentCrystal->GetDeltaTcryTneig()[iNeig].canvasPosition);
                               CurrentCrystal->GetDeltaTcryTneig()[iNeig].spectrum->Draw();
+                              plotsDir->cd();
+                              CurrentCrystal->GetDeltaTcryTneig()[iNeig].spectrum->Write();
+                              plotsDir->cd("..");
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
@@ -6803,10 +7054,16 @@ int main (int argc, char** argv)
                             //first plot the Delta Tcry - Ttagging for this crystal
                             C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                             CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
+                            plotsDir->cd();
+                            CurrentCrystal->GetDeltaTvsW()->Write();
+                            plotsDir->cd("..");
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsW().size() ; iNeig++)
                             {
                               C_spectrum->cd(CurrentCrystal->GetDeltaT2vsW()[iNeig].canvasPosition);
                               CurrentCrystal->GetDeltaT2vsW()[iNeig].spectrum->Draw("COLZ");
+                              plotsDir->cd();
+                              CurrentCrystal->GetDeltaT2vsW()[iNeig].spectrum->Write();
+                              plotsDir->cd("..");
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
@@ -6817,13 +7074,21 @@ int main (int argc, char** argv)
                             //first plot the Delta Tcry - Ttagging for this crystal
                             C_spectrum->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition()) ;
                             CurrentCrystal->GetDeltaTvsCH()->Draw("COLZ");
+                            plotsDir->cd();
+                            CurrentCrystal->GetDeltaTvsCH()->Write();
+                            plotsDir->cd("..");
                             for(unsigned int iNeig = 0 ; iNeig < CurrentCrystal->GetDeltaT2vsCH().size() ; iNeig++)
                             {
                               C_spectrum->cd(CurrentCrystal->GetDeltaT2vsCH()[iNeig].canvasPosition);
                               CurrentCrystal->GetDeltaT2vsCH()[iNeig].spectrum->Draw("COLZ");
+                              plotsDir->cd();
+                              CurrentCrystal->GetDeltaT2vsCH()[iNeig].spectrum->Write();
+                              plotsDir->cd("..");
                             }
                             C_spectrum->Write();
                             delete C_spectrum;
+
+
 
 
                             // if(likelihoodCorrection)
