@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "Element.h"
+#include "TTreeFormula.h"
 // #include "Detector.h"
 
 class Module : public Element
@@ -21,6 +22,7 @@ private:
   int taggingCrystalTimingChannel;
   TH2F *TagVsExtTimeSpectrum;
   TH2F *TagVsDeltaTimeSpectrum;
+  TTreeFormula* FormulaTag;
 
 public:
   Module(); // default constructor
@@ -52,6 +54,8 @@ public:
 
   void                   SetTagVsDeltaTimeSpectrum(TH2F* aHisto){TagVsDeltaTimeSpectrum = aHisto;};
   TH2F*                  GetTagVsDeltaTimeSpectrum(){return TagVsDeltaTimeSpectrum;};
+  void                   SetFormulaTaggingPhotopeakCut(TTreeFormula* aFormula){FormulaTag = aFormula;};
+  TTreeFormula*          GetFormulaTaggingPhotopeakCut(){return FormulaTag;};
   void PrintGlobal();
   void PrintSpecific();
 };

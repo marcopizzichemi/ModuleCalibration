@@ -110,12 +110,21 @@ private:
   std::vector<int>     channelsNumRelevantForW;
   int                  bigCanvasPosition;
   std::vector<int>     DelayTimingChannelsNum;
+  std::vector<int>     AlignedTimingChannels;
   int                  timingChannel;
   std::vector<int>     tChannelsForPolishedCorrection;
   std::vector<double>  meanForPolishedCorrection;
   std::vector<double>  fwhmForPolishedCorrection;
   std::vector<correction_t>         correction;
 
+  float WstepSlicing;
+  float MinAcceptedW;
+  float WminSlicing;
+  float MaxAcceptedW;
+  float WmaxSlicing;
+
+  TTreeFormula* FormulaGeoCut;
+  TTreeFormula* FormulaEnergyCut;
 
   struct multiSpectrum_t
   {
@@ -136,13 +145,52 @@ private:
   struct multiGraphDelayW_t
   {
     int canvasPosition;
+    int timingChannel;
     TGraphErrors* spectrum;
   };
   struct multiGraphDelayRMS_t
   {
     int canvasPosition;
+    int timingChannel;
     TGraphErrors* spectrum;
   };
+
+  struct multiAlignedScatter_t
+  {
+    int timingChannel;
+    TH2F* spectrum;
+  };
+
+  struct multiGraphAligned_t
+  {
+    int timingChannel;
+    TGraphErrors* graph;
+  };
+
+  struct ctr_aligned_t
+{
+  // int detectorChannel;
+  bool isMainChannel;
+  int timingChannel;
+  TH2F* original_scatter;
+  TH2F* aligned_scatter;
+  TGraphErrors *delay_graph;
+  TGraphErrors *delay_rms_graph;
+  TGraphErrors *ctr_aligned_graph;
+  TGraphErrors *ctr_aligned_rms_graph;
+  std::vector<TH1D*> slice;
+  std::vector<float> wmean;
+  std::vector<float> werr;
+  std::vector<float> ctr_center;
+  std::vector<float> ctr_err;
+  std::vector<float> rms;
+  std::vector<float> rms_err;
+
+  std::vector<TH1F*> asIfPolishedHisto;
+  std::vector<float> asIfPolishedRMS;
+  std::vector<float> asIfPolishedMean;
+
+};
 
 
   std::vector<multiSpectrum_t>   deltaTcryTneig;
@@ -154,10 +202,16 @@ private:
   std::vector<multiDeltaSlice_t> slicesDelta;
   std::vector<multiGraphDelayW_t> graphDelayW;
   std::vector<multiGraphDelayRMS_t> graphDelayRMS;
+  std::vector<ctr_aligned_t> ctr_aligned;
+  std::vector<multiAlignedScatter_t> alignedScatter;
+
+  std::vector<multiGraphAligned_t>  ctr_aligned_graph;
+  std::vector<multiGraphAligned_t>  ctr_aligned_rms_graph;
 
   std::vector<TH2F*> TvsQHistos;
   std::vector<TH1F*> DeltaTHistos;
   std::vector<TH1F*> DelayHistos;
+  std::vector<TH1D*> alignedSlice;
 
 public:
   Crystal();                                 ///< default constructor
@@ -222,6 +276,11 @@ public:
   double               GetWbegin(){return wBegin;};
   double               GetWend(){return wEnd;};
   double               GetDeltaW(){return std::abs(deltaW);};
+  float                GetWstepSlicing(){return WstepSlicing ;};
+  float                GetMinAcceptedW(){return MinAcceptedW ;};
+  float                GetWminSlicing (){return WminSlicing  ;};
+  float                GetMaxAcceptedW(){return MaxAcceptedW ;};
+  float                GetWmaxSlicing (){return WmaxSlicing  ;};
 
   bool                 CrystalIsOn(){return isOn;};
   TH2F*                GetVersusTime(){return VersusTime;};
@@ -263,6 +322,7 @@ public:
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
+  std::vector<int>    GetAlignedTimingChannels(){return AlignedTimingChannels;};
 
   std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
   std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
@@ -284,6 +344,9 @@ public:
   std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
   std::vector<TH1F*>                       GetDelayHistos(){return DelayHistos;};
   std::vector<multiSpectrum_t>             GetLSSpectra(){return LSSpectra;};
+  std::vector<multiAlignedScatter_t>       GetAlignedScatter(){return alignedScatter;};
+  std::vector<multiGraphAligned_t>         GetAlignedGraph(){return ctr_aligned_graph;};
+  std::vector<multiGraphAligned_t>         GetAlignedGraphRMS(){return ctr_aligned_rms_graph;};
 
   TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
 
@@ -370,13 +433,53 @@ public:
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
   void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
+  void                 SetAlignedTimingChannels(std::vector<int> aVect){AlignedTimingChannels = aVect;};
   void                 SetTChannelsForPolishedCorrection(std::vector<int> aVect){tChannelsForPolishedCorrection = aVect;};
   void                 SetMeanForPolishedCorrection(std::vector<double> aVect){meanForPolishedCorrection = aVect;};
   void                 SetFwhmForPolishedCorrection(std::vector<double> aVect){fwhmForPolishedCorrection = aVect;};
   void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
   void                 SetBigCanvasPosition(int aNum){bigCanvasPosition = aNum;};
 
+  void                 SetFormulaGeoCut(TTreeFormula* aFormula){FormulaGeoCut = aFormula;};
+  TTreeFormula*        GetFormulaGeoCut(){return FormulaGeoCut;};
+  void                 SetFormulaEnergyCut(TTreeFormula* aFormula){FormulaEnergyCut = aFormula;};
+  TTreeFormula*        GetFormulaEnergyCut(){return FormulaEnergyCut;};
+
+  void                 SetWstepSlicing(float aFloat){WstepSlicing = aFloat;};
+  void                 SetMinAcceptedW(float aFloat){MinAcceptedW = aFloat;};
+  void                 SetWminSlicing(float aFloat) {WminSlicing  = aFloat;};
+  void                 SetMaxAcceptedW(float aFloat){MaxAcceptedW = aFloat;};
+  void                 SetWmaxSlicing(float aFloat) {WmaxSlicing  = aFloat;};
+
   void                 AddCorrection(correction_t aCorrection){correction.push_back(aCorrection);};
+  void                 AddAlignedSlice(TH1D* aHisto){alignedSlice.push_back(aHisto);};
+  std::vector<TH1D*>   GetAlignedSlice(){return alignedSlice;};
+
+
+
+  void AddAlignedGraph(int timingChannel,TGraphErrors* graph)
+  {
+    multiGraphAligned_t temp;
+    temp.timingChannel = timingChannel;
+    temp.graph = graph;
+    ctr_aligned_graph.push_back(temp);
+  }
+
+  void AddAlignedGraphRMS(int timingChannel,TGraphErrors* graph)
+  {
+    multiGraphAligned_t temp;
+    temp.timingChannel = timingChannel;
+    temp.graph = graph;
+    ctr_aligned_rms_graph.push_back(temp);
+  }
+
+  void AddAlignedScatter(TH2F* aHisto,int timingChannel)
+  {
+    multiAlignedScatter_t tempScatter;
+    tempScatter.timingChannel = timingChannel;
+    tempScatter.spectrum = aHisto;
+    alignedScatter.push_back(tempScatter);
+  };
 
 
   void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
@@ -428,20 +531,22 @@ public:
     // tempDelta.fit            = aFit;
     slicesDelta.push_back(tempDelta);
   };
-  void                 AddGraphDelayW(TGraphErrors* aGraph,int aPos)
+  void                 AddGraphDelayW(TGraphErrors* aGraph,int timingChannel,int aPos)
   {
     multiGraphDelayW_t tempDelta;
     tempDelta.canvasPosition = aPos;
     tempDelta.spectrum       = aGraph;
+    tempDelta.timingChannel  = timingChannel;
     // tempDelta.fit            = aFit;
     graphDelayW.push_back(tempDelta);
   };
 
-  void AddGraphDelayRMS(TGraphErrors* aGraph,int aPos)
+  void AddGraphDelayRMS(TGraphErrors* aGraph,int timingChannel,int aPos)
   {
     multiGraphDelayRMS_t tempDelta;
     tempDelta.canvasPosition = aPos;
     tempDelta.spectrum       = aGraph;
+    tempDelta.timingChannel  = timingChannel;
     // tempDelta.fit            = aFit;
     graphDelayRMS.push_back(tempDelta);
   }

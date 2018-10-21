@@ -92,8 +92,6 @@ struct multi_channel_t
   std::string string;
 };
 
-
-
 //------------------------------------------//
 // CREATION OF STRINGS FOR PLOTTING         //
 //------------------------------------------//

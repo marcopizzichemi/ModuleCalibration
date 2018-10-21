@@ -633,21 +633,21 @@ InputFile::InputFile (ConfigFile& config)
   //  opens the Tchain, set its branches, create the TTree that will be used for the analysis //
   //------------------------------------------------------------------------------------------//
   inputChannels          = detector.size();
-  fchain                 = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
-  ftree                  = new TTree(fname.c_str(),fname.c_str());
-  // first, create the adc channels variables and branches
-  ChainAdcChannel        = new Int_t [adcChannels];
-  ChainDesktopAdcChannel = new Short_t [adcChannels]; // input from ADC desktop
-  ChainVMEadcChannel     = new UShort_t [adcChannels]; // input from ADC desktop
-  ChainTimeStamp         = new Float_t[adcChannels];
-  TDCBinning             = new Float_t[adcChannels];
+  // fchain                 = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
+  // ftree                  = new TTree(fname.c_str(),fname.c_str());
+  // // first, create the adc channels variables and branches
+  // ChainAdcChannel        = new Int_t [adcChannels];
+  // ChainDesktopAdcChannel = new Short_t [adcChannels]; // input from ADC desktop
+  // ChainVMEadcChannel     = new UShort_t [adcChannels]; // input from ADC desktop
+  // ChainTimeStamp         = new Float_t[adcChannels];
+  // TDCBinning             = new Float_t[adcChannels];
   DigitizerChannelOn     = new bool[adcChannels];
-  bChainAdcChannel       = new TBranch* [adcChannels];
-  bChainTimeStamp        = new TBranch* [adcChannels];
-  TreeAdcChannel         = new Float_t [inputChannels]; // channels analyzed
+  // bChainAdcChannel       = new TBranch* [adcChannels];
+  // bChainTimeStamp        = new TBranch* [adcChannels];
+  // TreeAdcChannel         = new Float_t [inputChannels]; // channels analyzed
   // if(digitizerType  == 1 || digitizerType == 2)
   // {
-  TreeTimeStamp          = new Float_t[inputChannels];
+  // TreeTimeStamp          = new Float_t[inputChannels];
   // }
   for(int i = 0; i < adcChannels; i++)
   {
@@ -661,465 +661,465 @@ InputFile::InputFile (ConfigFile& config)
 }
 
 
+//
+// void InputFile::ImportTChain(int argc, char** argv)
+// {
+//   gROOT->ProcessLine("#include <vector>");
+//
+//   // fill the tchain with input files
+//   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
+//   {
+//     for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
+//     {
+//       std::cout << "Adding file " << argv[i] << std::endl;
+//       fchain->Add(argv[i]);
+//     }
+//   }
+//   else // the config file was indeed the default one
+//   {
+//     for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
+//     {
+//       std::cout << "Adding file " << argv[i] << std::endl;
+//       fchain->Add(argv[i]);
+//     }
+//   }
+//   // set branches for reading the input files
+//   fchain->SetBranchAddress("ExtendedTimeTag", &ChainExtendedTimeTag, &bChainExtendedTimeTag);
+//   fchain->SetBranchAddress("DeltaTimeTag", &ChainDeltaTimeTag, &bChainDeltaTimeTag);
+//   if(usingRealSimData)
+//   {
+//     fchain->SetBranchAddress("RealX", &RealX, &bRealX);
+//     fchain->SetBranchAddress("RealY", &RealY, &bRealY);
+//     fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
+//     // fchain->SetBranchAddress("Tagging", &simTaggingCharge, &bsimTaggingCharge);
+//     // fchain->SetBranchAddress("TaggingTimeStamp", &simTaggingTime, &bsimTaggingTime);
+//     fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
+//     fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
+//     // fchain->SetBranchAddress("TotalCryEnergy",&TotalCryEnergy, &bTotalCryEnergy);
+//   }
+//   for(int i=0; i<adcChannels; i++)
+//   {
+//
+//     if(digitizerType == 0)
+//     {
+//       std::stringstream sname;
+//       sname << "ch" << i;
+//       fchain->SetBranchAddress(sname.str().c_str(), &ChainDesktopAdcChannel[i], &bChainAdcChannel[i]);
+//     }
+//     if(digitizerType == 1)
+//     {
+//       std::stringstream sname;
+//       sname << "ch" << i;
+//       fchain->SetBranchAddress(sname.str().c_str(), &ChainVMEadcChannel[i], &bChainAdcChannel[i]);
+//       sname.str("");
+//       sname << "t" << i;
+//       fchain->SetBranchAddress(sname.str().c_str(), &ChainTimeStamp[i],&bChainTimeStamp[i]);
+//     }
+//   }
+// }
+//
+// void InputFile::PrepareTTree()
+// {
+//   //set branches also for the analysis ttree
+//   ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l");
+//   ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
+//   //branches of the channels data
+//   for (int i = 0 ; i < inputChannels ; i++)
+//   {
+//     //empty the stringstreams
+//     std::stringstream sname,stype;
+//     sname << "ch" << detector[i].digitizerChannel;
+//     stype << "ch" << detector[i].digitizerChannel << "/F";
+//     ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
+//     sname.str("");
+//     stype.str("");
+//     if(digitizerType == 1)
+//     {
+//       sname << "t" << detector[i].digitizerChannel;
+//       stype << "t" << detector[i].digitizerChannel << "/F";
+//       ftree->Branch(sname.str().c_str(),&TreeTimeStamp[i],stype.str().c_str());
+//       sname.str("");
+//       stype.str("");
+//     }
+//     if(digitizerType == 2)
+//     {
+//       sname << "t" << detector[i].digitizerChannel;
+//       stype << "t" << detector[i].digitizerChannel << "/F";
+//       ftree->Branch(sname.str().c_str(),&TreeTimeStamp[i],stype.str().c_str());
+//       sname.str("");
+//       stype.str("");
+//     }
+//   }
+//   ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
+//   ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
+//   ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
+//   ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
+//   ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O");
+//   if(usingTaggingBench || taggingForTiming)
+//   {
+//     ftree->Branch("Tagging",&TreeTagging,"Tagging/F");
+//     ftree->Branch("TaggingTimeStamp",&TaggingTimeStamp,"TaggingTimeStamp/F");
+//     ftree->Branch("ZPosition",&TreeZPosition,"ZPosition/F");
+//   }
+//   // ftree->Branch("Theta",&TreeTheta,"Theta/F");
+//   // ftree->Branch("Phi",&TreePhi,"Phi/F");
+//   if(usingRealSimData)
+//   {
+//     // pTreeTotalCryEnergy = &TreeTotalCryEnergy;
+//     ftree->Branch("RealX",&TreeRealX,"RealX/F");
+//     ftree->Branch("RealY",&TreeRealY,"RealY/F");
+//     ftree->Branch("RealZ",&TreeRealZ,"RealZ/F");
+//     ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S");
+//     ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S");
+//     // ftree->Branch("TotalCryEnergy","std::vector<float>",&pTreeTotalCryEnergy);
+//   }
+// }
 
-void InputFile::ImportTChain(int argc, char** argv)
-{
-  gROOT->ProcessLine("#include <vector>");
-
-  // fill the tchain with input files
-  if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
-  {
-    for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
-    {
-      std::cout << "Adding file " << argv[i] << std::endl;
-      fchain->Add(argv[i]);
-    }
-  }
-  else // the config file was indeed the default one
-  {
-    for (int i = 1; i < argc ; i++) // run on the remaining arguments to add all the input files
-    {
-      std::cout << "Adding file " << argv[i] << std::endl;
-      fchain->Add(argv[i]);
-    }
-  }
-  // set branches for reading the input files
-  fchain->SetBranchAddress("ExtendedTimeTag", &ChainExtendedTimeTag, &bChainExtendedTimeTag);
-  fchain->SetBranchAddress("DeltaTimeTag", &ChainDeltaTimeTag, &bChainDeltaTimeTag);
-  if(usingRealSimData)
-  {
-    fchain->SetBranchAddress("RealX", &RealX, &bRealX);
-    fchain->SetBranchAddress("RealY", &RealY, &bRealY);
-    fchain->SetBranchAddress("RealZ", &RealZ, &bRealZ);
-    // fchain->SetBranchAddress("Tagging", &simTaggingCharge, &bsimTaggingCharge);
-    // fchain->SetBranchAddress("TaggingTimeStamp", &simTaggingTime, &bsimTaggingTime);
-    fchain->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
-    fchain->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
-    // fchain->SetBranchAddress("TotalCryEnergy",&TotalCryEnergy, &bTotalCryEnergy);
-  }
-  for(int i=0; i<adcChannels; i++)
-  {
-
-    if(digitizerType == 0)
-    {
-      std::stringstream sname;
-      sname << "ch" << i;
-      fchain->SetBranchAddress(sname.str().c_str(), &ChainDesktopAdcChannel[i], &bChainAdcChannel[i]);
-    }
-    if(digitizerType == 1)
-    {
-      std::stringstream sname;
-      sname << "ch" << i;
-      fchain->SetBranchAddress(sname.str().c_str(), &ChainVMEadcChannel[i], &bChainAdcChannel[i]);
-      sname.str("");
-      sname << "t" << i;
-      fchain->SetBranchAddress(sname.str().c_str(), &ChainTimeStamp[i],&bChainTimeStamp[i]);
-    }
-  }
-}
-
-void InputFile::PrepareTTree()
-{
-  //set branches also for the analysis ttree
-  ftree->Branch("ExtendedTimeTag",&TreeExtendedTimeTag,"ExtendedTimeTag/l");
-  ftree->Branch("DeltaTimeTag",&TreeDeltaTimeTag,"DeltaTimeTag/l");
-  //branches of the channels data
-  for (int i = 0 ; i < inputChannels ; i++)
-  {
-    //empty the stringstreams
-    std::stringstream sname,stype;
-    sname << "ch" << detector[i].digitizerChannel;
-    stype << "ch" << detector[i].digitizerChannel << "/F";
-    ftree->Branch(sname.str().c_str(),&TreeAdcChannel[i],stype.str().c_str());
-    sname.str("");
-    stype.str("");
-    if(digitizerType == 1)
-    {
-      sname << "t" << detector[i].digitizerChannel;
-      stype << "t" << detector[i].digitizerChannel << "/F";
-      ftree->Branch(sname.str().c_str(),&TreeTimeStamp[i],stype.str().c_str());
-      sname.str("");
-      stype.str("");
-    }
-    if(digitizerType == 2)
-    {
-      sname << "t" << detector[i].digitizerChannel;
-      stype << "t" << detector[i].digitizerChannel << "/F";
-      ftree->Branch(sname.str().c_str(),&TreeTimeStamp[i],stype.str().c_str());
-      sname.str("");
-      stype.str("");
-    }
-  }
-  ftree->Branch("TriggerChannel",&TreeTriggerChannel,"TriggerChannel/I");
-  ftree->Branch("FloodX",&TreeFloodX,"FloodX/F");
-  ftree->Branch("FloodY",&TreeFloodY,"FloodY/F");
-  ftree->Branch("FloodZ",&TreeFloodZ,"FloodZ/F");
-  ftree->Branch("BadEvent",&TreeBadevent,"BadEvent/O");
-  if(usingTaggingBench || taggingForTiming)
-  {
-    ftree->Branch("Tagging",&TreeTagging,"Tagging/F");
-    ftree->Branch("TaggingTimeStamp",&TaggingTimeStamp,"TaggingTimeStamp/F");
-    ftree->Branch("ZPosition",&TreeZPosition,"ZPosition/F");
-  }
-  // ftree->Branch("Theta",&TreeTheta,"Theta/F");
-  // ftree->Branch("Phi",&TreePhi,"Phi/F");
-  if(usingRealSimData)
-  {
-    // pTreeTotalCryEnergy = &TreeTotalCryEnergy;
-    ftree->Branch("RealX",&TreeRealX,"RealX/F");
-    ftree->Branch("RealY",&TreeRealY,"RealY/F");
-    ftree->Branch("RealZ",&TreeRealZ,"RealZ/F");
-    ftree->Branch("CrystalsHit",&TreeCrystalsHit,"CrystalsHit/S");
-    ftree->Branch("NumbOfInteractions",&TreeNumbOfInteractions,"NumbOfInteractions/S");
-    // ftree->Branch("TotalCryEnergy","std::vector<float>",&pTreeTotalCryEnergy);
-  }
-}
-
-
-void InputFile::FillEvent()
-{
-  double maxCharge = 0;
-  // double secondCharge = 0;
-  float columnsum= 0;
-  float rowsum= 0;
-  float total=  0;
-  // float totalForFloodZ = 0;
-  TreeBadevent = false;
-  TreeExtendedTimeTag = ChainExtendedTimeTag;
-  TreeDeltaTimeTag = ChainDeltaTimeTag;
-
-
-
-  // int TreeEntryCounter = 0;
-  // int detectorCounter = 0;
-  int TriggerID = 0;
-  //loop to fill the channel
-  for (int j = 0 ; j < adcChannels ; j++)
-  {
-    for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
-    {
-      if(j == detector[iDet].digitizerChannel)
-      {
-        //charge part
-        Float_t ADCminusPedestal = ChainAdcChannel[j] - detector[iDet].pedestal;
-        // std::cout << ADCminusPedestal << std::endl;
-        if(correctingSaturation)
-        {
-          if( ADCminusPedestal > detector[iDet].saturation)
-          {
-            TreeBadevent = true;
-          }
-          TreeAdcChannel[iDet] = (Float_t) (-detector[iDet].saturation * TMath::Log(1.0 - ( (ADCminusPedestal)/((Float_t) detector[iDet].saturation) )));
-        }
-        else
-          TreeAdcChannel[iDet] = (Float_t) ADCminusPedestal;
-            //find the max charge and therefore the TriggerChannel
-        if (TreeAdcChannel[iDet] > maxCharge)
-        {
-          maxCharge = TreeAdcChannel[iDet];
-          TreeTriggerChannel = detector[iDet].digitizerChannel;
-          TriggerID = iDet;
-        }
-      }
-      if(j == detector[iDet].timingChannel)
-      {
-        //timing part
-        TreeTimeStamp[iDet] = (Float_t) ChainTimeStamp[j];
-      }
-    }
-    if(usingTaggingBench || taggingForTiming)
-    {
-      if( j == taggingCrystalChannel)
-      {
-        TreeTagging = (Float_t) (ChainAdcChannel[j] - pedestalTag); // no saturation correction for the tagging crystal..
-      }
-      if( j == taggingCrystalTimingChannel)
-      {
-        TaggingTimeStamp = (Float_t) ChainTimeStamp[j];//timing part
-      }
-    }
-  }
-
-  //localize trigger channel detector
-  //loop to calculate u,v
-  // int counterFill = 0;
-
-  for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
-  {
-    bool acceptedChannel = false;
-    if(usingAllChannels) //all channels for u and v, so accept all the channels
-    {
-      acceptedChannel = true;
-    }
-    else // only neighbour channels (and trigger channel itself) are accepted
-    {
-      if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
-      {
-        acceptedChannel = true;
-      }
-      else
-      {
-        for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
-        {
-          if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
-          acceptedChannel = true;
-        }
-      }
-    }
-
-    bool acceptedChannelW = false;
-    if(wAllChannels) //all channels for w
-    {
-      acceptedChannelW = true;
-    }
-    else
-    {
-      if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
-      {
-        acceptedChannelW = true;
-      }
-      else
-      {
-        for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
-        {
-          if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
-          acceptedChannelW = true;
-        }
-      }
-    }
-
-    if(acceptedChannel)
-    {
-      rowsum    += TreeAdcChannel[iDet]*detector[iDet].xPosition;
-      columnsum += TreeAdcChannel[iDet]*detector[iDet].yPosition;
-    }
-    if(acceptedChannelW)
-    {
-      total += TreeAdcChannel[iDet];
-    }
-  }
-
-
-  //compute u,v,w
-  // near channels vs. total channels depending on what decided before
-  TreeFloodX = rowsum/total;
-  TreeFloodY = columnsum/total;
-  TreeFloodZ =  maxCharge/total;
-  //     TreeFloodZ =  maxCharge/totalForFloodZ;
-
-  if(usingTaggingBench || taggingForTiming) TreeZPosition = taggingPosition;
-
-  if(usingRealSimData)
-  {
-    TreeRealX = RealX;
-    TreeRealY = RealY;
-    TreeRealZ = RealZ;
-    TreeTagging = 1;      //FIXME for now like this...
-
-    TaggingTimeStamp = 0; //FIXME for now like this...
-    if(smearTaggingTime) // smear time tag of "tagging bench"
-    {
-      TaggingTimeStamp = (Float_t) ((gRandom->Gaus(0,sigmaTimeTag))*1e-12);
-    }
-    TreeCrystalsHit = CrystalsHit;
-    TreeNumbOfInteractions = NumbOfInteractions;
-  }
-
-  if(TreeExtendedTimeTag >= nclock)
-  {
-    if(!TreeBadevent)
-    {
-      ftree->Fill();
-      GoodCounter++;
-    }
-    else
-    {
-      badEvents++;
-    }
-  }
-  //counter to give a feedback to the user
-  // counter++;
-}
-
-
-
-
-
-void InputFile::FillTreeCAEN()
-{
-  long long int nevent = fchain->GetEntries();
-
-  for (long long int i=0;i<nevent;i++)
-  {
-    fchain->GetEvent(i);
-    //copy the input charges to the larger type array
-    for (int j = 0 ; j < adcChannels ; j++)
-    {
-      if(digitizerType == 0)
-      {
-        ChainAdcChannel[j] = (Int_t) ChainDesktopAdcChannel[j];
-      }
-      else
-      {
-        ChainAdcChannel[j] = (Int_t) ChainVMEadcChannel[j];
-      }
-    }
-    FillEvent();
-    int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
-    if( (perc % 10) == 0 )
-    {
-      std::cout << "\r";
-      std::cout << perc << "% done... ";
-      //std::cout << counter << std::endl;
-    }
-    counter++;
-  }
-
-}
-
-
-
-
-
-void InputFile::FillTreePetiroc(int argc, char** argv)
-{
-  //read the input file from Petiroc
-  //open stream input
-  std::ifstream inputFilePetiroc;
-  std::string PetirocFileName;
-  if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
-  {
-    PetirocFileName = argv[3];
-  }
-  else // the config file was indeed the default one
-  {
-    PetirocFileName = argv[1];
-  }
-
-  if(calculateTDCbinning)
-  {
-    std::cout << "Scanning file " << PetirocFileName << " to calculate TDC binnings..." << std::endl;
-    inputFilePetiroc.open (PetirocFileName.c_str(), std::ifstream::in);
-    string dummyLine;
-    getline(inputFilePetiroc, dummyLine);
-    inputPetirocFile_t inputPetiroc(adcChannels);
-    int *maxFT;
-    int *minFT;
-    maxFT = new int[adcChannels];
-    minFT = new int[adcChannels];
-    for(int j = 0; j < adcChannels; j++)
-    {
-      maxFT[j] = -30000;
-      minFT[j] = 30000;
-    }
-
-
-    // read file and update min e max
-    while(inputFilePetiroc >> inputPetiroc)
-    {
-      if( (TDCcalculationEntries != 0) && (counter > TDCcalculationEntries)) //if TDCcalculationEntries == 0, whole input is used, otherwise up to TDCcalculationEntries events
-      {
-        break;
-      }
-      for(int j = 0 ; j < adcChannels ; j++)
-      {
-        // std::cout << inputPetiroc.FineTime[j]<< " minFT[" << j << "] = " <<  minFT[j] << "\t" << "maxFT[" << j << "] = " <<  maxFT[j] << std::endl;
-        if(inputPetiroc.FineTime[j] > maxFT[j])
-        {
-          maxFT[j] = inputPetiroc.FineTime[j];
-        }
-        if(inputPetiroc.FineTime[j] < minFT[j])
-        {
-          minFT[j] = inputPetiroc.FineTime[j];
-        }
-      }
-      inputPetiroc.clear();
-      counter++;
-    }
-    inputFilePetiroc.close();
-
-    //calculate the TDC binnings
-    for(int j = 0 ; j < adcChannels ; j++)
-    {
-      // std::cout << "minFT[" << j << "] = " <<  minFT[j] << "\t" << "maxFT[" << j << "] = " <<  maxFT[j] << std::endl;
-      if( (maxFT[j] - minFT[j]) > minDeltaForFT )
-      {
-        TDCBinning[j] = (25e-9) / (maxFT[j] - minFT[j]);
-      }
-      else
-      {
-        TDCBinning[j] = approximateTDCbinning*1e-12;
-      }
-      std::cout << "TDCBinning[" << j << "] = " <<  TDCBinning[j] << std::endl;
-    }
-
-
-
-
-    counter = 0;
-
-  }
-  else
-  {
-    std::cout << "Using approximate TDC binning = " << approximateTDCbinning << " ps for all channels"<< std::endl;
-    for (int j = 0 ; j < adcChannels ; j++)
-    {
-      TDCBinning[j] = approximateTDCbinning*1e-12;
-    }
-  }
-
-
-
-  std::cout << "Reading file " << PetirocFileName << std::endl;
-  inputFilePetiroc.open (PetirocFileName.c_str(), std::ifstream::in);
-  //skip the first line
-  string dummyLine;
-  getline(inputFilePetiroc, dummyLine);
-  inputPetirocFile_t inputPetiroc(adcChannels);
-  while(inputFilePetiroc >> inputPetiroc)
-  {
-    ChainExtendedTimeTag = counter; //FIXME is there an absolute time tag in this ADC?
-    ChainDeltaTimeTag = 1;
-    for (int j = 0 ; j < adcChannels ; j++)
-    {
-      ChainAdcChannel[j] = (Int_t) inputPetiroc.Charge[j];
-      ChainTimeStamp[j] =  (Float_t) ( ( (inputPetiroc.CoarseTime[j] + 1)*25e-9) - (inputPetiroc.FineTime[j]*TDCBinning[j]) );
-    }
-    FillEvent();
-    // int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
-    if( (counter % 1000) == 0 )
-    {
-      std::cout << "\r";
-      std::cout << counter << " events done... ";
-      //std::cout << counter << std::endl;
-    }
-    inputPetiroc.clear();
-    counter++;
-  }
-  FillEvent();
-}
-
-// Runs on the input TChain elements
-// and fills the analysis TTree
-void InputFile::FillTree(int argc, char** argv)
-{
-  //creates the TTree from the input Tchain
-  std::cout << "Filling the TTree for the analysis... " << std::endl;
-
-  if(digitizerType == 0 || digitizerType == 1)
-  {
-    FillTreeCAEN();
-  }
-  if(digitizerType == 2)
-  {
-    FillTreePetiroc(argc,argv);
-  }
-  //some feedback...
-  std::cout << std::endl;
-  std::cout << "Tot events = \t" << counter << std::endl;
-  std::cout << "Accepted events = \t" << GoodCounter << std::endl;
-  std::cout << "Bad events = \t" << badEvents << std::endl;
-}
+//
+// void InputFile::FillEvent()
+// {
+//   double maxCharge = 0;
+//   // double secondCharge = 0;
+//   float columnsum= 0;
+//   float rowsum= 0;
+//   float total=  0;
+//   // float totalForFloodZ = 0;
+//   TreeBadevent = false;
+//   TreeExtendedTimeTag = ChainExtendedTimeTag;
+//   TreeDeltaTimeTag = ChainDeltaTimeTag;
+//
+//
+//
+//   // int TreeEntryCounter = 0;
+//   // int detectorCounter = 0;
+//   int TriggerID = 0;
+//   //loop to fill the channel
+//   for (int j = 0 ; j < adcChannels ; j++)
+//   {
+//     for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
+//     {
+//       if(j == detector[iDet].digitizerChannel)
+//       {
+//         //charge part
+//         Float_t ADCminusPedestal = ChainAdcChannel[j] - detector[iDet].pedestal;
+//         // std::cout << ADCminusPedestal << std::endl;
+//         if(correctingSaturation)
+//         {
+//           if( ADCminusPedestal > detector[iDet].saturation)
+//           {
+//             TreeBadevent = true;
+//           }
+//           TreeAdcChannel[iDet] = (Float_t) (-detector[iDet].saturation * TMath::Log(1.0 - ( (ADCminusPedestal)/((Float_t) detector[iDet].saturation) )));
+//         }
+//         else
+//           TreeAdcChannel[iDet] = (Float_t) ADCminusPedestal;
+//             //find the max charge and therefore the TriggerChannel
+//         if (TreeAdcChannel[iDet] > maxCharge)
+//         {
+//           maxCharge = TreeAdcChannel[iDet];
+//           TreeTriggerChannel = detector[iDet].digitizerChannel;
+//           TriggerID = iDet;
+//         }
+//       }
+//       if(j == detector[iDet].timingChannel)
+//       {
+//         //timing part
+//         TreeTimeStamp[iDet] = (Float_t) ChainTimeStamp[j];
+//       }
+//     }
+//     if(usingTaggingBench || taggingForTiming)
+//     {
+//       if( j == taggingCrystalChannel)
+//       {
+//         TreeTagging = (Float_t) (ChainAdcChannel[j] - pedestalTag); // no saturation correction for the tagging crystal..
+//       }
+//       if( j == taggingCrystalTimingChannel)
+//       {
+//         TaggingTimeStamp = (Float_t) ChainTimeStamp[j];//timing part
+//       }
+//     }
+//   }
+//
+//   //localize trigger channel detector
+//   //loop to calculate u,v
+//   // int counterFill = 0;
+//
+//   for(unsigned int iDet = 0 ; iDet < detector.size(); iDet++)
+//   {
+//     bool acceptedChannel = false;
+//     if(usingAllChannels) //all channels for u and v, so accept all the channels
+//     {
+//       acceptedChannel = true;
+//     }
+//     else // only neighbour channels (and trigger channel itself) are accepted
+//     {
+//       if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
+//       {
+//         acceptedChannel = true;
+//       }
+//       else
+//       {
+//         for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
+//         {
+//           if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
+//           acceptedChannel = true;
+//         }
+//       }
+//     }
+//
+//     bool acceptedChannelW = false;
+//     if(wAllChannels) //all channels for w
+//     {
+//       acceptedChannelW = true;
+//     }
+//     else
+//     {
+//       if(detector[iDet].digitizerChannel == detector[TriggerID].digitizerChannel) // accept the detector if this is the trigger channel
+//       {
+//         acceptedChannelW = true;
+//       }
+//       else
+//       {
+//         for(unsigned int iNeighbour = 0; iNeighbour < detector[TriggerID].neighbourChannels.size(); iNeighbour++)
+//         {
+//           if(detector[iDet].digitizerChannel == detector[TriggerID].neighbourChannels[iNeighbour]) // check if this channel is in the list of neighbours of the trigger channel
+//           acceptedChannelW = true;
+//         }
+//       }
+//     }
+//
+//     if(acceptedChannel)
+//     {
+//       rowsum    += TreeAdcChannel[iDet]*detector[iDet].xPosition;
+//       columnsum += TreeAdcChannel[iDet]*detector[iDet].yPosition;
+//     }
+//     if(acceptedChannelW)
+//     {
+//       total += TreeAdcChannel[iDet];
+//     }
+//   }
+//
+//
+//   //compute u,v,w
+//   // near channels vs. total channels depending on what decided before
+//   TreeFloodX = rowsum/total;
+//   TreeFloodY = columnsum/total;
+//   TreeFloodZ =  maxCharge/total;
+//   //     TreeFloodZ =  maxCharge/totalForFloodZ;
+//
+//   if(usingTaggingBench || taggingForTiming) TreeZPosition = taggingPosition;
+//
+//   if(usingRealSimData)
+//   {
+//     TreeRealX = RealX;
+//     TreeRealY = RealY;
+//     TreeRealZ = RealZ;
+//     TreeTagging = 1;      //FIXME for now like this...
+//
+//     TaggingTimeStamp = 0; //FIXME for now like this...
+//     if(smearTaggingTime) // smear time tag of "tagging bench"
+//     {
+//       TaggingTimeStamp = (Float_t) ((gRandom->Gaus(0,sigmaTimeTag))*1e-12);
+//     }
+//     TreeCrystalsHit = CrystalsHit;
+//     TreeNumbOfInteractions = NumbOfInteractions;
+//   }
+//
+//   if(TreeExtendedTimeTag >= nclock)
+//   {
+//     if(!TreeBadevent)
+//     {
+//       ftree->Fill();
+//       GoodCounter++;
+//     }
+//     else
+//     {
+//       badEvents++;
+//     }
+//   }
+//   //counter to give a feedback to the user
+//   // counter++;
+// }
+//
+//
+//
+//
+//
+// void InputFile::FillTreeCAEN()
+// {
+//   long long int nevent = fchain->GetEntries();
+//
+//   for (long long int i=0;i<nevent;i++)
+//   {
+//     fchain->GetEvent(i);
+//     //copy the input charges to the larger type array
+//     for (int j = 0 ; j < adcChannels ; j++)
+//     {
+//       if(digitizerType == 0)
+//       {
+//         ChainAdcChannel[j] = (Int_t) ChainDesktopAdcChannel[j];
+//       }
+//       else
+//       {
+//         ChainAdcChannel[j] = (Int_t) ChainVMEadcChannel[j];
+//       }
+//     }
+//     FillEvent();
+//     int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
+//     if( (perc % 10) == 0 )
+//     {
+//       std::cout << "\r";
+//       std::cout << perc << "% done... ";
+//       //std::cout << counter << std::endl;
+//     }
+//     counter++;
+//   }
+//
+// }
+//
+//
+//
+//
+//
+// void InputFile::FillTreePetiroc(int argc, char** argv)
+// {
+//   //read the input file from Petiroc
+//   //open stream input
+//   std::ifstream inputFilePetiroc;
+//   std::string PetirocFileName;
+//   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
+//   {
+//     PetirocFileName = argv[3];
+//   }
+//   else // the config file was indeed the default one
+//   {
+//     PetirocFileName = argv[1];
+//   }
+//
+//   if(calculateTDCbinning)
+//   {
+//     std::cout << "Scanning file " << PetirocFileName << " to calculate TDC binnings..." << std::endl;
+//     inputFilePetiroc.open (PetirocFileName.c_str(), std::ifstream::in);
+//     string dummyLine;
+//     getline(inputFilePetiroc, dummyLine);
+//     inputPetirocFile_t inputPetiroc(adcChannels);
+//     int *maxFT;
+//     int *minFT;
+//     maxFT = new int[adcChannels];
+//     minFT = new int[adcChannels];
+//     for(int j = 0; j < adcChannels; j++)
+//     {
+//       maxFT[j] = -30000;
+//       minFT[j] = 30000;
+//     }
+//
+//
+//     // read file and update min e max
+//     while(inputFilePetiroc >> inputPetiroc)
+//     {
+//       if( (TDCcalculationEntries != 0) && (counter > TDCcalculationEntries)) //if TDCcalculationEntries == 0, whole input is used, otherwise up to TDCcalculationEntries events
+//       {
+//         break;
+//       }
+//       for(int j = 0 ; j < adcChannels ; j++)
+//       {
+//         // std::cout << inputPetiroc.FineTime[j]<< " minFT[" << j << "] = " <<  minFT[j] << "\t" << "maxFT[" << j << "] = " <<  maxFT[j] << std::endl;
+//         if(inputPetiroc.FineTime[j] > maxFT[j])
+//         {
+//           maxFT[j] = inputPetiroc.FineTime[j];
+//         }
+//         if(inputPetiroc.FineTime[j] < minFT[j])
+//         {
+//           minFT[j] = inputPetiroc.FineTime[j];
+//         }
+//       }
+//       inputPetiroc.clear();
+//       counter++;
+//     }
+//     inputFilePetiroc.close();
+//
+//     //calculate the TDC binnings
+//     for(int j = 0 ; j < adcChannels ; j++)
+//     {
+//       // std::cout << "minFT[" << j << "] = " <<  minFT[j] << "\t" << "maxFT[" << j << "] = " <<  maxFT[j] << std::endl;
+//       if( (maxFT[j] - minFT[j]) > minDeltaForFT )
+//       {
+//         TDCBinning[j] = (25e-9) / (maxFT[j] - minFT[j]);
+//       }
+//       else
+//       {
+//         TDCBinning[j] = approximateTDCbinning*1e-12;
+//       }
+//       std::cout << "TDCBinning[" << j << "] = " <<  TDCBinning[j] << std::endl;
+//     }
+//
+//
+//
+//
+//     counter = 0;
+//
+//   }
+//   else
+//   {
+//     std::cout << "Using approximate TDC binning = " << approximateTDCbinning << " ps for all channels"<< std::endl;
+//     for (int j = 0 ; j < adcChannels ; j++)
+//     {
+//       TDCBinning[j] = approximateTDCbinning*1e-12;
+//     }
+//   }
+//
+//
+//
+//   std::cout << "Reading file " << PetirocFileName << std::endl;
+//   inputFilePetiroc.open (PetirocFileName.c_str(), std::ifstream::in);
+//   //skip the first line
+//   string dummyLine;
+//   getline(inputFilePetiroc, dummyLine);
+//   inputPetirocFile_t inputPetiroc(adcChannels);
+//   while(inputFilePetiroc >> inputPetiroc)
+//   {
+//     ChainExtendedTimeTag = counter; //FIXME is there an absolute time tag in this ADC?
+//     ChainDeltaTimeTag = 1;
+//     for (int j = 0 ; j < adcChannels ; j++)
+//     {
+//       ChainAdcChannel[j] = (Int_t) inputPetiroc.Charge[j];
+//       ChainTimeStamp[j] =  (Float_t) ( ( (inputPetiroc.CoarseTime[j] + 1)*25e-9) - (inputPetiroc.FineTime[j]*TDCBinning[j]) );
+//     }
+//     FillEvent();
+//     // int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
+//     if( (counter % 1000) == 0 )
+//     {
+//       std::cout << "\r";
+//       std::cout << counter << " events done... ";
+//       //std::cout << counter << std::endl;
+//     }
+//     inputPetiroc.clear();
+//     counter++;
+//   }
+//   FillEvent();
+// }
+//
+// // Runs on the input TChain elements
+// // and fills the analysis TTree
+// void InputFile::FillTree(int argc, char** argv)
+// {
+//   //creates the TTree from the input Tchain
+//   std::cout << "Filling the TTree for the analysis... " << std::endl;
+//
+//   if(digitizerType == 0 || digitizerType == 1)
+//   {
+//     FillTreeCAEN();
+//   }
+//   if(digitizerType == 2)
+//   {
+//     FillTreePetiroc(argc,argv);
+//   }
+//   //some feedback...
+//   std::cout << std::endl;
+//   std::cout << "Tot events = \t" << counter << std::endl;
+//   std::cout << "Accepted events = \t" << GoodCounter << std::endl;
+//   std::cout << "Bad events = \t" << badEvents << std::endl;
+// }
 
 
 // takes the Elements created in the main file and fill them with information (hierarchy, positions, names, etc..)
