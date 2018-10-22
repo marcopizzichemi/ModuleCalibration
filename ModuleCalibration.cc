@@ -3193,9 +3193,11 @@ int main (int argc, char** argv)
                           //prepare three std::vector, timingChannel, meanDelta and sigmaTiming
                           // they will hold the t channel number, mean difference in t and sigma from crystalball fits
 
-                          std::vector<int> tChannelsForPolishedCorrection;
-                          std::vector<double> meanForPolishedCorrection;
-                          std::vector<double> fwhmForPolishedCorrection;
+                          //do not do it here anymore, but after calculating the aligned ctr th2fs
+                          std::vector <int> tChannelsForPolishedCorrectionMean;
+                          std::vector <double> meanForPolishedCorrection;
+
+
 
 
                           // basic CTR with respect to an external tagging crystal, cutting on photopeak of this crystal
@@ -3280,56 +3282,59 @@ int main (int argc, char** argv)
                           // }
                           // aSpectrum->Fit(f1,"Q","",fitMin,fitMax);
 
-                          if(lowStat)
-                          {
-                            double fitPercMin = 5.0;
-                            double fitPercMax = 6.0;
-                            // int divisions = 10000;
-                            double res[4];
+                          tChannelsForPolishedCorrectionMean.push_back(detector[thisChannelID].timingChannel);
+                          meanForPolishedCorrection.push_back(0);
 
-                            // std::cout << "debug 1" << std::endl;
-
-                            if(gexp)
-                            {
-                              extractWithEMG(aSpectrum,fitPercMin,fitPercMax,res);
-                            }
-                            else
-                            {
-                              extractCTR(aSpectrum,fitPercMin,fitPercMax,res);
-                            }
-
-
-
-                            // std::cout << "debug 1 - post" << std::endl;
-
-                            // if(TimeCorrectionFitFunction == 0)
-                            // {
-                            //   extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
-                            // }
-                            // else
-                            // {
-                            //   extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
-                            // }
-
-                            if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
-                            {
-
-                            }
-                            else
-                            {
-                              tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
-                              meanForPolishedCorrection.push_back(res[0]);
-                              fwhmForPolishedCorrection.push_back(res[1]);
-                            }
-
-                          }
-                          else
-                          {
-                            tChannelsForPolishedCorrection.push_back(detector[thisChannelID].timingChannel);
-                            meanForPolishedCorrection.push_back(aSpectrum->GetMean());
-                            fwhmForPolishedCorrection.push_back(aSpectrum->GetRMS());
-
-                          }
+                          // if(lowStat)
+                          // {
+                          //   double fitPercMin = 5.0;
+                          //   double fitPercMax = 6.0;
+                          //   // int divisions = 10000;
+                          //   double res[4];
+                          //
+                          //   // std::cout << "debug 1" << std::endl;
+                          //
+                          //   if(gexp)
+                          //   {
+                          //     extractWithEMG(aSpectrum,fitPercMin,fitPercMax,res);
+                          //   }
+                          //   else
+                          //   {
+                          //     extractCTR(aSpectrum,fitPercMin,fitPercMax,res);
+                          //   }
+                          //
+                          //
+                          //
+                          //   // std::cout << "debug 1 - post" << std::endl;
+                          //
+                          //   // if(TimeCorrectionFitFunction == 0)
+                          //   // {
+                          //   //   extractFromCrystalBall(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          //   // }
+                          //   // else
+                          //   // {
+                          //   //   extractWithGaussAndExp(aSpectrum,fitPercMin,fitPercMax,divisions,res);
+                          //   // }
+                          //
+                          //   if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                          //   {
+                          //
+                          //   }
+                          //   else
+                          //   {
+                          //     tChannelsForPolishedCorrectionMean.push_back(detector[thisChannelID].timingChannel);
+                          //     meanForPolishedCorrection.push_back(res[0]);
+                          //     // fwhmForPolishedCorrection.push_back(res[1]);
+                          //   }
+                          //
+                          // }
+                          // else
+                          // {
+                          //   tChannelsForPolishedCorrectionMean.push_back(detector[thisChannelID].timingChannel);
+                          //   meanForPolishedCorrection.push_back(aSpectrum->GetMean());
+                          //   // fwhmForPolishedCorrection.push_back(aSpectrum->GetRMS());
+                          //
+                          // }
 
 
 
@@ -3891,16 +3896,16 @@ int main (int argc, char** argv)
                                   }
                                   else
                                   {
-                                    tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                    tChannelsForPolishedCorrectionMean.push_back(iNeighTimingChannel);
                                     meanForPolishedCorrection.push_back(res[0]);
-                                    fwhmForPolishedCorrection.push_back(res[1]);
+                                    // fwhmForPolishedCorrection.push_back(res[1]);
                                   }
                                 }
                                 else
                                 {
-                                  tChannelsForPolishedCorrection.push_back(iNeighTimingChannel);
+                                  tChannelsForPolishedCorrectionMean.push_back(iNeighTimingChannel);
                                   meanForPolishedCorrection.push_back(spectrumDeltaTcryTneig->GetMean());
-                                  fwhmForPolishedCorrection.push_back(spectrumDeltaTcryTneig->GetRMS());
+                                  // fwhmForPolishedCorrection.push_back(spectrumDeltaTcryTneig->GetRMS());
                                 }
 
 
@@ -4207,9 +4212,9 @@ int main (int argc, char** argv)
                             CurrentCrystal->SetDelayTimingChannels(DelayTimingChannelsNum);
                             CurrentCrystal->SetAlignedTimingChannels(AlignedTimingChannelsNum);
 
-                            CurrentCrystal->SetTChannelsForPolishedCorrection(tChannelsForPolishedCorrection);
+                            CurrentCrystal->SetTChannelsForPolishedCorrectionMean(tChannelsForPolishedCorrectionMean);
                             CurrentCrystal->SetMeanForPolishedCorrection(meanForPolishedCorrection);
-                            CurrentCrystal->SetFwhmForPolishedCorrection(fwhmForPolishedCorrection);
+                            // CurrentCrystal->SetFwhmForPolishedCorrection(fwhmForPolishedCorrection);
                           }
                         }
                       }
@@ -4728,8 +4733,42 @@ int main (int argc, char** argv)
                     Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
                     if(CurrentCrystal->CrystalIsOn())
                     {
+                      std::vector<int> tChannelsForPolishedCorrection;
+                      // std::vector<double> meanForPolishedCorrection;
+                      std::vector<double> fwhmForPolishedCorrection;
+
                       for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++)
                       {
+                        //first, project the histos as if you were blind to DOI (i.e., like in polished, and peform a fit)
+                        TString namePoli = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->GetName();
+                        std::stringstream snamePoli;
+                        snamePoli << "ProjectionY_" << namePoli ;
+
+                        double fitPercMin = 5.0;
+                        double fitPercMax = 6.0;
+                        // int divisions = 10000;
+                        double resPoli[4];
+                        TH1D *histoPoli = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(snamePoli.str().c_str());
+                        // std::cout << "debug 1" << std::endl;
+
+                        extractWithEMG(histoPoli,fitPercMin,fitPercMax,resPoli);
+                        if(resPoli[0] == 0 && resPoli[1] == 0 && resPoli[2] == 0 && resPoli[3] == 0) // all fits failed, don't accept the channel
+                        {
+
+                        }
+                        else
+                        {
+                          tChannelsForPolishedCorrection.push_back(CurrentCrystal->GetAlignedScatter()[iDet].timingChannel);
+                          // meanForPolishedCorrection.push_back(resPoli[0]);
+                          fwhmForPolishedCorrection.push_back(resPoli[1]);
+                        }
+
+                        CurrentCrystal->AddPolishedHisto(histoPoli);
+
+
+
+
+                        // then, do the w slicing and stuff...
                         std::vector<float> wmean;
                         std::vector<float> werr;
                         std::vector<float> ctr_center;
@@ -4749,8 +4788,8 @@ int main (int argc, char** argv)
                           std::stringstream sname;
                           sname << name << "_" <<  firstBin << "_" << lastBin;
 
-                          double fitPercMin = 5.0;
-                          double fitPercMax = 6.0;
+                          // double fitPercMin = 5.0;
+                          // double fitPercMax = 6.0;
                           // int divisions = 10000;
                           double res[4];
                           TH1D *histo = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(sname.str().c_str(),firstBin,lastBin);
@@ -4805,6 +4844,9 @@ int main (int argc, char** argv)
                         CurrentCrystal->AddAlignedGraphRMS(CurrentCrystal->GetAlignedScatter()[iDet].timingChannel,ctr_aligned_rms_graph);
                       }
                       // int centralTimingChannel = CurrentCrystal->GetTimingChannel();
+                      CurrentCrystal->SetTChannelsForPolishedCorrectionFWHM(tChannelsForPolishedCorrection);
+                      // CurrentCrystal->SetMeanForPolishedCorrection(meanForPolishedCorrection);
+                      CurrentCrystal->SetFwhmForPolishedCorrection(fwhmForPolishedCorrection);
                     }
                   }
                 }
@@ -5867,14 +5909,29 @@ int main (int argc, char** argv)
 
                             }
 
+                            //create TimeCorrection folder
+                            TDirectory *poliDir = directory[iModule+jModule][(iMppc+jMppc)+1][(iCry+jCry)+1]->mkdir("PolishedDir");
+                            poliDir->cd();
+
+                            for(unsigned int iDel = 0 ; iDel < CurrentCrystal->GetPolishedHisto().size() ; iDel++)
+                            {
+                              // std::stringstream alignSname;
+                              // alignSname << "Delay graph t" << CurrentCrystal->GetPolishedHisto()[iDel].timingChannel;
+                              // CurrentCrystal->GetPolishedHisto()[iDel].spectrum->SetName(alignSname.str().c_str());
+                              CurrentCrystal->GetPolishedHisto()[iDel]->Write();
+                            }
+                            poliDir->cd("..");
+
                             // std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
                             // std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
                             // std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
 
-                            std::vector<int> tChannelsForPolishedCorrection = CurrentCrystal->GetTChannelsForPolishedCorrection();
-                            gDirectory->WriteObject(&tChannelsForPolishedCorrection, "tChannelsForPolishedCorrection");
+                            std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
+                            gDirectory->WriteObject(&tChannelsForPolishedCorrectionMean, "tChannelsForPolishedCorrectionMean");
                             std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
                             gDirectory->WriteObject(&meanForPolishedCorrection, "meanForPolishedCorrection");
+                            std::vector<int> tChannelsForPolishedCorrectionFWHM = CurrentCrystal->GetTChannelsForPolishedCorrectionFWHM();
+                            gDirectory->WriteObject(&tChannelsForPolishedCorrectionFWHM, "tChannelsForPolishedCorrectionFWHM");
                             std::vector<double> fwhmForPolishedCorrection = CurrentCrystal->GetFwhmForPolishedCorrection();
                             gDirectory->WriteObject(&fwhmForPolishedCorrection, "fwhmForPolishedCorrection");
 

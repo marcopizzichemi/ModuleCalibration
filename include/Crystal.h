@@ -112,10 +112,12 @@ private:
   std::vector<int>     DelayTimingChannelsNum;
   std::vector<int>     AlignedTimingChannels;
   int                  timingChannel;
-  std::vector<int>     tChannelsForPolishedCorrection;
+  std::vector<int>     tChannelsForPolishedCorrectionMean;
+  std::vector<int>     tChannelsForPolishedCorrectionFWHM;
   std::vector<double>  meanForPolishedCorrection;
   std::vector<double>  fwhmForPolishedCorrection;
   std::vector<correction_t>         correction;
+  std::vector<TH1D*>  polishedHisto;
 
   float WstepSlicing;
   float MinAcceptedW;
@@ -324,7 +326,8 @@ public:
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
   std::vector<int>    GetAlignedTimingChannels(){return AlignedTimingChannels;};
 
-  std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
+  std::vector<int>    GetTChannelsForPolishedCorrectionMean(){return tChannelsForPolishedCorrectionMean;};
+  std::vector<int>    GetTChannelsForPolishedCorrectionFWHM(){return tChannelsForPolishedCorrectionFWHM;};
   std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
   std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
 
@@ -434,7 +437,8 @@ public:
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
   void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
   void                 SetAlignedTimingChannels(std::vector<int> aVect){AlignedTimingChannels = aVect;};
-  void                 SetTChannelsForPolishedCorrection(std::vector<int> aVect){tChannelsForPolishedCorrection = aVect;};
+  void                 SetTChannelsForPolishedCorrectionMean(std::vector<int> aVect){tChannelsForPolishedCorrectionMean = aVect;};
+  void                 SetTChannelsForPolishedCorrectionFWHM(std::vector<int> aVect){tChannelsForPolishedCorrectionFWHM = aVect;};
   void                 SetMeanForPolishedCorrection(std::vector<double> aVect){meanForPolishedCorrection = aVect;};
   void                 SetFwhmForPolishedCorrection(std::vector<double> aVect){fwhmForPolishedCorrection = aVect;};
   void                 SetLScentralSpectrum(TH1F *aHisto){LScentralSpectrum = aHisto;};
@@ -454,6 +458,8 @@ public:
   void                 AddCorrection(correction_t aCorrection){correction.push_back(aCorrection);};
   void                 AddAlignedSlice(TH1D* aHisto){alignedSlice.push_back(aHisto);};
   std::vector<TH1D*>   GetAlignedSlice(){return alignedSlice;};
+  void                 AddPolishedHisto(TH1D* aHisto){polishedHisto.push_back(aHisto);};
+  std::vector<TH1D*>   GetPolishedHisto(){return polishedHisto;};
 
 
 
