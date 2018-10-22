@@ -12,7 +12,7 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection,excludeChannels,excludeChannelsList):
+def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection,excludeChannels,excludeChannelsList,inputCalibFolder,inputTimeFolder):
     """thread worker function"""
     # value = 1
 
@@ -20,9 +20,9 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
 
     # filesMod = ""
     for i in filesCalib.split():
-        for file in os.listdir("./"):
+        for file in os.listdir(inputCalibFolder):
             if file.startswith(i):
-                cmd.append(file)
+                cmd.append(inputCalibFolder+ '/' +file)
     # print (filesMod)
 
 
@@ -39,8 +39,8 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
     # print (cmd)
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
-
-    cmd = ['timeAnalysis','-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    #timeResolution --input-folder ./ --input TTree_ --calibration ../calibrationDataset/calibration6.root -o output6.root --histoMin -0.5e-9 --histoMax 1.5e-9 --histoBins 500 --func 0 --fitPercMin 6.0 --fitPercMax 5.0
+    cmd = ['timeResolution','--input-folder', inputTimeFolder,'-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
     if fitCorrection == 1:
         cmd.append('--fitCorrection')
     if excludeChannels == 1:
@@ -66,8 +66,10 @@ def main(argv):
    parser.add_argument('-c','--config'     , help='Config file'                  ,required=True )
    parser.add_argument('-m','--mppcs'      , help='MPPC analyzed'                ,required=False)
    parser.add_argument('-r','--crystals'   , help='Crystals analyzed'            ,required=False)
-   parser.add_argument('-f','--filesCalib' , help='File prefix(es) for calibration'  ,required=True )
-   parser.add_argument('-l','--filesTime'  , help='File prefix time analysis'    ,required=True )
+   parser.add_argument('-p','--inputCalibFolder'  , help='Folder of input files for Calibration'    ,required=True )
+   parser.add_argument('-f','--filesCalib'        , help='File prefix for calibration'  ,required=True )
+   parser.add_argument('-w','--inputTimeFolder'   , help='Folder of input files for time resolution'    ,required=True )
+   parser.add_argument('-l','--filesTime'         , help='File prefix for time resolution'    ,required=True )
    parser.add_argument('-a','--histoMin'   , help='Min of CTR histograms [s] - default = -15e-9',required=False)
    parser.add_argument('-b','--histoMax'   , help='Max of CTR histograms [s] - default = 15e-9',required=False)
    parser.add_argument('-d','--histoBins'  , help='Number of bins in CTR histograms - default = 300',required=False)
@@ -83,10 +85,16 @@ def main(argv):
    # if args.threads == None:
    #     args.threads = 8
    prefix_name = "pOutput_"
+   inputCalibFolder = "./"
+   inputTimeFolder = "./"
    func = 0
    fitCorrection = 0
    excludeChannels = 0
 
+   if args.inputCalibFolder != None:
+       inputCalibFolder = args.inputCalibFolder
+   if args.inputTimeFolder != None:
+       inputTimeFolder = args.inputTimeFolder
 
    if args.fitCorrection != None:
        fitCorrection = int(args.fitCorrection)
@@ -127,8 +135,10 @@ def main(argv):
        BaseParaStr = "parallelMPPC = "
    #print values
    print ("Config file                 = %s" % args.config )
-   print ("Elements analyzed           = %s" % elements )
+   print ("Element(s) analyzed         = %s" % elements )
+   print ("Calibration files folder    = %s" % inputCalibFolder )
    print ("Calibration files prefix    = %s" % args.filesCalib )
+   print ("Time analysis files folder  = %s" % inputTimeFolder )
    print ("Time analysis files prefix  = %s" % args.filesTime )
    print ("")
    # print ("Number of threads = %s" % args.threads )
@@ -163,7 +173,7 @@ def main(argv):
            fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels))
+       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels,inputCalibFolder,inputTimeFolder))
        processList.append(proc)
 
    #start processes
