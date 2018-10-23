@@ -4999,13 +4999,13 @@ int main (int argc, char** argv)
     double unbinnedPoliCTR;
     double ret[2];
     double fitRes[3];
-    Int_t CTRentries;
+    // Int_t CTRentries;
     Float_t lightCentral;
     Float_t lightAll;
 
     // get data on entries and light collected
     // CTR entries
-    CTRentries = crystal[iCry].basicCTRhisto->GetEntries();
+
     crystal[iCry].basicCTRhisto->Write();
 
     // light central
@@ -5024,7 +5024,7 @@ int main (int argc, char** argv)
     // std::cout << crystal[iCry]
     if(crystal[iCry].simpleCTR)
     {
-
+      Int_t CTRentries = crystal[iCry].simpleCTR->GetEntries();
       crystal[iCry].simpleCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].simpleCTR->SetFillStyle(3001);
       crystal[iCry].simpleCTR->SetFillColor(kGreen);
@@ -5133,6 +5133,7 @@ int main (int argc, char** argv)
 
     if(crystal[iCry].centralCTR)
     {
+      Int_t CTRentries = crystal[iCry].centralCTR->GetEntries();
       crystal[iCry].centralCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].centralCTR->SetFillStyle(3001);
       crystal[iCry].centralCTR->SetFillColor(kBlue);
@@ -5248,6 +5249,7 @@ int main (int argc, char** argv)
 
     if(crystal[iCry].allCTR)
     {
+      Int_t CTRentries = crystal[iCry].allCTR->GetEntries();
       crystal[iCry].allCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].allCTR->SetFillStyle(3001);
       crystal[iCry].allCTR->SetFillColor(kRed);
@@ -5364,6 +5366,7 @@ int main (int argc, char** argv)
 
     if(crystal[iCry].likeCTR)
     {
+      Int_t CTRentries = crystal[iCry].likeCTR->GetEntries();
       crystal[iCry].likeCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].likeCTR->SetFillStyle(3001);
       crystal[iCry].likeCTR->SetFillColor(kRed);
@@ -5483,6 +5486,7 @@ int main (int argc, char** argv)
 
     if(crystal[iCry].hybridCTR)
     {
+      Int_t CTRentries = crystal[iCry].hybridCTR->GetEntries();
       crystal[iCry].hybridCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].hybridCTR->SetFillStyle(3001);
       crystal[iCry].hybridCTR->SetFillColor(kRed);
@@ -5607,6 +5611,7 @@ int main (int argc, char** argv)
 
     if(crystal[iCry].poliCorrCTR)
     {
+      Int_t CTRentries = crystal[iCry].poliCorrCTR->GetEntries();
       crystal[iCry].poliCorrCTR->GetXaxis()->SetTitle("Time [s]");
       crystal[iCry].poliCorrCTR->SetFillStyle(3001);
       crystal[iCry].poliCorrCTR->SetFillColor(kBlack);
