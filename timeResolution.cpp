@@ -60,6 +60,8 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+#include "Crystal.h"
+
 // typedef std::vector<std::string> stringvec;
 // list files in directory
 // taken from
@@ -92,180 +94,6 @@ invert_a_matrix(gsl_matrix *matrix,size_t size)
 
     return inv;
 }
-
-struct slice_t
-{
-  Float_t wmin;
-  Float_t wmax;
-  Float_t wmean;
-  Float_t werr;
-  long long int entries;
-  std::vector<int> tChannel;
-  std::vector<Float_t> averageDelay;
-  std::vector<Float_t> averageDeltaT;
-  std::vector<Float_t> varianceDeltaT;
-  std::vector<long long int> nVarianceDeltaT;
-  std::vector<long long int> nDeltaT;
-  Float_t **covariance;
-  Float_t **inverse_covariance;
-  long long int **entries_covariance;
-  Float_t **normalized_covariance;
-
-  // TGraphErrors* delay;
-  // TF1* delay_line;
-  // TH2F* deltaTscatter;
-  // TGraphErrors* deltaTgraph;
-  // TF1* deltaTline;
-  // std::vector<TH1F*> deltaTslice;
-  // std::vector<double> wmean;
-  // std::vector<double> werr;
-  //
-  //
-  // std::vector<double> dx;
-  // std::vector<double> dy;
-  // std::vector<double> dex;
-  // std::vector<double> dey;
-};
-
-
-// struct ctr_aligned_t
-// {
-//   // int detectorChannel;
-//   bool isMainChannel;
-//   int timingChannel;
-//   TH2F* original_scatter;
-//   TH2F* aligned_scatter;
-//   TGraphErrors *delay_graph;
-//   TGraphErrors *delay_rms_graph;
-//   TGraphErrors *ctr_aligned_graph;
-//   TGraphErrors *ctr_aligned_rms_graph;
-//   std::vector<TH1D*> slice;
-//   std::vector<float> wmean;
-//   std::vector<float> werr;
-//   std::vector<float> ctr_center;
-//   std::vector<float> ctr_err;
-//   std::vector<float> rms;
-//   std::vector<float> rms_err;
-//
-//   std::vector<TH1F*> asIfPolishedHisto;
-//   std::vector<float> asIfPolishedRMS;
-//   std::vector<float> asIfPolishedMean;
-//
-// };
-
-struct graphs_t
-{
-  int timingChannel;
-  TGraphErrors* graph;
-};
-
-struct correction_graphs_t
-{
-  int timingChannel;
-  bool isMainChannel;
-  TGraphErrors* delay;
-  TGraphErrors* rms;
-};
-
-struct polished_correction_t
-{
-  int timingChannel;
-  double mean;
-  double rms;
-};
-
-struct Crystal_t
-{
-  int number;
-  int detectorChannel;
-  int timingChannel;
-  std::vector<int> relevantForW;
-  std::vector<int> delayTimingChannels;
-  TCut *CrystalCut;
-  TCut *CrystalCutWithoutCutG;
-  TCut *PhotopeakEnergyCut;
-  std::vector<TCutG*> cutg;
-  TGraph *calibrationGraph;
-  TGraph *wz;
-  TH1F *simpleCTR;
-  TH1F *centralCTR;
-  TH1F *allCTR;
-  TH1F *poliCorrCTR;
-  TH1F *likeCTR;
-  TH1F *hybridCTR;
-  std::vector<double> vSimple;
-  std::vector<double> vCentral;
-  std::vector<double> vAll;
-  std::vector<double> vPoli;
-  std::vector<double> vLike;
-  std::vector<double> vhybrid;
-  TH1F *simpleCTR_norm;
-  TH1F *centralCTR_norm;
-  TH1F *allCTR_norm;
-  TH1F *poliCorrCTR_norm;
-  TH1F *hybridCTR_norm;
-  TTreeFormula *Formula;
-  TTreeFormula *FormulaAnalysis;
-  TH1F *likeCTR_norm;
-
-  float minAcceptedW;  // events w min e max for ->Eval operations
-  float maxAcceptedW;
-  float wMinSlicing;   // limits of w in scatter plot slicing
-  float wMaxSlicing;
-  float wStepSlicing;
-
-  std::vector<double> z;
-  TGraphErrors* tw_correction;
-  TGraphErrors* rms_tw_correction;
-  std::vector<TGraphErrors*> delay;
-  std::vector<TGraphErrors*> rms_delay;
-  TF1 *tw_correction_line;
-  TF1 *rms_tw_correction_line;
-  std::vector<TF1*> delay_line;
-  std::vector<TF1*> rms_delay_line;
-  const char* path;
-  bool accepted;
-  bool polishedCorrection;
-  std::vector<int>    tChannelsForPolishedCorrectionMean;
-  std::vector<int>    tChannelsForPolishedCorrectionFWHM;
-  std::vector<double> meanForPolishedCorrection;
-  std::vector<double> fwhmForPolishedCorrection;
-
-  std::vector<polished_correction_t> polished_correction;
-
-  std::vector<slice_t> slice;
-
-  TGraph *** inverse_covariance_element; // matrix of TGraph, one for each element of the inverse covariance element s^{-1}_i,j(w) that is a function of doi...
-  TF1 *** inverse_covariance_element_line;
-
-  std::vector<graphs_t> delay_graphs;
-  std::vector<graphs_t> rms_graphs;
-  std::vector<correction_graphs_t> correction_graphs;
-  // std::vector<ctr_aligned_t> ctr_aligned;
-
-
-  // Float_t *variance;
-  // long long int *entries_variance;
-  // std::vector<Float_t**> covariance;
-  // std::vector<long long int**> entries_covariance;
-  // std::vector<Float_t**> inverse_covariance;
-  //
-  // TH2F** deltaTscatter;
-
-  TH1F* lightCentralHisto;
-  TH1F* lightAllHisto;
-  TH1F* basicCTRhisto;
-
-  // TCanvas
-};
-
-struct detector_t
-{
-  int digitizerChannel;
-  float saturation;
-  float pedestal;
-};
-
 
 void extractWithEMG(TH1F* histo,double fitPercMin,double fitPercMax,int divs, double tagFwhm,double* res,double* fitRes)
 {
@@ -531,304 +359,8 @@ void extractWithEMG(TH1F* histo,double fitPercMin,double fitPercMax,int divs, do
   delete cTemp;
 }
 
-void extractFromHisto(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double* res)
-{
-  // TF1 *gexp;
-  // TF1 *cb;
-
-  // preliminary gauss fit
-  TCanvas *cTemp  = new TCanvas("temp","temp");
-  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-  // resctrict the fitting range of gauss function
-
-  gaussDummy->SetLineColor(kRed);
-  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
-  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
-  double f1min = histo->GetXaxis()->GetXmin();
-  double f1max = histo->GetXaxis()->GetXmax();
-  if(fitGaussMin < f1min)
-  {
-    fitGaussMin = f1min;
-  }
-  if(fitGaussMax > f1max)
-  {
-    fitGaussMax = f1max;
-  }
-  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
-  Int_t fitStatusGauss= rGauss;
-
-  //NB fit results converted to int gives the fit status:
-  // fitStatusGauss == 0 -> fit OK
-  // fitStatusGauss != 0 -> fit FAILED
-
-  double fitMin;
-  double fitMax;
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    fitMin = fitGaussMin;
-    fitMax = fitGaussMax;
-  }
-  else
-  {
-    // use fit values
-    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-  }
-
-  // chech that they are not outside the limits defined by user
-  if(fitMin < f1min)
-  {
-    fitMin = f1min;
-  }
-  if(fitMax > f1max)
-  {
-    fitMax = f1max;
-  }
-
-  //fit with crystalball
-  TF1 *cb  = new TF1("cb","crystalball",f1min,f1max);
-  cb->SetLineColor(kBlue);
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    cb->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),1,3);
-  }
-  else
-  {
-    // use fit values
-    cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  }
-  TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
-
-  //fit with gauss + exp
-  TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
-  gexp->SetLineColor(kGreen);
-  gexp->SetParName(0,"N");
-  gexp->SetParName(1,"Mean");
-  gexp->SetParName(2,"Sigma");
-  gexp->SetParName(3,"tau");
-  // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    gexp->SetParameter(0,histo->GetEntries());
-    gexp->SetParameter(1,histo->GetMean());
-    gexp->SetParameter(2,histo->GetRMS());
-    gexp->SetParameter(3,histo->GetRMS()); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  }
-  else
-  {
-    // use fit values
-    gexp->SetParameter(0,gaussDummy->GetParameter(0));
-    gexp->SetParameter(1,gaussDummy->GetParameter(1));
-    gexp->SetParameter(2,gaussDummy->GetParameter(2));
-    gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  }
-  TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
-
-  Int_t fitStatusCb = rCb;
-  Int_t fitStatusGexp = rGexp;
-
-  double chi2gexp;
-  double chi2cb;
-
-  if(fitStatusGexp == 0) // if Gexp worked
-  {
-    chi2gexp = rGexp->Chi2();
-  }
-  if(fitStatusCb == 0)// if cb worked
-  {
-    chi2cb   = rCb->Chi2();
-  }
-
-
-  //set function to measure ctr etc...
-  TF1 *f1;
-  // std::cout << histo->GetName() << std::endl;
-  // std::cout << fitStatusGexp << " "
-  //           << fitStatusCb << " "
-  //           << fitStatusGauss << " "
-  //           << std::endl;
-  if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss != 0)) // all fit didn't work, just set everything to 0
-  {
-    // std::cout << "None" << std::endl;
-    res[0] = 0;
-    res[1] = 0;
-    res[2] = 0;
-    res[3] = 0;
-  }
-  else
-  {
-    if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss == 0)) // only gauss worked
-    {
-      // std::cout << "Gauss" << std::endl;
-      f1 = gaussDummy;
-      histo->Fit(f1,"Q","",fitGaussMin,fitGaussMax);
-      res[0] = f1->GetParameter(1);
-      res[1] = f1->GetParameter(2);
-      res[2] = f1->GetParError(1);
-      res[3] = f1->GetParError(2);
-      delete gexp;
-      delete cb;
-    }
-    else // one between gexp and cb worked
-    {
-      if((fitStatusGexp  != 0) && (fitStatusCb == 0)) // only cb worked
-      {
-        // std::cout << "cb" << std::endl;
-        f1 = cb;
-        histo->Fit(f1,"Q","",fitMin,fitMax);
-        delete gexp;
-
-      }
-      else if((fitStatusGexp  == 0) && (fitStatusCb != 0)) // only gexp worked
-      {
-        // std::cout << "gexp" << std::endl;
-        f1 = gexp;
-        histo->Fit(f1,"Q","",fitMin,fitMax);
-        delete cb;
-      }
-      else // both worked
-      {
-        if(chi2gexp > chi2cb)
-        {
-          // std::cout << "cb better than gexp" << std::endl;
-          f1 = cb;
-          histo->Fit(f1,"Q","",fitMin,fitMax);
-          delete gexp;
-        }
-        else
-        {
-          // std::cout << "gexp better than cb" << std::endl;
-          f1 = gexp;
-          histo->Fit(f1,"Q","",fitMin,fitMax);
-          delete cb;
-        }
-      }
-      // f1->SetLineColor(kRed);
-      res[0] = f1->GetParameter(1);
-      res[1] = f1->GetParameter(2);
-      res[2] = f1->GetParError(1);
-      res[3] = f1->GetParError(2);
-    }
-  }
-  delete cTemp;
-}
-
-/*** find width at half max ***/
-// float ComputeFWHM(TH1F* histo)
-// {
-//    float max = histo->GetMaximum();
-//    float halfMax = max / 2.0;
-//    int binMin = histo->FindFirstBinAbove(halfMax);
-//    int binMax = histo->FindLastBinAbove(halfMax);
-//    float down = histo->GetBinCenter(binMin);
-//    float up   = histo->GetBinCenter(binMax);
-//    float ret = up -down;
-//    return ret;
-// }
-
-void extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double tagFwhm, double* res)
-{
-  TCanvas *cTemp  = new TCanvas("temp","temp");
-  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-  histo->Fit(gaussDummy,"QN");
-
-  double f1min = histo->GetXaxis()->GetXmin();
-  double f1max = histo->GetXaxis()->GetXmax();
-
-
-  TF1* f1  = new TF1("f1","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
-  f1->SetLineColor(kBlack);
-  f1->SetParName(0,"N");
-  f1->SetParName(1,"Mean");
-  f1->SetParName(2,"Sigma");
-  f1->SetParName(3,"tau");
-  // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  f1->SetParameter(0,gaussDummy->GetParameter(0));
-  f1->SetParameter(1,gaussDummy->GetParameter(1));
-  f1->SetParameter(2,gaussDummy->GetParameter(2));
-  f1->SetParameter(3,5e-9);
-  double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-  double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-  if(fitMin < f1min)
-  {
-    fitMin = f1min;
-  }
-  if(fitMax > f1max)
-  {
-    fitMax = f1max;
-  }
-
-  histo->Fit(f1,"","",fitMin,fitMax);
-  std::cout << "-----------------------------------------------------------------------" << std::endl;
-  std::cout << histo->GetName() << std::endl;
-  std::cout << f1->GetMaximum(fitMin,fitMax)    << "\t"
-            // << fitMin              << "\t"
-            // << fitMax              << "\t"
-            << f1->GetParameter(0) << "\t"
-            << f1->GetParameter(1) << "\t"
-            << f1->GetParameter(2) << "\t"
-            << f1->GetParameter(3) << "\t"
-            << std::endl;
-  double min,max,min10,max10;
-  // int divs = 3000;
-  double step = (fitMin-fitMax)/divs;
-  double funcMax = f1->GetMaximum(fitMin,fitMax);
-  for(int i = 0 ; i < divs ; i++)
-  {
-    if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-    {
-      min = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-    {
-      max = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) < funcMax/10.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/10.0) )
-    {
-      min10 = f1min + (i+0.5)*step;
-    }
-    if( (f1->Eval(f1min + i*step) > funcMax/10.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/10.0) )
-    {
-      max10 = f1min + (i+0.5)*step;
-    }
-  }
-  // res[0] = f1->GetParameter(1);  // res[0] is mean
-  // res[1] = max-min;              // res[1] is FWHM
-  res[0] = sqrt(2)*sqrt(pow((max-min),2)-pow(tagFwhm,2));
-  res[1] = sqrt(2)*sqrt(pow((max10-min10),2)-pow((tagFwhm/2.355)*4.29,2));
-  std::cout <<"----> " << res[0] << " " << res[1]<< std::endl;
-  delete cTemp;
-
-}
-
 void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, double tagFwhm, double* res, double* fitRes)
 {
-  //first, dummy gaussian fit
-  // TCanvas *cTemp  = new TCanvas("temp","temp");
-  // TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-  // histo->Fit(gaussDummy,"QN");
-  //
-  // double f1min = histo->GetXaxis()->GetXmin();
-  // double f1max = histo->GetXaxis()->GetXmax();
-  // // std::cout << f1min << " " << f1max << std::endl;
-  // TF1* f1  = new TF1("f1","crystalball");
-  // f1->SetLineColor(kBlack);
-  // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  // double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-  // double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-  // if(fitMin < f1min)
-  // {
-  //   fitMin = f1min;
-  // }
-  // if(fitMax > f1max)
-  // {
-  //   fitMax = f1max;
-  // }
-  // histo->Fit(f1,"Q","",fitMin,fitMax);
-
 
   // preliminary gauss fit
   TCanvas *cTemp  = new TCanvas("temp","temp");
@@ -1037,7 +569,6 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
   }
 }
 
-
 //**** per std::vector -- non binnata
 double FindSmallestInterval(double& mean,
                             double& meanErr,
@@ -1145,11 +676,12 @@ fraction, const bool& verbosity, double tagFwhm)
    retValues[1] = 0;
 }
 
-
 bool compareByNumber(const Crystal_t &a,const Crystal_t  &b)
 {
   return a.number < b.number;
 }
+
+
 
 void usage()
 {
@@ -1192,6 +724,9 @@ void usage()
             << "\t\t" << std::endl;
 }
 
+//----------------//
+//  MAIN PROGRAM  //
+//----------------//
 int main (int argc, char** argv)
 {
   if(argc < 2)
@@ -1250,10 +785,10 @@ int main (int argc, char** argv)
   bool sliced = false;
   bool likelihood = false;
   bool likelihoodLine = false;
-  int WrangeBinsForTiming = 10;
-  float marginWZgraph = 0.1; // and then we read from modulecalib file
-  int binningForWCut = -1;
-  bool applyBinRestriction = false;
+  // int WrangeBinsForTiming = 10;
+  // float marginWZgraph = 0.1; // and then we read from modulecalib file
+  // int binningForWCut = -1;
+  // bool applyBinRestriction = false;
   // float marginWZgraph = 0.1;
 
   // parse arguments
@@ -1481,38 +1016,6 @@ int main (int argc, char** argv)
 
   // INPUT
 
-  // CALIBRATION TTREE DATASET
-  // read file in dir
-  // std::cout << std::endl;
-  // std::cout << "|----------------------------------------|" << std::endl;
-  // std::cout << "|         CALIBRATION FILES              |" << std::endl;
-  // std::cout << "|----------------------------------------|" << std::endl;
-  // std::cout << std::endl;
-  // std::vector<std::string> vCali;
-  // read_directory(calibration_folder, vCali);
-  // // std::copy(v.begin(), v.end(),std::ostream_iterator<std::string>(std::cout, "\n"));
-  // // extract files with correct prefix
-  // std::vector<std::string> listInputFiles_calibration;
-  //
-  // for(unsigned int i = 0 ; i < vCali.size() ; i++)
-  // {
-  //   if(!vCali[i].compare(0,calibration_files.size(),calibration_files))
-  //   {
-  //     listInputFiles_calibration.push_back(calibration_folder + "/" + vCali[i]);
-  //   }
-  // }
-  //
-  // //----------------------------------------------------------//
-  // //  Get TChain of calibration TTree files                   //
-  // //----------------------------------------------------------//
-  // TChain* tree = new TChain("adc");  // create the input tchain and the analysis ttree
-  // for(unsigned int i = 0 ; i < listInputFiles_calibration.size(); i++)
-  // {
-  //   std::cout << "Adding file " << listInputFiles_calibration[i] << std::endl;
-  //   tree->Add(listInputFiles_calibration[i].c_str());
-  // }
-
-
   // ANALYSIS DATASET
   // read file in dir
   std::cout << std::endl;
@@ -1547,16 +1050,8 @@ int main (int argc, char** argv)
   std::cout << "|----------------------------------------|" << std::endl;
   std::cout << std::endl;
 
-
-
-
-
   // Add several TTreeFormula to the list;
-  TList formulas;
   TList formulasAnalysis;
-
-
-
 
   std::vector<int> detector_channels;
 
@@ -1764,6 +1259,8 @@ int main (int argc, char** argv)
   int taggingCrystalTimingChannel;
   std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
   std::string taggingCrystalTimingChannel_prefix("taggingCrystalTimingChannel");
+  float marginWZgraph = 0.1;
+  float WrangeBinsForTiming = 0.1;
   std::string marginWZgraph_prefix("marginWZgraph");
   std::string WrangeBinsForTiming_prefix("WrangeBinsForTiming");
   // std::string det_prefix("channels");
@@ -1822,10 +1319,10 @@ int main (int argc, char** argv)
     {
       std::stringstream snameCh;
       snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
-      binningForWCut = atof(snameCh.str().c_str());
-      applyBinRestriction = true;
-      std::cout << "Applying bin restriction, binningForWCut set to " << binningForWCut << std::endl;
-      WrangeBinsForTiming = binningForWCut; // hardcode it to this
+      // binningForWCut = atof(snameCh.str().c_str());
+      // applyBinRestriction = true;
+      // std::cout << "Applying bin restriction, binningForWCut set to " << binningForWCut << std::endl;
+      WrangeBinsForTiming = atof(snameCh.str().c_str());
     }
 
 
@@ -1915,6 +1412,8 @@ int main (int argc, char** argv)
        temp_crystal.wMinSlicing = 0;
        temp_crystal.wMaxSlicing = 1;
        temp_crystal.wStepSlicing = 1;
+       temp_crystal.marginWZgraph = marginWZgraph;
+       temp_crystal.WrangeBinsForTiming = WrangeBinsForTiming;
 
        temp_crystal.CrystalCut = NULL;
        temp_crystal.CrystalCutWithoutCutG = NULL;
@@ -2443,12 +1942,6 @@ int main (int argc, char** argv)
          }
          sname.str("");
 
-         // sname << "Formula" << temp_crystal.number;
-         // TTreeFormula* Formula = new TTreeFormula(sname.str().c_str(),globalCut,tree);
-         // formulas.Add(Formula);
-         // temp_crystal.Formula = Formula;
-         // sname.str("");
-
          sname << "FormulaAnalysis" << temp_crystal.number;
          TTreeFormula* FormulaAnalysis = new TTreeFormula(sname.str().c_str(),globalCut,tree);
          formulasAnalysis.Add(FormulaAnalysis);
@@ -2598,8 +2091,8 @@ int main (int argc, char** argv)
   {
     if(crystal[iCry].accepted)
     {
-      float beginW = crystal[iCry].wz->Eval(length - marginWZgraph);
-      float endW = crystal[iCry].wz->Eval(marginWZgraph);
+      float beginW = crystal[iCry].wz->Eval(length - crystal[iCry].marginWZgraph);
+      float endW = crystal[iCry].wz->Eval(crystal[iCry].marginWZgraph);
 
 
       // first wmean
@@ -2609,16 +2102,16 @@ int main (int argc, char** argv)
 
       int iBin = 0;
 
-      wmin = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
-      wmax = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+      wmin = beginW + ((iBin*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
+      wmax = beginW + (((iBin+1)*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
       wmean = (wmax + wmin) / 2.0;
       crystal[iCry].wStepSlicing = (wmax - wmin);
       crystal[iCry].minAcceptedW = wmean;
       crystal[iCry].wMinSlicing = wmin;
 
-      iBin = WrangeBinsForTiming -1;
-      wmin2 = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
-      wmax2 = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+      iBin = crystal[iCry].WrangeBinsForTiming -1;
+      wmin2 = beginW + ((iBin*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
+      wmax2 = beginW + (((iBin+1)*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
       wmean2 = (wmax2 + wmin2) / 2.0;
       crystal[iCry].maxAcceptedW = wmean2;
       crystal[iCry].wMaxSlicing = wmax2;
@@ -2627,7 +2120,7 @@ int main (int argc, char** argv)
       //DEBUG
       std::cout << "Crystal = " << crystal[iCry].number << std::endl;
       std::cout << "Step lenght in w, for slicing = " << crystal[iCry].wStepSlicing << std::endl;
-      std::cout << "Steps in w, for slicing = " << WrangeBinsForTiming << std::endl;
+      std::cout << "Steps in w, for slicing = " << crystal[iCry].WrangeBinsForTiming << std::endl;
       std::cout << "min accepted w in slicing = " << crystal[iCry].wMinSlicing
                 << " corresponding to " << crystal[iCry].calibrationGraph->Eval(crystal[iCry].wMinSlicing)
                 << std::endl;
@@ -2822,7 +2315,6 @@ int main (int argc, char** argv)
   // ------------------------------------------- //
 
   //notify TTreeFormula(s) to TChain
-  // tree->SetNotify(&formulas);
   long long int nevent = tree->GetEntries();
   // ULong64_t tStart = tree->GetMinimum("ExtendedTimeTag");
 
@@ -2852,19 +2344,19 @@ int main (int argc, char** argv)
         int nLike = crystal[iCry].delay.size() + 1;
 
 
-        float beginW = crystal[iCry].wz->Eval(length - marginWZgraph);
-        float endW = crystal[iCry].wz->Eval(marginWZgraph);
+        float beginW = crystal[iCry].wz->Eval(length - crystal[iCry].marginWZgraph);
+        float endW = crystal[iCry].wz->Eval(crystal[iCry].marginWZgraph);
 
         std::cout << "Preparing slices..." << std::endl;
 
         // since WrangeBinsForTiming is taken from the calibration file, there is no need to check here for the
         // min and maxAcceptedW
-        for(int iBin = 0; iBin < WrangeBinsForTiming; iBin++) //
+        for(int iBin = 0; iBin < crystal[iCry].WrangeBinsForTiming; iBin++) //
         {
           slice_t temp_slice;
 
-          Float_t wmin = beginW + ((iBin*(endW - beginW))/WrangeBinsForTiming);
-          Float_t wmax = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
+          Float_t wmin = beginW + ((iBin*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
+          Float_t wmax = beginW + (((iBin+1)*(endW - beginW))/crystal[iCry].WrangeBinsForTiming);
           Float_t wmean = (wmax + wmin) / 2.0;
           Float_t werr = (wmax-wmin)/TMath::Sqrt(12.0);
 
@@ -3027,7 +2519,7 @@ int main (int argc, char** argv)
     {
       if(crystal[iCry].accepted)
       {
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           int nLike = crystal[iCry].slice[iSlice].tChannel.size();
           for(int iCorr = 0; iCorr < nLike ; iCorr++)
@@ -3050,7 +2542,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           std::cout << "slice = " << iSlice << std::endl;
           std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3257,7 +2749,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         // std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           // std::cout << "slice = " << iSlice << std::endl;
           // std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3286,7 +2778,7 @@ int main (int argc, char** argv)
     //   if(crystal[iCry].accepted)
     //   {
     //     std::cout << "crystal " << crystal[iCry].number << std::endl;
-    //     for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+    //     for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
     //     {
     //       std::cout << "slice = " << iSlice << std::endl;
     //       std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3358,7 +2850,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         // std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           // std::cout << "slice = " << iSlice << std::endl;
           // std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3387,7 +2879,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           std::cout << "slice = " << iSlice << std::endl;
           // std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3461,7 +2953,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         // std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           // std::cout << "slice = " << iSlice << std::endl;
           // std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
@@ -3518,7 +3010,7 @@ int main (int argc, char** argv)
       if(crystal[iCry].accepted)
       {
         std::cout << "crystal " << crystal[iCry].number << std::endl;
-        for(int iSlice = 0 ; iSlice < WrangeBinsForTiming ; iSlice++)
+        for(int iSlice = 0 ; iSlice < crystal[iCry].WrangeBinsForTiming ; iSlice++)
         {
           std::cout << "slice = " << iSlice << std::endl;
           // std::cout << "wmin    = " << crystal[iCry].slice[iSlice].wmin << std::endl;
