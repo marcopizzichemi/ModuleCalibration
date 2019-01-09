@@ -1324,6 +1324,9 @@ void read_calibration(std::vector<Crystal_t> *crystal, std::vector<detector_t> *
          }
          sname.str("");
 
+
+         std::cout << globalCut.GetTitle() << std::endl;
+
          sname << "FormulaAnalysis" << temp_crystal.number;
          TTreeFormula* FormulaAnalysis = new TTreeFormula(sname.str().c_str(),globalCut,tree);
          formulas->Add(FormulaAnalysis);
@@ -1686,6 +1689,7 @@ int main (int argc, char** argv)
       std::cout << ",";
     }
   }
+  std::cout << std::endl;
   std::cout << "histoMin             = " << histoMin      << std::endl;
   std::cout << "histoMax             = " << histoMax      << std::endl;
   std::cout << "histoBins            = " << histoBins     << std::endl;
@@ -1978,6 +1982,19 @@ int main (int argc, char** argv)
     std::cout<< detectorSaturation[iDet].digitizerChannel << std::endl;
   }
 
+  std::cout << std::endl;
+  std::cout << "|--------------------------------------------|" << std::endl;
+  std::cout << std::endl;
+  for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+  {
+    if(crystal[iCry].accepted)
+    {
+      std::cout << crystal[iCry].FormulaAnalysis->GetName() << std::endl;
+    }
+  }
+  std::cout << "|--------------------------------------------|" << std::endl;
+  std::cout << std::endl;
+
 
   // FIXME FOR NOW, restrict to hitogram of 2 crystals per run (no time to be more sofisticated...)
   std::stringstream sname;
@@ -2034,48 +2051,48 @@ int main (int argc, char** argv)
           if(crystal[iCry].FormulaAnalysis->EvalInstance())  //if in cutg and photopeak cuts for one crystal
           {
 
-            //find w of this event
-            //calculate FloodZ aka w
-            Float_t FloodZ;
-            float centralChargeOriginal;
-            float centralSaturation;
-            float centralPedestal;
-            Float_t division = 0.0;
-
-            centralChargeOriginal = charge[crystal[iCry].detectorChannel];
-            for(unsigned int iSat = 0; iSat < detectorSaturation.size(); iSat++)
-            {
-              if( detectorSaturation[iSat].digitizerChannel  == crystal[iCry].detectorChannel)
-              {
-                centralSaturation = detectorSaturation[iSat].saturation;
-                centralPedestal = detectorSaturation[iSat].pedestal;
-              }
-            }
-            float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
-
-            for (unsigned int iW = 0; iW < crystal[iCry].relevantForW.size(); iW++)
-            {
-              // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
-              float originalCh = charge[crystal[iCry].relevantForW[iW]];
-
-              float saturationCh;
-              float pedestalCorr;
-              for(unsigned int iSat = 0; iSat < detectorSaturation.size(); iSat++)
-              {
-                if( detectorSaturation[iSat].digitizerChannel  == crystal[iCry].relevantForW[iW])
-                {
-                  saturationCh = detectorSaturation[iSat].saturation;
-                  pedestalCorr = detectorSaturation[iSat].pedestal;
-                }
-              }
-              // std::cout << originalCh << " "
-              //           << saturationCh << " "
-              //           << pedestalCorr << " "
-              //           << std::endl;
-              division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
-            }
-
-            FloodZ = centralChargeCorr / division;
+            // //find w of this event
+            // //calculate FloodZ aka w
+            // Float_t FloodZ;
+            // float centralChargeOriginal;
+            // float centralSaturation;
+            // float centralPedestal;
+            // Float_t division = 0.0;
+            //
+            // centralChargeOriginal = charge[crystal[iCry].detectorChannel];
+            // for(unsigned int iSat = 0; iSat < detectorSaturation.size(); iSat++)
+            // {
+            //   if( detectorSaturation[iSat].digitizerChannel  == crystal[iCry].detectorChannel)
+            //   {
+            //     centralSaturation = detectorSaturation[iSat].saturation;
+            //     centralPedestal = detectorSaturation[iSat].pedestal;
+            //   }
+            // }
+            // float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+            //
+            // for (unsigned int iW = 0; iW < crystal[iCry].relevantForW.size(); iW++)
+            // {
+            //   // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
+            //   float originalCh = charge[crystal[iCry].relevantForW[iW]];
+            //
+            //   float saturationCh;
+            //   float pedestalCorr;
+            //   for(unsigned int iSat = 0; iSat < detectorSaturation.size(); iSat++)
+            //   {
+            //     if( detectorSaturation[iSat].digitizerChannel  == crystal[iCry].relevantForW[iW])
+            //     {
+            //       saturationCh = detectorSaturation[iSat].saturation;
+            //       pedestalCorr = detectorSaturation[iSat].pedestal;
+            //     }
+            //   }
+            //   // std::cout << originalCh << " "
+            //   //           << saturationCh << " "
+            //   //           << pedestalCorr << " "
+            //   //           << std::endl;
+            //   division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+            // }
+            //
+            // FloodZ = centralChargeCorr / division;
 
 
 

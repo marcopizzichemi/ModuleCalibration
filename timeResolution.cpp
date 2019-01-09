@@ -760,7 +760,7 @@ int main (int argc, char** argv)
   bool simulation = false;
   Float_t length = 15.0; //mm
   Float_t doiFraction = 0.5;
-  Float_t tagFwhm = 70.0e-12; //s
+  Float_t tagFwhm = 88.0e-12; //s //was 70.0e-12, then measured in 88.0e-12
   Float_t rmsLow = 1.75;
   Float_t rmsHigh = 1.75;
   Float_t histoMin = -15e-9;//s
