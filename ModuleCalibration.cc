@@ -5098,7 +5098,7 @@ int main (int argc, char** argv)
   //plots to summarize the values of relevant variable found on each crystal
   //--Distribution of photopeak positions, in ADC channels
   //histogram
-  TH1F *PeakPositionDistro = new TH1F("Photopeak position","Distribution photopeak positions",100,0,12000);
+  TH1F *PeakPositionDistro = new TH1F("Photopeak position","Distribution photopeak positions",100,0,histo1Dmax);
   PeakPositionDistro->GetXaxis()->SetTitle("ADC Channels");
   PeakPositionDistro->GetYaxis()->SetTitle("N");
   PeakPositionDistro->SetStats(1);
@@ -5150,7 +5150,7 @@ int main (int argc, char** argv)
   PeakPositionVsIJ->GetXaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetYaxis()->SetTitleOffset(1.8);
   PeakPositionVsIJ->GetZaxis()->SetTitleOffset(2.2);
-  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,PeakPositionVsIJmax);
+  PeakPositionVsIJ->GetZaxis()->SetRangeUser(0,histo1Dmax);
   //2d histogram
   TH2F *EnergyResolutionVsIJ = new TH2F("Energy res FWHM vs. i,j","",nmppcx*ncrystalsx,0,nmppcx*ncrystalsx,nmppcy*ncrystalsy,0,nmppcy*ncrystalsy);
   EnergyResolutionVsIJ->GetXaxis()->SetTitle("i (U axis)");
