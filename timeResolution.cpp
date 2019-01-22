@@ -60,7 +60,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "Crystal.h"
+#include "CrystalStructs.h"
 
 // typedef std::vector<std::string> stringvec;
 // list files in directory
@@ -695,7 +695,7 @@ void usage()
             << "\t\t" << "--doiFraction <value>                              - fraction of DOI length towards which the time stamps are corrected (from 0 to 1)"  << std::endl
             << "\t\t" << "                                                   - 0 = front of the crystal (DOI close to detector) "  << std::endl
             << "\t\t" << "                                                   - 1 = back of the crystal (DOI far from detector) "  << std::endl
-            << "\t\t" << "--tagFwhm <value>                                  - FWHM timing resolution of reference board, in sec - default = 70e-12"  << std::endl
+            << "\t\t" << "--tagFwhm <value>                                  - FWHM timing resolution of reference board, in sec - default = 88e-12"  << std::endl
             << "\t\t" << "--rmsLow <value>                                   - lower bound of CTR fit -> mean - rmsLow*mean - default = 1.75"  << std::endl
             << "\t\t" << "--rmsHigh <value>                                  - upper bound of CTR fit -> mean + rmsHigh*mean - default = 1.75"  << std::endl
             << "\t\t" << "--histoMin <value>                                 - lower limit of CTR spectra, in sec - default = -15e-9"  << std::endl
