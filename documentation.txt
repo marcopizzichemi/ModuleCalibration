@@ -1,0 +1,14 @@
+
+PROCEDURE FOR TIMING CORRECTION
+
+Time correction consists in two steps.
+
+1) finding best estimation for t1, i.e. the timestamp of detector in front of the crystal (see article for accurate definition) by correcting the other timestamps for the expected delay
+
+2) correcting t1 by the difference in delay wrt an external reference
+
+Both corrections are based on calibration data. So first we need to extract the calibration plots that will be used.
+
+1) BEST ESTIMATION OF T1
+
+For each non-trigger detector, a plot of
