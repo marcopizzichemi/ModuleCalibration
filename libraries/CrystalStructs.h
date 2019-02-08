@@ -1,3 +1,10 @@
+struct detector_t
+{
+  int digitizerChannel;
+  float saturation;
+  float pedestal;
+};
+
 struct slice_t
 {
   Float_t wmin;
@@ -59,6 +66,7 @@ struct Crystal_t
   int number;
   int detectorChannel;
   int timingChannel;
+  float length;
   std::vector<int> relevantForW;
   std::vector<int> delayTimingChannels;
   TCut *CrystalCut;
@@ -67,36 +75,19 @@ struct Crystal_t
   std::vector<TCutG*> cutg;
   TGraph *calibrationGraph;
   TGraph *wz;
-  TH1F *simpleCTR;
-  TH1F *centralCTR;
-  TH1F *allCTR;
-  TH1F *poliCorrCTR;
-  TH1F *likeCTR;
-  TH1F *hybridCTR;
-  std::vector<double> vSimple;
-  std::vector<double> vCentral;
-  std::vector<double> vAll;
-  std::vector<double> vPoli;
-  std::vector<double> vLike;
-  std::vector<double> vhybrid;
-  TH1F *simpleCTR_norm;
-  TH1F *centralCTR_norm;
-  TH1F *allCTR_norm;
-  TH1F *poliCorrCTR_norm;
-  TH1F *hybridCTR_norm;
   TTreeFormula *Formula;
   TTreeFormula *FormulaAnalysis;
-  TH1F *likeCTR_norm;
-
+  TTreeFormula *FormulaTagAnalysis;
+  int taggingCrystalTimingChannel;
+  TCut* taggingPhotopeakCut;
+  std::vector<detector_t> detectorSaturation;
   float marginWZgraph;
   float WrangeBinsForTiming;
-
-  float minAcceptedW;  // events w min e max for ->Eval operations
+  float minAcceptedW;
   float maxAcceptedW;
-  float wMinSlicing;   // limits of w in scatter plot slicing
+  float wMinSlicing;
   float wMaxSlicing;
   float wStepSlicing;
-
   std::vector<double> z;
   TGraphErrors* tw_correction;
   TGraphErrors* rms_tw_correction;
@@ -113,38 +104,44 @@ struct Crystal_t
   std::vector<int>    tChannelsForPolishedCorrectionFWHM;
   std::vector<double> meanForPolishedCorrection;
   std::vector<double> fwhmForPolishedCorrection;
-
   std::vector<polished_correction_t> polished_correction;
-
   std::vector<slice_t> slice;
-
   TGraph *** inverse_covariance_element; // matrix of TGraph, one for each element of the inverse covariance element s^{-1}_i,j(w) that is a function of doi...
   TF1 *** inverse_covariance_element_line;
-
   std::vector<graphs_t> delay_graphs;
   std::vector<graphs_t> rms_graphs;
   std::vector<correction_graphs_t> correction_graphs;
-  // std::vector<ctr_aligned_t> ctr_aligned;
-
-
-  // Float_t *variance;
-  // long long int *entries_variance;
-  // std::vector<Float_t**> covariance;
-  // std::vector<long long int**> entries_covariance;
-  // std::vector<Float_t**> inverse_covariance;
-  //
-  // TH2F** deltaTscatter;
-
   TH1F* lightCentralHisto;
   TH1F* lightAllHisto;
   TH1F* basicCTRhisto;
 
-  // TCanvas
+  // CTR histograms. Here because it's easier like this, but they shouldn't belong...
+  TH1F *simpleCTR;
+  TH1F *centralCTR;
+  TH1F *allCTR;
+  TH1F *poliCorrCTR;
+  TH1F *likeCTR;
+  TH1F *hybridCTR;
+
+  TH1F *simpleCTR_norm;
+  TH1F *centralCTR_norm;
+  TH1F *allCTR_norm;
+  TH1F *poliCorrCTR_norm;
+  TH1F *hybridCTR_norm;
+  TH1F *likeCTR_norm;
+
+  //CTR std::vectors for unbinned calculations. obsolete
+  // std::vector<double> vSimple;
+  // std::vector<double> vCentral;
+  // std::vector<double> vAll;
+  // std::vector<double> vPoli;
+  // std::vector<double> vLike;
+  // std::vector<double> vhybrid;
 };
 
-struct detector_t
+
+
+bool compareByNumber(const Crystal_t &a,const Crystal_t  &b)
 {
-  int digitizerChannel;
-  float saturation;
-  float pedestal;
-};
+  return a.number < b.number;
+}

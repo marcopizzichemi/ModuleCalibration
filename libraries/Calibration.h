@@ -1,74 +1,16 @@
-
-//read data relative to external reference crystal stored in the calibration file, and fills the
-// FormulaTagAnalysis formula
-void readTaggingData(TFile* calibrationFile,
-                    TChain* tree,
-                    int &taggingCrystalTimingChannel,               // number of channel for ref crystal
-                    TCut &taggingPhotopeakCutName                  // TCut string for ref crystal
-                   )
-{
-  TCut *taggingPhotopeakCut;
-
-  std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
-  std::string taggingCrystalTimingChannel_prefix("taggingCrystalTimingChannel");
-
-  calibrationFile->cd("Module 0.0");
-  TList *listModuleTag = gDirectory->GetListOfKeys();
-  int nKeysModTag = listModuleTag->GetEntries();
-  std::vector<std::string> keysModNameTag;
-  // fill a vector with the leaves names
-  for(int i = 0 ; i < nKeysModTag ; i++){
-    keysModNameTag.push_back(listModuleTag->At(i)->GetName());
-  }
-  for(unsigned int i = 0 ; i < keysModNameTag.size() ; i++)
-  {
-    if(!keysModNameTag[i].compare(0,taggingPhotopeakCut_prefix.size(),taggingPhotopeakCut_prefix)) // find tcut
-    {
-      taggingPhotopeakCut = (TCut*) gDirectory->Get( keysModNameTag[i].c_str());
-    }
-    if(!keysModNameTag[i].compare(0,taggingCrystalTimingChannel_prefix.size(),taggingCrystalTimingChannel_prefix)) // find tcut
-    {
-      std::stringstream snameCh;
-      snameCh << ((TNamed*) gDirectory->Get(keysModNameTag[i].c_str()))->GetTitle();
-      taggingCrystalTimingChannel = atoi(snameCh.str().c_str());
-    }
-  }
-
-  // TCut taggingPhotopeakCutName;
-  taggingPhotopeakCutName = taggingPhotopeakCut->GetTitle();
-  // TTreeFormula* temp_formula = new TTreeFormula("FormulaTagAnalysis",taggingPhotopeakCutName,tree);
-  // formulasAnalysis->Add(temp_formula);
-  // FormulaTagAnalysis = temp_formula;
-
-
-  // std::cout << "Formula TAG ------------------" <<std::endl;
-  // std::cout << FormulaTagAnalysis->PrintValue(-1) << std::endl;
-  // std::cout << "------------------------------" <<std::endl;
-
-
-  // return 0;
-}
-
-
-
-
-
-
 void readCalibration(TFile* calibrationFile,                         // file with output of modulecalibration
                     TChain* tree,                                   // TChain of events to analyze
                     TList *formulasAnalysis,                        // list of formulas
-                    std::vector<Crystal_t> &crystal,                // collection of crystal structures
-                    std::vector<detector_t> &detectorSaturation,    // collection of detector structures
-                    std::vector<int> forbidden_channels)            // channels excluded from timing correction. this can be an empty vector, and all channels will be included. The number of the channel is the number after "ch_" in the name of the "Graph Delay ch_" and "RMS Graph Delay ch_" graphs located inside the "TimeCorrection" folder of each crystal. The number corresponds to the ADC channel number, i.e. the channel number of the V1740 pair of digitizer (it can go from 0 to 63)
+                    std::vector<Crystal_t> &crystal)                // collection of crystal structures
+                    // std::vector<detector_t> &detectorSaturation,    // collection of detector structures
+                    // std::vector<int> forbidden_channels)            // channels excluded from timing correction. this can be an empty vector, and all channels will be included. The number of the channel is the number after "ch_" in the name of the "Graph Delay ch_" and "RMS Graph Delay ch_" graphs located inside the "TimeCorrection" folder of each crystal. The number corresponds to the ADC channel number, i.e. the channel number of the V1740 pair of digitizer (it can go from 0 to 63)
 {
 
 
-  // TCut *taggingPhotopeakCut;
 
-  // std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
-  // std::string taggingCrystalTimingChannel_prefix("taggingCrystalTimingChannel");
 
   calibrationFile->cd("Module 0.0");
+
   TList *listModule = gDirectory->GetListOfKeys();
   int nKeysMod = listModule->GetEntries();
   std::vector<std::string> keysModName;
@@ -78,8 +20,16 @@ void readCalibration(TFile* calibrationFile,                         // file wit
     keysModName.push_back(listModule->At(i)->GetName());
   }
 
+  TCut *taggingPhotopeakCut;
   float marginWZgraph = 0.1;      // defaults
   float WrangeBinsForTiming = 10; // defaults
+  float length = 15.0;  // defaults
+  // taggingPhotopeakCut->SetName(""); //defaults
+  int taggingCrystalTimingChannel = -1; //defaults
+
+  std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
+  std::string taggingCrystalTimingChannel_prefix("taggingCrystalTimingChannel");
+  std::string length_prefix("length");
   std::string marginWZgraph_prefix("marginWZgraph");
   std::string WrangeBinsForTiming_prefix("WrangeBinsForTiming");
   std::vector<int> *pChannels;
@@ -93,6 +43,8 @@ void readCalibration(TFile* calibrationFile,                         // file wit
   std::vector<float> saturation = pSaturation[0];
   std::vector<float> pedestal = pPedestal[0];
 
+  std::vector<detector_t> detectorSaturation;
+
   for(unsigned int iSat = 0; iSat < DetChannels.size(); iSat++)
   {
     detector_t tempDetector;
@@ -102,6 +54,8 @@ void readCalibration(TFile* calibrationFile,                         // file wit
     detectorSaturation.push_back(tempDetector);
   }
 
+
+
   std::vector<std::string> MPPCfolders;
   for(unsigned int i = 0 ; i < keysModName.size() ; i++)
   {
@@ -109,14 +63,14 @@ void readCalibration(TFile* calibrationFile,                         // file wit
     {
       MPPCfolders.push_back(keysModName[i]);
     }
-    if(!keysModName[i].compare(0,marginWZgraph_prefix.size(),marginWZgraph_prefix)) // find tcut
+    if(!keysModName[i].compare(0,marginWZgraph_prefix.size(),marginWZgraph_prefix)) // find
     {
       std::stringstream snameCh;
       snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
       marginWZgraph = atof(snameCh.str().c_str());
       std::cout << "margin cut set to " << marginWZgraph << std::endl;
     }
-    if(!keysModName[i].compare(0,WrangeBinsForTiming_prefix.size(),WrangeBinsForTiming_prefix)) // find tcut
+    if(!keysModName[i].compare(0,WrangeBinsForTiming_prefix.size(),WrangeBinsForTiming_prefix)) // find
     {
       std::stringstream snameCh;
       snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
@@ -125,31 +79,30 @@ void readCalibration(TFile* calibrationFile,                         // file wit
       // std::cout << "Applying bin restriction, binningForWCut set to " << binningForWCut << std::endl;
       WrangeBinsForTiming = atoi(snameCh.str().c_str());
     }
+    if(!keysModName[i].compare(0,length_prefix.size(),length_prefix)) // find
+    {
+      std::stringstream snameCh;
+      snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
+      // binningForWCut = atof(snameCh.str().c_str());
+      // applyBinRestriction = true;
+      // std::cout << "Applying bin restriction, binningForWCut set to " << binningForWCut << std::endl;
+      length = atof(snameCh.str().c_str());
+    }
+    if(!keysModName[i].compare(0,taggingPhotopeakCut_prefix.size(),taggingPhotopeakCut_prefix)) // find tcut
+    {
+      taggingPhotopeakCut = (TCut*) gDirectory->Get( keysModName[i].c_str());
+    }
+    if(!keysModName[i].compare(0,taggingCrystalTimingChannel_prefix.size(),taggingCrystalTimingChannel_prefix)) // find tcut
+    {
+      std::stringstream snameCh;
+      snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
+      taggingCrystalTimingChannel = atoi(snameCh.str().c_str());
+    }
 
-    // //TAGGING PART
-    // if(!keysModName[i].compare(0,taggingPhotopeakCut_prefix.size(),taggingPhotopeakCut_prefix)) // find tcut
-    // {
-    //   taggingPhotopeakCut = (TCut*) gDirectory->Get( keysModName[i].c_str());
-    // }
-    // if(!keysModName[i].compare(0,taggingCrystalTimingChannel_prefix.size(),taggingCrystalTimingChannel_prefix)) // find tcut
-    // {
-    //   std::stringstream snameCh;
-    //   snameCh << ((TNamed*) gDirectory->Get(keysModName[i].c_str()))->GetTitle();
-    //   taggingCrystalTimingChannel = atoi(snameCh.str().c_str());
-    // }
 
   }
 
-  // TCut taggingPhotopeakCutName;
-  // taggingPhotopeakCutName = taggingPhotopeakCut->GetTitle();
-  // FormulaTagAnalysis = new TTreeFormula("FormulaTagAnalysis",taggingPhotopeakCutName,tree);
-  // formulasAnalysis->Add(FormulaTagAnalysis);
-   // = temp_formula;
 
-
-  // std::cout << "Formula TAG ------------------" <<std::endl;
-  // std::cout << FormulaTagAnalysis->PrintValue(-1) << std::endl;
-  // std::cout << "------------------------------" <<std::endl;
 
   for(unsigned int iMppc = 0 ; iMppc < MPPCfolders.size() ; iMppc++)
   {
@@ -190,6 +143,9 @@ void readCalibration(TFile* calibrationFile,                         // file wit
        temp_crystal.wStepSlicing = 1;
        temp_crystal.marginWZgraph = marginWZgraph;
        temp_crystal.WrangeBinsForTiming = WrangeBinsForTiming;
+       temp_crystal.length = length;
+       temp_crystal.taggingCrystalTimingChannel = taggingCrystalTimingChannel;
+       temp_crystal.taggingPhotopeakCut = taggingPhotopeakCut;
        temp_crystal.CrystalCut = NULL;
        temp_crystal.CrystalCutWithoutCutG = NULL;
        temp_crystal.PhotopeakEnergyCut = NULL;
@@ -210,6 +166,17 @@ void readCalibration(TFile* calibrationFile,                         // file wit
        temp_crystal.accepted = true;
        temp_crystal.tw_correction = NULL;
        temp_crystal.polishedCorrection = false;
+       temp_crystal.detectorSaturation = detectorSaturation;
+
+       //set taggingPhotopeakCut Formula if it is found in calibration file
+       if((temp_crystal.taggingCrystalTimingChannel != -1))
+       {
+         TTreeFormula* FormulaTagAnalysis = new TTreeFormula("FormulaTagAnalysis",
+                                                             taggingPhotopeakCut->GetTitle(),
+                                                             tree);
+         formulasAnalysis->Add(FormulaTagAnalysis);
+         temp_crystal.FormulaTagAnalysis = FormulaTagAnalysis;
+       }
 
        //get crystal number
        temp_crystal.number = atoi((CrystalFolders[iCry].substr(crystal_prefix.size()+1,CrystalFolders[iCry].size()-crystal_prefix.size()-1)).c_str());
@@ -490,13 +457,15 @@ void readCalibration(TFile* calibrationFile,                         // file wit
                    // std::cout << keysTcorrName[i] << "\t" << str2 << "\t" << str3 << "\t" << current_ch << std::endl;     // output
 
                    bool acceptCh = true;
-                   for(int iForb = 0; iForb < forbidden_channels.size(); iForb++)                // check if this ch is in the forbidden_channels list
-                   {
-                     if(current_ch == forbidden_channels[iForb])
-                     {
-                       acceptCh = false;
-                     }
-                   }
+
+                   // forbidden_channels part is removed
+                   // for(int iForb = 0; iForb < forbidden_channels.size(); iForb++)                // check if this ch is in the forbidden_channels list
+                   // {
+                   //   if(current_ch == forbidden_channels[iForb])
+                   //   {
+                   //     acceptCh = false;
+                   //   }
+                   // }
 
                    if(acceptCh)               // add graph if the ch is accepted
                    {
@@ -533,13 +502,15 @@ void readCalibration(TFile* calibrationFile,                         // file wit
 
 
                    bool acceptCh = true;
-                   for(int iForb = 0; iForb < forbidden_channels.size(); iForb++)                // check if this ch is in the forbidden_channels list
-                   {
-                     if(current_ch == forbidden_channels[iForb])
-                     {
-                       acceptCh = false;
-                     }
-                   }
+
+                   // forbidden_channels part is removed
+                   // for(int iForb = 0; iForb < forbidden_channels.size(); iForb++)                // check if this ch is in the forbidden_channels list
+                   // {
+                   //   if(current_ch == forbidden_channels[iForb])
+                   //   {
+                   //     acceptCh = false;
+                   //   }
+                   // }
 
                    if(acceptCh)               // add graph if the ch is accepted
                    {
@@ -697,8 +668,17 @@ void readCalibration(TFile* calibrationFile,                         // file wit
          // sname << "Polished correction - Crystal " << temp_crystal.number;
          // temp_crystal.poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
          sname.str("");
+
+         // std::cout << "CrystalCutWithoutCutG" << std::endl
+         //           << temp_crystal.CrystalCutWithoutCutG->GetTitle()
+         //           << std::endl
+         //           << "PhotopeakEnergyCut" << std::endl
+         //           << temp_crystal.PhotopeakEnergyCut->GetTitle()
+         //           << std::endl;
+
          TCut globalCut; // the cut for the formula
-         globalCut += temp_crystal.CrystalCutWithoutCutG->GetTitle();     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
+
+         // globalCut += temp_crystal.CrystalCutWithoutCutG->GetTitle();     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
          globalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();        // this is the cut on photopeak energy of the corrected spectrum for this crystal
          for(unsigned int iCutg = 0; iCutg < temp_crystal.cutg.size(); iCutg++)
          {
@@ -719,116 +699,17 @@ void readCalibration(TFile* calibrationFile,                         // file wit
          {
            crystal.push_back(temp_crystal);
          }
-
        }
        gDirectory->cd("..");
     }
     calibrationFile->cd("Module 0.0");
   }
-
-  // //DEBUG
-  // for(unsigned int iSat = 0; iSat < detectorSaturation.size(); iSat++)
-  // {
-  //   std::cout << detectorSaturation[iSat].digitizerChannel << " " << detectorSaturation[iSat].saturation << " " << detectorSaturation[iSat].pedestal << std::endl;
-  // }
-
-  // COINCIDENCE CALIBRATION FILE
-  //
-  // TFile *coincidenceCalibrationFile = new TFile(coincidenceCalibrationFileName.c_str());
-  // coincidenceCalibrationFile->cd("Module 0.0");
-  // TList *listModuleCoinc = gDirectory->GetListOfKeys();
-  // int nKeysModCoinc = listModuleCoinc->GetEntries();
-  // std::vector<std::string> keysModNameCoinc;
-  // // fill a vector with the leaves names
-  // // std::string mppc_prefixCoinc("MPPC");
-  // for(int i = 0 ; i < nKeysModCoinc ; i++){
-  //   keysModNameCoinc.push_back(listModuleCoinc->At(i)->GetName());
-  // }
-
-  //   TCut *taggingPhotopeakCut;
-  //   std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
-  // std::vector<std::string> MPPCfoldersCoinc;
-  //   for(unsigned int i = 0 ; i < keysModNameCoinc.size() ; i++)
-  //   {
-    // if (!keysModNameCoinc[i].compare(0, mppc_prefixCoinc.size(), mppc_prefixCoinc))
-    // {
-    //   MPPCfoldersCoinc.push_back(keysModNameCoinc[i]);
-    // }
-  //     if(!keysModNameCoinc[i].compare(0,taggingPhotopeakCut_prefix.size(),taggingPhotopeakCut_prefix)) // find tcut
-  //     {
-     //  std::cout << keysCryName[i] << std::endl;
-  //       taggingPhotopeakCut = (TCut*) gDirectory->Get( keysModName[i].c_str());
-      // if(cut)
-      //   temp_crystal.CrystalCut = cut;
-  //     }
-  //   }
-
-  // std::stringstream sformulaname;
-  // sformulaname << "FormulaTag";
-  // TCut taggingPhotopeakCutName;
-  // taggingPhotopeakCutName = taggingPhotopeakCut->GetTitle();
-  // TTreeFormula* FormulaTag = new TTreeFormula("FormulaTag",taggingPhotopeakCutName,tree);
-
-  //look only into crystals found in the other calibration file
-  //   for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
-  //   {
-  //     bool dirFound = gDirectory->cd(crystal[iCry].path);
-  //     if(dirFound)
-  //     {
-  //       crystal[iCry].accepted = true;
-  //       TList *listTcorr = gDirectory->GetListOfKeys();
-  //       int nKeysTcorr = listTcorr->GetEntries();
-  //       std::vector<std::string> keysTcorrName;
-  //       if(nKeysTcorr) //if directory not empty
-  //       {
-  //         for(int i = 0 ; i < nKeysTcorr ; i++){
-  //           keysTcorrName.push_back(listTcorr->At(i)->GetName());
-  //         }
-  //
-  //         std::string deltaWGraph_prefix = "DeltaW Graph";
-  //         std::string rms_deltaWGraph_prefix = "RMS DeltaW Graph";
-  //         // std::string graph_delay_prefix = "Graph Delay ch_";
-  //         // std::string rms_graph_delay_prefix = "RMS Graph Delay ch_";
-  //
-  //         for(unsigned int i = 0 ; i < keysTcorrName.size() ; i++)
-  //         {
-  //           if(!keysTcorrName[i].compare(0,deltaWGraph_prefix.size(),deltaWGraph_prefix))
-  //           {
-  //             TGraph *calibGraph = NULL;
-  //             calibGraph = (TGraph*) gDirectory->Get(keysTcorrName[i].c_str());
-  //             if(calibGraph)
-  //               crystal[iCry].tw_correction = calibGraph;
-  //           }
-  //
-  //           if(!keysTcorrName[i].compare(0,rms_deltaWGraph_prefix.size(),rms_deltaWGraph_prefix))
-  //           {
-  //            TGraph *calibGraph = NULL;
-  //            calibGraph = (TGraph*) gDirectory->Get(keysTcorrName[i].c_str());
-  //            if(calibGraph)
-  //               crystal[iCry].rms_tw_correction = calibGraph;
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
+}
 
 
 
-  // // //BEGIN of DEBUG
-  // for(unsigned int i = 0 ;  i < crystal.size() ; i++)
-  // {
-  //   std::cout << crystal[i].number << "\t"
-  //             // << crystal[i].cut->GetTitle() << "\t"
-  //             << crystal[i].calibrationGraph->GetName() << "\t";
-  //   for(unsigned int j = 0 ; j < crystal[i].cutg.size(); j++)
-  //   {
-  //     std::cout << crystal[i].cutg[j]->GetName() << "\t";
-  //   }
-  //   std::cout << std::endl;
-  // }
-  // // //END of DEBUG
-
-
+int setWandZcuts(std::vector<Crystal_t> &crystal)
+{
   //------------------------------------------------//
   //------------------------------------------------//
   //------------------------------------------------//
@@ -849,18 +730,6 @@ void readCalibration(TFile* calibrationFile,                         // file wit
   // whatever is outside this range has to be thrown away
   // this has to be written in the crystal as a limit on the acceptance of w
 
-
-
-
-
-  // return 0;
-}
-
-
-
-int setWandZcuts(std::vector<Crystal_t> &crystal,
-                float length)
-{
   std::cout << std::endl;
   std::cout << "|--------------------------------------------|" << std::endl;
   std::cout << "|                 w and z cuts               |" << std::endl;
@@ -869,7 +738,7 @@ int setWandZcuts(std::vector<Crystal_t> &crystal,
   {
     if(crystal[iCry].accepted)
     {
-      float beginW = crystal[iCry].wz->Eval(length - crystal[iCry].marginWZgraph);
+      float beginW = crystal[iCry].wz->Eval(crystal[iCry].length - crystal[iCry].marginWZgraph);
       float endW = crystal[iCry].wz->Eval(crystal[iCry].marginWZgraph);
 
 

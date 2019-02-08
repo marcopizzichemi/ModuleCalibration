@@ -60,7 +60,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "CrystalStructs.h"
+#include "./libraries/CrystalStructs.h"
 // #include "./include/ConfigFile.h"
 
 
