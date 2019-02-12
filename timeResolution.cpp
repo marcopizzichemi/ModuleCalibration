@@ -776,7 +776,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractCTRWithEMG_withRef(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].simpleCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -892,7 +892,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractCTRWithEMG_withRef(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].centralCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -1009,7 +1009,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractCTRWithEMG_withRef(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].allCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -1122,7 +1122,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else

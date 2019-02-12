@@ -42,15 +42,15 @@ Double_t emginv_function(Double_t *x, Double_t *par)
 
 // forward declarations
 template <class T>
-void fitWithEMG(T* histo,float fitPercMin,float fitPercMax,float* res); //just fitting, ignoring fitres and tagfwhm. this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
+void fitWithEMG(T* histo,float* res); //just fitting, ignoring fitres and tagfwhm. this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
 template <class T>
-void extractCTRWithEMG_withRef(T* histo,float fitPercMin,float fitPercMax,int divs, float tagFwhm,float* res,float* fitRes);//fit and directly calculate the fwhm on the function
+void extractCTRWithEMG_withRef(T* histo,int divs, float tagFwhm,float* res,float* fitRes);//fit and directly calculate the fwhm on the function
 template <class T>
-void fitWithEMG_core(T* histo,float fitPercMin,float fitPercMax,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams); // actual EMG fitting routine
+void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams); // actual EMG fitting routine
 
 // routines
 template <class T>
-void fitWithEMG(T* histo,float fitPercMin,float fitPercMax,float* res)
+void fitWithEMG(T* histo,float* res)
 {
   //just fitting, ignoring fitres and tagfwhm
   // this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
@@ -60,7 +60,7 @@ void fitWithEMG(T* histo,float fitPercMin,float fitPercMax,float* res)
   float f1max = 0;
   int fType;
   double fParams[4];
-  fitWithEMG_core(histo,fitPercMin,fitPercMax,fitMin,fitMax,f1min,f1max,fType,fParams);
+  fitWithEMG_core(histo,fitMin,fitMax,f1min,f1max,fType,fParams);
 
   if(fType == 0)
   {
@@ -116,7 +116,7 @@ void fitWithEMG(T* histo,float fitPercMin,float fitPercMax,float* res)
 
 //fit and directly calculate the fwhm on the function
 template <class T>
-void extractCTRWithEMG_withRef(T* histo,float fitPercMin,float fitPercMax,int divs, float tagFwhm,float* res,float* fitRes)
+void extractCTRWithEMG_withRef(T* histo,int divs, float tagFwhm,float* res,float* fitRes)
 {
   float fitMin = 0;
   float fitMax = 0;
@@ -124,7 +124,7 @@ void extractCTRWithEMG_withRef(T* histo,float fitPercMin,float fitPercMax,int di
   float f1max = 0;
   double fParams[4];
   int fType;
-  fitWithEMG_core(histo,fitPercMin,fitPercMax,fitMin,fitMax,f1min,f1max,fType,fParams);
+  fitWithEMG_core(histo,fitMin,fitMax,f1min,f1max,fType,fParams);
   fitRes[0] = 0;
   fitRes[1] = 0;
   fitRes[2] = 0;
@@ -190,7 +190,7 @@ void extractCTRWithEMG_withRef(T* histo,float fitPercMin,float fitPercMax,int di
 
 
 template <class T>
-void fitWithEMG_core(T* histo,float fitPercMin,float fitPercMax,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams) // actual EMG fitting routine
+void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams) // actual EMG fitting routine
 {
   // actual EMG fitting routine
   TCanvas *cTemp  = new TCanvas("temp","temp");

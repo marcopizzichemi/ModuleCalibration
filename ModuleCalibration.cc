@@ -102,7 +102,7 @@
 #include "Module.h"
 #include "Mppc.h"
 #include "ModuleCalibration.h"
-// #include "Detector.h"
+#include "./libraries/Extract.h"
 
 // #include <omp.h>
 //test
@@ -113,487 +113,387 @@
 
 
 
-// double extractWithGaussAndExp(TH1F* histo,double fitPercMin,double fitPercMax, TF1* f1)
+// template <class T>
+// void extractWithEMG(T* histo,double fitPercMin,double fitPercMax,double* res)
 // {
+//   // std::cout << "aaaaa" << std::endl;
+//   // preliminary gauss fit
 //   TCanvas *cTemp  = new TCanvas("temp","temp");
 //   TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-//   histo->Fit(gaussDummy,"QN");
+//   // resctrict the fitting range of gauss function
 //
+//   gaussDummy->SetLineColor(kRed);
+//   double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+//   double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
 //   double f1min = histo->GetXaxis()->GetXmin();
 //   double f1max = histo->GetXaxis()->GetXmax();
+//   if(fitGaussMin < f1min)
+//   {
+//     fitGaussMin = f1min;
+//   }
+//   if(fitGaussMax > f1max)
+//   {
+//     fitGaussMax = f1max;
+//   }
+//   TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+//   Int_t fitStatusGauss= rGauss;
 //
-//   f1  = new TF1("f1","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))");
-//   f1->SetLineColor(kBlack);
-//   f1->SetParName(0,"N");
-//   f1->SetParName(1,"Mean");
-//   f1->SetParName(2,"Sigma");
-//   f1->SetParName(3,"tau");
+//   //NB fit results converted to int gives the fit status:
+//   // fitStatusGauss == 0 -> fit OK
+//   // fitStatusGauss != 0 -> fit FAILED
+//
+//   double fitMin;
+//   double fitMax;
+//   if(fitStatusGauss != 0) // gauss fit didn't work
+//   {
+//     // use the histogram values
+//     fitMin = fitGaussMin;
+//     fitMax = fitGaussMax;
+//   }
+//   else
+//   {
+//     // use fit values
+//     fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+//     fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+//   }
+//
+//   // chech that they are not outside the limits defined by user
+//   if(fitMin < f1min)
+//   {
+//     fitMin = f1min;
+//   }
+//   if(fitMax > f1max)
+//   {
+//     fitMax = f1max;
+//   }
+//
+//   //define the standard gauss plus exp and the same but with inverted sign for x and mu
+//   //the standard definition should be equivalent to the classical definition of the Exponentially Modified Gaussian function
+//   TF1* gexp      = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
+//   gexp->SetLineColor(kGreen);
+//   gexp->SetParName(0,"N");
+//   gexp->SetParName(1,"mu");
+//   gexp->SetParName(2,"Sigma");
+//   gexp->SetParName(3,"tau");
+//   if(fitStatusGauss != 0) // gauss fit didn't work
+//   {
+//     gexp->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
+//   }
+//   else
+//   {
+//     // use fit values
+//     gexp->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
+//   }
+//   TFitResultPtr r_gexp = histo->Fit(gexp,"QS","",fitMin,fitMax);
+//
+//   TF1* gexp_inv  = new TF1("gexp_inv","[0]/sqrt(2)*exp([2]^2/2/[3]^2-((-x)-(-[1]))/[3])*(1-TMath::Erf(((-[1])-(-x)+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
+//   gexp_inv->SetLineColor(kBlue);
+//   gexp_inv->SetParName(0,"N");
+//   gexp_inv->SetParName(1,"mu");
+//   gexp_inv->SetParName(2,"Sigma");
+//   gexp_inv->SetParName(3,"tau");
+//   if(fitStatusGauss != 0) // gauss fit didn't work
+//   {
+//     gexp_inv->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
+//   }
+//   else
+//   {
+//     // use fit values
+//     gexp_inv->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
+//   }
+//   TFitResultPtr r_gexp_inv = histo->Fit(gexp_inv,"QS","",fitMin,fitMax);
+//
+//   //try both, see what fits better
+//
+//   Int_t fitStatusGexp = r_gexp;
+//   Int_t fitStatusGexp_inv = r_gexp_inv;
+//
+//   double chi2gexp;
+//   double chi2gexp_inv;
+//
+//   if(fitStatusGexp == 0) // if gexp worked
+//   {
+//     chi2gexp = r_gexp->Chi2();
+//   }
+//   if(fitStatusGexp_inv == 0)// if gexp_inv worked
+//   {
+//     chi2gexp_inv   = r_gexp_inv->Chi2();
+//   }
+//
+//   // now remember:
+//   // mean = mu + tau
+//   // sig = sqrt(Sigma^2 + tau^2)
+//   // and errors from error propagation
+//   // (meanErr)^2 = errMu^2 + errTau^2
+//
+//   float mean = 0.0;
+//   float sigma = 0.0;
+//   float meanErr = 0.0;
+//   float sigmaErr = 0.0;
+//   TF1 *fitFunction = NULL;
+//
+//   if(fitStatusGexp == 0 && fitStatusGexp_inv != 0) //if gexp worked and gexp_inv didn't worked
+//   {
+//     // fit again just to draw it
+//     // histo->Fit(gexp,"Q","",fitMin,fitMax);
+//     // delete the other function
+//     // delete gexp_inv;
+//     fitFunction = gexp;
+//   }
+//   else
+//   {
+//     if(fitStatusGexp != 0 && fitStatusGexp_inv == 0) //if gexp didn't worked and gexp_inv worked
+//     {
+//       // delete gexp;
+//       fitFunction = gexp_inv;
+//     }
+//     else // both worked or nothing worked
+//     {
+//       if(fitStatusGexp == 0 && fitStatusGexp_inv == 0)
+//       {
+//         if(chi2gexp > chi2gexp_inv) // gexp_inv better than gexp
+//         {
+//           // delete gexp;
+//           fitFunction = gexp_inv;
+//         }
+//         else // gexp better than gexp_inv
+//         {
+//           // delete gexp_inv;
+//           fitFunction = gexp;
+//         }
+//       }
+//       else  // nothing worked
+//       {
+//         // leave values untouched
+//         // delete all func
+//         delete gexp_inv;
+//         delete gexp;
+//       }
+//     }
+//   }
+//
+//
+//   if(fitFunction == NULL)
+//   {
+//     res[0] = 0;
+//     res[1] = 0;
+//     res[2] = 0;
+//     res[3] = 0;
+//   }
+//   else
+//   {
+//     // SetParName(0,"N");
+//     // SetParName(1,"mu");
+//     // SetParName(2,"Sigma");
+//     // SetParName(3,"tau");
+//     //
+//     //
+//     histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+//     // write variables or it's gonna be a mess
+//     float mu = fitFunction->GetParameter(1);
+//     float e_mu = fitFunction->GetParError(1);
+//     float s = fitFunction->GetParameter(2);
+//     float e_s = fitFunction->GetParError(2);
+//     float tau = fitFunction->GetParameter(3);
+//     float e_tau = fitFunction->GetParError(3);
+//
+//     mean = mu + tau;
+//     sigma = TMath::Sqrt(TMath::Power(s,2) + TMath::Power(tau,2));
+//     meanErr = TMath::Sqrt(TMath::Power(e_mu,2) + TMath::Power(e_tau,2));
+//     sigmaErr = TMath::Sqrt(TMath::Power(s*e_s/sigma,2) + TMath::Power(tau*e_tau/sigma,2));
+//
+//     res[0] = mean;
+//     res[1] = sigma;
+//     res[2] = meanErr;
+//     res[3] = sigmaErr;
+//   }
+// }
+
+
+
+// void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, double* res)
+// {
+//   // TF1 *gexp;
+//   // TF1 *cb;
+//
+//   // preliminary gauss fit
+//   TCanvas *cTemp  = new TCanvas("temp","temp");
+//   TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+//   // resctrict the fitting range of gauss function
+//
+//   gaussDummy->SetLineColor(kRed);
+//   double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+//   double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
+//   double f1min = histo->GetXaxis()->GetXmin();
+//   double f1max = histo->GetXaxis()->GetXmax();
+//   if(fitGaussMin < f1min)
+//   {
+//     fitGaussMin = f1min;
+//   }
+//   if(fitGaussMax > f1max)
+//   {
+//     fitGaussMax = f1max;
+//   }
+//   TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+//   Int_t fitStatusGauss= rGauss;
+//
+//   //NB fit results converted to int gives the fit status:
+//   // fitStatusGauss == 0 -> fit OK
+//   // fitStatusGauss != 0 -> fit FAILED
+//
+//   double fitMin;
+//   double fitMax;
+//   if(fitStatusGauss != 0) // gauss fit didn't work
+//   {
+//     // use the histogram values
+//     fitMin = fitGaussMin;
+//     fitMax = fitGaussMax;
+//   }
+//   else
+//   {
+//     // use fit values
+//     fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+//     fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+//   }
+//
+//   // chech that they are not outside the limits defined by user
+//   if(fitMin < f1min)
+//   {
+//     fitMin = f1min;
+//   }
+//   if(fitMax > f1max)
+//   {
+//     fitMax = f1max;
+//   }
+//
+//   //fit with crystalball
+//   TF1 *cb  = new TF1("cb","crystalball",f1min,f1max);
+//   cb->SetLineColor(kBlue);
+//   if(fitStatusGauss != 0) // gauss fit didn't work
+//   {
+//     // use the histogram values
+//     cb->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),1,3);
+//   }
+//   else
+//   {
+//     // use fit values
+//     cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
+//   }
+//   TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
+//
+//   //fit with gauss + exp
+//   TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
+//   gexp->SetLineColor(kGreen);
+//   gexp->SetParName(0,"N");
+//   gexp->SetParName(1,"Mean");
+//   gexp->SetParName(2,"Sigma");
+//   gexp->SetParName(3,"tau");
 //   // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-//   f1->SetParameter(0,gaussDummy->GetParameter(0));
-//   f1->SetParameter(1,gaussDummy->GetParameter(1));
-//   f1->SetParameter(2,gaussDummy->GetParameter(2));
-//   f1->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-//   double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-//   double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-//   if(fitMin < f1min)
+//   if(fitStatusGauss != 0) // gauss fit didn't work
 //   {
-//     fitMin = f1min;
+//     // use the histogram values
+//     gexp->SetParameter(0,histo->GetEntries());
+//     gexp->SetParameter(1,histo->GetMean());
+//     gexp->SetParameter(2,histo->GetRMS());
+//     gexp->SetParameter(3,histo->GetRMS()); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
 //   }
-//   if(fitMax > f1max)
+//   else
 //   {
-//     fitMax = f1max;
+//     // use fit values
+//     gexp->SetParameter(0,gaussDummy->GetParameter(0));
+//     gexp->SetParameter(1,gaussDummy->GetParameter(1));
+//     gexp->SetParameter(2,gaussDummy->GetParameter(2));
+//     gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
 //   }
-//   TFitResultPtr r = histo->Fit(f1,"QNS","",fitMin,fitMax);
-//   // double min,max;
-//   // // int divs = 3000;
-//   // double step = (f1max-f1min)/divs;
-//   // double funcMax = f1->GetMaximum(fitMin,fitMax);
-//   // // is [0] the max of the function???
-//   // for(int i = 0 ; i < divs ; i++)
-//   // {
-//   //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-//   //   {
-//   //     min = f1min + (i+0.5)*step;
-//   //   }
-//   //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-//   //   {
-//   //     max = f1min + (i+0.5)*step;
-//   //   }
-//   // }
-//   // res[0] = f1->GetParameter(1);  // res[0] is mean
-//   // res[1] = max-min;              // res[1] is FWHM
-//   delete cTemp;
-//   return r->Chi2();
+//   TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
 //
+//   Int_t fitStatusCb = rCb;
+//   Int_t fitStatusGexp = rGexp;
+//
+//   double chi2gexp;
+//   double chi2cb;
+//
+//   if(fitStatusGexp == 0) // if Gexp worked
+//   {
+//     chi2gexp = rGexp->Chi2();
+//   }
+//   if(fitStatusCb == 0)// if cb worked
+//   {
+//     chi2cb   = rCb->Chi2();
+//   }
+//
+//
+//   //set function to measure ctr etc...
+//   TF1 *f1;
+//   // std::cout << histo->GetName() << std::endl;
+//   // std::cout << fitStatusGexp << " "
+//   //           << fitStatusCb << " "
+//   //           << fitStatusGauss << " "
+//   //           << std::endl;
+//   if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss != 0)) // all fit didn't work, just set everything to 0
+//   {
+//     // std::cout << "None" << std::endl;
+//     res[0] = 0;
+//     res[1] = 0;
+//     res[2] = 0;
+//     res[3] = 0;
+//   }
+//   else
+//   {
+//     if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss == 0)) // only gauss worked
+//     {
+//       // std::cout << "Gauss" << std::endl;
+//       f1 = gaussDummy;
+//       histo->Fit(f1,"Q","",fitGaussMin,fitGaussMax);
+//       res[0] = f1->GetParameter(1);
+//       res[1] = f1->GetParameter(2);
+//       res[2] = f1->GetParError(1);
+//       res[3] = f1->GetParError(2);
+//       delete gexp;
+//       delete cb;
+//     }
+//     else // one between gexp and cb worked
+//     {
+//       if((fitStatusGexp  != 0) && (fitStatusCb == 0)) // only cb worked
+//       {
+//         // std::cout << "cb" << std::endl;
+//         f1 = cb;
+//         histo->Fit(f1,"Q","",fitMin,fitMax);
+//         delete gexp;
+//
+//       }
+//       else if((fitStatusGexp  == 0) && (fitStatusCb != 0)) // only gexp worked
+//       {
+//         // std::cout << "gexp" << std::endl;
+//         f1 = gexp;
+//         histo->Fit(f1,"Q","",fitMin,fitMax);
+//         delete cb;
+//       }
+//       else // both worked
+//       {
+//         if(chi2gexp > chi2cb)
+//         {
+//           // std::cout << "cb better than gexp" << std::endl;
+//           f1 = cb;
+//           histo->Fit(f1,"Q","",fitMin,fitMax);
+//           delete gexp;
+//         }
+//         else
+//         {
+//           // std::cout << "gexp better than cb" << std::endl;
+//           f1 = gexp;
+//           histo->Fit(f1,"Q","",fitMin,fitMax);
+//           delete cb;
+//         }
+//       }
+//       // f1->SetLineColor(kRed);
+//       res[0] = f1->GetParameter(1);
+//       res[1] = f1->GetParameter(2);
+//       res[2] = f1->GetParError(1);
+//       res[3] = f1->GetParError(2);
+//     }
+//   }
 // }
-//
-//
-// double extractFromCrystalBall(TH1F* histo,double fitPercMin,double fitPercMax, TF1* f1)
-// {
-//   //first, dummy gaussian fit
-//   TCanvas *cTemp  = new TCanvas("temp","temp");
-//   TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-//   histo->Fit(gaussDummy,"QN");
-//
-//   double f1min = histo->GetXaxis()->GetXmin();
-//   double f1max = histo->GetXaxis()->GetXmax();
-//   // std::cout << f1min << " " << f1max << std::endl;
-//   f1  = new TF1("f1","crystalball");
-//   f1->SetLineColor(kBlack);
-//   f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-//   double fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-//   double fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-//   if(fitMin < f1min)
-//   {
-//     fitMin = f1min;
-//   }
-//   if(fitMax > f1max)
-//   {
-//     fitMax = f1max;
-//   }
-//   TFitResultPtr r = histo->Fit(f1,"QNS","",fitMin,fitMax);
-//   // double min,max;
-//   // // int divs = 3000;
-//   // double step = (f1max-f1min)/divs;
-//   // double funcMax = f1->GetMaximum(fitMin,fitMax);
-//   // // is [0] the max of the function???
-//   // for(int i = 0 ; i < divs ; i++)
-//   // {
-//   //   if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
-//   //   {
-//   //     min = f1min + (i+0.5)*step;
-//   //   }
-//   //   if( (f1->Eval(f1min + i*step) > funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-//   //   {
-//   //     max = f1min + (i+0.5)*step;
-//   //   }
-//   // }
-//   // res[0] = f1->GetParameter(1);  // res[0] is mean
-//   // res[1] = max-min;              // res[1] is FWHM
-//   delete cTemp;
-//   return r->Chi2();
-// }
-template <class T>
-void extractWithEMG(T* histo,double fitPercMin,double fitPercMax,double* res)
-{
-  // std::cout << "aaaaa" << std::endl;
-  // preliminary gauss fit
-  TCanvas *cTemp  = new TCanvas("temp","temp");
-  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-  // resctrict the fitting range of gauss function
-
-  gaussDummy->SetLineColor(kRed);
-  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
-  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
-  double f1min = histo->GetXaxis()->GetXmin();
-  double f1max = histo->GetXaxis()->GetXmax();
-  if(fitGaussMin < f1min)
-  {
-    fitGaussMin = f1min;
-  }
-  if(fitGaussMax > f1max)
-  {
-    fitGaussMax = f1max;
-  }
-  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
-  Int_t fitStatusGauss= rGauss;
-
-  //NB fit results converted to int gives the fit status:
-  // fitStatusGauss == 0 -> fit OK
-  // fitStatusGauss != 0 -> fit FAILED
-
-  double fitMin;
-  double fitMax;
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    fitMin = fitGaussMin;
-    fitMax = fitGaussMax;
-  }
-  else
-  {
-    // use fit values
-    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-  }
-
-  // chech that they are not outside the limits defined by user
-  if(fitMin < f1min)
-  {
-    fitMin = f1min;
-  }
-  if(fitMax > f1max)
-  {
-    fitMax = f1max;
-  }
-
-  //define the standard gauss plus exp and the same but with inverted sign for x and mu
-  //the standard definition should be equivalent to the classical definition of the Exponentially Modified Gaussian function
-  TF1* gexp      = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
-  gexp->SetLineColor(kGreen);
-  gexp->SetParName(0,"N");
-  gexp->SetParName(1,"mu");
-  gexp->SetParName(2,"Sigma");
-  gexp->SetParName(3,"tau");
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    gexp->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
-  }
-  else
-  {
-    // use fit values
-    gexp->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
-  }
-  TFitResultPtr r_gexp = histo->Fit(gexp,"QS","",fitMin,fitMax);
-
-  TF1* gexp_inv  = new TF1("gexp_inv","[0]/sqrt(2)*exp([2]^2/2/[3]^2-((-x)-(-[1]))/[3])*(1-TMath::Erf(((-[1])-(-x)+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
-  gexp_inv->SetLineColor(kBlue);
-  gexp_inv->SetParName(0,"N");
-  gexp_inv->SetParName(1,"mu");
-  gexp_inv->SetParName(2,"Sigma");
-  gexp_inv->SetParName(3,"tau");
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    gexp_inv->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),histo->GetRMS());
-  }
-  else
-  {
-    // use fit values
-    gexp_inv->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),gaussDummy->GetParameter(2));
-  }
-  TFitResultPtr r_gexp_inv = histo->Fit(gexp_inv,"QS","",fitMin,fitMax);
-
-  //try both, see what fits better
-
-  Int_t fitStatusGexp = r_gexp;
-  Int_t fitStatusGexp_inv = r_gexp_inv;
-
-  double chi2gexp;
-  double chi2gexp_inv;
-
-  if(fitStatusGexp == 0) // if gexp worked
-  {
-    chi2gexp = r_gexp->Chi2();
-  }
-  if(fitStatusGexp_inv == 0)// if gexp_inv worked
-  {
-    chi2gexp_inv   = r_gexp_inv->Chi2();
-  }
-
-  // now remember:
-  // mean = mu + tau
-  // sig = sqrt(Sigma^2 + tau^2)
-  // and errors from error propagation
-  // (meanErr)^2 = errMu^2 + errTau^2
-
-  float mean = 0.0;
-  float sigma = 0.0;
-  float meanErr = 0.0;
-  float sigmaErr = 0.0;
-  TF1 *fitFunction = NULL;
-
-  if(fitStatusGexp == 0 && fitStatusGexp_inv != 0) //if gexp worked and gexp_inv didn't worked
-  {
-    // fit again just to draw it
-    // histo->Fit(gexp,"Q","",fitMin,fitMax);
-    // delete the other function
-    // delete gexp_inv;
-    fitFunction = gexp;
-  }
-  else
-  {
-    if(fitStatusGexp != 0 && fitStatusGexp_inv == 0) //if gexp didn't worked and gexp_inv worked
-    {
-      // delete gexp;
-      fitFunction = gexp_inv;
-    }
-    else // both worked or nothing worked
-    {
-      if(fitStatusGexp == 0 && fitStatusGexp_inv == 0)
-      {
-        if(chi2gexp > chi2gexp_inv) // gexp_inv better than gexp
-        {
-          // delete gexp;
-          fitFunction = gexp_inv;
-        }
-        else // gexp better than gexp_inv
-        {
-          // delete gexp_inv;
-          fitFunction = gexp;
-        }
-      }
-      else  // nothing worked
-      {
-        // leave values untouched
-        // delete all func
-        delete gexp_inv;
-        delete gexp;
-      }
-    }
-  }
-
-
-  if(fitFunction == NULL)
-  {
-    res[0] = 0;
-    res[1] = 0;
-    res[2] = 0;
-    res[3] = 0;
-  }
-  else
-  {
-    // SetParName(0,"N");
-    // SetParName(1,"mu");
-    // SetParName(2,"Sigma");
-    // SetParName(3,"tau");
-    //
-    //
-    histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
-    // write variables or it's gonna be a mess
-    float mu = fitFunction->GetParameter(1);
-    float e_mu = fitFunction->GetParError(1);
-    float s = fitFunction->GetParameter(2);
-    float e_s = fitFunction->GetParError(2);
-    float tau = fitFunction->GetParameter(3);
-    float e_tau = fitFunction->GetParError(3);
-
-    mean = mu + tau;
-    sigma = TMath::Sqrt(TMath::Power(s,2) + TMath::Power(tau,2));
-    meanErr = TMath::Sqrt(TMath::Power(e_mu,2) + TMath::Power(e_tau,2));
-    sigmaErr = TMath::Sqrt(TMath::Power(s*e_s/sigma,2) + TMath::Power(tau*e_tau/sigma,2));
-
-    res[0] = mean;
-    res[1] = sigma;
-    res[2] = meanErr;
-    res[3] = sigmaErr;
-  }
-}
-
-
-
-void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, double* res)
-{
-  // TF1 *gexp;
-  // TF1 *cb;
-
-  // preliminary gauss fit
-  TCanvas *cTemp  = new TCanvas("temp","temp");
-  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
-  // resctrict the fitting range of gauss function
-
-  gaussDummy->SetLineColor(kRed);
-  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
-  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
-  double f1min = histo->GetXaxis()->GetXmin();
-  double f1max = histo->GetXaxis()->GetXmax();
-  if(fitGaussMin < f1min)
-  {
-    fitGaussMin = f1min;
-  }
-  if(fitGaussMax > f1max)
-  {
-    fitGaussMax = f1max;
-  }
-  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
-  Int_t fitStatusGauss= rGauss;
-
-  //NB fit results converted to int gives the fit status:
-  // fitStatusGauss == 0 -> fit OK
-  // fitStatusGauss != 0 -> fit FAILED
-
-  double fitMin;
-  double fitMax;
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    fitMin = fitGaussMin;
-    fitMax = fitGaussMax;
-  }
-  else
-  {
-    // use fit values
-    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
-    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
-  }
-
-  // chech that they are not outside the limits defined by user
-  if(fitMin < f1min)
-  {
-    fitMin = f1min;
-  }
-  if(fitMax > f1max)
-  {
-    fitMax = f1max;
-  }
-
-  //fit with crystalball
-  TF1 *cb  = new TF1("cb","crystalball",f1min,f1max);
-  cb->SetLineColor(kBlue);
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    cb->SetParameters(histo->GetEntries(),histo->GetMean(),histo->GetRMS(),1,3);
-  }
-  else
-  {
-    // use fit values
-    cb->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  }
-  TFitResultPtr rCb = histo->Fit(cb,"QNS","",fitMin,fitMax);
-
-  //fit with gauss + exp
-  TF1* gexp  = new TF1("gexp","[0]/sqrt(2)*exp([2]^2/2/[3]^2-(x-[1])/[3])*(1-TMath::Erf(([1]-x+[2]^2/[3])/(sqrt(2*[2]^2))))",f1min,f1max);
-  gexp->SetLineColor(kGreen);
-  gexp->SetParName(0,"N");
-  gexp->SetParName(1,"Mean");
-  gexp->SetParName(2,"Sigma");
-  gexp->SetParName(3,"tau");
-  // f1->SetParameters(gaussDummy->GetParameter(0),gaussDummy->GetParameter(1),gaussDummy->GetParameter(2),1,3);
-  if(fitStatusGauss != 0) // gauss fit didn't work
-  {
-    // use the histogram values
-    gexp->SetParameter(0,histo->GetEntries());
-    gexp->SetParameter(1,histo->GetMean());
-    gexp->SetParameter(2,histo->GetRMS());
-    gexp->SetParameter(3,histo->GetRMS()); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  }
-  else
-  {
-    // use fit values
-    gexp->SetParameter(0,gaussDummy->GetParameter(0));
-    gexp->SetParameter(1,gaussDummy->GetParameter(1));
-    gexp->SetParameter(2,gaussDummy->GetParameter(2));
-    gexp->SetParameter(3,gaussDummy->GetParameter(2)); // ROOT really needs all parameters initialized, and a "good" guess for tau is the sigma of the previous fit...
-  }
-  TFitResultPtr rGexp = histo->Fit(gexp,"QNS","",fitMin,fitMax);
-
-  Int_t fitStatusCb = rCb;
-  Int_t fitStatusGexp = rGexp;
-
-  double chi2gexp;
-  double chi2cb;
-
-  if(fitStatusGexp == 0) // if Gexp worked
-  {
-    chi2gexp = rGexp->Chi2();
-  }
-  if(fitStatusCb == 0)// if cb worked
-  {
-    chi2cb   = rCb->Chi2();
-  }
-
-
-  //set function to measure ctr etc...
-  TF1 *f1;
-  // std::cout << histo->GetName() << std::endl;
-  // std::cout << fitStatusGexp << " "
-  //           << fitStatusCb << " "
-  //           << fitStatusGauss << " "
-  //           << std::endl;
-  if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss != 0)) // all fit didn't work, just set everything to 0
-  {
-    // std::cout << "None" << std::endl;
-    res[0] = 0;
-    res[1] = 0;
-    res[2] = 0;
-    res[3] = 0;
-  }
-  else
-  {
-    if((fitStatusGexp  != 0) && (fitStatusCb != 0) && (fitStatusGauss == 0)) // only gauss worked
-    {
-      // std::cout << "Gauss" << std::endl;
-      f1 = gaussDummy;
-      histo->Fit(f1,"Q","",fitGaussMin,fitGaussMax);
-      res[0] = f1->GetParameter(1);
-      res[1] = f1->GetParameter(2);
-      res[2] = f1->GetParError(1);
-      res[3] = f1->GetParError(2);
-      delete gexp;
-      delete cb;
-    }
-    else // one between gexp and cb worked
-    {
-      if((fitStatusGexp  != 0) && (fitStatusCb == 0)) // only cb worked
-      {
-        // std::cout << "cb" << std::endl;
-        f1 = cb;
-        histo->Fit(f1,"Q","",fitMin,fitMax);
-        delete gexp;
-
-      }
-      else if((fitStatusGexp  == 0) && (fitStatusCb != 0)) // only gexp worked
-      {
-        // std::cout << "gexp" << std::endl;
-        f1 = gexp;
-        histo->Fit(f1,"Q","",fitMin,fitMax);
-        delete cb;
-      }
-      else // both worked
-      {
-        if(chi2gexp > chi2cb)
-        {
-          // std::cout << "cb better than gexp" << std::endl;
-          f1 = cb;
-          histo->Fit(f1,"Q","",fitMin,fitMax);
-          delete gexp;
-        }
-        else
-        {
-          // std::cout << "gexp better than cb" << std::endl;
-          f1 = gexp;
-          histo->Fit(f1,"Q","",fitMin,fitMax);
-          delete cb;
-        }
-      }
-      // f1->SetLineColor(kRed);
-      res[0] = f1->GetParameter(1);
-      res[1] = f1->GetParameter(2);
-      res[2] = f1->GetParError(1);
-      res[3] = f1->GetParError(2);
-    }
-  }
-}
 
 
 
@@ -803,8 +703,8 @@ int main (int argc, char** argv)
   float neighCTRmin = config.read<float>("neighCTRmin",-1e-9); // min  of neighbour CTR plots - default = -1e-9
   float neighCTRmax = config.read<float>("neighCTRmax",10e-9); // max of neighbour CTR plots - default = 10e-9
 
-  bool lowStat = config.read<bool>("lowStat",0); // if low statistics, apply fits to slices - default 0 (false)
-  bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
+  bool lowStat = config.read<bool>("lowStat",1); // if low statistics, apply fits to slices - default 1 (false)
+  // bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -3686,22 +3586,22 @@ int main (int argc, char** argv)
 
                                 tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+wCut+noZerosCut);
 
-                                double fitPercMin = 5.0;
-                                double fitPercMax = 6.0;
+                                // float fitPercMin = 5.0;
+                                // float fitPercMax = 6.0;
                                 // int divisions = 10000;
-                                double res[4];
+                                float res[4];
                                 // std::cout << "debug 2" << std::endl;
 
                                 if(lowStat)
                                 {
-                                  if(gexp)
-                                  {
-                                    extractWithEMG(tempHisto,fitPercMin,fitPercMax,res);
-                                  }
-                                  else
-                                  {
-                                    extractCTR(tempHisto,fitPercMin,fitPercMax,res);
-                                  }
+                                  // if(gexp)
+                                  // {
+                                    fitWithEMG(tempHisto,res);
+                                  // }
+                                  // else
+                                  // {
+                                    // extractCTR(tempHisto,fitPercMin,fitPercMax,res);
+                                  // }
 
                                   if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
                                   {
@@ -3860,10 +3760,10 @@ int main (int argc, char** argv)
                               //   fitMax = f1max;
                               // }
 
-                              double fitPercMin = 5.0;
-                              double fitPercMax = 6.0;
+                              // double fitPercMin = 5.0;
+                              // double fitPercMax = 6.0;
                               // int divisions = 10000;
-                              double res[4];
+                              float res[4];
                               // std::cout << "debug 3" << std::endl;
 
 
@@ -3881,14 +3781,14 @@ int main (int argc, char** argv)
                               {
                                 if(lowStat)
                                 {
-                                  if(gexp)
-                                  {
-                                    extractWithEMG(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,res);
-                                  }
-                                  else
-                                  {
-                                    extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,res);
-                                  }
+                                  // if(gexp)
+                                  // {
+                                    fitWithEMG(spectrumDeltaTcryTneig,res);
+                                  // }
+                                  // else
+                                  // {
+                                  //   extractCTR(spectrumDeltaTcryTneig,fitPercMin,fitPercMax,res);
+                                  // }
 
                                   if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0)
                                   {
@@ -4094,21 +3994,21 @@ int main (int argc, char** argv)
                                   // crystalball->SetParameters(tempHisto->GetMaximum(),tempHisto->GetMean(),tempHisto->GetRMS(),1,3);
                                   // tempHisto->Fit(crystalball,"Q","",DeltaTimeMin,DeltaTimeMax);
 
-                                  double fitPercMin = 5.0;
-                                  double fitPercMax = 6.0;
+                                  // double fitPercMin = 5.0;
+                                  // double fitPercMax = 6.0;
                                   // int divisions = 10000;
-                                  double res[4];
+                                  float res[4];
 
                                   if(lowStat)
                                   {
-                                    if(gexp)
-                                    {
-                                      extractWithEMG(tempHisto,fitPercMin,fitPercMax,res);
-                                    }
-                                    else
-                                    {
-                                      extractCTR(tempHisto,fitPercMin,fitPercMax,res);
-                                    }
+                                    // if(gexp)
+                                    // {
+                                      fitWithEMG(tempHisto,res);
+                                    // }
+                                    // else
+                                    // {
+                                    //   extractCTR(tempHisto,fitPercMin,fitPercMax,res);
+                                    // }
 
                                     if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) //ignore point if fit didn't work
                                     {
@@ -4744,14 +4644,14 @@ int main (int argc, char** argv)
                         std::stringstream snamePoli;
                         snamePoli << "ProjectionY_" << namePoli ;
 
-                        double fitPercMin = 5.0;
-                        double fitPercMax = 6.0;
+                        // double fitPercMin = 5.0;
+                        // double fitPercMax = 6.0;
                         // int divisions = 10000;
-                        double resPoli[4];
+                        float resPoli[4];
                         TH1D *histoPoli = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(snamePoli.str().c_str());
                         // std::cout << "debug 1" << std::endl;
 
-                        extractWithEMG(histoPoli,fitPercMin,fitPercMax,resPoli);
+                        fitWithEMG(histoPoli,resPoli);
                         if(resPoli[0] == 0 && resPoli[1] == 0 && resPoli[2] == 0 && resPoli[3] == 0) // all fits failed, don't accept the channel
                         {
 
@@ -4791,11 +4691,11 @@ int main (int argc, char** argv)
                           // double fitPercMin = 5.0;
                           // double fitPercMax = 6.0;
                           // int divisions = 10000;
-                          double res[4];
+                          float res[4];
                           TH1D *histo = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(sname.str().c_str(),firstBin,lastBin);
                           // std::cout << "debug 1" << std::endl;
 
-                          extractWithEMG(histo,fitPercMin,fitPercMax,res);
+                          fitWithEMG(histo,res);
                           if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
                           {
 
