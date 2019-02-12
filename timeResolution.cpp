@@ -740,8 +740,8 @@ int main (int argc, char** argv)
     // double unbinnedCentralCTR;
     // double unbinnedAllCTR;
     // double unbinnedPoliCTR;
-    double ret[2];
-    double fitRes[3];
+    float ret[4];
+    float fitRes[3];
     Float_t lightCentral;
     Float_t lightAll;
 
@@ -776,7 +776,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractWithEMG(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -892,7 +892,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractWithEMG(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -1009,7 +1009,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractWithEMG(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
@@ -1122,7 +1122,7 @@ int main (int argc, char** argv)
       {
         if(func ==1)
         {
-          extractWithEMG(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
         else
