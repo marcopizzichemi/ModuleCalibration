@@ -42,25 +42,38 @@ Double_t emginv_function(Double_t *x, Double_t *par)
 
 // forward declarations
 template <class T>
-void fitWithEMG(T* histo,float* res); //just fitting, ignoring fitres and tagfwhm. this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
+void fitWithEMG(T* histo,Double_t* res); //just fitting, ignoring fitres and tagfwhm. this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
 template <class T>
-void extractCTRWithEMG_withRef(T* histo,int divs, float tagFwhm,float* res,float* fitRes);//fit and directly calculate the fwhm on the function
+void extractCTRWithEMG_withRef(T* histo,int divs, Double_t tagFwhm,Double_t* res,Double_t* fitRes);//fit and directly calculate the fwhm on the function
 template <class T>
-void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams); // actual EMG fitting routine
+void fitWithEMG_core(T* histo,Double_t &fitMin,Double_t &fitMax,Double_t &f1min,Double_t &f1max,int &fType,double *fParams); // actual EMG fitting routine
 
 // routines
 template <class T>
-void fitWithEMG(T* histo,float* res)
+void fitWithEMG(T* histo,Double_t* res)
 {
   //just fitting, ignoring fitres and tagfwhm
   // this is used in ModuleCalibration to fit the slices and find mean. relevant values are in *res
-  float fitMin = 0;
-  float fitMax = 0;
-  float f1min = 0;
-  float f1max = 0;
+  Double_t fitMin = 0;
+  Double_t fitMax = 0;
+  Double_t f1min = 0;
+  Double_t f1max = 0;
   int fType;
   double fParams[4];
   fitWithEMG_core(histo,fitMin,fitMax,f1min,f1max,fType,fParams);
+
+  // std::cout << fType  << " "
+  //           << fitMin << " "
+  //           << fitMax << " "
+  //           << f1min  << " "
+  //           << f1max  << "\n";
+  // std::cout <g< "Post: " << histo->GetListOfFunctions()->GetEntries() << std::endl;
+  for(int ifunc = 0; ifunc < histo->GetListOfFunctions()->GetEntries(); ifunc++)
+  {
+    // std::cout << histo->GetListOfFunctions()->At(ifunc)->GetName() << std::endl;
+    // TF1* remFunc = (TF1*) histo->GetListOfFunctions()->At(ifunc);
+    histo->GetListOfFunctions()->Remove(histo->GetFunction(histo->GetListOfFunctions()->At(ifunc)->GetName()));
+  }
 
   if(fType == 0)
   {
@@ -72,132 +85,301 @@ void fitWithEMG(T* histo,float* res)
   else
   {
     TF1 *fitFunction;
-    if(fType == 1)
+    if(fType == 1)  // gexp fit worked
     {
-      fitFunction = new TF1("gexp",emg_function,f1min,f1max,4);
-    }
-    else
-    {
-      fitFunction = new TF1("gexp_inv",emginv_function,f1min,f1max,4);
-    }
-    fitFunction->SetParameter(0,fParams[0]);
-    fitFunction->SetParameter(1,fParams[1]);
-    fitFunction->SetParameter(2,fParams[2]);
-    fitFunction->SetParameter(3,fParams[3]);
+      fitFunction = new TF1("gexp_final",emg_function,f1min,f1max,4);
+      fitFunction->SetLineColor(kGreen);
+      fitFunction->SetParName(0,"N");
+      fitFunction->SetParName(1,"mu");
+      fitFunction->SetParName(2,"Sigma");
+      fitFunction->SetParName(3,"tau");
+      fitFunction->SetParameter(0,fParams[0]);
+      fitFunction->SetParameter(1,fParams[1]);
+      fitFunction->SetParameter(2,fParams[2]);
+      fitFunction->SetParameter(3,fParams[3]);
 
-    histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
-    // write variables or it's gonna be a mess
-    float mu = fitFunction->GetParameter(1);
-    float e_mu = fitFunction->GetParError(1);
-    float s = fitFunction->GetParameter(2);
-    float e_s = fitFunction->GetParError(2);
-    float tau = fitFunction->GetParameter(3);
-    float e_tau = fitFunction->GetParError(3);
+      histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+      // write variables or it's gonna be a mess
+      Double_t mu = fitFunction->GetParameter(1);
+      Double_t e_mu = fitFunction->GetParError(1);
+      Double_t s = fitFunction->GetParameter(2);
+      Double_t e_s = fitFunction->GetParError(2);
+      Double_t tau = fitFunction->GetParameter(3);
+      Double_t e_tau = fitFunction->GetParError(3);
 
-    float mean;
-    if(fType == 1)
-    {
+      Double_t mean;
       mean = mu + tau;
+
+      Double_t sigma = TMath::Sqrt(TMath::Power(s,2) + TMath::Power(tau,2));
+      Double_t meanErr = TMath::Sqrt(TMath::Power(e_mu,2) + TMath::Power(e_tau,2));
+      Double_t sigmaErr = TMath::Sqrt( ( (TMath::Power(s,2))/(TMath::Power(s,2) + TMath::Power(tau,2))  )*TMath::Power(e_s,2) + ((TMath::Power(tau,2))/(TMath::Power(s,2) + TMath::Power(tau,2)))*TMath::Power(e_tau,2));
+
+      res[0] = mean;
+      res[1] = sigma;
+      res[2] = meanErr;
+      res[3] = sigmaErr;
     }
     else
     {
-      mean = -(mu + tau);
-    }
-    float sigma = TMath::Sqrt(TMath::Power(s,2) + TMath::Power(tau,2));
-    float meanErr = TMath::Sqrt(TMath::Power(e_mu,2) + TMath::Power(e_tau,2));
-    float sigmaErr = TMath::Sqrt( ( (TMath::Power(s,2))/(TMath::Power(s,2) + TMath::Power(tau,2))  )*TMath::Power(e_s,2) + ((TMath::Power(tau,2))/(TMath::Power(s,2) + TMath::Power(tau,2)))*TMath::Power(e_tau,2));
+      if(fType == 2)// gexp_inv fit worked
+      {
+        fitFunction = new TF1("gexp_inv_final",emginv_function,f1min,f1max,4);
+        fitFunction->SetLineColor(kBlue);
 
-    res[0] = mean;
-    res[1] = sigma;
-    res[2] = meanErr;
-    res[3] = sigmaErr;
+        fitFunction->SetParName(0,"N");
+        fitFunction->SetParName(1,"mu");
+        fitFunction->SetParName(2,"Sigma");
+        fitFunction->SetParName(3,"tau");
+        fitFunction->SetParameter(0,fParams[0]);
+        fitFunction->SetParameter(1,fParams[1]);
+        fitFunction->SetParameter(2,fParams[2]);
+        fitFunction->SetParameter(3,fParams[3]);
+
+        histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+        // write variables or it's gonna be a mess
+        Double_t mu = fitFunction->GetParameter(1);
+        Double_t e_mu = fitFunction->GetParError(1);
+        Double_t s = fitFunction->GetParameter(2);
+        Double_t e_s = fitFunction->GetParError(2);
+        Double_t tau = fitFunction->GetParameter(3);
+        Double_t e_tau = fitFunction->GetParError(3);
+
+        Double_t mean;
+        mean = -(mu + tau);
+
+        Double_t sigma = TMath::Sqrt(TMath::Power(s,2) + TMath::Power(tau,2));
+        Double_t meanErr = TMath::Sqrt(TMath::Power(e_mu,2) + TMath::Power(e_tau,2));
+        Double_t sigmaErr = TMath::Sqrt( ( (TMath::Power(s,2))/(TMath::Power(s,2) + TMath::Power(tau,2))  )*TMath::Power(e_s,2) + ((TMath::Power(tau,2))/(TMath::Power(s,2) + TMath::Power(tau,2)))*TMath::Power(e_tau,2));
+
+        res[0] = mean;
+        res[1] = sigma;
+        res[2] = meanErr;
+        res[3] = sigmaErr;
+      }
+      else
+      {
+        if(fType == 3)// gauss fit worked
+        {
+          fitFunction = new TF1("gauss_final","gaus",f1min,f1max);
+          fitFunction->SetLineColor(kRed);
+          fitFunction->SetParameter(0,fParams[0]);
+          fitFunction->SetParameter(1,fParams[1]);
+          fitFunction->SetParameter(2,fParams[2]);
+          histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+
+          res[0] = fitFunction->GetParameter(1);
+          res[1] = fitFunction->GetParameter(2);
+          res[2] = fitFunction->GetParError(1);
+          res[3] = fitFunction->GetParError(2);
+        }
+        else
+        {
+          std::cout << "ERROR: Invalid function type!!!" << std::endl;
+        }
+      }
+    }
   }
+  // std::cout << "Post: " << histo->GetListOfFunctions()->GetEntries() << std::endl;
+  // for(int ifunc = 0; ifunc < histo->GetListOfFunctions()->GetEntries(); ifunc++)
+  // {
+  //   std::cout << "Post: "<< histo->GetListOfFunctions()->At(ifunc)->GetName() << std::endl;
+  // }
 }
 
 //fit and directly calculate the fwhm on the function
 template <class T>
-void extractCTRWithEMG_withRef(T* histo,int divs, float tagFwhm,float* res,float* fitRes)
+void extractCTRWithEMG_withRef(T* histo,int divs, Double_t tagFwhm,Double_t* res,Double_t* fitRes)
 {
-  float fitMin = 0;
-  float fitMax = 0;
-  float f1min = 0;
-  float f1max = 0;
+  Double_t fitMin = 0;
+  Double_t fitMax = 0;
+  Double_t f1min = 0;
+  Double_t f1max = 0;
   double fParams[4];
   int fType;
   fitWithEMG_core(histo,fitMin,fitMax,f1min,f1max,fType,fParams);
+
+
+
   fitRes[0] = 0;
   fitRes[1] = 0;
   fitRes[2] = 0;
 
   TF1 *fitFunction;
-  if(fType == 0)
+
+  if(fType == 3)
   {
-    fitFunction = NULL;
-    res[0] = 0;
-    res[1] = 0;
-    res[2] = 0;
-    res[3] = 0;
+    if(fType == 3)// gauss fit worked
+    {
+      fitFunction = new TF1("gauss_final","gaus",f1min,f1max);
+      fitFunction->SetLineColor(kRed);
+      fitFunction->SetParameter(0,fParams[0]);
+      fitFunction->SetParameter(1,fParams[1]);
+      fitFunction->SetParameter(2,fParams[2]);
+      histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+
+      res[0] = fitFunction->GetParameter(1);
+      res[1] = fitFunction->GetParameter(2);
+      res[2] = fitFunction->GetParError(1);
+      res[3] = fitFunction->GetParError(2);
+
+      res[0] = sqrt(2)*sqrt(pow((fitFunction->GetParameter(2)*2.355),2)-pow(tagFwhm,2));
+      res[1] = sqrt(2)*sqrt(pow((fitFunction->GetParameter(2)*4.29 ),2)-pow((tagFwhm/2.355)*4.29,2));
+      res[2] = 0;
+      res[3] = 0;
+
+      fitRes[0] = fitFunction->GetChisquare();
+      fitRes[1] = fitFunction->GetNDF();
+      fitRes[2] = fitFunction->GetProb();
+    }
+
   }
   else
   {
-    if(fType == 1)
+    if(fType == 0)
     {
-      fitFunction = new TF1("gexp",emg_function,f1min,f1max,4);
+      fitFunction = NULL;
+      res[0] = 0;
+      res[1] = 0;
+      res[2] = 0;
+      res[3] = 0;
     }
     else
     {
-      fitFunction = new TF1("gexp_inv",emginv_function,f1min,f1max,4);
-    }
-    fitFunction->SetParameter(0,fParams[0]);
-    fitFunction->SetParameter(1,fParams[1]);
-    fitFunction->SetParameter(2,fParams[2]);
-    fitFunction->SetParameter(3,fParams[3]);
+      if(fType == 1)
+      {
+        fitFunction = new TF1("gexp",emg_function,f1min,f1max,4);
+        fitFunction->SetLineColor(kGreen);
+      }
+      else
+      {
+        fitFunction = new TF1("gexp_inv",emginv_function,f1min,f1max,4);
+        fitFunction->SetLineColor(kBlue);
+      }
+      fitFunction->SetParName(0,"N");
+      fitFunction->SetParName(1,"mu");
+      fitFunction->SetParName(2,"Sigma");
+      fitFunction->SetParName(3,"tau");
+      fitFunction->SetParameter(0,fParams[0]);
+      fitFunction->SetParameter(1,fParams[1]);
+      fitFunction->SetParameter(2,fParams[2]);
+      fitFunction->SetParameter(3,fParams[3]);
 
-    histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
-    float min,max,min10,max10;
-    float step = (f1max-f1min)/divs;
-    float funcMax = fitFunction->GetMaximum(fitMin,fitMax);
-    for(int i = 0 ; i < divs ; i++)
-    {
-      if( (fitFunction->Eval(f1min + i*step) < funcMax/2.0) && (fitFunction->Eval(f1min + (i+1)*step) > funcMax/2.0) )
+      histo->Fit(fitFunction,"Q","",fitMin,fitMax); // re-fit just to store only the good one
+      Double_t min,max,min10,max10;
+      Double_t step = (f1max-f1min)/divs;
+      Double_t funcMax = fitFunction->GetMaximum(fitMin,fitMax);
+      for(int i = 0 ; i < divs ; i++)
       {
-        min = f1min + (i+0.5)*step;
+        if( (fitFunction->Eval(f1min + i*step) < funcMax/2.0) && (fitFunction->Eval(f1min + (i+1)*step) > funcMax/2.0) )
+        {
+          min = f1min + (i+0.5)*step;
+        }
+        if( (fitFunction->Eval(f1min + i*step) > funcMax/2.0) && (fitFunction->Eval(f1min + (i+1)*step) < funcMax/2.0) )
+        {
+          max = f1min + (i+0.5)*step;
+        }
+        if( (fitFunction->Eval(f1min + i*step) < funcMax/10.0) && (fitFunction->Eval(f1min + (i+1)*step) > funcMax/10.0) )
+        {
+          min10 = f1min + (i+0.5)*step;
+        }
+        if( (fitFunction->Eval(f1min + i*step) > funcMax/10.0) && (fitFunction->Eval(f1min + (i+1)*step) < funcMax/10.0) )
+        {
+          max10 = f1min + (i+0.5)*step;
+        }
       }
-      if( (fitFunction->Eval(f1min + i*step) > funcMax/2.0) && (fitFunction->Eval(f1min + (i+1)*step) < funcMax/2.0) )
-      {
-        max = f1min + (i+0.5)*step;
-      }
-      if( (fitFunction->Eval(f1min + i*step) < funcMax/10.0) && (fitFunction->Eval(f1min + (i+1)*step) > funcMax/10.0) )
-      {
-        min10 = f1min + (i+0.5)*step;
-      }
-      if( (fitFunction->Eval(f1min + i*step) > funcMax/10.0) && (fitFunction->Eval(f1min + (i+1)*step) < funcMax/10.0) )
-      {
-        max10 = f1min + (i+0.5)*step;
-      }
-    }
-    res[0] = sqrt(2)*sqrt(pow((max-min),2)-pow(tagFwhm,2));
-    res[1] = sqrt(2)*sqrt(pow((max10-min10),2)-pow((tagFwhm/2.355)*4.29,2));
-    res[2] = 0;
-    res[3] = 0;
+      res[0] = sqrt(2)*sqrt(pow((max-min),2)-pow(tagFwhm,2));
+      res[1] = sqrt(2)*sqrt(pow((max10-min10),2)-pow((tagFwhm/2.355)*4.29,2));
+      res[2] = 0;
+      res[3] = 0;
 
-    fitRes[0] = fitFunction->GetChisquare();
-    fitRes[1] = fitFunction->GetNDF();
-    fitRes[2] = fitFunction->GetProb();
+      fitRes[0] = fitFunction->GetChisquare();
+      fitRes[1] = fitFunction->GetNDF();
+      fitRes[2] = fitFunction->GetProb();
+    }
   }
+
+
+
 }
 //---------------------------------------------------//
 
 
 template <class T>
-void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1max,int &fType,double *fParams) // actual EMG fitting routine
+void fitWithEMG_core(T* histo,Double_t &fitMin,Double_t &fitMax,Double_t &f1min,Double_t &f1max,int &fType,double *fParams) // actual EMG fitting routine
 {
   // actual EMG fitting routine
   TCanvas *cTemp  = new TCanvas("temp","temp");
+  // preliminary gauss fit
+  TF1 *gaussDummy = new TF1("gaussDummy","gaus");
+  gaussDummy->SetLineColor(kRed);
+  double fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+  double fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
   f1min = histo->GetXaxis()->GetXmin();
   f1max = histo->GetXaxis()->GetXmax();
-  fitMin = f1min;
-  fitMax = f1max;
+
+  // std::cout << "fitGaussMin " << fitGaussMin << "\n"
+  //           << "fitGaussMax " << fitGaussMax << "\n"
+  //           << "f1min       " << f1min << "\n"
+  //           << "f1max       " << f1max << "\n";
+  // std::cout << std::endl;
+  // fitMin = f1min;
+  // fitMax = f1max;
+
+  if(fitGaussMin < f1min)
+  {
+    fitGaussMin = f1min;
+  }
+  if(fitGaussMax > f1max)
+  {
+    fitGaussMax = f1max;
+  }
+  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+  Int_t fitStatusGauss= rGauss;
+
+  // std::cout << "fitGaussMin " << fitGaussMin << "\n"
+  //           << "fitGaussMax " << fitGaussMax << "\n";
+  // std::cout << std::endl;
+
+  //NB fit results converted to int gives the fit status:
+  // fitStatusGauss == 0 -> fit OK
+  // fitStatusGauss != 0 -> fit FAILED
+
+  // double fitMin;
+  // double fitMax;
+  Double_t fitPercMin = 6.0;
+  Double_t fitPercMax = 5.0;
+  if(fitStatusGauss != 0) // gauss fit didn't work
+  {
+    // use the histogram values
+    fitMin = fitGaussMin;
+    fitMax = fitGaussMax;
+  }
+  else
+  {
+    // use fit values
+    fitMin = gaussDummy->GetParameter(1) - fitPercMin*(gaussDummy->GetParameter(2));
+    fitMax = gaussDummy->GetParameter(1) + fitPercMax*(gaussDummy->GetParameter(2));
+  }
+
+  // chech that they are not outside the limits defined by user
+  if(fitMin < f1min)
+  {
+    fitMin = f1min;
+  }
+  if(fitMax > f1max)
+  {
+    fitMax = f1max;
+  }
+  // std::cout << "fitMin " << fitMin << "\n"
+  //           << "fitMax " << fitMax << "\n"
+  //           << "f1min  " << f1min  << "\n"
+  //           << "f1max  " << f1max  << "\n";
+  // std::cout << std::endl;
+
+  //FIXME define function only within fit range
+  f1min = fitMin;
+  f1max = fitMax;
+
   //define the standard gauss plus exp and the same but with inverted sign for x
   // TF1* gexp      = new TF1("gexp",gexp_string,f1min,f1max); //paper-like
   TF1* gexp      = new TF1("gexp",emg_function,f1min,f1max,4);
@@ -227,8 +409,10 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
   //try both, see what fits better
   Int_t fitStatusGexp = r_gexp;
   Int_t fitStatusGexp_inv = r_gexp_inv;
-  float chi2gexp = 0;
-  float chi2gexp_inv = 0;
+  Double_t chi2gexp = 0;
+  Double_t chi2gexp_inv = 0;
+
+
 
   if(fitStatusGexp == 0) // if gexp worked
   {
@@ -246,6 +430,12 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
     fParams[1] = gexp->GetParameter(1);
     fParams[2] = gexp->GetParameter(2);
     fParams[3] = gexp->GetParameter(3);
+    histo->GetListOfFunctions()->Remove(gaussDummy);
+    histo->GetListOfFunctions()->Remove(gexp);
+    histo->GetListOfFunctions()->Remove(gexp_inv);
+    delete gaussDummy;
+    delete gexp_inv;
+    delete gexp;
   }
   else
   {
@@ -256,6 +446,12 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
       fParams[1] = gexp_inv->GetParameter(1);
       fParams[2] = gexp_inv->GetParameter(2);
       fParams[3] = gexp_inv->GetParameter(3);
+      histo->GetListOfFunctions()->Remove(histo->GetFunction("gaussDummy"));
+      histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp"));
+      histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp_inv"));
+      delete gaussDummy;
+      delete gexp_inv;
+      delete gexp;
     }
     else // both worked or nothing worked
     {
@@ -268,6 +464,12 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
           fParams[1] = gexp_inv->GetParameter(1);
           fParams[2] = gexp_inv->GetParameter(2);
           fParams[3] = gexp_inv->GetParameter(3);
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gaussDummy"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp_inv"));
+          delete gaussDummy;
+          delete gexp_inv;
+          delete gexp;
         }
         else // gexp better than gexp_inv
         {
@@ -276,15 +478,43 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
           fParams[1] = gexp->GetParameter(1);
           fParams[2] = gexp->GetParameter(2);
           fParams[3] = gexp->GetParameter(3);
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gaussDummy"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp_inv"));
+          delete gaussDummy;
+          delete gexp_inv;
+          delete gexp;
           // fitFunction = gexp;
         }
       }
-      else  // nothing worked
+      else  // both gexp and gexp_inv did not work
       {
-        // delete all func
-        fType = 0;
-        delete gexp_inv;
-        delete gexp;
+        if(fitStatusGauss == 0) // at least gauss fit converged
+        {
+          fType = 3; // 3 = gaussian
+          fParams[0] = gaussDummy->GetParameter(0);
+          fParams[1] = gaussDummy->GetParameter(1);
+          fParams[2] = gaussDummy->GetParameter(2);
+          fParams[3] = 0;
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gaussDummy"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp_inv"));
+          delete gaussDummy;
+          delete gexp_inv;
+          delete gexp;
+        }
+        else
+        {
+          // delete all func
+          fType = 0;
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gaussDummy"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp"));
+          histo->GetListOfFunctions()->Remove(histo->GetFunction("gexp_inv"));
+          delete gaussDummy;
+          delete gexp_inv;
+          delete gexp;
+        }
+
       }
     }
   }
@@ -294,7 +524,7 @@ void fitWithEMG_core(T* histo,float &fitMin,float &fitMax,float &f1min,float &f1
 
 
 
-void extractCTR(TH1F* histo,float fitPercMin,float fitPercMax, int divs, float tagFwhm, float* res, float* fitRes)
+void extractCTR(TH1F* histo,Double_t fitPercMin,Double_t fitPercMax, int divs, Double_t tagFwhm, Double_t* res, Double_t* fitRes)
 {
 
   // preliminary gauss fit
@@ -303,10 +533,10 @@ void extractCTR(TH1F* histo,float fitPercMin,float fitPercMax, int divs, float t
   // resctrict the fitting range of gauss function
 
   gaussDummy->SetLineColor(kRed);
-  float fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
-  float fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
-  float f1min = histo->GetXaxis()->GetXmin();
-  float f1max = histo->GetXaxis()->GetXmax();
+  Double_t fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+  Double_t fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
+  Double_t f1min = histo->GetXaxis()->GetXmin();
+  Double_t f1max = histo->GetXaxis()->GetXmax();
   if(fitGaussMin < f1min)
   {
     fitGaussMin = f1min;
@@ -322,8 +552,8 @@ void extractCTR(TH1F* histo,float fitPercMin,float fitPercMax, int divs, float t
   // fitStatusGauss == 0 -> fit OK
   // fitStatusGauss != 0 -> fit FAILED
 
-  float fitMin;
-  float fitMax;
+  Double_t fitMin;
+  Double_t fitMax;
   if(fitStatusGauss != 0) // gauss fit didn't work
   {
     // use the histogram values
@@ -391,8 +621,8 @@ void extractCTR(TH1F* histo,float fitPercMin,float fitPercMax, int divs, float t
   Int_t fitStatusCb = rCb;
   Int_t fitStatusGexp = rGexp;
 
-  float chi2gexp;
-  float chi2cb;
+  Double_t chi2gexp;
+  Double_t chi2cb;
 
   if(fitStatusGexp == 0) // if Gexp worked
   {
@@ -467,10 +697,10 @@ void extractCTR(TH1F* histo,float fitPercMin,float fitPercMax, int divs, float t
         }
       }
 
-      float min,max,min10,max10;
+      Double_t min,max,min10,max10;
       // int divs = 3000;
-      float step = (f1max-f1min)/divs;
-      float funcMax = f1->GetMaximum(fitMin,fitMax);
+      Double_t step = (f1max-f1min)/divs;
+      Double_t funcMax = f1->GetMaximum(fitMin,fitMax);
       for(int i = 0 ; i < divs ; i++)
       {
         if( (f1->Eval(f1min + i*step) < funcMax/2.0) && (f1->Eval(f1min + (i+1)*step) > funcMax/2.0) )
@@ -542,7 +772,7 @@ float FindSmallestInterval(float& mean,
 
 /*** find effective sigma ***/
 void FindSmallestInterval(float* retValues, TH1F* histo, const float&
-fraction, const bool& verbosity, float tagFwhm)
+fraction, const bool& verbosity, Float_t tagFwhm)
 {
   float ret[4];
    float integralMax = fraction * histo->Integral();

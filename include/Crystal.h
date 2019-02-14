@@ -42,7 +42,7 @@ private:
   TH1F*                investigatedSpectrum;
   TH1F*                doiResWithCalibration;
   TH1F*                CTRcentralCorrection;
-  TH1F*                DeltaTimeWRTTagging;
+  TH1D*                DeltaTimeWRTTagging;
   TH1F*                LScentralSpectrum;
   TH2F*                CTRvsTimeSpectrum;
   // TH1F*                LSSpectrum;
@@ -128,7 +128,12 @@ private:
   TTreeFormula* FormulaGeoCut;
   TTreeFormula* FormulaEnergyCut;
 
-  struct multiSpectrum_t
+  struct multiSpectrumD_t
+  {
+    int canvasPosition;
+    TH1D* spectrum;
+  };
+  struct multiSpectrumF_t
   {
     int canvasPosition;
     TH1F* spectrum;
@@ -195,9 +200,9 @@ private:
 };
 
 
-  std::vector<multiSpectrum_t>   deltaTcryTneig;
-  std::vector<multiSpectrum_t>   neighCTR;
-  std::vector<multiSpectrum_t>   LSSpectra;
+  std::vector<multiSpectrumD_t>   deltaTcryTneig;
+  std::vector<multiSpectrumD_t>   neighCTR;
+  std::vector<multiSpectrumF_t>   LSSpectra;
   std::vector<multiScatter_t>   deltaT2vsW;
   std::vector<multiScatter_t>   neighCTRvsW;
   std::vector<multiScatter_t>   deltaT2vsCH;
@@ -211,8 +216,8 @@ private:
   std::vector<multiGraphAligned_t>  ctr_aligned_rms_graph;
 
   std::vector<TH2F*> TvsQHistos;
-  std::vector<TH1F*> DeltaTHistos;
-  std::vector<TH1F*> DelayHistos;
+  std::vector<TH1D*> DeltaTHistos;
+  std::vector<TH1D*> DelayHistos;
   std::vector<TH1D*> alignedSlice;
 
 public:
@@ -335,25 +340,25 @@ public:
 
 
   std::vector<TF1*>    GetSaturationFits(){return saturationFits;};
-  std::vector<multiSpectrum_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
+  std::vector<multiSpectrumD_t>             GetDeltaTcryTneig(){return deltaTcryTneig;};
   std::vector<multiScatter_t>              GetDeltaT2vsW(){return deltaT2vsW;};
-  std::vector<multiSpectrum_t>             GetNeighCTR(){return neighCTR;};
+  std::vector<multiSpectrumD_t>             GetNeighCTR(){return neighCTR;};
   std::vector<multiScatter_t>              GetNeighCTRvsW(){return neighCTRvsW;};
   std::vector<multiScatter_t>              GetDeltaT2vsCH(){return deltaT2vsCH;};
   std::vector<multiDeltaSlice_t>           GetDeltaSlice(){return slicesDelta;};
   std::vector<multiGraphDelayW_t>          GetGraphDelayW(){return graphDelayW;};
   std::vector<multiGraphDelayRMS_t>        GetGraphDelayRMS(){return graphDelayRMS;};
   std::vector<TH2F*>                       GetTvsQHistos(){return TvsQHistos;};
-  std::vector<TH1F*>                       GetDeltaTHistos(){return DeltaTHistos;};
-  std::vector<TH1F*>                       GetDelayHistos(){return DelayHistos;};
-  std::vector<multiSpectrum_t>             GetLSSpectra(){return LSSpectra;};
+  std::vector<TH1D*>                       GetDeltaTHistos(){return DeltaTHistos;};
+  std::vector<TH1D*>                       GetDelayHistos(){return DelayHistos;};
+  std::vector<multiSpectrumF_t>             GetLSSpectra(){return LSSpectra;};
   std::vector<multiAlignedScatter_t>       GetAlignedScatter(){return alignedScatter;};
   std::vector<multiGraphAligned_t>         GetAlignedGraph(){return ctr_aligned_graph;};
   std::vector<multiGraphAligned_t>         GetAlignedGraphRMS(){return ctr_aligned_rms_graph;};
 
-  TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
+  TH1D*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
 
-  void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};
+  void                 SetDeltaTimeWRTTagging(TH1D* aHisto)       {DeltaTimeWRTTagging = aHisto;};
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
@@ -430,8 +435,8 @@ public:
   void                 Analyze();
   void                 SetGraphDeltaW(TGraphErrors* aGraph){graphDeltaW = aGraph;};
   void                 SetGraphDeltaRMS(TGraphErrors* aGraph){graphDeltaRMS = aGraph;};
-  void                 AddDeltaTHistos(TH1F* aHisto){DeltaTHistos.push_back(aHisto);};
-  void                 AddDelayTHistos(TH1F* aHisto){DelayHistos.push_back(aHisto);};
+  void                 AddDeltaTHistos(TH1D* aHisto){DeltaTHistos.push_back(aHisto);};
+  void                 AddDelayTHistos(TH1D* aHisto){DelayHistos.push_back(aHisto);};
   void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
@@ -488,17 +493,17 @@ public:
   };
 
 
-  void                 AddDeltaTcryTneig(TH1F* aHisto,int aPos)
+  void                 AddDeltaTcryTneig(TH1D* aHisto,int aPos)
   {
-    multiSpectrum_t tempSpectrum;
+    multiSpectrumD_t tempSpectrum;
     tempSpectrum.canvasPosition = aPos;
     tempSpectrum.spectrum = aHisto;
     deltaTcryTneig.push_back(tempSpectrum);
   };
 
-  void                 AddNeighCTR(TH1F* aHisto,int aPos)
+  void                 AddNeighCTR(TH1D* aHisto,int aPos)
   {
-    multiSpectrum_t tempSpectrum;
+    multiSpectrumD_t tempSpectrum;
     tempSpectrum.canvasPosition = aPos;
     tempSpectrum.spectrum = aHisto;
     neighCTR.push_back(tempSpectrum);
@@ -559,7 +564,7 @@ public:
 
   void AddLSSpectrum(TH1F* aHisto,int aPos)
   {
-    multiSpectrum_t tempSpectrum;
+    multiSpectrumF_t tempSpectrum;
     tempSpectrum.canvasPosition = aPos;
     tempSpectrum.spectrum = aHisto;
     LSSpectra.push_back(tempSpectrum);

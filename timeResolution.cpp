@@ -421,8 +421,8 @@ int main (int argc, char** argv)
       sname << "No correction - Crystal " << crystal[iCry].number;
       crystal[iCry].simpleCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
       sname.str("");
-      sname << "Polished correction - Crystal " << crystal[iCry].number;
-      crystal[iCry].poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
+      // sname << "Polished correction - Crystal " << crystal[iCry].number;
+      // crystal[iCry].poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
     }
   }
 
@@ -579,84 +579,84 @@ int main (int argc, char** argv)
                 }
               }
 
-              if(crystal[iCry].polishedCorrection) //FIXME bugged now..
-              {
-                //central time stamp
-                // std::cout << "----------------" << std::endl;
-
-                float meanTimeStamp = 0.0;
-                float sumWeight = 0.0;
-                // std::cout << "crystal[iCry].fwhmForPolishedCorrection[0] = " << crystal[iCry].fwhmForPolishedCorrection[0]<< std::endl;
-
-                bool noZeroes = true;
-                if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0)
-                {
-                  noZeroes = false;
-                }
-                for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
-                {
-                  int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  if(timeStamp[timingChannel] == 0)
-                  {
-                    noZeroes = false;
-                  }
-                }
-                for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
-                {
-                  int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  float delay = 0;
-                  if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
-                  {
-                    delay = 0;
-                  }
-                  else
-                  {
-                    delay = crystal[iCry].polished_correction[iDet].mean;
-                  }
-                  float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                  if(correctedElement <=  histoMin || correctedElement >= histoMax )
-                  {
-                    noZeroes = false;
-                  }
-                }
-
-                if(noZeroes)
-                {
-                  // std::cout << "in " << crystal[iCry].polished_correction.size() <<  std::endl;
-                  for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
-                  {
-                    // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
-                    // std::cout << iPoli <<" ";
-                    float delay = 0;
-                    float weight = 0.0;
-                    if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
-                    {
-                      delay = 0;
-                    }
-                    else
-                    {
-                      delay = crystal[iCry].polished_correction[iPoli].mean;
-                    }
-                    float rms = crystal[iCry].polished_correction[iPoli].rms;
-                    weight = pow(rms,-2);
-                    sumWeight += weight;
-                    float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                    meanTimeStamp += weight * correctedTimepstamp;
-
-                    // std::cout << rms << "\t"
-                    //           << weight << "\t"
-                    //           << sumWeight << "\t"
-                    //           << correctedTimepstamp << "\t"
-                    //           << meanTimeStamp << "\t"
-                    //           << std::endl;
-                    // std::cout << std::flush;
-                  }
-                  meanTimeStamp = meanTimeStamp/sumWeight;
-                  double poliCorrCTR = meanTimeStamp;
-                  crystal[iCry].poliCorrCTR->Fill(poliCorrCTR);
-                  // crystal[iCry].vPoli.push_back(poliCorrCTR);
-                }
-              }
+              // if(crystal[iCry].polishedCorrection) //FIXME bugged now..
+              // {
+              //   //central time stamp
+              //   // std::cout << "----------------" << std::endl;
+              //
+              //   float meanTimeStamp = 0.0;
+              //   float sumWeight = 0.0;
+              //   // std::cout << "crystal[iCry].fwhmForPolishedCorrection[0] = " << crystal[iCry].fwhmForPolishedCorrection[0]<< std::endl;
+              //
+              //   bool noZeroes = true;
+              //   if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0)
+              //   {
+              //     noZeroes = false;
+              //   }
+              //   for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+              //   {
+              //     int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
+              //     if(timeStamp[timingChannel] == 0)
+              //     {
+              //       noZeroes = false;
+              //     }
+              //   }
+              //   for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+              //   {
+              //     int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
+              //     float delay = 0;
+              //     if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
+              //     {
+              //       delay = 0;
+              //     }
+              //     else
+              //     {
+              //       delay = crystal[iCry].polished_correction[iDet].mean;
+              //     }
+              //     float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+              //     if(correctedElement <=  histoMin || correctedElement >= histoMax )
+              //     {
+              //       noZeroes = false;
+              //     }
+              //   }
+              //
+              //   if(noZeroes)
+              //   {
+              //     // std::cout << "in " << crystal[iCry].polished_correction.size() <<  std::endl;
+              //     for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
+              //     {
+              //       // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
+              //       // std::cout << iPoli <<" ";
+              //       float delay = 0;
+              //       float weight = 0.0;
+              //       if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
+              //       {
+              //         delay = 0;
+              //       }
+              //       else
+              //       {
+              //         delay = crystal[iCry].polished_correction[iPoli].mean;
+              //       }
+              //       float rms = crystal[iCry].polished_correction[iPoli].rms;
+              //       weight = pow(rms,-2);
+              //       sumWeight += weight;
+              //       float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+              //       meanTimeStamp += weight * correctedTimepstamp;
+              //
+              //       // std::cout << rms << "\t"
+              //       //           << weight << "\t"
+              //       //           << sumWeight << "\t"
+              //       //           << correctedTimepstamp << "\t"
+              //       //           << meanTimeStamp << "\t"
+              //       //           << std::endl;
+              //       // std::cout << std::flush;
+              //     }
+              //     meanTimeStamp = meanTimeStamp/sumWeight;
+              //     double poliCorrCTR = meanTimeStamp;
+              //     crystal[iCry].poliCorrCTR->Fill(poliCorrCTR);
+              //     // crystal[iCry].vPoli.push_back(poliCorrCTR);
+              //   }
+              // }
               // end of temp commented
             }
           }
@@ -714,11 +714,11 @@ int main (int argc, char** argv)
   TCanvas *cSumSimple  = new TCanvas("Summary Basic CTR","Summary Basic CTR",1200,1200);
   TCanvas *cSumCentral = new TCanvas("Summary Central CTR","Summary Central CTR",1200,1200);
   TCanvas *cSumAll     = new TCanvas("Summary Full CTR","Summary Full CTR",1200,1200);
-  TCanvas *cPoliAll     = new TCanvas("Summary Polished CTR","Summary Polished CTR",1200,1200);
+  // TCanvas *cPoliAll     = new TCanvas("Summary Polished CTR","Summary Polished CTR",1200,1200);
   cSumSimple ->Divide(sqrtCrystals,sqrtCrystals);
   cSumCentral->Divide(sqrtCrystals,sqrtCrystals);
   cSumAll->Divide(sqrtCrystals,sqrtCrystals);
-  cPoliAll->Divide(sqrtCrystals,sqrtCrystals);
+  // cPoliAll->Divide(sqrtCrystals,sqrtCrystals);
 
 
   std::cout << "Saving results..." << std::endl;
@@ -728,20 +728,21 @@ int main (int argc, char** argv)
 
   for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
   {
+
     std::stringstream sname;
 
     Float_t realBasicCTRfwhm,realBasicCTRfwtm ;
     Float_t realCentralCTRfwhm,realCentralCTRfwtm;
     Float_t realAllCTRfwhm,realAllCTRfwtm;
-    Float_t poliCorrCTRfwhm,poliCorrCTRfwtm;
+    // Float_t poliCorrCTRfwhm,poliCorrCTRfwtm;
     Float_t reallikeCTRfwhm,reallikeCTRfwtm;
     Float_t realhybridCTRfwhm,realhybridCTRfwtm;
     // double unbinnedSimpleCTR;
     // double unbinnedCentralCTR;
     // double unbinnedAllCTR;
     // double unbinnedPoliCTR;
-    float ret[4];
-    float fitRes[3];
+    Double_t ret[4];
+    Double_t fitRes[3];
     Float_t lightCentral;
     Float_t lightAll;
 
@@ -757,6 +758,8 @@ int main (int argc, char** argv)
     crystal[iCry].lightAllHisto->Fit(gaussAll,"Q");
     lightAll = gaussAll->GetParameter(1);
     crystal[iCry].lightAllHisto->Write();
+
+    std::cout << "quiiii" << std::endl;
 
     if(crystal[iCry].simpleCTR)
     {
@@ -779,10 +782,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].simpleCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        else
-        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          FindSmallestInterval(ret,crystal[iCry].simpleCTR,0.68,true,tagFwhm);
-        }
+        // else
+        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+        //   FindSmallestInterval(ret,crystal[iCry].simpleCTR,0.68,true,tagFwhm);
+        // }
       }
 
       std::cout << "# Condition" << "\t"
@@ -895,10 +898,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].centralCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        else
-        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          FindSmallestInterval(ret,crystal[iCry].centralCTR,0.68,true,tagFwhm);
-        }
+        // else
+        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+        //   FindSmallestInterval(ret,crystal[iCry].centralCTR,0.68,true,tagFwhm);
+        // }
       }
 
 
@@ -1012,10 +1015,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].allCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        else
-        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          FindSmallestInterval(ret,crystal[iCry].allCTR,0.68,true,tagFwhm);
-        }
+        // else
+        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+        //   FindSmallestInterval(ret,crystal[iCry].allCTR,0.68,true,tagFwhm);
+        // }
       }
       std::cout << "# Condition" << "\t"
                 << "CTRfwhm"<< "\t"
@@ -1096,144 +1099,144 @@ int main (int argc, char** argv)
       // }
     }
 
-    if(crystal[iCry].poliCorrCTR)
-    {
-      Int_t CTRentries = crystal[iCry].poliCorrCTR->GetEntries();
-      crystal[iCry].poliCorrCTR->GetXaxis()->SetTitle("Time [s]");
-      crystal[iCry].poliCorrCTR->SetFillStyle(3001);
-      crystal[iCry].poliCorrCTR->SetFillColor(kBlack);
-      crystal[iCry].poliCorrCTR->SetLineColor(kBlack);
-      crystal[iCry].poliCorrCTR->SetStats(0);
-
-      crystal[iCry].poliCorrCTR_norm = (TH1F*) crystal[iCry].poliCorrCTR->Clone();
-      // if(func == 0)
-      // {
-      //   extractCTR(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
-      // }
-      // else
-      // {
-      //   extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
-      // }
-      if(func == 0)
-      {
-        extractCTR(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
-      }
-      else
-      {
-        if(func ==1)
-        {
-          extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,divs,tagFwhm,ret,fitRes);
-          // extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
-        }
-        else
-        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          FindSmallestInterval(ret,crystal[iCry].poliCorrCTR,0.68,true,tagFwhm);
-        }
-      }
-
-
-      // std::cout << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      //           << ret[0]*1e12 << "\t"
-      //           << ret[1]*1e12 << std::endl;
-      // //
-      // std::cout << "Polished FIT   - cry " << crystal[iCry].number << "\t"
-      //           << fitRes[0] << "\t"
-      //           << fitRes[1] << "\t"
-      //           << fitRes[2] << "\t"
-      //           << std::endl;
-      //
-      // textfile  << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      //           << ret[0]*1e12 << "\t"
-      //           << ret[1]*1e12 << std::endl;
-      // //
-      // textfile << "Polished FIT   - cry " << crystal[iCry].number << "\t"
-      //           << fitRes[0] << "\t"
-      //           << fitRes[1] << "\t"
-      //           << fitRes[2] << "\t"
-      //           << std::endl;
-
-
-      //
-      std::cout << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
-                << std::endl;
-
-
-      std::cout << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
-
-      textfile << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
-                << std::endl;
-
-      textfile  << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
-
-      poliCorrCTRfwhm = ret[0]*1e12;
-      poliCorrCTRfwtm = ret[1]*1e12;
-      // poliCorr->Fill(ret[0]*1e12);
-      crystal[iCry].poliCorrCTR->Write();
-      cPoliAll->cd(iCry+1);
-      crystal[iCry].poliCorrCTR->Draw();
-      crystal[iCry].poliCorrCTR_norm->Scale(1.0/crystal[iCry].poliCorrCTR_norm->GetMaximum());
-      // crystal[iCry].allCTR->Scale(1.0/crystal[iCry].allCTR->GetMaximum());
-
-
-      // use unbinned method
-      // if(unbinned)
-      // {
-      //   double mean,meanErr,min,max;
-      //   double delta = FindSmallestInterval(mean,
-      //                                       meanErr,
-      //                                       min,
-      //                                       max,
-      //                                       crystal[iCry].vPoli,
-      //                                       0.68,
-      //                                       true);
-      //   //now pass to fwhm
-      //   double fwhm = 2.355 * (delta/2.0);
-      //   unbinnedPoliCTR = 1e12*sqrt(2)*sqrt(pow(fwhm,2)-pow(tagFwhm,2));
-      //   // unbinnedpoliCorr->Fill(unbinnedPoliCTR);
-      //
-      //   std::cout << "Unbinned Polished corr. - cry " << crystal[iCry].number << "\t"
-      //             << unbinnedPoliCTR << "\t"
-      //             << 0 << std::endl;
-      //
-      //   textfile  << "Unbinned Polished corr. - cry " << crystal[iCry].number << "\t"
-      //             << unbinnedPoliCTR << "\t"
-      //             << 0 << std::endl;
-      // }
-    }
+    // if(crystal[iCry].poliCorrCTR)
+    // {
+    //   Int_t CTRentries = crystal[iCry].poliCorrCTR->GetEntries();
+    //   crystal[iCry].poliCorrCTR->GetXaxis()->SetTitle("Time [s]");
+    //   crystal[iCry].poliCorrCTR->SetFillStyle(3001);
+    //   crystal[iCry].poliCorrCTR->SetFillColor(kBlack);
+    //   crystal[iCry].poliCorrCTR->SetLineColor(kBlack);
+    //   crystal[iCry].poliCorrCTR->SetStats(0);
+    //
+    //   crystal[iCry].poliCorrCTR_norm = (TH1F*) crystal[iCry].poliCorrCTR->Clone();
+    //   // if(func == 0)
+    //   // {
+    //   //   extractCTR(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
+    //   // }
+    //   // else
+    //   // {
+    //   //   extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
+    //   // }
+    //   if(func == 0)
+    //   {
+    //     extractCTR(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+    //   }
+    //   else
+    //   {
+    //     if(func ==1)
+    //     {
+    //       extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,divs,tagFwhm,ret,fitRes);
+    //       // extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
+    //     }
+    //     else
+    //     { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+    //       FindSmallestInterval(ret,crystal[iCry].poliCorrCTR,0.68,true,tagFwhm);
+    //     }
+    //   }
+    //
+    //
+    //   // std::cout << "Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   //           << ret[0]*1e12 << "\t"
+    //   //           << ret[1]*1e12 << std::endl;
+    //   // //
+    //   // std::cout << "Polished FIT   - cry " << crystal[iCry].number << "\t"
+    //   //           << fitRes[0] << "\t"
+    //   //           << fitRes[1] << "\t"
+    //   //           << fitRes[2] << "\t"
+    //   //           << std::endl;
+    //   //
+    //   // textfile  << "Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   //           << ret[0]*1e12 << "\t"
+    //   //           << ret[1]*1e12 << std::endl;
+    //   // //
+    //   // textfile << "Polished FIT   - cry " << crystal[iCry].number << "\t"
+    //   //           << fitRes[0] << "\t"
+    //   //           << fitRes[1] << "\t"
+    //   //           << fitRes[2] << "\t"
+    //   //           << std::endl;
+    //
+    //
+    //   //
+    //   std::cout << "# Condition" << "\t"
+    //             << "CTRfwhm"<< "\t"
+    //             << "CTRfwtm"<< "\t"
+    //             << "CTRentries"<< "\t"
+    //             << "lightCentral"<< "\t"
+    //             << "lightAll"<< "\t"
+    //             << "ChiSquare"<< "\t"
+    //             << "NDF"<< "\t"
+    //             << "Prob"<< "\t"
+    //             << std::endl;
+    //
+    //
+    //   std::cout << "Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   << ret[0]*1e12 << "\t"
+    //   << ret[1]*1e12 << "\t"
+    //   << CTRentries << "\t"
+    //   << lightCentral << "\t"
+    //   << lightAll << "\t"
+    //   << fitRes[0] << "\t"
+    //   << fitRes[1] << "\t"
+    //   << fitRes[2] << "\t"
+    //   << std::endl;
+    //
+    //   textfile << "# Condition" << "\t"
+    //             << "CTRfwhm"<< "\t"
+    //             << "CTRfwtm"<< "\t"
+    //             << "CTRentries"<< "\t"
+    //             << "lightCentral"<< "\t"
+    //             << "lightAll"<< "\t"
+    //             << "ChiSquare"<< "\t"
+    //             << "NDF"<< "\t"
+    //             << "Prob"<< "\t"
+    //             << std::endl;
+    //
+    //   textfile  << "Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   << ret[0]*1e12 << "\t"
+    //   << ret[1]*1e12 << "\t"
+    //   << CTRentries << "\t"
+    //   << lightCentral << "\t"
+    //   << lightAll << "\t"
+    //   << fitRes[0] << "\t"
+    //   << fitRes[1] << "\t"
+    //   << fitRes[2] << "\t"
+    //   << std::endl;
+    //
+    //   poliCorrCTRfwhm = ret[0]*1e12;
+    //   poliCorrCTRfwtm = ret[1]*1e12;
+    //   // poliCorr->Fill(ret[0]*1e12);
+    //   crystal[iCry].poliCorrCTR->Write();
+    //   cPoliAll->cd(iCry+1);
+    //   crystal[iCry].poliCorrCTR->Draw();
+    //   crystal[iCry].poliCorrCTR_norm->Scale(1.0/crystal[iCry].poliCorrCTR_norm->GetMaximum());
+    //   // crystal[iCry].allCTR->Scale(1.0/crystal[iCry].allCTR->GetMaximum());
+    //
+    //
+    //   // use unbinned method
+    //   // if(unbinned)
+    //   // {
+    //   //   double mean,meanErr,min,max;
+    //   //   double delta = FindSmallestInterval(mean,
+    //   //                                       meanErr,
+    //   //                                       min,
+    //   //                                       max,
+    //   //                                       crystal[iCry].vPoli,
+    //   //                                       0.68,
+    //   //                                       true);
+    //   //   //now pass to fwhm
+    //   //   double fwhm = 2.355 * (delta/2.0);
+    //   //   unbinnedPoliCTR = 1e12*sqrt(2)*sqrt(pow(fwhm,2)-pow(tagFwhm,2));
+    //   //   // unbinnedpoliCorr->Fill(unbinnedPoliCTR);
+    //   //
+    //   //   std::cout << "Unbinned Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   //             << unbinnedPoliCTR << "\t"
+    //   //             << 0 << std::endl;
+    //   //
+    //   //   textfile  << "Unbinned Polished corr. - cry " << crystal[iCry].number << "\t"
+    //   //             << unbinnedPoliCTR << "\t"
+    //   //             << 0 << std::endl;
+    //   // }
+    // }
 
 
 
@@ -1246,7 +1249,7 @@ int main (int argc, char** argv)
     hs->Add(crystal[iCry].simpleCTR_norm);
     hs->Add(crystal[iCry].centralCTR_norm);
     hs->Add(crystal[iCry].allCTR_norm);
-    hs->Add(crystal[iCry].poliCorrCTR_norm);
+    // hs->Add(crystal[iCry].poliCorrCTR_norm);
 
 
     // std::cout << "Crystal " << crystal[iCry].number << std::endl;
@@ -1284,13 +1287,13 @@ int main (int argc, char** argv)
       // std::cout << "Full correction     = "<< realAllCTRfwhm     << " ps" << std::endl;
     }
 
-    if(crystal[iCry].poliCorrCTR)
-    {
-      sname.str("");
-      sname << "Polished correction       = " << poliCorrCTRfwhm << "ps";
-      legend->AddEntry(crystal[iCry].poliCorrCTR,sname.str().c_str(),"f");
-      // std::cout << "Full correction     = "<< realAllCTRfwhm     << " ps" << std::endl;
-    }
+    // if(crystal[iCry].poliCorrCTR)
+    // {
+    //   sname.str("");
+    //   sname << "Polished correction       = " << poliCorrCTRfwhm << "ps";
+    //   legend->AddEntry(crystal[iCry].poliCorrCTR,sname.str().c_str(),"f");
+    //   // std::cout << "Full correction     = "<< realAllCTRfwhm     << " ps" << std::endl;
+    // }
 
 
 
@@ -1307,7 +1310,7 @@ int main (int argc, char** argv)
     TH1F* cloneBasic;
     TH1F* cloneCentral;
     TH1F* cloneAll;
-    TH1F* clonePoli;
+    // TH1F* clonePoli;
     THStack *cloneHs = (THStack*) hs->Clone();
     TLegend *legend1 = new TLegend(0.15,0.69,0.49,0.89,"");
     legend1->SetFillStyle(0);
@@ -1369,7 +1372,7 @@ int main (int argc, char** argv)
   cSumSimple ->Write();
   cSumCentral->Write();
   cSumAll->Write();
-  cPoliAll->Write();
+  // cPoliAll->Write();
 
   //save the full command line
   TNamed CommandNameD("Command",streamCommand.str().c_str());
