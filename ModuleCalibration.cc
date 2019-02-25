@@ -286,7 +286,7 @@ int main (int argc, char** argv)
   float photopeakSigmasMin = config.read<float>("photopeakSigmasMin",2.0);      // how many sigmas far from mean is the lower bound of cut on photopeak  - default = 2.0
   float photopeakSigmasMax = config.read<float>("photopeakSigmasMax",4.0);     // how many sigmas far from mean is the upper bound of cut on photopeak  - default = 4.0
   float TaggingPhotopeakSigmasMin = config.read<float>("TaggingPhotopeakSigmasMin",1.5);      // how many sigmas far from mean is the lower bound of cut on Tagging photopeak  - default = 1.5
-  float TaggingPhotopeakSigmasMax = config.read<float>("TaggingPhotopeakSigmasMin",2.0);     // how many sigmas far from mean is the upper bound of cut on Tagging photopeak  - default = 2.0
+  float TaggingPhotopeakSigmasMax = config.read<float>("TaggingPhotopeakSigmasMax",2.0);     // how many sigmas far from mean is the upper bound of cut on Tagging photopeak  - default = 2.0
   int WrangeBinsForTiming = config.read<int>("WrangeBinsForTiming",10);
   bool smearTaggingTime = config.read<bool>("smearTaggingTime",0);// whether to smear the time stamp of external tagging. Needed for simulations, where the tagging time stamp is always 0 (i.e. the gamma emission time) - default = 0
   float tagFitLowerFraction = config.read<float>("tagFitLowerFraction",0.06);  // enRes = 2.355*sigma/peak --> sigma = enRes*Peak/2.355   EnRes about 0.15 -->  sigma = 0.06* peak  -> limits -1sigma +2 sigma
@@ -3274,7 +3274,7 @@ int main (int argc, char** argv)
                                 Float_t wUpperLimit = beginW + (((iBin+1)*(endW - beginW))/WrangeBinsForTiming);
                                 Float_t midW        = beginW + (((iBin+0.5)*(endW - beginW))/WrangeBinsForTiming);
 
-                                
+
                                 // TH2F* histo2D = (TH2F*) CurrentCrystal->GetDeltaTvsW();
                                 int firstBin = spectrumCrystalDeltaT2vsW->GetXaxis()->FindBin(wLowerLimit);
                                 int lastBin = spectrumCrystalDeltaT2vsW->GetXaxis()->FindBin(wUpperLimit);
