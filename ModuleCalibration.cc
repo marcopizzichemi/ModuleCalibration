@@ -2744,7 +2744,7 @@ int main (int argc, char** argv)
                           // << " >> " << sname.str();
 
                           TH1D* aSpectrum =  spectrumCrystalDeltaTvsW->ProjectionY(sname.str().c_str());
-                          new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
+                          // new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
                           // tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut);
                           aSpectrum->SetTitle(sname.str().c_str());
                           aSpectrum->GetXaxis()->SetTitle("Time [S]");
@@ -3612,7 +3612,8 @@ int main (int argc, char** argv)
                           std::stringstream sname;
 
                           sname << "Aligned_scatter - t" << timingChannel << "-t" << taggingCrystalTimingChannel << "vs.W_cry" << CurrentCrystal->GetID();
-                          alignedScatter = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,neighCTRbins,neighCTRmin,neighCTRmax);
+                          // alignedScatter = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,neighCTRbins,neighCTRmin,neighCTRmax);
+                          alignedScatter = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,CTRbins,CTRmin,CTRmax);
                           sname.str("");
                         }
                         CurrentCrystal->AddAlignedScatter(alignedScatter,timingChannel);
