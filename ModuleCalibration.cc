@@ -3655,6 +3655,7 @@ int main (int argc, char** argv)
                   {
                     if(crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)]->GetIsOnForModular())
                     {
+
                       // get a pointer to this crystal
                       Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
                       if(CurrentCrystal->CrystalIsOn())
@@ -3665,13 +3666,13 @@ int main (int argc, char** argv)
                           {
                             if(CurrentCrystal->GetFormulaEnergyCut()->EvalInstance())  //if in geo cut of crystal
                             {
+
                               timingCorrectionCounter++;
 
                               int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
                               std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
                               // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
                               int centralTimingChannel = CurrentCrystal->GetTimingChannel();
-
                               // GetGraphDelayW()
 
                               // find w of this event
@@ -3718,6 +3719,8 @@ int main (int argc, char** argv)
 
                               FloodZ = centralChargeCorr / division;
 
+
+
                               // std::cout << FloodZ << std::endl;
                               //in these scatter plots, accept events only if they come from the accepted range of w
                               if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())
@@ -3736,7 +3739,7 @@ int main (int argc, char** argv)
                                     else
                                     {
                                       // run on the delay TGraphs and find the one of this timingChannel
-                                      for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetAlignedScatter().size(); iGraph++ )
+                                      for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetGraphDelayW().size(); iGraph++ )
                                       {
                                         if (timingChannel == CurrentCrystal->GetGraphDelayW()[iGraph].timingChannel)
                                         {
