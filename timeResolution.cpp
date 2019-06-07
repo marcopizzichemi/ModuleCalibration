@@ -421,6 +421,11 @@ int main (int argc, char** argv)
       sname << "No correction - Crystal " << crystal[iCry].number;
       crystal[iCry].simpleCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
       sname.str("");
+
+      sname.str("");
+      sname << "CTR vs. W - Crystal " << crystal[iCry].number;
+      crystal[iCry].ctrVSw = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,1,histoBins,histoMin,histoMax);
+      sname.str("");
       // sname << "Polished correction - Crystal " << crystal[iCry].number;
       // crystal[iCry].poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
     }
@@ -569,6 +574,7 @@ int main (int argc, char** argv)
                         averageTimeStamp += delta*weight;
                       }
                       averageTimeStamp = averageTimeStamp/totalWeight;
+                      crystal[iCry].ctrVSw->Fill(FloodZ,averageTimeStamp);
                       double allCTR = averageTimeStamp + centralcorrection;
 
                       crystal[iCry].allCTR->Fill(allCTR);
@@ -721,6 +727,38 @@ int main (int argc, char** argv)
   // cPoliAll->Divide(sqrtCrystals,sqrtCrystals);
 
 
+  // for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+  // {
+  //   TObjArray aSlices;
+  //   crystal[iCry].ctrVSw->FitSlicesY(0,0,-1,0,"QNR",&aSlices);
+  //
+  //   crystal[iCry].aSlices = (TH1D*) aSlices[2];
+  //
+  //
+  //   int nbinsx = crystal[iCry].aSlices->GetXaxis()->GetNbins();
+  //   std::vector<double> x,y;
+  //
+  //   for (int i = 1; i < nbinsx ; i++)
+  //   {
+  //     if(crystal[iCry].aSlices->GetBinContent(i) > 0)
+  //     {
+  //       x.push_back(crystal[iCry].aSlices->GetBinCenter(i));
+  //       y.push_back(1e12 * sqrt(2)*sqrt(pow(crystal[iCry].aSlices->GetBinContent(i),2)-pow(tagFwhm,2)))  ;
+  //     }
+  //   }
+  //
+  //    crystal[iCry].crtVSw_gr = new TGraph(x.size(),&x[0],&y[0]);
+  //
+  //
+  //
+  // }
+
+
+
+
+  // crystal[iCry].ctrVSw->Write();
+
+
   std::cout << "Saving results..." << std::endl;
   TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
   outputFile->cd();
@@ -730,6 +768,8 @@ int main (int argc, char** argv)
   {
 
     std::stringstream sname;
+
+
 
     Float_t realBasicCTRfwhm,realBasicCTRfwtm ;
     Float_t realCentralCTRfwhm,realCentralCTRfwtm;
@@ -746,8 +786,15 @@ int main (int argc, char** argv)
     Float_t lightCentral;
     Float_t lightAll;
 
+    // crystal[iCry].crtVSw_gr->Write();
+    crystal[iCry].ctrVSw->Write();
+    // crystal[iCry].aSlices->Write();
+    // sigmas->Write();
+
     // get data on entries and light collected
-    crystal[iCry].basicCTRhisto->Write();
+    // std::cout << "quiiii" << std::endl;
+    // crystal[iCry].basicCTRhisto->Write();
+
     // light central
     TF1 *gaussCentral = new TF1("gaussCentral","gaus");
     crystal[iCry].lightCentralHisto->Fit(gaussCentral,"Q");
@@ -759,7 +806,7 @@ int main (int argc, char** argv)
     lightAll = gaussAll->GetParameter(1);
     crystal[iCry].lightAllHisto->Write();
 
-    std::cout << "quiiii" << std::endl;
+
 
     if(crystal[iCry].simpleCTR)
     {

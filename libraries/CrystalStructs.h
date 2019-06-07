@@ -130,6 +130,10 @@ struct Crystal_t
   TH1F *hybridCTR_norm;
   TH1F *likeCTR_norm;
 
+  TH2F *ctrVSw;
+  TH1D* aSlices;
+  TGraph *crtVSw_gr;
+
   //CTR std::vectors for unbinned calculations. obsolete
   // std::vector<double> vSimple;
   // std::vector<double> vCentral;

@@ -60,7 +60,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "Crystal.h"
+#include "libraries/CrystalStructs.h"
 // #include "./include/ConfigFile.h"
 
 
@@ -610,10 +610,10 @@ void extractCTR(TH1F* histo,double fitPercMin,double fitPercMax, int divs, doubl
 //------------------------------------------//
 
 
-bool compareByNumber(const Crystal_t &a,const Crystal_t  &b)
-{
-  return a.number < b.number;
-}
+// bool compareByNumber(const Crystal_t &a,const Crystal_t  &b)
+// {
+//   return a.number < b.number;
+// }
 
 // function to check if file exists
 inline bool fileExists(const std::string& name)
@@ -2020,6 +2020,7 @@ int main (int argc, char** argv)
   double tStart2Analysis = (tree->GetMinimum("DeltaTimeTag"))/(1e9*3600);
   double tEnd2Analysis   = (tree->GetMaximum("DeltaTimeTag") - tree->GetMinimum("DeltaTimeTag"))/(1e9*3600);
   // for (long long int i=0;i<1000000;i++)
+  long int oneCry = 0;
   for (long long int i=0;i<nevent;i++)
   {
     // std::cout << "Event " << i << std::endl;
@@ -2093,6 +2094,7 @@ int main (int argc, char** argv)
             // }
             //
             // FloodZ = centralChargeCorr / division;
+            oneCry++;
 
 
 
@@ -2145,6 +2147,7 @@ int main (int argc, char** argv)
   }
   std::cout << std::endl;
   std::cout << "Coincidence events found = " << goodEvents << std::endl;
+  std::cout << "One crystal              = " << oneCry << std::endl;
 
   TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
   outputFile->cd();
