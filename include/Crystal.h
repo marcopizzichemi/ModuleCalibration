@@ -70,6 +70,9 @@ private:
   TCut                 crytalCut;
   TCut                 crytalCutWithoutCutG;
   TCut                 photopeakEnergyCut;
+  TCut                 TriggerChannelCut;
+  TCut                 broadCut;
+  TCut                 CutNoise;
   bool                 isOn;                 ///< if the crystal is on/off
   TEllipse             GraphicalCut;         ///< TEllipse to visualize the cut on the u,v global plot
   float                peakPosition;         ///< position of mean (after fitting) for the photopeak
@@ -310,6 +313,11 @@ public:
   TCut                 GetCrystalCutWithoutCutG(){return crytalCutWithoutCutG;};
   TCut                 GetPhotopeakEnergyCut(){return photopeakEnergyCut;};
 
+  TCut                 GetTriggerChannelCut(){return TriggerChannelCut;};
+  TCut                 GetBroadCut(){return broadCut;};
+  TCut                 GetCutNoise(){return CutNoise;};
+
+
   TF1*                 GetThetaFit(){return ThetaFit;};
   TF1*                 GetDeltaWfit(){return deltaWfit;};
   TF1*                 GetDeltaWfit_2(){return deltaWfit_2;};
@@ -365,6 +373,11 @@ public:
   void                 SetCrystalCut(TCut aCut){crytalCut = aCut;};
   void                 SetCrystalCutWithoutCutG(TCut aCut){crytalCutWithoutCutG = aCut;};
   void                 SetPhotopeakEnergyCut(TCut aCut){photopeakEnergyCut = aCut;};
+
+  void                 SetTriggerChannelCut(TCut aCut){TriggerChannelCut = aCut;};
+  void                 SetBroadCut(TCut aCut){broadCut = aCut;};
+  void                 SetCutNoise(TCut aCut){CutNoise = aCut;};
+
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
   void                 SetLYSpectrum(TH1F* aHisto){LYSpectrum = aHisto;};

@@ -134,6 +134,11 @@ struct Crystal_t
   TH1D* aSlices;
   TGraph *crtVSw_gr;
 
+  TCut* TriggerChannelCut ;
+  TCut* broadCut          ;
+  TCut* CutNoise          ;
+  TCut* PhotopeakEnergyCutnergyCut;
+
   //CTR std::vectors for unbinned calculations. obsolete
   // std::vector<double> vSimple;
   // std::vector<double> vCentral;

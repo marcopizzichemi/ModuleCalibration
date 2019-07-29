@@ -167,6 +167,7 @@ void readCalibration(TFile* calibrationFile,                         // file wit
        temp_crystal.tw_correction = NULL;
        temp_crystal.polishedCorrection = false;
        temp_crystal.detectorSaturation = detectorSaturation;
+       temp_crystal.FormulaAnalysis = NULL;
 
        //set taggingPhotopeakCut Formula if it is found in calibration file
        if((temp_crystal.taggingCrystalTimingChannel != -1))
@@ -195,9 +196,9 @@ void readCalibration(TFile* calibrationFile,                         // file wit
          std::vector<std::string> cutgNames;
          std::string cutG_prefix("cutg");
          std::string calibration_prefix("Calibration");
-         std::string crystalCut_prefix("CrystalCut");
-         std::string crystalCutWithoutCutG_prefix("CrystalCutWithoutCutG");
-         std::string photopeakEnergyCut_prefix("PhotopeakEnergyCut");
+         // std::string crystalCut_prefix("CrystalCut");
+         // std::string crystalCutWithoutCutG_prefix("CrystalCutWithoutCutG");
+         // std::string photopeakEnergyCut_prefix("PhotopeakEnergyCut");
          std::string channel_prefix("digitizerChannel");
          std::string w_channels_prefix("channelsNumRelevantForW");
          std::string timing_channel_prefix("timingChannel");
@@ -206,6 +207,11 @@ void readCalibration(TFile* calibrationFile,                         // file wit
          std::string t_channels_for_poli_FWHM_prefix("tChannelsForPolishedCorrectionFWHM");
          std::string mean_for_poli_prefix("meanForPolishedCorrection");
          std::string fwhm_for_poli_prefix("fwhmForPolishedCorrection");
+
+         std::string TriggerChannelCut_prefix  ("TriggerChannelCut");
+         std::string broadCut_prefix           ("broadCut");
+         std::string CutNoise_prefix           ("CutNoise");
+         std::string PhotopeakEnergyCut_prefix ("PhotopeakEnergyCut");
 
          std::string lightCentral_prefix("Light collected in trigger crystal");
          std::string lightAll_prefix("Sum spectrum highlighted");
@@ -236,27 +242,45 @@ void readCalibration(TFile* calibrationFile,                         // file wit
                temp_crystal.wz = calibGraph;
            }
 
-           if(!keysCryName[i].compare(0,crystalCut_prefix.size(),crystalCut_prefix)) // find tcut
+           if(!keysCryName[i].compare(0,TriggerChannelCut_prefix.size(),TriggerChannelCut_prefix)) // find tcut
            {
             //  std::cout << keysCryName[i] << std::endl;
              TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
              if(cut)
-               temp_crystal.CrystalCut = cut;
+               temp_crystal.TriggerChannelCut = cut;
            }
-           if(!keysCryName[i].compare(0,crystalCutWithoutCutG_prefix.size(),crystalCutWithoutCutG_prefix)) // find tcut
+
+           if(!keysCryName[i].compare(0,broadCut_prefix.size(),broadCut_prefix)) // find tcut
            {
             //  std::cout << keysCryName[i] << std::endl;
              TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
              if(cut)
-               temp_crystal.CrystalCutWithoutCutG = cut;
+               temp_crystal.broadCut = cut;
            }
-           if(!keysCryName[i].compare(0,photopeakEnergyCut_prefix.size(),photopeakEnergyCut_prefix)) // find tcut
+           if(!keysCryName[i].compare(0,CutNoise_prefix.size(),CutNoise_prefix)) // find tcut
+           {
+            //  std::cout << keysCryName[i] << std::endl;
+             TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
+             if(cut)
+               temp_crystal.CutNoise = cut;
+           }
+           if(!keysCryName[i].compare(0,PhotopeakEnergyCut_prefix.size(),PhotopeakEnergyCut_prefix)) // find tcut
            {
             //  std::cout << keysCryName[i] << std::endl;
              TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
              if(cut)
                temp_crystal.PhotopeakEnergyCut = cut;
            }
+
+
+
+           // if(!keysCryName[i].compare(0,photopeakEnergyCut_prefix.size(),photopeakEnergyCut_prefix)) // find tcut
+           // {
+           //  //  std::cout << keysCryName[i] << std::endl;
+           //   TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
+           //   if(cut)
+           //     temp_crystal.PhotopeakEnergyCut = cut;
+           // }
 
            if(!keysCryName[i].compare(0,cutG_prefix.size(),cutG_prefix)) // find tcutgs
            {
@@ -676,26 +700,69 @@ void readCalibration(TFile* calibrationFile,                         // file wit
          //           << temp_crystal.PhotopeakEnergyCut->GetTitle()
          //           << std::endl;
 
-         TCut globalCut; // the cut for the formula
+         // TCut globalCut; // the cut for the formula
+         //
+         // // globalCut += temp_crystal.CrystalCutWithoutCutG->GetTitle();     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
+         // globalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();        // this is the cut on photopeak energy of the corrected spectrum for this crystal
+         // for(unsigned int iCutg = 0; iCutg < temp_crystal.cutg.size(); iCutg++)
+         // {
+         //   globalCut += temp_crystal.cutg[iCutg]->GetName();              // these are the two cutg for this crystal
+         // }
+         // sname.str("");
+         //
+         // sname << "FormulaAnalysis" << temp_crystal.number;
+         // // std::cout << "globalCut" << std::endl;
+         // // std::cout << globalCut << std::endl;
+         // TTreeFormula* FormulaAnalysis = new TTreeFormula(sname.str().c_str(),globalCut,tree);
+         // formulasAnalysis->Add(FormulaAnalysis);
+         // temp_crystal.FormulaAnalysis = FormulaAnalysis;
+         // sname.str("");
 
-         // globalCut += temp_crystal.CrystalCutWithoutCutG->GetTitle();     // this is BasicCut (XYZ and taggingPhotopeak) + CutTrigger (TriggerChannel and broadcut)
-         globalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();        // this is the cut on photopeak energy of the corrected spectrum for this crystal
-         for(unsigned int iCutg = 0; iCutg < temp_crystal.cutg.size(); iCutg++)
+         // TriggerChannelCut  = (TCut*) gDirectory->Get("TriggerChannelCut");
+         // broadCut           = (TCut*) gDirectory->Get("broadCut");
+         // CutNoise           = (TCut*) gDirectory->Get("CutNoise");
+         // PhotopeakEnergyCut = (TCut*) gDirectory->Get("PhotopeakEnergyCut");
+
+         // std::string cutG_prefix("cutg");
+         // for(int i = 0 ; i < nKeysCry ; i++)
+         // {
+         //   keysCryName.push_back(listCry->At(i)->GetName());
+         // }
+         // for(unsigned int i = 0 ; i < keysCryName.size() ; i++)
+         // {
+         //   if(!keysCryName[i].compare(0,cutG_prefix.size(),cutG_prefix)) // find tcutgs
+         //   {
+         //     TCutG* cut = (TCutG*) gDirectory->Get(keysCryName[i].c_str());
+         //     cutg.push_back(cut);
+         //   }
+         // }
+
+         // create formula for cutting dataset
+         TCut globalCut ;
+         // if(UseTaggingPhotopeakCut)     globalCut += taggingPhotopeakCut->GetTitle();
+
+         bool UseTriggerChannelCut = false;
+         bool UseBroadCut = false;
+         bool UseCutNoise = false;
+         bool UsePhotopeakEnergyCut = true;
+         bool UseCutgs = true;
+
+         if(UseTriggerChannelCut)       globalCut += temp_crystal.TriggerChannelCut->GetTitle();
+         if(UseBroadCut)                globalCut += temp_crystal.broadCut->GetTitle();
+         if(UseCutNoise)                globalCut += temp_crystal.CutNoise->GetTitle();
+         if(UsePhotopeakEnergyCut)      globalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();
+         if(UseCutgs)
          {
-           globalCut += temp_crystal.cutg[iCutg]->GetName();              // these are the two cutg for this crystal
+           globalCut += temp_crystal.cutg[0]->GetName();
+           globalCut += temp_crystal.cutg[1]->GetName();
          }
-         sname.str("");
 
-         sname << "FormulaAnalysis" << temp_crystal.number;
-         // std::cout << "globalCut" << std::endl;
-         // std::cout << globalCut << std::endl;
-         TTreeFormula* FormulaAnalysis = new TTreeFormula(sname.str().c_str(),globalCut,tree);
-         formulasAnalysis->Add(FormulaAnalysis);
+         TTreeFormula* FormulaAnalysis = new TTreeFormula("FormulaAnalysis",globalCut,tree);
          temp_crystal.FormulaAnalysis = FormulaAnalysis;
-         sname.str("");
+         // TList* formulasAnalysis = new TList();
+         formulasAnalysis->Add(FormulaAnalysis);
 
-         // if(temp_crystal.calibrationGraph && temp_crystal.CrystalCutWithoutCutG && temp_crystal.PhotopeakEnergyCut && (temp_crystal.cutg.size() == 2))
-         if(temp_crystal.calibrationGraph && temp_crystal.CrystalCutWithoutCutG && temp_crystal.PhotopeakEnergyCut && temp_crystal.FormulaAnalysis)
+         if(temp_crystal.FormulaAnalysis)
          {
            crystal.push_back(temp_crystal);
          }

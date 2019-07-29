@@ -316,8 +316,9 @@ int main (int argc, char** argv)
   float neighCTRmin = config.read<float>("neighCTRmin",-1e-9); // min  of neighbour CTR plots - default = -1e-9
   float neighCTRmax = config.read<float>("neighCTRmax",10e-9); // max of neighbour CTR plots - default = 10e-9
 
-  bool lowStat = config.read<bool>("lowStat",1); // if low statistics, apply fits to slices - default 1 (false)
+  bool lowStat = config.read<bool>("lowStat",1); // if low statistics, apply fits to slices - default 1 (true)
   // bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
+  bool dumpImages =  config.read<bool>("dumpImages",0); // dump images of some plots for quick check - default 0 (false)
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -931,9 +932,14 @@ int main (int argc, char** argv)
         }
 
 
+        //save tagging crystal timing channel
+        module[iModule][jModule]->SetTaggingCrystalChannel(taggingCrystalChannel);
 
         //save tagging crystal timing channel
         module[iModule][jModule]->SetTaggingTimingChannel(taggingCrystalTimingChannel);
+
+        //save taggingPosition (or 0 if no taggingPosition)
+        module[iModule][jModule]->SetTaggingPosition(taggingPosition);
       }
 
       sname << "Flood Histogram 3D - Module " << module[iModule][jModule]->GetName();
@@ -1074,6 +1080,12 @@ int main (int argc, char** argv)
             std::vector<multi_channel_t> neighbourChannels;
             std::vector<multi_channel_t> allChannels;
             // compose the strings for variables, corrected or not by saturation
+            // sat correction is
+            // - q_max * ln( 1 - (ch - ped)/(q_max))
+            // where
+            // q_max    = saturation
+            // ch       = charge not corrected
+            // ped      = pedestal (not corrected)
             if(correctingSaturation)
             {
               // this channel
@@ -1214,6 +1226,7 @@ int main (int argc, char** argv)
 
             cut.str("");
             cut << TriggerChannel.str().c_str() << " == " << thisChannel.string.c_str();
+            TCut TriggerChannelCut = cut.str().c_str();
             TCut CutTrigger = cut.str().c_str();
 
 
@@ -1737,6 +1750,10 @@ int main (int argc, char** argv)
                     // BasicCut = 1. and 2.
                     // CutTrigger = 3. and 4. and 5.
                     // CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName() = 6.
+
+                    // at 11.06.2019
+                    // BasicCut is only taggingPhotopeakCut, if any
+                    // CutTrigger
 
                     TCut CrystalCut = BasicCut + CutTrigger;
 
@@ -2262,6 +2279,9 @@ int main (int argc, char** argv)
                         CurrentCrystal->SetHistoWfit(gaussW);
                         sname.str("");
 
+
+
+
                         // if(calcDoiResWithDelta) // FIXME for now with this approach it is not possible to have different ZPositions in the same dataset, so this calcDoiResWithDelta should not be used!
                         // {
                         //   for(unsigned int kAltDoi = 0; kAltDoi < inputDoi.size(); kAltDoi++)
@@ -2473,6 +2493,34 @@ int main (int argc, char** argv)
                       CurrentCrystal->SetCrystalCut(CrystalCut);                        // this is BasicCut + CutTrigger + cutg[0] + cutg[1] - so "geometrical" without energy constrains
                       CurrentCrystal->SetPhotopeakEnergyCut(PhotopeakEnergyCut);        // energy cut, events in the photopeak
                       CurrentCrystal->SetCrystalCutWithoutCutG(CrystalCutWithoutCutG);  // this is BasicCut + CutTrigger
+
+                      // added: export all cuts separately!!!
+
+                      // a cut for events falling in this crystal. This basically means
+                      // 1. "Physical" constrains are satisfied (u and v are not beyond the broad physical x-y limits of the array, w is between 0 and 1). This is set at module level - FIXME not implemented in this version! (is it useful?)
+                      // 2. If a tagging crystal is used, events have charge in the channel of tagging crystal in the photopeak of the tagging crystal. This is set at module level
+                      // 3. The MPPC where the crystal is has the maximum signal in the event ("trigger" channel).
+                      // 4. The "broad" cut on energy is applied, which means that the user decided to discard events that in the "trigger" spectrum of this mppc are "too low". This is set at mppc level
+                      // 5. None of the channels involved is below noiseSigmas*noise for that channel
+                      // 6. Events are in the density area of this crystal, defined by the two tcutg
+                      //
+                      // BasicCut = 1. and 2.
+                      // CutTrigger = 3. and 4. and 5.
+                      // CurrentCrystal->GetZXCut()->GetName() + CurrentCrystal->GetZYCut()->GetName() = 6.
+
+                      // 1. CutXYZ - not used anymore
+                      // 2. taggingPhotopeakCut - already exported fo the entire module
+                      // 3. TriggerChannelCut
+                      TriggerChannelCut.SetName("TriggerChannelCut");
+                      CurrentCrystal->SetTriggerChannelCut(TriggerChannelCut);
+                      // 4. broadCut
+                      broadCut.SetName("broadCut");
+                      CurrentCrystal->SetBroadCut(broadCut);
+                      // 5. CutNoise
+                      CutNoise.SetName("CutNoise");
+                      CurrentCrystal->SetCutNoise(CutNoise);
+                      // 6. cutgs - already exported
+                      // 7. photopeakEnergyCut - already exported
 
                       sname.str("");
                       sname << "FormulaGeoCut_cry" << CurrentCrystal->GetID();
@@ -4290,6 +4338,13 @@ int main (int argc, char** argv)
         TriggerSpectrumHighlight->Draw("same");
         C_TaggingCrystalSpectrum->Write();
 
+        if(dumpImages)
+        {
+          std::stringstream scanvas;
+          scanvas << outputFileName.substr(0, outputFileName.size()-5) << "_" << C_TaggingCrystalSpectrum->GetName() << ".png";
+          C_TaggingCrystalSpectrum->Print(scanvas.str().c_str());
+        }
+
         C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
         C_spectrum->SetName(module[iModule][jModule]->GetTagVsExtTimeSpectrum()->GetName());
         C_spectrum->cd();
@@ -4318,12 +4373,26 @@ int main (int argc, char** argv)
 
       if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming)
       {
+
+        std::stringstream TagChNum;
+        TagChNum.str("");
+        TagChNum << module[iModule][jModule]->GetTaggingCrystalChannel();
+        TNamed tChNum("taggingCrystalChannel",TagChNum.str().c_str());
+        tChNum.Write();
+        TagChNum.str("");
+
+
         std::stringstream TagNum;
         TagNum.str("");
         TagNum << module[iModule][jModule]->GetTaggingTimingChannel();
         TNamed tNum("taggingCrystalTimingChannel",TagNum.str().c_str());
         tNum.Write();
         TagNum.str("");
+
+        std::stringstream stagPos;
+        stagPos << module[iModule][jModule]->GetTaggingPosition();
+        TNamed tagPos("taggingPosition",stagPos.str().c_str());
+        tagPos.Write();
 
         module[iModule][jModule]->GetTaggingPhotopeakCut().Write();
       }
@@ -5118,6 +5187,12 @@ int main (int argc, char** argv)
                       CurrentCrystal->GetCrystalCutWithoutCutG().Write();
                       CurrentCrystal->GetPhotopeakEnergyCut().Write();
 
+                      CurrentCrystal->GetTriggerChannelCut().Write();
+                      CurrentCrystal->GetBroadCut().Write();
+                      CurrentCrystal->GetCutNoise().Write();
+
+
+
                       if(usingTaggingBench || calcDoiResWithCalibration)
                       {
                         if(calcDoiResWithDelta)
@@ -5137,6 +5212,8 @@ int main (int argc, char** argv)
                       sChNum << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
                       TNamed ChNum("digitizerChannel",sChNum.str().c_str());
                       ChNum.Write();
+
+
 
                       //write charge channels used for W calculation for this crystal
                       std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
@@ -5247,6 +5324,18 @@ int main (int argc, char** argv)
             //
             C_multi->Write();
             C_multi_2d->Write();
+
+            if(dumpImages)
+            {
+              std::stringstream scanvas;
+              scanvas << outputFileName.substr(0, outputFileName.size()-5) << "_" << C_multi->GetName() << ".png";
+              C_multi->Print(scanvas.str().c_str());
+
+              scanvas.str("");
+              scanvas << outputFileName.substr(0, outputFileName.size()-5) << "_" << C_multi_2d->GetName() << ".png";
+              C_multi_2d->Print(scanvas.str().c_str());
+            }
+
             //
             delete C_multi_2d;
             delete C_multi;

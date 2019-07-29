@@ -51,7 +51,7 @@
 void usage()
 {
   std::cout << "\t\t" << "[-i | --input]   <moduleCalibration file> " << std::endl
-            << "\t\t" << "[--all|--hostname|--pwd|--files--config]   - choice of info to be printed. At least one has to be chosen!"   << std::endl
+            << "\t\t" << "[--all|--hostname|--pwd|--files|--config]   - choice of info to be printed. At least one has to be chosen!"   << std::endl
             << "\t\t" << "[-o | --output]  <output file>             - OPTIONAL: if no output file given, results will be print on screen> ] " << std::endl
             << "\t\t" << std::endl;
 }

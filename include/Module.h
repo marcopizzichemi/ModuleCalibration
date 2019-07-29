@@ -19,7 +19,9 @@ private:
 
   UInt_t seed;
   std::vector<detector_t> detector;
+  int taggingCrystalChannel;
   int taggingCrystalTimingChannel;
+  float taggingPosition;
   TH2F *TagVsExtTimeSpectrum;
   TH2F *TagVsDeltaTimeSpectrum;
   TTreeFormula* FormulaTag;
@@ -56,6 +58,12 @@ public:
   TH2F*                  GetTagVsDeltaTimeSpectrum(){return TagVsDeltaTimeSpectrum;};
   void                   SetFormulaTaggingPhotopeakCut(TTreeFormula* aFormula){FormulaTag = aFormula;};
   TTreeFormula*          GetFormulaTaggingPhotopeakCut(){return FormulaTag;};
+
+  void                   SetTaggingPosition(float aNum){taggingPosition = aNum;};
+  float                  GetTaggingPosition(){return taggingPosition;};
+
+  int                    GetTaggingCrystalChannel(){return taggingCrystalChannel;};
+  void                   SetTaggingCrystalChannel (int aNum){taggingCrystalChannel = aNum;};
   void PrintGlobal();
   void PrintSpecific();
 };

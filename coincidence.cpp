@@ -2,7 +2,7 @@
 // use it as a base for analysis programs
 
 // compile with
-// g++ -o ../build/barebone barebone.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+// g++ -o ../build/coincidence coincidence.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 
 
 #include "TROOT.h"
@@ -91,6 +91,7 @@ int main (int argc, char** argv)
 
   gStyle->SetOptStat(1111);
   gStyle->SetOptFit(1111);
+  ROOT::v5::TFormula::SetMaxima(10000,10000,10000);
 
   // default args
   std::string calibrationFileNames = "";
@@ -371,8 +372,10 @@ int main (int argc, char** argv)
 
     // LOOP ON ALL ACCEPTED CRYSTALS
     // I.E. ALL CRYSTALS IN THE CALIBRATION FILES
+    int c = 0;
     for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
     {
+
       // do whatever you want
       // in particular, some tips:
       // 1) if(crystal[iCry].FormulaTagAnalysis->EvalInstance()){} --> this will select events in the photopeak of the external reference crystal, if there is one. Notice that each crystal can have its own FormulaTagAnalysis, since they can come from different calibration runs
@@ -384,19 +387,54 @@ int main (int argc, char** argv)
       //example here, selecting photopeak events in ext ref, photopeak events the crystal(s) found in calibration file(s), and calculating FloodZ for each
       if(crystal[iCry].accepted)
       {
-        if(crystal[iCry].FormulaTagAnalysis->EvalInstance())
-        {
+
+        // if(crystal[iCry].FormulaAnalysis)
+        // {
           if(crystal[iCry].FormulaAnalysis->EvalInstance())
           {
-            goodEventsAnalysis++;
-            // float FloodZ = calculateFloodZ(charge,crystal[iCry]);
-            // std::cout << FloodZ << std::endl;
+            // std::cout << i << " " << std::endl;
+            // c++;
+
+            // std::cout << crystal[iCry].number << " ";
+            for(unsigned int jCry = 0 ;  jCry < crystal.size() ; jCry++)
+            {
+              if(crystal[jCry].number != crystal[iCry].number )
+              {
+                if(crystal[jCry].accepted)
+                {
+            //       // if(crystal[jCry].FormulaAnalysis)
+            //       // {
+                    if(crystal[jCry].FormulaAnalysis->EvalInstance())
+                    {
+                      // std::cout << crystal[iCry].timingChannel << " " << crystal[jCry].timingChannel << std::endl;
+                      if(fabs( timeStamp[crystal[iCry].detectorChannel] - timeStamp[crystal[jCry].detectorChannel] ) < 1e-9) // FIXME this works only because channels are the same N for charge and t, and it is used here because the calibration files were obtained wihtout timing analisys
+                      {
+                        goodEventsAnalysis++;
+                      }
+                      // std::cout << crystal[iCry].number << " "
+                                // << crystal[jCry].number << std::endl;
+            //
+
+            //           // std::cout << "ciao" << std::endl;
+                    }
+            //       // }
+            //
+                }
+              }
+            }
           }
-        }
+        // }
+
       }
     }
+    // if(c > 1)
+    // {
+      // std::cout << i << std::endl;
+    // }
 
-    //LOOP COUNTER
+
+
+    // LOOP COUNTER
     counterAnalysis++;
     int perc = ((100*counterAnalysis)/neventAnalysis);
     if( (perc % 10) == 0 )
