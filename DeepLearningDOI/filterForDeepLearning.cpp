@@ -1,5 +1,5 @@
 // compile with
-// g++ -o ../build/filterForDeepLearning filterForDeepLearning.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer
+// g++ -o ../../build/filterForDeepLearning filterForDeepLearning.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 
 // small program to take doi bench data and filter events in one cyrstal, producing an output for deeplearning study
 
@@ -52,43 +52,14 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <algorithm>    // std::sort
-
 #include <sys/types.h>
-#include <dirent.h>
 
-// #include "./libraries/Calibration.h"        // readTaggingData , readCalibration , setWandZcuts
-
-// typedef std::vector<std::string> stringvec;
-// list files in directory
-// taken from
-// http://www.martinbroadhurst.com/list-the-files-in-a-directory-in-c.html
-void read_directory(const std::string& name, std::vector<std::string> &v)
-{
-    DIR* dirp = opendir(name.c_str());
-    struct dirent * dp;
-    while ((dp = readdir(dirp)) != NULL) {
-        v.push_back(dp->d_name);
-    }
-    closedir(dirp);
-}
+#include "../libraries/CrystalStructs.h"        // Crystal_t , detector_t
+#include "../libraries/Calibration.h"           // readTaggingData , readCalibration , setWandZcuts
+#include "../libraries/Utilities.h"             // read_directory , invert_a_matrix
 
 
 
-
-struct detector_t
-{
-  int digitizerChannel;
-  float saturation;
-  float pedestal;
-};
-
-
-
-struct data_t
-{
-  double x;
-  double y;
-};
 
 
 void usage()
@@ -99,6 +70,10 @@ void usage()
             << "\t\t" << "<output.txt>                                      - output file name"   << std::endl
             << "\t\t" << std::endl;
 }
+
+
+
+
 
 int main (int argc, char** argv)
 {
@@ -358,269 +333,89 @@ int main (int argc, char** argv)
     t1->Branch(names.c_str(),&out_timestamp[i],types.c_str());
   }
 
+
   //----------------------------------------------------------//
   //  Read and import from Calibration file                   //
   //----------------------------------------------------------//
+  // open calibration file
   TFile *calibrationFile = new TFile(calibrationFileName.c_str());
-
-  //prepare individual relevat cuts
-  // TCut* CrystalCut = NULL;
-  TCut* taggingPhotopeakCut = NULL;
-  TCut* TriggerChannelCut = NULL;
-  TCut* broadCut = NULL;
-  TCut* CutNoise = NULL;
-  std::vector<TCutG*> cutg;
-  TCut* PhotopeakEnergyCut = NULL;
-
-  //enter main folder
-  calibrationFile->cd("Module 0.0");
-
-  // get data for saturaiton correction
-  std::vector<int> *pChannels;
-  std::vector<float> *pSaturation;
-  std::vector<float> *pPedestal;
-  gDirectory->GetObject("channels",pChannels);
-  gDirectory->GetObject("saturation",pSaturation);
-  gDirectory->GetObject("pedestal",pPedestal);
-  std::vector<int> DetChannels = pChannels[0];
-  std::vector<float> saturation = pSaturation[0];
-  std::vector<float> pedestal = pPedestal[0];
-  std::vector<detector_t> detectorSaturation;
-  for(unsigned int iSat = 0; iSat < DetChannels.size(); iSat++)
-  {
-    detector_t tempDetector;
-    tempDetector.digitizerChannel = DetChannels[iSat];
-    tempDetector.saturation = saturation[iSat];
-    tempDetector.pedestal = pedestal[iSat];
-    detectorSaturation.push_back(tempDetector);
-  }
-
-
-
-  taggingPhotopeakCut = (TCut*) gDirectory->Get("taggingPhotopeakCut");
-
-  std::stringstream snameCh;
-  snameCh << ((TNamed*) gDirectory->Get("taggingPosition"))->GetTitle();
-  float taggingPosition = atof(snameCh.str().c_str());
-
-  snameCh.str("");
-  snameCh << ((TNamed*) gDirectory->Get("taggingCrystalChannel"))->GetTitle();
-  int taggingCrystalChannel = atoi(snameCh.str().c_str());
-
-
-  // std::cout << taggingCrystalChannel << std::endl;
-
-
-  // list keys
-  TList *listModule = gDirectory->GetListOfKeys(); // list of keys
-  int nKeysMod = listModule->GetEntries();  // number of keys
-  std::vector<std::string> keysModName;
-  // fill a vector with the leaves names
-  std::string mppc_prefix("MPPC");
-  for(int i = 0 ; i < nKeysMod ; i++)
-  {
-    keysModName.push_back(listModule->At(i)->GetName()); // put keys names in a vector of strings
-  }
-  // get MPPC folders
-  std::vector<std::string> MPPCfolders; // check keys starting by "MPPC"
-  for(unsigned int i = 0 ; i < keysModName.size() ; i++)
-  {
-    if (!keysModName[i].compare(0, mppc_prefix.size(), mppc_prefix))
-    {
-      MPPCfolders.push_back(keysModName[i]); // put MPPC keys name in list
-    }
-  }
-
-  // run on all the mppc
-  for(unsigned int iMppc = 0 ; iMppc < MPPCfolders.size() ; iMppc++)
-  {
-    // std::cout << MPPCfolders[iMppc] << std::endl;
-    gDirectory->cd(MPPCfolders[iMppc].c_str());
-    TList *listMppc = gDirectory->GetListOfKeys();
-    int nKeysMppc = listMppc->GetEntries();
-    std::vector<std::string> keysMppcName;
-    // fill a vector with the leaves names
-    std::string crystal_prefix("Crystal");
-
-    for(int i = 0 ; i < nKeysMppc ; i++){
-      keysMppcName.push_back(listMppc->At(i)->GetName());
-    }
-
-    std::vector<std::string> CrystalFolders;
-
-    for(unsigned int i = 0 ; i < keysMppcName.size() ; i++)
-    {
-      if (!keysMppcName[i].compare(0, crystal_prefix.size(), crystal_prefix))
-      {
-        CrystalFolders.push_back(keysMppcName[i]);
-      }
-    }
-
-    // enter crystal folders
-    for(unsigned int iCry = 0 ; iCry < CrystalFolders.size() ; iCry++)
-    {
-      gDirectory->cd(CrystalFolders[iCry].c_str());
-      int CryNumber = atoi((CrystalFolders[iCry].substr(crystal_prefix.size()+1,CrystalFolders[iCry].size()-crystal_prefix.size()-1)).c_str());
-
-
-      if(CryNumber == selectedCrystal)
-      {
-
-
-        TList *listCry = gDirectory->GetListOfKeys();
-        int nKeysCry = listCry->GetEntries();
-        std::vector<std::string> keysCryName;
-        if(nKeysCry) //if directory not empty
-        {
-          // CrystalCut = (TCut*) gDirectory->Get("CrystalCut");
-          TriggerChannelCut  = (TCut*) gDirectory->Get("TriggerChannelCut");
-          broadCut           = (TCut*) gDirectory->Get("broadCut");
-          CutNoise           = (TCut*) gDirectory->Get("CutNoise");
-          PhotopeakEnergyCut = (TCut*) gDirectory->Get("PhotopeakEnergyCut");
-
-          std::string cutG_prefix("cutg");
-          for(int i = 0 ; i < nKeysCry ; i++)
-          {
-            keysCryName.push_back(listCry->At(i)->GetName());
-          }
-          for(unsigned int i = 0 ; i < keysCryName.size() ; i++)
-          {
-            if(!keysCryName[i].compare(0,cutG_prefix.size(),cutG_prefix)) // find tcutgs
-            {
-              TCutG* cut = (TCutG*) gDirectory->Get(keysCryName[i].c_str());
-              cutg.push_back(cut);
-            }
-          }
-        }
-      }
-      gDirectory->cd("..");
-    }
-    gDirectory->cd("..");
-  }
-  //----------------------------------------------------------//
-
-
-
-  //----------------------------------------------------------//
-  //  check                                                   //
-  //----------------------------------------------------------//
-  if(taggingPhotopeakCut)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "taggingPhotopeakCut: " << std::endl;
-      std::cout << taggingPhotopeakCut->GetTitle() << std::endl;
-    }
-  }
-  else
-  {
-    std::cout << "taggingPhotopeakCut not found! Aborting." << std::endl;
-    return 1;
-  }
-
-  if(TriggerChannelCut)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "TriggerChannelCut: " << std::endl;
-      std::cout << TriggerChannelCut->GetTitle() << std::endl;
-    }
-  }
-  else
-  {
-    std::cout << "TriggerChannelCut not found! Aborting." << std::endl;
-    return 1;
-  }
-
-  if(broadCut)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "broadCut: " << std::endl;
-      std::cout << broadCut->GetTitle() << std::endl;
-    }
-  }
-  else
-  {
-    std::cout << "broadCut not found! Aborting." << std::endl;
-    return 1;
-  }
-
-  if(CutNoise)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "CutNoise: " << std::endl;
-      std::cout << CutNoise->GetTitle() << std::endl;
-    }
-  }
-  else
-  {
-    std::cout << "CutNoise not found! Aborting." << std::endl;
-    return 1;
-  }
-
-  if(PhotopeakEnergyCut)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "PhotopeakEnergyCut: " << std::endl;
-      std::cout << PhotopeakEnergyCut->GetTitle() << std::endl;
-    }
-  }
-  else
-  {
-    std::cout << "PhotopeakEnergyCut not found! Aborting." << std::endl;
-    return 1;
-  }
-  if(cutg.size() == 2)
-  {
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "cutg[0]: " << std::endl;
-      cutg[0]->Print();
-    }
-    if(verbose)
-    {
-      std::cout << "---------------------------------------" << std::endl;
-      std::cout << "cutg[1]: " << std::endl;
-      cutg[1]->Print();
-    }
-  }
-  else
-  {
-    std::cout << "CutGs not found! Aborting." << std::endl;
-    return 1;
-  }
-  //----------------------------------------------------------//
-
-  //----------------------------------------------------------//
-  //  set global cuts                                         //
-  //----------------------------------------------------------//
-
-  // create formula for cutting dataset
-  TCut globalCut ;
-  if(UseTaggingPhotopeakCut)     globalCut += taggingPhotopeakCut->GetTitle();
-  if(UseTriggerChannelCut)       globalCut += TriggerChannelCut->GetTitle();
-  if(UseBroadCut)                globalCut += broadCut->GetTitle();
-  if(UseCutNoise)                globalCut += CutNoise->GetTitle();
-  if(UsePhotopeakEnergyCut)      globalCut += PhotopeakEnergyCut->GetTitle();
-  if(UseCutgs)
-  {
-    globalCut += cutg[0]->GetName();
-    globalCut += cutg[1]->GetName();
-  }
-
-  TTreeFormula* FormulaAnalysis = new TTreeFormula("FormulaAnalysis",globalCut,tree);
+  // prepare a list of TTreeFormula
   TList* formulasAnalysis = new TList();
-  formulasAnalysis->Add(FormulaAnalysis);
+  // prepare a vector of crystals (we will use only one)
+  std::vector<Crystal_t> crystal;
 
+  readCalibration(calibrationFile,          // calib file
+                  tree,                     // input TChain (same for everyone)
+                  formulasAnalysis,         // TList of all TTreeFormula
+                  crystal,                  // structure of all crystals found in all calib lifes
+                  UseTriggerChannelCut,                      // include TriggerChannelCuthannel cut in crystalCut
+                  UseBroadCut,                               // include broadCut in crystalCut
+                  UseCutNoise,                               // include CutNoise in crystalCut
+                  UsePhotopeakEnergyCut,                     // include PhotopeakEnergyCut in crystalCut
+                  UseCutgs                                   // include CutGs in crystalCut
+                 );
+
+  // optionally set w and z limits, and write values into crystal struct
+  // setWandZcuts(crystal);
+
+  // list the crystals with calibration data found
+  std::cout << "Calibration data found for crystals: " << std::endl;
+  for(unsigned int i = 0 ;  i < crystal.size() ; i++)
+  {
+    if(crystal[i].accepted)
+    {
+      std::cout << crystal[i].number << std::endl;
+    }
+  }
+
+
+  // switch off crystals if they were not chosen (only one chosen allowed)
+  // std::cout << "Calibration data found for crystals: " << std::endl;
+  int crystalsFound = 0;
+  int id = -1;
+  for(unsigned int i = 0 ;  i < crystal.size() ; i++)
+  {
+    if(crystal[i].accepted)
+    {
+      if(crystal[i].number != selectedCrystal)
+      {
+        crystal[i].accepted = false;
+      }
+      else
+      {
+        crystalsFound++;
+        id = i;
+      }
+    }
+  }
+
+  if(crystalsFound == 0)
+  {
+    std::cout << "ERROR: No chosen crystal found? Aborting." << std::endl;
+    return 1;
+  }
+  if(crystalsFound > 1)
+  {
+    std::cout << "ERROR: More than one chosen crystal found?? Aborting."<< std::endl << "crystalsFound = " << crystalsFound << std::endl;
+    return 1;
+  }
+  if(crystalsFound == 1 )
+  {
+    if(id == -1 )
+    {
+      std::cout << "ERROR: This cannot happen. Aborting." << std::endl
+                << "crystalsFound = " << crystalsFound << std::endl
+                << "id            = " << id << std::endl;
+      return 1;
+    }
+  }
+
+  std::cout << "Chosen crystal = " << crystal[id].number << std::endl;
+
+
+  //----------------------------------------------------------//
+  //  MAIN LOOP                                               //
+  //----------------------------------------------------------//
 
   //MAIN LOOP
   long long int nevent = tree->GetEntries();
@@ -628,7 +423,6 @@ int main (int argc, char** argv)
   long int counter = 0;
   long int passCounter = 0;
   tree->SetNotify(formulasAnalysis);
-
   for (long long int i=0;i<nevent;i++)
   {
     // std::cout << "Event " << i << std::endl;
@@ -644,41 +438,47 @@ int main (int argc, char** argv)
     //
     counter++;
 
-    if(FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+    if(crystal[id].FormulaTagAnalysis->EvalInstance()) // tag photopeak
     {
-      passCounter++;
-      out_doiFromTag      = taggingPosition;
-      out_ExtendedTimeTag = ChainExtendedTimeTag;
-      out_DeltaTimeTag    = ChainDeltaTimeTag;
-      for(int iCh = 0; iCh < numOfCh ; iCh++)
+      if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
       {
-        if(charge[iCh] > 0) // old readout could give negative integrals (why?) anyway filter them out
+        passCounter++;
+        out_doiFromTag      = crystal[id].taggingPosition;
+        out_ExtendedTimeTag = ChainExtendedTimeTag;
+        out_DeltaTimeTag    = ChainDeltaTimeTag;
+        for(int iCh = 0; iCh < numOfCh ; iCh++)
         {
-          if(iCh == taggingCrystalChannel)
+          if(charge[iCh] > 0) // old readout could give negative integrals (why?) anyway filter them out
           {
-            out_charge[iCh] = charge[iCh];
-          }
-          for(int iDet = 0 ; iDet < detectorSaturation.size(); iDet++)
-          {
-            // sat correction is
-            // - q_max * ln( 1 - (ch - ped)/(q_max))
-            // where
-            // q_max    = saturation
-            // ch       = charge not corrected
-            // ped      = pedestal (not corrected)
-            if(iCh == detectorSaturation[iDet].digitizerChannel)
+            if(iCh == crystal[id].taggingCrystalChannel)
             {
-              out_charge[iCh] = -detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - detectorSaturation[iDet].pedestal ) / (detectorSaturation[iDet].saturation) ) );
+              out_charge[iCh] = charge[iCh];
+            }
+            for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+            {
+              // sat correction is
+              // - q_max * ln( 1 - (ch - ped)/(q_max))
+              // where
+              // q_max    = saturation
+              // ch       = charge not corrected
+              // ped      = pedestal (not corrected)
+              if(iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+              {
+                out_charge[iCh] = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
+              }
             }
           }
         }
+        for(int iT = 0; iT < numOfT ; iT++)
+        {
+          out_timestamp[iT] = timeStamp[iT];
+        }
+        t1->Fill();
       }
-      for(int iT = 0; iT < numOfT ; iT++)
-      {
-        out_timestamp[iT] = timeStamp[iT];
-      }
-      t1->Fill();
     }
+
+
+
     //
     int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
     if( (perc % 10) == 0 )

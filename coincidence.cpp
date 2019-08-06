@@ -99,6 +99,14 @@ int main (int argc, char** argv)
   std::string inputFilePrefix = "";
   std::string outputFileName = "outputBareboneFile.root";
 
+  bool UseDefaultCuts         = true;
+  bool UseTaggingPhotopeakCut = false;
+  bool UseTriggerChannelCut   = false;
+  bool UseBroadCut            = false;
+  bool UseCutNoise            = false;
+  bool UsePhotopeakEnergyCut  = false;
+  bool UseCutgs               = false;
+
   // parse command line arguments
   static struct option longOptions[] =
   {
@@ -106,6 +114,12 @@ int main (int argc, char** argv)
       { "folder", required_argument, 0, 0 },
       { "prefix", required_argument, 0, 0 },
       { "output", required_argument, 0, 0 },
+      { "tagCut", no_argument, 0, 0 },
+      { "triggerCut", no_argument, 0, 0 },
+      { "broadCut", no_argument, 0, 0 },
+      { "noiseCut", no_argument, 0, 0 },
+      { "photopeakCut", no_argument, 0, 0 },
+      { "cutgCut", no_argument, 0, 0 },
 			{ NULL, 0, 0, 0 }
 	};
 
@@ -140,12 +154,49 @@ int main (int argc, char** argv)
     else if (c == 0 && optionIndex == 3){
       outputFileName = (char *)optarg;
     }
+    else if (c == 0 && optionIndex == 4){
+      UseDefaultCuts = false;
+      UseTaggingPhotopeakCut = true;
+    }
+    else if (c == 0 && optionIndex == 5){
+      UseDefaultCuts = false;
+      UseTriggerChannelCut = true;
+    }
+    else if (c == 0 && optionIndex == 6){
+      UseDefaultCuts = false;
+      UseBroadCut = true;
+    }
+    else if (c == 0 && optionIndex == 7){
+      UseDefaultCuts = false;
+      UseCutNoise = true;
+    }
+    else if (c == 0 && optionIndex == 8){
+      UseDefaultCuts = false;
+      UsePhotopeakEnergyCut = true;
+    }
+    else if (c == 0 && optionIndex == 9){
+      UseDefaultCuts = false;
+      UseCutgs = true;
+    }
+
+
+
 		else {
       std::cout	<< "Usage: " << argv[0] << std::endl;
 			usage();
 			return 1;
 		}
 	}
+
+  if(UseDefaultCuts)
+  {
+    // UseTaggingPhotopeakCut = true;
+    // UseTriggerChannelCut   = true;
+    // UseBroadCut            = true;
+    // UseCutNoise            = true;
+    UsePhotopeakEnergyCut  = true;
+    UseCutgs               = true;
+  }
 
 
 
@@ -337,9 +388,13 @@ int main (int argc, char** argv)
     readCalibration(calibrationFile[i],       // this calib file
                     tree,                     // input TChain (same for everyone)
                     formulasAnalysis,         // TList of all TTreeFormula
-                    crystal);                 // structure of all crystals found in all calib lifes
-
-
+                    crystal,                  // structure of all crystals found in all calib files
+                    UseTriggerChannelCut,                      // include TriggerChannelCuthannel cut in crystalCut
+                    UseBroadCut,                               // include broadCut in crystalCut
+                    UseCutNoise,                               // include CutNoise in crystalCut
+                    UsePhotopeakEnergyCut,                     // include PhotopeakEnergyCut in crystalCut
+                    UseCutgs                                   // include CutGs in crystalCut
+                   );
   }
   // optionally set w and z limits, and write values into crystal struct
   // setWandZcuts(crystal);

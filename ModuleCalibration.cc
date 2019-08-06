@@ -1649,14 +1649,21 @@ int main (int argc, char** argv)
             // run on all the possible crystals (i.e. all the crystals coupled to this mppc)
             for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
             {
+
               for(int jCry = 0; jCry < ncrystalsy ; jCry++)
               {
                 if(crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)]->GetIsOnForModular())
                 {
                   if(found)
                   {
+                    int actualIOfCrystal = iCry;
+                    if(usingTaggingBench)
+                    { //with tagging crystal setup, take the doiColumnOffset into account
+
+                      actualIOfCrystal +=  doiColumnOffset;
+                    }
                     // get a pointer to this crystal
-                    Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
+                    Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(actualIOfCrystal)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
                     CurrentCrystal->SetCrystalOn(true);
                     //store the cutg in the crystal
                     if(apply3Dcut)

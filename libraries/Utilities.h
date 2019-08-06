@@ -1,3 +1,9 @@
+#include <gsl/gsl_matrix_double.h>
+#include <gsl/gsl_linalg.h>
+
+#include <sys/stat.h>
+#include <dirent.h>
+
 // list files in directory
 // taken from
 // http://www.martinbroadhurst.com/list-the-files-in-a-directory-in-c.html

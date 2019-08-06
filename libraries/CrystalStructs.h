@@ -79,6 +79,8 @@ struct Crystal_t
   TTreeFormula *FormulaAnalysis;
   TTreeFormula *FormulaTagAnalysis;
   int taggingCrystalTimingChannel;
+  int taggingCrystalChannel;
+  int taggingPosition;
   TCut* taggingPhotopeakCut;
   std::vector<detector_t> detectorSaturation;
   float marginWZgraph;
