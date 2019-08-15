@@ -340,6 +340,9 @@ int main (int argc, char** argv)
     completeAnalysis = false;
   }
 
+  std::vector<tagEdge_t> tagEdge;
+
+
 
   // GET INFO ON PC AND FILES
   char hostname[1024];
@@ -2103,17 +2106,29 @@ int main (int argc, char** argv)
                         spectrumCharge->Fit(gauss,"Q","",fitmin,fitmax);
                         // std::cout << "pars " << par0 << "\t" << par1 << "\t" << par2 << std::endl;
 
+                        tagEdge_t tempEdge;
                         if((usingTaggingBench || taggingForTiming ) && TagEdgeCalculation)
                         {
-                          std::cout << "Crystal "
-                          << CurrentCrystal->GetID()
-                          << " - MPPC "
-                          << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()
-                          << ", Ratio 1 = "
-                          << fabs(gauss->GetParameter(0)*
-                          gauss->GetParameter(2)*
-                          TMath::Sqrt(2.0*TMath::Pi())) /
-                          tagPeakHgEntries;
+                          std::stringstream sedge;
+                          sedge << "Crystal "
+                                << CurrentCrystal->GetID()
+                                << " - MPPC "
+                                << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                          tempEdge.label  = sedge.str();
+                          tempEdge.ratio1 = fabs(gauss->GetParameter(0)*
+                                            gauss->GetParameter(2)*
+                                            TMath::Sqrt(2.0*TMath::Pi())) /
+                                            tagPeakHgEntries;
+
+                          // std::cout << "Crystal "
+                          // << CurrentCrystal->GetID()
+                          // << " - MPPC "
+                          // << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()
+                          // << ", Ratio 1 = "
+                          // << fabs(gauss->GetParameter(0)*
+                          // gauss->GetParameter(2)*
+                          // TMath::Sqrt(2.0*TMath::Pi())) /
+                          // tagPeakHgEntries;
                           // << std::endl;
                         }
                         //store the mean and sigma in the crystal
@@ -2156,7 +2171,9 @@ int main (int argc, char** argv)
 
                         if((usingTaggingBench || taggingForTiming ) && TagEdgeCalculation)
                         {
-                          std::cout << ", Ratio 2 = " << spectrumChargeHighlighted->Integral() / tagPeakHgEntries << std::endl;
+                          tempEdge.ratio2 = spectrumChargeHighlighted->Integral() / tagPeakHgEntries;
+                          // std::cout << ", Ratio 2 = " << spectrumChargeHighlighted->Integral() / tagPeakHgEntries << std::endl;
+                          tagEdge.push_back(tempEdge);
                         }
                         var.str("");
                         sname.str("");
@@ -4040,7 +4057,15 @@ int main (int argc, char** argv)
   // SAVE DATA TO FILE                                        //
   //----------------------------------------------------------//
 
-
+  if(TagEdgeCalculation)
+  {
+    for(unsigned int i = 0 ; i < tagEdge.size(); i++)
+    {
+      std::cout << tagEdge[i].label << "\t"
+                << tagEdge[i].ratio1 << "\t"
+                << tagEdge[i].ratio2 << std::endl;
+    }
+  }
 
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
 
@@ -4442,6 +4467,7 @@ int main (int argc, char** argv)
       sWrangeBinsForTiming.str("");
 
       //
+
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
         for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
@@ -4523,6 +4549,7 @@ int main (int argc, char** argv)
                 std::stringstream CrystalDirStream;
                 //create a pointer for the current crystal (mainly to make the code more readable)
                 Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
+
                 if(CurrentCrystal->GetIsOnForModular())
                 {
                   CrystalDirStream << "Crystal " <<  CurrentCrystal->GetID();
@@ -4830,6 +4857,9 @@ int main (int argc, char** argv)
                       }
 
 
+
+
+
                       if(usingTaggingBench || taggingForTiming)
                       {
 
@@ -4886,6 +4916,10 @@ int main (int argc, char** argv)
                             }
                             corrDir->cd("..");
                           }
+
+
+
+
 
 
 
@@ -5122,6 +5156,13 @@ int main (int argc, char** argv)
                             }
                             poliDir->cd("..");
 
+                            // C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                            // C_spectrum->SetName(CurrentCrystal->GetDeltaTvsCH()->GetName());
+                            // CurrentCrystal->GetDeltaTvsCH()->Draw("COLZ");
+                            // C_spectrum->Write();
+                            // delete C_spectrum;
+
+
                             // std::vector<int>    GetTChannelsForPolishedCorrection(){return tChannelsForPolishedCorrection;};
                             // std::vector<double> GetMeanForPolishedCorrection(){return meanForPolishedCorrection;};
                             // std::vector<double> GetFwhmForPolishedCorrection(){return fwhmForPolishedCorrection;};
@@ -5138,23 +5179,22 @@ int main (int argc, char** argv)
                           }
                           else // otherwise plot only the CTR plot
                           {
+
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
                             C_spectrum->SetName(CurrentCrystal->GetDeltaTimeWRTTagging()->GetName());
                             CurrentCrystal->GetDeltaTimeWRTTagging()->Draw();
                             C_spectrum->Write();
                             delete C_spectrum;
+                            // std::cout << "aaaaaaaaaaaaaaaaa" << std::endl;
 
                             C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
                             C_spectrum->SetName(CurrentCrystal->GetDeltaTvsW()->GetName());
                             CurrentCrystal->GetDeltaTvsW()->Draw("COLZ");
                             C_spectrum->Write();
                             delete C_spectrum;
+                            // std::cout << "bbbbbbbbbbbbbbbbbb" << std::endl;
 
-                            C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
-                            C_spectrum->SetName(CurrentCrystal->GetDeltaTvsCH()->GetName());
-                            CurrentCrystal->GetDeltaTvsCH()->Draw("COLZ");
-                            C_spectrum->Write();
-                            delete C_spectrum;
+
 
 
                           }

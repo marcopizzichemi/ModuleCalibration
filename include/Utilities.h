@@ -92,6 +92,13 @@ struct multi_channel_t
   std::string string;
 };
 
+
+struct tagEdge_t
+{
+  std::string label;
+  float ratio1;
+  float ratio2;
+};
 //------------------------------------------//
 // CREATION OF STRINGS FOR PLOTTING         //
 //------------------------------------------//
