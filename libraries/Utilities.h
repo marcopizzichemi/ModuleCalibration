@@ -125,10 +125,6 @@ float calculateFloodZ(UShort_t  *charge,
         pedestalCorr = crystal.detectorSaturation[iSat].pedestal;
       }
     }
-    // std::cout << originalCh << " "
-    //           << saturationCh << " "
-    //           << pedestalCorr << " "
-    //           << std::endl;
     division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
   }
 
@@ -136,3 +132,26 @@ float calculateFloodZ(UShort_t  *charge,
   return FloodZ;
 }
 //calculate FloodZ...
+
+
+float calculateFloodZ_withoutCorrectingForSaturation(UShort_t  *charge,
+                      Crystal_t crystal)
+{
+  float FloodZ;
+  float centralChargeOriginal;
+  float centralSaturation;
+  float centralPedestal;
+  float division = 0.0;
+
+  centralChargeOriginal = charge[crystal.detectorChannel];
+  float centralChargeCorr = centralChargeOriginal;
+
+  for (unsigned int iW = 0; iW < crystal.relevantForW.size(); iW++)
+  {
+    float originalCh = charge[crystal.relevantForW[iW]];
+    division += originalCh;
+  }
+
+  FloodZ = centralChargeCorr / division;
+  return FloodZ;
+}

@@ -141,13 +141,6 @@ struct Crystal_t
   TCut* CutNoise          ;
   TCut* PhotopeakEnergyCutnergyCut;
 
-  //CTR std::vectors for unbinned calculations. obsolete
-  // std::vector<double> vSimple;
-  // std::vector<double> vCentral;
-  // std::vector<double> vAll;
-  // std::vector<double> vPoli;
-  // std::vector<double> vLike;
-  // std::vector<double> vhybrid;
 };
 
 
