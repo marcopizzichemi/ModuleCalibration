@@ -4077,6 +4077,8 @@ int main (int argc, char** argv)
 
   if(TagEdgeCalculation)
   {
+    std::ofstream tagEdgeFile;
+    tagEdgeFile.open("tagEdgeData.txt", std::ofstream::out);
     // for(unsigned int s = 0 ; s < tagEdgeCalculationLabels.size(); s++)
     // {
       for(unsigned int i = 0 ; i < tagEdge.size(); i++)
@@ -4101,12 +4103,17 @@ int main (int argc, char** argv)
           // std::cout << tagEdge[i].label << "\t"
           //           << tagEdge[i].ratio1 << "\t"
           //           << tagEdge[i].ratio2 << std::endl;
+          tagEdgeFile << tagEdge[i].ratio1 << " ";
           std::cout << tagEdge[i].ratio1 << " ";
         }
       }
     }
+    tagEdgeFile << std::endl;
+    std::cout << std::endl;
+    tagEdgeFile.close();
   }
-  std::cout << std::endl;
+
+
 
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
 
