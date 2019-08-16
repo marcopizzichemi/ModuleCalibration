@@ -272,6 +272,7 @@ int main (int argc, char** argv)
   float taggingSpectrumMin = config.read<float>("taggingSpectrumMin",0.0);
   float taggingSpectrumMax = config.read<float>("taggingSpectrumMax",12000.0);
   bool TagEdgeCalculation  = config.read<bool>("tagEdgeCalculation",0);
+  std::string TagEdgeCalculationLabels_s = config.read<std::string>("tagEdgeCalculationLabels","");
   int digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme, 2 = petiroc
   bool cuttingOnTagPhotopeak = config.read<bool>("cuttingOnTagPhotopeak",1);
   int CTRbins = config.read<int>("CTRbins",500);
@@ -331,6 +332,22 @@ int main (int argc, char** argv)
     config.trim(excludeChannels_f[i]);
     excludeChannels.push_back(atoi(excludeChannels_f[i].c_str()));
   }
+
+  std::vector<std::string> tagEdgeCalculationLabels_f;
+  std::vector<std::string> tagEdgeCalculationLabels;
+  config.split( tagEdgeCalculationLabels_f, TagEdgeCalculationLabels_s, "," );
+  for(unsigned int i = 0 ; i < tagEdgeCalculationLabels_f.size() ; i++)
+  {
+    config.trim(tagEdgeCalculationLabels_f[i]);
+    tagEdgeCalculationLabels.push_back(tagEdgeCalculationLabels_f[i].c_str());
+  }
+
+  for(unsigned int i = 0 ; i <tagEdgeCalculationLabels.size(); i++ )
+  {
+    std::cout << tagEdgeCalculationLabels[i] << " " ;
+  }
+  std::cout << std::endl;
+
 
 
   //get a more readable variable for essential plots
@@ -2115,6 +2132,7 @@ int main (int argc, char** argv)
                                 << " - MPPC "
                                 << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                           tempEdge.label  = sedge.str();
+                          tempEdge.mppc   = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
                           tempEdge.ratio1 = fabs(gauss->GetParameter(0)*
                                             gauss->GetParameter(2)*
                                             TMath::Sqrt(2.0*TMath::Pi())) /
@@ -4059,13 +4077,36 @@ int main (int argc, char** argv)
 
   if(TagEdgeCalculation)
   {
-    for(unsigned int i = 0 ; i < tagEdge.size(); i++)
+    // for(unsigned int s = 0 ; s < tagEdgeCalculationLabels.size(); s++)
+    // {
+      for(unsigned int i = 0 ; i < tagEdge.size(); i++)
+      {
+        // if(tagEdge[i].label.compare(tagEdgeCalculationLabels[s]) == 0 )
+        // {
+          std::cout << tagEdge[i].label << "\t"
+                    << tagEdge[i].ratio1 << "\t"
+                    << tagEdge[i].ratio2 << std::endl;
+          // std::cout << tagEdge[i].ratio1 << " ";
+        // }
+      }
+    // }
+
+
+    for(unsigned int s = 0 ; s < tagEdgeCalculationLabels.size(); s++)
     {
-      std::cout << tagEdge[i].label << "\t"
-                << tagEdge[i].ratio1 << "\t"
-                << tagEdge[i].ratio2 << std::endl;
+      for(unsigned int i = 0 ; i < tagEdge.size(); i++)
+      {
+        if(tagEdge[i].mppc.compare(tagEdgeCalculationLabels[s]) == 0 )
+        {
+          // std::cout << tagEdge[i].label << "\t"
+          //           << tagEdge[i].ratio1 << "\t"
+          //           << tagEdge[i].ratio2 << std::endl;
+          std::cout << tagEdge[i].ratio1 << " ";
+        }
+      }
     }
   }
+  std::cout << std::endl;
 
   std::cout << "Saving data to " << outputFileName << " ..." << std::endl;
 

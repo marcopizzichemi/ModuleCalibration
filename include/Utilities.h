@@ -96,6 +96,7 @@ struct multi_channel_t
 struct tagEdge_t
 {
   std::string label;
+  std::string mppc;
   float ratio1;
   float ratio2;
 };
