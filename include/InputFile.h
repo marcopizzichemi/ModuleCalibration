@@ -157,6 +157,7 @@ private:
   Int_t        *ChainAdcChannel;
   Short_t      *ChainDesktopAdcChannel;                              // input TChain data for desktop digitizers - data is int_16
   UShort_t     *ChainVMEadcChannel;                                  // input TChain data for VME digitizers - data is uint_16
+  UShort_t     *ChainVMEAmplitudeChannel;                             // input TChain data for VME amplitude - data is also uint_16
   Float_t      *ChainTimeStamp;
   Float_t      *TDCBinning;
   // Short_t      *ChainPetirocChannel;                                 //FIXME temporary data type of petiroc charge input - ask
@@ -173,7 +174,8 @@ private:
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
   TBranch     **bChainAdcChannel;                                    // branches for above data
-  TBranch     **bChainTimeStamp;
+  TBranch     **bChainAmplChannel;                                    // branches for above data
+  TBranch     **bChainTimeStamp;                                    // branches for above data
   TBranch      *bRealX;                                              // branches for above data
   TBranch      *bRealY;                                              // branches for above data
   TBranch      *bRealZ;                                              // branches for above data

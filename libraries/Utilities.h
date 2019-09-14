@@ -134,7 +134,8 @@ float calculateFloodZ(UShort_t  *charge,
 //calculate FloodZ...
 
 
-float calculateFloodZ_withoutCorrectingForSaturation(UShort_t  *charge,
+template <class T>
+float calculateFloodZ_withoutCorrectingForSaturation(T  *charge,
                       Crystal_t crystal)
 {
   float FloodZ;

@@ -88,6 +88,7 @@ int main (int argc, char** argv)
   std::string textFileName = "";
   std::string calibrationFileName = "";
   int selectedCrystal = -1;
+  bool simulation = false;
 
 
   // parse arguments
@@ -97,13 +98,14 @@ int main (int argc, char** argv)
       { "output", required_argument, 0, 0 },
       { "calibration", required_argument, 0, 0 },
       { "crystal", required_argument, 0, 0 },
-      { "verbose", no_argument, 0, 0 },
-      { "tagCut", no_argument, 0, 0 },
-      { "triggerCut", no_argument, 0, 0 },
-      { "broadCut", no_argument, 0, 0 },
-      { "noiseCut", no_argument, 0, 0 },
-      { "photopeakCut", no_argument, 0, 0 },
-      { "cutgCut", no_argument, 0, 0 },
+      { "sim",no_argument,0,0},
+      // { "verbose", no_argument, 0, 0 },
+      // { "tagCut", no_argument, 0, 0 },
+      // { "triggerCut", no_argument, 0, 0 },
+      // { "broadCut", no_argument, 0, 0 },
+      // { "noiseCut", no_argument, 0, 0 },
+      // { "photopeakCut", no_argument, 0, 0 },
+      // { "cutgCut", no_argument, 0, 0 },
 			{ NULL, 0, 0, 0 }
 	};
 
@@ -138,32 +140,35 @@ int main (int argc, char** argv)
       selectedCrystal = atoi((char *)optarg);
     }
     else if (c == 0 && optionIndex == 4){
-      verbose = true;
+      simulation = true;
     }
-    else if (c == 0 && optionIndex == 5){
-      UseAllCuts = false;
-      UseTaggingPhotopeakCut = true;
-    }
-    else if (c == 0 && optionIndex == 6){
-      UseAllCuts = false;
-      UseTriggerChannelCut = true;
-    }
-    else if (c == 0 && optionIndex == 7){
-      UseAllCuts = false;
-      UseBroadCut = true;
-    }
-    else if (c == 0 && optionIndex == 8){
-      UseAllCuts = false;
-      UseCutNoise = true;
-    }
-    else if (c == 0 && optionIndex == 9){
-      UseAllCuts = false;
-      UsePhotopeakEnergyCut = true;
-    }
-    else if (c == 0 && optionIndex == 10){
-      UseAllCuts = false;
-      UseCutgs = true;
-    }
+    // else if (c == 0 && optionIndex == 4){
+    //   verbose = true;
+    // }
+    // else if (c == 0 && optionIndex == 5){
+    //   UseAllCuts = false;
+    //   UseTaggingPhotopeakCut = true;
+    // }
+    // else if (c == 0 && optionIndex == 6){
+    //   UseAllCuts = false;
+    //   UseTriggerChannelCut = true;
+    // }
+    // else if (c == 0 && optionIndex == 7){
+    //   UseAllCuts = false;
+    //   UseBroadCut = true;
+    // }
+    // else if (c == 0 && optionIndex == 8){
+    //   UseAllCuts = false;
+    //   UseCutNoise = true;
+    // }
+    // else if (c == 0 && optionIndex == 9){
+    //   UseAllCuts = false;
+    //   UsePhotopeakEnergyCut = true;
+    // }
+    // else if (c == 0 && optionIndex == 10){
+    //   UseAllCuts = false;
+    //   UseCutgs = true;
+    // }
 		else {
       std::cout	<< "Usage: " << argv[0] << std::endl;
 			usage();
@@ -175,15 +180,15 @@ int main (int argc, char** argv)
   outputFileName += ".root";
   TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
 
-  if(UseAllCuts)
-  {
-    UseTaggingPhotopeakCut = true;
-    UseTriggerChannelCut   = true;
-    UseBroadCut            = true;
-    UseCutNoise            = true;
-    UsePhotopeakEnergyCut  = true;
-    UseCutgs               = true;
-  }
+  // if(UseAllCuts)
+  // {
+  //   UseTaggingPhotopeakCut = true;
+  //   UseTriggerChannelCut   = true;
+  //   UseBroadCut            = true;
+  //   UseCutNoise            = true;
+  //   UsePhotopeakEnergyCut  = true;
+  //   UseCutgs               = true;
+  // }
 
   // read file in dir
   std::vector<std::string> v;
@@ -250,6 +255,7 @@ int main (int argc, char** argv)
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous
   UShort_t      *charge;
+  Short_t      *s_charge;
   Float_t      *timeStamp;
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
@@ -257,23 +263,64 @@ int main (int argc, char** argv)
   TBranch      **btimeStamp;
   TBranch      *b_zFromTag;
   charge = new UShort_t[numOfCh];
+  s_charge = new Short_t[numOfCh];
   timeStamp = new Float_t[numOfT];
   bCharge = new TBranch*[numOfCh];
   btimeStamp = new TBranch*[numOfT];
   Float_t      zFromTag;
 
+  // sim part
+  Float_t RealX;
+  Float_t RealY;
+  Float_t RealZ;
+  Short_t CrystalsHit;
+  Short_t NumbOfInteractions;
+  TBranch *bRealX;
+  TBranch *bRealY;
+  TBranch *bRealZ;
+  TBranch *bCrystalsHit;
+  TBranch *bNumbOfInteractions;
+
+
+
   // set branches for reading the input files
   tree->SetBranchAddress("ExtendedTimeTag", &ChainExtendedTimeTag, &bChainExtendedTimeTag);
   tree->SetBranchAddress("DeltaTimeTag", &ChainDeltaTimeTag, &bChainDeltaTimeTag);
-  for (int i = 0 ; i < detector_channels.size() ; i++)
+  if(simulation)
   {
-    std::stringstream sname;
-    sname << "ch" << detector_channels[i];
-    tree->SetBranchAddress(sname.str().c_str(),&charge[detector_channels[i]],&bCharge[detector_channels[i]]);
-    sname.str("");
+    for (int i = 0 ; i < detector_channels.size() ; i++)
+    {
+      std::stringstream sname;
+      sname << "ch" << detector_channels[i];
+      tree->SetBranchAddress(sname.str().c_str(),&s_charge[detector_channels[i]],&bCharge[detector_channels[i]]);
+      sname.str("");
+    }
+  }
+  else
+  {
+    for (int i = 0 ; i < detector_channels.size() ; i++)
+    {
+      std::stringstream sname;
+      sname << "ch" << detector_channels[i];
+      tree->SetBranchAddress(sname.str().c_str(),&charge[detector_channels[i]],&bCharge[detector_channels[i]]);
+      sname.str("");
+    }
   }
 
-  tree->SetBranchAddress("zFromTag", &zFromTag, &b_zFromTag);
+
+  if(simulation)
+  {
+    tree->SetBranchAddress("RealX", &RealX, &bRealX);
+    tree->SetBranchAddress("RealY", &RealY, &bRealY);
+    tree->SetBranchAddress("RealZ", &RealZ, &bRealZ);
+    tree->SetBranchAddress("CrystalsHit",&CrystalsHit, &bCrystalsHit);
+    tree->SetBranchAddress("NumbOfInteractions",&NumbOfInteractions, &bNumbOfInteractions);
+  }
+  else
+  {
+    tree->SetBranchAddress("zFromTag", &zFromTag, &b_zFromTag);
+  }
+
 
   for (int i = 0 ; i < t_channels.size() ; i++)
   {
@@ -299,15 +346,16 @@ int main (int argc, char** argv)
                   tree,                     // input TChain (same for everyone)
                   formulasAnalysis,         // TList of all TTreeFormula
                   crystal,                  // structure of all crystals found in all calib lifes
-                  UseTriggerChannelCut,                      // include TriggerChannelCuthannel cut in crystalCut
-                  UseBroadCut,                               // include broadCut in crystalCut
-                  UseCutNoise,                               // include CutNoise in crystalCut
-                  UsePhotopeakEnergyCut,                     // include PhotopeakEnergyCut in crystalCut
-                  UseCutgs                                   // include CutGs in crystalCut
+                  false,                        // include TriggerChannelCuthannel cut in crystalCut
+                  false,                        // include broadCut in crystalCut
+                  false,                               // include CutNoise in crystalCut
+                  true,                          // include PhotopeakEnergyCut in crystalCut
+                  true                                   // include CutGs in crystalCut
                  );
 
   // optionally set w and z limits, and write values into crystal struct
   // setWandZcuts(crystal);
+  tree->SetNotify(formulasAnalysis);
 
   // list the crystals with calibration data found
   std::cout << "Calibration data found for crystals: " << std::endl;
@@ -377,9 +425,32 @@ int main (int argc, char** argv)
   {
     // std::cout << "Event " << i << std::endl;
     tree->GetEvent(i);              //read complete accepted event in memory
-    Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
+    // std::cout << "Event " << i << std::endl;
+    // for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+    // {
+      if(crystal[id].accepted)
+      {
+        // if(crystal[iCry].FormulaTagAnalysis->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
+        // {
+        if(simulation)
+        {
+          if(crystal[id].FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+          {
+            Float_t w = calculateFloodZ_withoutCorrectingForSaturation(s_charge,crystal[id]);
 
-    h2->Fill(w,zFromTag);
+            h2->Fill(w,-(RealZ-7.5));
+
+
+          }
+        }
+        else
+        {
+          Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
+          h2->Fill(w,zFromTag);
+        }
+      }
+    // }
+
 
     //Progress
     counter++;
@@ -395,36 +466,80 @@ int main (int argc, char** argv)
   std::vector<float> x,y,ex,ey;
   int sigmaCounter=0;
   float avgSigma = 0.0;
-  for (int i = 1 ; i < h2->GetNbinsY(); i++)
+  float calculatedDoiRes = 0.0;
+  TGraphErrors *g ;
+  TF1 *fLine = new TF1("fLine","pol1",0,1);
+
+  if(simulation)
   {
-    TH1D* pjx = (TH1D*) h2->ProjectionX("pjx",i,i,"");
-    int entries = pjx->GetEntries();
-    if(entries)
+
+
+    // // FitSlicesX
+    // std::stringstream sname;
+    // h2->FitSlicesX(0, 1, h2->GetNbinsY(), 0, "QNRG5S");
+    // sname << h2->GetName() << "_1";
+    // TH1D *spectrum2dSimDOIplot_1 = (TH1D*)gDirectory->Get(sname.str().c_str());
+    // sname.str("");
+    // sname << h2->GetName() << "_2";
+    // TH1D *spectrum2dSimDOIplot_2 = (TH1D*)gDirectory->Get(sname.str().c_str());
+    // sname.str("");
+    // //run on  histogram and store the results in a TGraphErrors
+    // std::vector<Double_t> ySim,xSim,exSim,eySim;
+    // for(int iSim = 1 ; iSim < spectrum2dSimDOIplot_1->GetNbinsX()  ; iSim++)
+    // {
+    //   ySim.push_back(spectrum2dSimDOIplot_1->GetBinCenter(iSim));
+    //   xSim.push_back(spectrum2dSimDOIplot_1->GetBinContent(iSim));
+    //   eySim.push_back(0);
+    //   exSim.push_back(spectrum2dSimDOIplot_2->GetBinContent(iSim));
+    //   // sigmaSim->Fill(spectrum2dSimDOIplot_2->GetBinContent(iSim));
+    // }
+    // g = new TGraphErrors(xSim.size(),&xSim[0],&ySim[0],&exSim[0],&eySim[0]);
+    // sname.str("");
+    //
+    // // TF1 *fLine = new TF1("fLine","pol1",0,1);
+    // g->Fit(fLine,"Q");
+  }
+  else
+  {
+    for (int i = 1 ; i < h2->GetNbinsY(); i++)
     {
-      sigmaCounter++;
-      TF1 *fGauss = new TF1("fGauss","gaus",0,1);
-      pjx->Fit(fGauss,"Q");
-      x.push_back(fGauss->GetParameter(1));
-      ex.push_back(fGauss->GetParError(1));
-      y.push_back(h2->GetYaxis()->GetBinCenter(i));
-      float error = (h2->GetYaxis()->GetBinWidth(i)) / (3.4641016151) ;
-      ey.push_back(error);
-      avgSigma += fGauss->GetParameter(2);
+      TH1D* pjx = (TH1D*) h2->ProjectionX("pjx",i,i,"");
+      int entries = pjx->GetEntries();
+      if(entries)
+      {
+        sigmaCounter++;
+        TF1 *fGauss = new TF1("fGauss","gaus",0,1);
+        pjx->Fit(fGauss,"Q");
+        x.push_back(fGauss->GetParameter(1));
+        ex.push_back(fGauss->GetParError(1));
+        y.push_back(h2->GetYaxis()->GetBinCenter(i));
+        float error = (h2->GetYaxis()->GetBinWidth(i)) / (3.4641016151) ;
+        ey.push_back(error);
+        avgSigma += fGauss->GetParameter(2);
+      }
+
     }
+    g = new TGraphErrors(x.size(),&x[0],&y[0],&ex[0],&ey[0]);
+
+    // FIRST METHOD to calc DOI RES:
+    // 1. Calculate uncertainty in w estimation
+    // 2. Progatate to uncertainty of z estimation
+
+    // TF1 *fLine = new TF1("fLine","pol1",0,1);
+    g->Fit(fLine,"Q");
+    g->SetMarkerStyle(21);
+    g->SetMarkerColor(kBlue);
+    avgSigma = avgSigma / sigmaCounter;
+    float m = fLine->GetParameter(1);
+    calculatedDoiRes = fabs(avgSigma * m) ;
+    // std::cout << calculatedDoiRes << std::endl;
   }
 
-  TGraphErrors *g = new TGraphErrors(x.size(),&x[0],&y[0],&ex[0],&ey[0]);
-  g->SetMarkerStyle(21);
-  g->SetMarkerColor(kBlue);
-  TF1 *fLine = new TF1("fLine","pol1",0,1);
-  g->Fit(fLine,"Q");
-  // FIRST METHOD to calc DOI RES:
-  // 1. Calculate uncertainty in w estimation
-  // 2. Progatate to uncertainty of z estimation
-  avgSigma = avgSigma / sigmaCounter;
-  float m = fLine->GetParameter(1);
-  float calculatedDoiRes = fabs(avgSigma * m) ;
-  // std::cout << calculatedDoiRes << std::endl;
+
+
+
+
+
 
 
 
@@ -441,21 +556,50 @@ int main (int argc, char** argv)
 
   //MAIN LOOP
   // long int passCounter = 0;
-  // tree->SetNotify(formulasAnalysis);
+  tree->SetNotify(formulasAnalysis);
   counter = 0;
   for (long long int i=0;i<nevent;i++)
   {
     // std::cout << "Event " << i << std::endl;
     tree->GetEvent(i);              //read complete accepted event in memory
+    // for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+    // {
+      if(crystal[id].accepted)
+      {
+        // if(crystal[iCry].FormulaTagAnalysis->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
+        // {
+        if(simulation)
+        {
+          if(crystal[id].FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+          {
+            // goodEventsAnalysis++;
+            Float_t w = calculateFloodZ_withoutCorrectingForSaturation(s_charge,crystal[id]);
+            // std::cout << w << std::endl;
+            float doiFromCalibration =  crystal[id].calibrationGraph->Eval(w);
+            // float doiFromLine        =  fLine->Eval(w);
+            float deltaToCalibration = -(RealZ-7.5) - doiFromCalibration;
+            // float deltaToLine        = RealZ - doiFromLine;
+            hDeltaToCalibration->Fill(deltaToCalibration);
+            // hDeltaToLine       ->Fill(deltaToLine);
+          }
+        }
+        else
+        {
+          // goodEventsAnalysis++;
+          Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
+          // std::cout << w << std::endl;
+          float doiFromCalibration =  crystal[id].calibrationGraph->Eval(w);
+          float doiFromLine        =  fLine->Eval(w);
+          float deltaToCalibration = zFromTag - doiFromCalibration;
+          float deltaToLine        = zFromTag - doiFromLine;
+          hDeltaToCalibration->Fill(deltaToCalibration);
+          hDeltaToLine       ->Fill(deltaToLine);
+        }
 
-    Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
-    // std::cout << w << std::endl;
-    float doiFromCalibration =  crystal[id].calibrationGraph->Eval(w);
-    float doiFromLine        =  fLine->Eval(w);
-    float deltaToCalibration = zFromTag - doiFromCalibration;
-    float deltaToLine        = zFromTag - doiFromLine;
-    hDeltaToCalibration->Fill(deltaToCalibration);
-    hDeltaToLine       ->Fill(deltaToLine);
+        // }
+      }
+    // }
+
 
     //Progress
     counter++;
@@ -478,6 +622,7 @@ int main (int argc, char** argv)
   // crystalNumber DOIres1 DOIres2(rms) DOIres2(fit) DOIres3(rms) DOIres3(fit)
 
   std::ofstream textfile (textFileName.c_str(), std::ofstream::out);
+  textfile << "# crystal line_propagation HistoWidth_calib HistoFit_calib HistoWidth_line HistoFit_line " << std::endl;
   textfile << crystal[id].number << " "
            << calculatedDoiRes              *2.355 << " "
            << hDeltaToCalibration->GetRMS() *2.355 << " "
@@ -487,17 +632,24 @@ int main (int argc, char** argv)
            << std::endl;
   textfile.close();
 
-  std::cout<< crystal[id].number << " "
-           << calculatedDoiRes              *2.355 << " "
-           << hDeltaToCalibration->GetRMS() *2.355 << " "
-           << fGaussCalib->GetParameter(2)  *2.355 << " "
-           << hDeltaToLine->GetRMS()        *2.355 << " "
-           << fGaussLinear->GetParameter(2) *2.355 << " "
-           << std::endl;
+  std::cout << "# crystal line_propagation HistoWidth_calib HistoFit_calib HistoWidth_line HistoFit_line " << std::endl;
+  std::cout << crystal[id].number << " "
+            << calculatedDoiRes              *2.355 << " "
+            << hDeltaToCalibration->GetRMS() *2.355 << " "
+            << fGaussCalib->GetParameter(2)  *2.355 << " "
+            << hDeltaToLine->GetRMS()        *2.355 << " "
+            << fGaussLinear->GetParameter(2) *2.355 << " "
+            << std::endl;
 
   outputFile->cd();
   hDeltaToCalibration->Write();
   hDeltaToLine->Write();
+  h2->Write();
+  if(!simulation)
+  {
+    g->Write();
+  }
+
   outputFile->Close();
 
   return 0;

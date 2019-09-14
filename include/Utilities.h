@@ -60,6 +60,7 @@ ULong64_t     ChainDeltaTimeTag;                                   // delta tag 
 Int_t        *ChainAdcChannel;
 Short_t      *ChainDesktopAdcChannel;                              // input TChain data for desktop digitizers - data is int_16
 UShort_t     *ChainVMEadcChannel;                                  // input TChain data for VME digitizers - data is uint_16
+UShort_t     *ChainVMEAmplitudeChannel;                             // input TChain data for VME amplitude - data is also uint_16
 Float_t      *ChainTimeStamp;
 Float_t      *TDCBinning;
 // Short_t      *ChainPetirocChannel;                                 //FIXME temporary data type of petiroc charge input - ask
@@ -75,6 +76,7 @@ Short_t       NumbOfInteractions;                                  // "real" num
 TBranch      *bChainExtendedTimeTag;                               // branches for above data
 TBranch      *bChainDeltaTimeTag;                                  // branches for above data
 TBranch     **bChainAdcChannel;                                    // branches for above data
+TBranch     **bChainAmplChannel;                                    // branches for above data
 TBranch     **bChainTimeStamp;
 TBranch      *bRealX;                                              // branches for above data
 TBranch      *bRealY;                                              // branches for above data
@@ -90,6 +92,9 @@ struct multi_channel_t
 {
   int detectorIndex;
   std::string string;
+  std::string rawCharge;
+  std::string amplitude;
+  std::string rawAmplitude;
 };
 
 

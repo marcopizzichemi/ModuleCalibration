@@ -22,6 +22,7 @@ private:
   Element* parentMppc;                       ///< pointer for parent element
   //spectra and co.
   TH1F*                Spectrum;             ///< charge spectrum for this crystal. It's always the sum of all mppcs charges
+  TH1F*                AmplitudeSpectrum;
   TH1F*                singleChargeSpectrum; ///< charge spectrum for this crystal, but not sum of all mppcs, just the sipm in front of the crystal
   TH1F*                LYSpectrum;
   TH1F*                CorrectedSpectrum;    ///< charge spectrum for this crystal corrected by DOI
@@ -45,6 +46,7 @@ private:
   TH1D*                DeltaTimeWRTTagging;
   TH1F*                LScentralSpectrum;
   TH2F*                CTRvsTimeSpectrum;
+  TH2F*                AmplitudeVsIntegralSpectrum;
   // TH1F*                LSSpectrum;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
@@ -231,6 +233,7 @@ public:
   // methods to get and set the private variables. Names should be self explanatory
   Mppc*                GetMppc(){return (Mppc *)parentMppc;};
   TH1F*                GetSpectrum(){return Spectrum;};
+  TH1F*                GetAmplitudeSpectrum(){return AmplitudeSpectrum;};
   TH1F*                GetLYSpectrum(){return LYSpectrum;};
   TH1F*                GetCorrectedSpectrum(){return CorrectedSpectrum;};
   TH1F*                GetHighlightedSpectrum(){return HighlightedSpectrum;};
@@ -263,6 +266,7 @@ public:
   int                  GetTimingChannel(){return timingChannel;};
   TH1F*                GetLScentralSpectrum(){return LScentralSpectrum;};
   TH2F*                GetCTRvsTimeSpectrum(){return CTRvsTimeSpectrum;};
+  TH2F*                GetAmplitudeVsIntegralSpectrum(){return AmplitudeVsIntegralSpectrum;};
   // TH1F*                GetLSSpectrum(){return LSSpectrum;};
 
 
@@ -380,6 +384,8 @@ public:
 
   void                 SetMppc(Mppc *amppc);
   void                 SetSpectrum(TH1F* aHisto){Spectrum = aHisto;};
+  void                 SetAmplitudeSpectrum(TH1F* aHisto){AmplitudeSpectrum = aHisto;};
+  void                 SetAmplitudeVsIntegralSpectrum(TH2F* aHisto){AmplitudeVsIntegralSpectrum = aHisto;};
   void                 SetLYSpectrum(TH1F* aHisto){LYSpectrum = aHisto;};
   void                 SetHighlightedSpectrum(TH1F* aHisto){HighlightedSpectrum = aHisto;};
   void                 SetHighlightedSpectrumCorrected(TH1F* aHisto){HighlightedSpectrumCorrected = aHisto;};

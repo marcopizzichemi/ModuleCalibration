@@ -32,7 +32,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
   // taggingPhotopeakCut->SetName(""); //defaults
   int taggingCrystalTimingChannel = -1; //defaults
   int taggingCrystalChannel = -1; //defaults
-  int taggingPosition = 0;
+  float taggingPosition = 0;
   std::string taggingPhotopeakCut_prefix("taggingPhotopeakCut");
   std::string taggingCrystalTimingChannel_prefix("taggingCrystalTimingChannel");
   std::string taggingCrystalChannel_prefix("taggingCrystalChannel");

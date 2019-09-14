@@ -273,7 +273,8 @@ int main (int argc, char** argv)
   float taggingSpectrumMax = config.read<float>("taggingSpectrumMax",12000.0);
   bool TagEdgeCalculation  = config.read<bool>("tagEdgeCalculation",0);
   std::string TagEdgeCalculationLabels_s = config.read<std::string>("tagEdgeCalculationLabels","");
-  int digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme, 2 = petiroc
+  int digitizerType               = config.read<int>("digitizerType",0);       // type of digitizer. 0 = desktop, 1 = vme
+  int amplitudeData  = config.read<int>("amplitudeData",0);
   bool cuttingOnTagPhotopeak = config.read<bool>("cuttingOnTagPhotopeak",1);
   int CTRbins = config.read<int>("CTRbins",500);
   float CTRmin = config.read<float>("CTRmin",-5e-9);
@@ -576,14 +577,17 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
   TChain* tree = new TChain(fname.c_str());  // create the input tchain and the analysis ttree
   // first, create the adc channels variables and branches
-  ChainAdcChannel        = new Int_t [adcChannels];
+  // ChainAdcChannel        = new Int_t [adcChannels];
   ChainDesktopAdcChannel = new Short_t [adcChannels]; // input from ADC desktop
   ChainVMEadcChannel     = new UShort_t [adcChannels]; // input from VME
+  ChainVMEAmplitudeChannel = new UShort_t [adcChannels]; // input amplitude from VME
   ChainTimeStamp         = new Float_t[adcChannels];
-  TDCBinning             = new Float_t[adcChannels];
+  // TDCBinning             = new Float_t[adcChannels];
   // DigitizerChannelOn     = new bool[adcChannels];
   bChainAdcChannel       = new TBranch* [adcChannels];
   bChainTimeStamp        = new TBranch* [adcChannels];
+  bChainAmplChannel       = new TBranch* [adcChannels];
+
   if(std::string(argv[1]) == std::string("-c")) // first argument is -c, then the config file name is passed by command line
   {
     for (int i = 3; i < argc ; i++) // run on the remaining arguments to add all the input files
@@ -621,6 +625,7 @@ int main (int argc, char** argv)
       std::stringstream sname;
       sname << "ch" << i;
       tree->SetBranchAddress(sname.str().c_str(), &ChainDesktopAdcChannel[i], &bChainAdcChannel[i]);
+      sname.str("");
     }
     if(digitizerType == 1)
     {
@@ -630,6 +635,13 @@ int main (int argc, char** argv)
       sname.str("");
       sname << "t" << i;
       tree->SetBranchAddress(sname.str().c_str(), &ChainTimeStamp[i],&bChainTimeStamp[i]);
+      sname.str("");
+      if(amplitudeData == 1)
+      {
+        sname << "ampl" << i;
+        tree->SetBranchAddress(sname.str().c_str(), &ChainVMEAmplitudeChannel[i], &bChainAmplChannel[i]);
+        sname.str("");
+      }
     }
   }
 
@@ -1087,9 +1099,12 @@ int main (int argc, char** argv)
 
 
             // 3. Translate indexes into strings, taking also into account saturation (if requested), pedestals and noise
-            //    Two info need to be stored together:
+            //    Four info need to be stored together:
             //           a) the channel ID
-            //           b) the complete string that will be passed to the Draw command
+            //           b) the complete string that will be passed to the Draw command, corrected by saturation etc if requested
+            //           c) the rawCharge string, i.e. same as above but ALWAYS not corrected by saturation
+            //           d) raw amplitude
+            //           e) corrected amplitude
             //    So it is necessary to create a multi_channel_t struct, with these two entries (see definition above)
             //    Then, 3 arrays of this multi_channel_t elements are created:
             //    ---> thisChannel        = holds the string and ID for this MPPC, so it's not a vector but one struct
@@ -1108,7 +1123,7 @@ int main (int argc, char** argv)
             // ped      = pedestal (not corrected)
             if(correctingSaturation)
             {
-              // this channel
+              // this channel charge
               var.str("");
               var <<  "("
               << -detector[thisChannelID].saturation
@@ -1122,6 +1137,8 @@ int main (int argc, char** argv)
               thisChannel.string = var.str();
               thisChannel.detectorIndex = thisChannelID;
               var.str("");
+
+              // this channel amplitude
 
               // neighbour channels
               for(unsigned int iNeigh = 0; iNeigh < neighbourChID.size(); iNeigh++)
@@ -1221,6 +1238,16 @@ int main (int argc, char** argv)
               // }
               // std::cout << std::endl;
             }
+
+            // save also the raw (not corrected by saturation) charge string
+            var.str("");
+            var <<  "(ch" <<  detector[thisChannelID].digitizerChannel << "-" << detector[thisChannelID].pedestal << ")";
+            thisChannel.rawCharge = var.str();
+            var.str("");
+            // and the amplitude string
+            var <<  "(ampl" << detector[thisChannelID].digitizerChannel << ")";
+            thisChannel.rawAmplitude = var.str();
+            var.str("");
 
 
 
@@ -2062,6 +2089,36 @@ int main (int argc, char** argv)
 
                       }
                       //photons*1.25e6*1.6e-19/156e-15
+
+                      // draw an amplitude spectrum, if needed
+                      if(amplitudeData == 1)
+                      {
+                        //draw amplitude spectrum
+                        sname << "Raw Amplitude Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                        var << thisChannel.rawAmplitude << " >> " << sname.str();
+                        TH1F* spectrumAmplitude = new TH1F(sname.str().c_str(),sname.str().c_str(),4000,0,4000);
+                        tree->Draw(var.str().c_str(),CrystalCut);
+                        spectrumCharge->GetXaxis()->SetTitle("Ampltitude");
+                        spectrumCharge->GetYaxis()->SetTitle("N");
+                        CurrentCrystal->SetAmplitudeSpectrum(spectrumAmplitude);
+                        sname.str("");
+                        var.str("");
+
+                        //draw amplitude vs. rawCharge 2d spectrum
+                        sname << "Raw Amplitude vs. Raw Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                        var << thisChannel.rawAmplitude << ":" << thisChannel.rawCharge <<  " >> " << sname.str();
+                        TH2F* amplitudeVsIntegral = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax/2.0,4000,0,4000);
+                        tree->Draw(var.str().c_str(),CrystalCut);
+                        amplitudeVsIntegral->GetYaxis()->SetTitle("Ampltitude [ADC Channels]");
+                        amplitudeVsIntegral->GetXaxis()->SetTitle("Integral [ADC Channels]");
+                        CurrentCrystal->SetAmplitudeVsIntegralSpectrum(amplitudeVsIntegral);
+                        sname.str("");
+                        var.str("");
+
+
+                      }
+
+
 
                       //prepare the photopeak cuts and stuff
                       TCut PhotopeakEnergyCutCorrected = "";
@@ -4731,6 +4788,25 @@ int main (int argc, char** argv)
                       }
                       C_spectrum->Write();
                       delete C_spectrum;
+
+                      if(amplitudeData == 1)
+                      {
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetAmplitudeSpectrum()->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetAmplitudeSpectrum()->Draw();
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
+                        C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                        C_spectrum->SetName(CurrentCrystal->GetAmplitudeVsIntegralSpectrum()->GetName());
+                        C_spectrum->cd();
+                        CurrentCrystal->GetAmplitudeVsIntegralSpectrum()->Draw("COLZ");
+                        C_spectrum->Write();
+                        delete C_spectrum;
+
+
+                      }
 
 
 
