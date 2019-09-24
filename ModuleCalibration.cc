@@ -2816,7 +2816,7 @@ int main (int argc, char** argv)
 
                       if(usingTaggingBench || taggingForTiming)
                       {
-                        if( (digitizerType == 1) || (digitizerType == 2)) //only for digitizers with timing capabilities
+                        if( (digitizerType == 1) ) //only for digitizers with timing capabilities
                         {
                           //prepare three std::vector, timingChannel, meanDelta and sigmaTiming
                           // they will hold the t channel number, mean difference in t and sigma from crystalball fits
@@ -4987,7 +4987,7 @@ int main (int argc, char** argv)
                       if(usingTaggingBench || taggingForTiming)
                       {
 
-                        if(digitizerType == 1 || digitizerType == 2)
+                        if(digitizerType == 1 )
                         {
                           // basic ctr plot
                           CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
@@ -5341,7 +5341,7 @@ int main (int argc, char** argv)
                       if(usingTaggingBench || taggingForTiming)
                       {
 
-                        if(digitizerType == 1 || digitizerType == 2)
+                        if(digitizerType == 1 )
                         {
                           //write timingChannel for this crystal
                           std::stringstream sChNum;

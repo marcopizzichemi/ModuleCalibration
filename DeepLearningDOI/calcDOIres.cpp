@@ -420,7 +420,7 @@ int main (int argc, char** argv)
   //  LINEAR REG LOOP                                         //
   //----------------------------------------------------------//
   // fill scatter plot
-  TH2F *h2 = new TH2F("h2","z vs w",1000,0,1,100,0,15);
+  TH2F *h2 = new TH2F("h2","z vs w",1000,0,1,10000,0,15);
   for (long long int i=0;i<nevent;i++)
   {
     // std::cout << "Event " << i << std::endl;
@@ -513,7 +513,8 @@ int main (int argc, char** argv)
         x.push_back(fGauss->GetParameter(1));
         ex.push_back(fGauss->GetParError(1));
         y.push_back(h2->GetYaxis()->GetBinCenter(i));
-        float error = (h2->GetYaxis()->GetBinWidth(i)) / (3.4641016151) ;
+        float error = 0.1 ; // positioning error
+        // float error = (h2->GetYaxis()->GetBinWidth(i)) / (3.4641016151) ;
         ey.push_back(error);
         avgSigma += fGauss->GetParameter(2);
       }
