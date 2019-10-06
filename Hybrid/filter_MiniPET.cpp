@@ -1,8 +1,8 @@
 // compile with
-// g++ -o ../../build/clusteringEfficiency clusteringEfficiency.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+// g++ -o ../../build/filter_MiniPET filter_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 
-// small program to take doi bench data and filter events in one cyrstal, producing an output for deeplearning study
-// this version is for input from MINI pet electronics
+// small program to take bench data and filter events in one cyrstal
+// this version is for input from MINIPET electronics
 
 #include "TROOT.h"
 #include "TFile.h"
@@ -59,41 +59,16 @@
 #include "../libraries/Calibration.h"           // readTaggingData , readCalibration , setWandZcuts
 #include "../libraries/Utilities.h"             // read_directory , invert_a_matrix
 
-// MPPC ID mapping
-// D1      D2      D3      D4
-// C1      C2      C3      C4
-// B1      B2      B3      B4
-// A1      A2      A3      A4
-//
-// Digitizer Channels mapping
-// 18      17      22      21
-// 19      16      23      20
-// 24      27      28      31
-// 25      26      29      30
-//
-// Crystal ID mapping
-// 3       7       11      15
-// 2       6       10      14
-// 1       5       9       13
-// 0       4       8       12
 
 
 
 
 void usage()
 {
-  std::cout << "\t\t" << "[-i|--input] <file_prefix>  [-o|--output] <output.root> [-c|--calibration] <calibration.root> [-n|--crystal] <crystal number> [OPTIONS]" << std::endl
+  std::cout << "\t\t" << "[-i|--input] <file_prefix>  [-o|--output] <output.txt> " << std::endl
             << "\t\t" << "<file_prefix>                                     - prefix of TTree files to analyze"   << std::endl
-            << "\t\t" << "<output.root>                                     - output file name"   << std::endl
-            << "\t\t" << "<calibration.root>                                - output file name"   << std::endl
-            << "\t\t" << "<crystal number>                                  - crystal to be analyzed"   << std::endl
-            << "\t\t" << "--verbose                                         - "   << std::endl
-            << "\t\t" << "--tagCut                                          - "   << std::endl
-            << "\t\t" << "--triggerCut                                      - "   << std::endl
-            << "\t\t" << "--broadCut                                        - "   << std::endl
-            << "\t\t" << "--noiseCut                                        - "   << std::endl
-            << "\t\t" << "--photopeakCut                                    - "   << std::endl
-            << "\t\t" << "--cutgCut                                         - "   << std::endl
+            << "\t\t" << "<output.txt>                                      - output file name"   << std::endl
+            << "\t\t" << "<output.txt>                                      - output file name"   << std::endl
             << "\t\t" << std::endl;
 }
 
@@ -121,6 +96,7 @@ int main (int argc, char** argv)
   bool UseCutNoise            = false;
   bool UsePhotopeakEnergyCut  = false;
   bool UseCutgs               = false;
+  bool correctForSaturation   = false;
 
   // parse arguments
   static struct option longOptions[] =
@@ -136,6 +112,7 @@ int main (int argc, char** argv)
       { "noiseCut", no_argument, 0, 0 },
       { "photopeakCut", no_argument, 0, 0 },
       { "cutgCut", no_argument, 0, 0 },
+      { "saturation", no_argument, 0, 0 },
 			{ NULL, 0, 0, 0 }
 	};
 
@@ -196,6 +173,9 @@ int main (int argc, char** argv)
       UseAllCuts = false;
       UseCutgs = true;
     }
+    else if (c == 0 && optionIndex == 11){
+      correctForSaturation = true;
+    }
 		else {
       std::cout	<< "Usage: " << argv[0] << std::endl;
 			usage();
@@ -204,9 +184,7 @@ int main (int argc, char** argv)
 	}
 
 
-  // TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
-  std::ofstream outputFile;
-  outputFile.open (outputFileName.c_str(),std::ofstream::out);
+  TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
 
   if(UseAllCuts)
   {
@@ -315,6 +293,54 @@ int main (int argc, char** argv)
 
 
   //----------------------------------------------------------//
+  //  Set TTree for output                                    //
+  //----------------------------------------------------------//
+  //declare ROOT ouput TTree and file
+  Float_t   out_doiFromTag = 0;
+  ULong64_t out_DeltaTimeTag = 0;
+  ULong64_t out_ExtendedTimeTag = 0;
+  UShort_t  out_charge[64];
+  Float_t   out_timestamp[64];
+  //the ttree variable
+  TTree *t1 ;
+  //strings for the names
+  std::stringstream snames;
+  std::stringstream stypes;
+  std::string names;
+  std::string types;
+
+  t1 = new TTree("adc","adc");
+
+  t1->Branch("ExtendedTimeTag",&out_ExtendedTimeTag,"ExtendedTimeTag/l");   //absolute time tag of the event
+  t1->Branch("DeltaTimeTag",   &out_DeltaTimeTag,"DeltaTimeTag/l");                    //delta time from previouevent
+  t1->Branch("zFromTag",&out_doiFromTag,"zFromTag/F");
+  for (int i = 0 ; i < 64 ; i++)
+  {
+    //empty the stringstreams
+    snames.str(std::string());
+    stypes.str(std::string());
+    out_charge[i] = 0;
+    snames << "ch" << i;
+    stypes << "ch" << i << "/s";
+    names = snames.str();
+    types = stypes.str();
+    t1->Branch(names.c_str(),&out_charge[i],types.c_str());
+  }
+  for (int i = 0 ; i < 64 ; i++)
+  {
+    //empty the stringstreams
+    snames.str(std::string());
+    stypes.str(std::string());
+    out_timestamp[i] = 0;
+    snames << "t" << i;
+    stypes << "t" << i << "/F";
+    names = snames.str();
+    types = stypes.str();
+    t1->Branch(names.c_str(),&out_timestamp[i],types.c_str());
+  }
+
+
+  //----------------------------------------------------------//
   //  Read and import from Calibration file                   //
   //----------------------------------------------------------//
   // open calibration file
@@ -323,26 +349,20 @@ int main (int argc, char** argv)
   TList* formulasAnalysis = new TList();
   // prepare a vector of crystals (we will use only one)
   std::vector<Crystal_t> crystal;
-  // read calibration file, fill the crystal structure with all relevant elements.
-  // in particular, set the formulasAnalysis list, which contains the formulas used
-  // in the loop to define the tag and crystal cuts. The tag cut is stored in
-  // crystal[id].FormulaTagAnalysis
-  // this includes only the tag photopeak condition. The crytal cut is in
-  // crystal[id].FormulaAnalysis
-  // and can be made of several cuts. The only relevant ones for real use here is Cutg
-  // i.e. the 3D cut given by clustering. In general the user chooses what to include
-  // in the formula (this routine is a general one used for other analysis), but here
-  // the program should always be used with both --tagCut --cutgCut flags activated
+
   readCalibration(calibrationFile,          // calib file
                   tree,                     // input TChain (same for everyone)
                   formulasAnalysis,         // TList of all TTreeFormula
                   crystal,                  // structure of all crystals found in all calib lifes
-                  UseTriggerChannelCut,     // include TriggerChannelCuthannel cut in crystalCut
-                  UseBroadCut,              // include broadCut in crystalCut
-                  UseCutNoise,              // include CutNoise in crystalCut
-                  UsePhotopeakEnergyCut,    // include PhotopeakEnergyCut in crystalCut
-                  UseCutgs                  // include CutGs in crystalCut
+                  UseTriggerChannelCut,                      // include TriggerChannelCuthannel cut in crystalCut
+                  UseBroadCut,                               // include broadCut in crystalCut
+                  UseCutNoise,                               // include CutNoise in crystalCut
+                  UsePhotopeakEnergyCut,                     // include PhotopeakEnergyCut in crystalCut
+                  UseCutgs                                   // include CutGs in crystalCut
                  );
+
+  // optionally set w and z limits, and write values into crystal struct
+  // setWandZcuts(crystal);
 
   // list the crystals with calibration data found
   std::cout << "Calibration data found for crystals: " << std::endl;
@@ -353,10 +373,10 @@ int main (int argc, char** argv)
       std::cout << crystal[i].number << std::endl;
     }
   }
-  //----------------------------------------------------------//
 
 
-  // switch off crystals if they were not chosen (only one chosen crystal allowed, sorry)
+  // switch off crystals if they were not chosen (only one chosen allowed)
+  // std::cout << "Calibration data found for crystals: " << std::endl;
   int crystalsFound = 0;
   int id = -1;
   for(unsigned int i = 0 ;  i < crystal.size() ; i++)
@@ -395,118 +415,102 @@ int main (int argc, char** argv)
       return 1;
     }
   }
+
   std::cout << "Chosen crystal = " << crystal[id].number << std::endl;
 
 
   //----------------------------------------------------------//
   //  MAIN LOOP                                               //
   //----------------------------------------------------------//
+
+  // std::cout << "-----" << std::endl;
+  // for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+  // {
+  //   std::cout << crystal[id].detectorSaturation[iDet].digitizerChannel << " " << crystal[id].detectorSaturation[iDet].saturation << " " << crystal[id].detectorSaturation[iDet].pedestal << " ";
+  // }
+  // std::cout << "-----" << std::endl;
   //MAIN LOOP
   long long int nevent = tree->GetEntries();
   std::cout << "Total number of events = " << nevent << std::endl;
-  // prepare counters
   long int counter = 0;
-  long int tagCounter = 0;
-  long int tagClustPPeakCounter = 0;
-  long int tagPPeakCounter = 0;
-  long int tagMaxCounter = 0;
-  long int tagMaxPPeakCounter = 0;
-  long int tagClustCounter = 0;
-  // notify the formulas to the tree
+  long int passCounter = 0;
   tree->SetNotify(formulasAnalysis);
-  // loop on events
   for (long long int i=0;i<nevent;i++)
   {
+    // std::cout << "Event " << i << std::endl;
     tree->GetEvent(i);              //read complete accepted event in memory
-    counter++;                      // increase counter of events
 
-    if(crystal[id].FormulaTagAnalysis->EvalInstance()) // filter on photopeak of tagging crystal
+    // std::cout << ChainExtendedTimeTag << "\t"
+              // << ChainDeltaTimeTag    << "\t";
+    // for (int j = 0 ; j < detector_channels.size() ; j++)
+    // {
+      // std::cout << charge[j] << "\t";
+    // }
+    // std::cout << std::endl;
+    //
+    counter++;
+
+    if(crystal[id].FormulaTagAnalysis->EvalInstance()) // tag photopeak
     {
-      tagCounter++; // increase counter of events that pass the tagging photopeak cut (TAG)
-
-      // calculate the charge corrected by saturation, but just for the
-      // "central" or trigger MPPC, since we are going to use single spectrum to cut photopeak
-      UShort_t corrected_charge = 0;
-      int iCh = crystal[id].detectorChannel;
-      for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+      if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
       {
-        // saturation correction is
-        // - q_max * ln( 1 - (ch - ped)/(q_max))
-        // where
-        // q_max    = saturation
-        // ch       = charge not corrected
-        // ped      = pedestal (not corrected)
-        // sat data is stored in the calibration file
+        passCounter++;
+        out_doiFromTag      = crystal[id].taggingPosition;
 
-        if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+        out_ExtendedTimeTag = ChainExtendedTimeTag;
+        out_DeltaTimeTag    = ChainDeltaTimeTag;
+        if(correctForSaturation)
         {
-          corrected_charge = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
-        }
-      }
+          for(int iCh = 0; iCh < numOfCh ; iCh++)
+          {
+            if(charge[iCh] > 0) // old readout could give negative integrals (why?) anyway filter them out
+            {
+              if(iCh == crystal[id].taggingCrystalChannel)
+              {
+                out_charge[iCh] = charge[iCh];
+              }
+              for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+              {
+                // std::cout << crystal[id].detectorSaturation[iDet].digitizerChannel << " " << crystal[id].detectorSaturation[iDet].saturation << " " << crystal[id].detectorSaturation[iDet].pedestal << " ";
+                // sat correction is
+                // - q_max * ln( 1 - (ch - ped)/(q_max))
+                // where
+                // q_max    = saturation
+                // ch       = charge not corrected
+                // ped      = pedestal (not corrected)
 
-      // prapare flags. possibly not a great logical implementation, but it comes from stratification
-      // and there's no time to change it now.
-      bool isTriggerPhotopeak = false;
-      bool isMax = true;
+                if(iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+                {
+                  // std::cout << std::endl;
+                  out_charge[iCh] = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
 
-      // photopeak of trigger (aka central) mppc
-      // luckily all single photopeaks are the same (no big surprise, since light sharing is ignored)
-      // so the photopeak cut ib beautifully hardcoded (shame!)
-      if((corrected_charge > 30000) && (corrected_charge < 45000)  )
-      {
-        isTriggerPhotopeak = true; // set that trigger charge is in the photpeak of trigger spectrum
-      }
-
-      // charge in trigger is max
-      // the loop is made on detectorSaturation structure just because it holds all crystals.
-      // strictly speaking this is not really elegant, but anyway...
-      for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
-      {
-        if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
-        {
-          // skip, it would compare charge with itself
+                  // std::cout << crystal[id].detectorSaturation[iDet].saturation << " " << crystal[id].detectorSaturation[iDet].pedestal << " "
+                            // << out_charge[iCh] << " " << charge[iCh] << std::endl;
+                }
+              }
+            }
+          }
         }
         else
         {
-          // compare charges before saturation correction, it would make small difference
-          // to correct before comparison (just detail)
-          if(charge[iCh] < charge[crystal[id].detectorSaturation[iDet].digitizerChannel])
+          for(int iCh = 0; iCh < numOfCh ; iCh++)
           {
-            isMax = false; // set that trigger charge is not max charge in the event
+            out_charge[iCh] = charge[iCh];
           }
         }
-      }
 
-      if(isTriggerPhotopeak)
-      {
-        tagPPeakCounter++; // increase counter of events in cut TAG + PPEAK
-      }
-
-      if(isMax)
-      {
-        tagMaxCounter++; // increase counter of events in cut TAG + MAX
-      }
-
-      if(isTriggerPhotopeak)
-      {
-        if(isMax)
+        for(int iT = 0; iT < numOfT ; iT++)
         {
-          tagMaxPPeakCounter++; // increase counter of events in cut TAG + MAX + PPEAK
+          out_timestamp[iT] = timeStamp[iT];
         }
-      }
-
-      // apply full crystal cut (on the basis of what has been chosen by user with cmd line options)
-      if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
-      {
-        tagClustCounter++; // increase counter of events in cut TAG + CLUST
-        if(isTriggerPhotopeak)
-        {
-          tagClustPPeakCounter++; // increase counter of events in cut TAG + CLUST + PPEAK
-        }
+        t1->Fill();
       }
     }
 
-    int perc = ((100*counter)/nevent);
+
+
+    //
+    int perc = ((100*counter)/nevent); //should strictly have not decimal part, written like this...
     if( (perc % 10) == 0 )
     {
       std::cout << "\r";
@@ -514,55 +518,15 @@ int main (int argc, char** argv)
     }
   }
 
-  std::cout  << std::endl;
+  std::cout << std::endl;
   // textfile.close();
-  std::cout  << "# Legend " << std::endl;
-  std::cout  << "# TAG   = events in photopeak of tagging crystal " << std::endl;
-  std::cout  << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
-  std::cout  << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
-  std::cout  << "# MAX   = events for with the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
-  std::cout  << std::endl;
-  std::cout  << "All events                   = " << counter     << std::endl;
-  std::cout  << "TAG                          = " << tagCounter  << std::endl;
-  std::cout  << "TAG + CLUST                  = " << tagClustCounter << std::endl;
-  std::cout  << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
-  std::cout  << "TAG + MAX                    = " << tagMaxCounter << std::endl;
-  std::cout  << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
-  std::cout  << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
-  std::cout  << counter     << " "
-             << tagCounter  << " "
-             << tagClustCounter << " "
-             << tagClustPPeakCounter << " "
-             << tagMaxCounter << " "
-             << tagMaxPPeakCounter << " "
-             << tagPPeakCounter << std::endl;
-  std::cout  << std::endl;
+  std::cout << counter << std::endl;
+  std::cout << passCounter << std::endl;
 
-  // outputFile->cd();
-  // t1->Write();
-  // outputFile->Close();
 
-  outputFile << "# Legend " << std::endl;
-  outputFile << "# TAG   = events in photopeak of tagging crystal " << std::endl;
-  outputFile << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
-  outputFile << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
-  outputFile << "# MAX   = events for with the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
-  outputFile << std::endl;
-  outputFile << "All events                   = " << counter     << std::endl;
-  outputFile << "TAG                          = " << tagCounter  << std::endl;
-  outputFile << "TAG + CLUST                  = " << tagClustCounter << std::endl;
-  outputFile << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
-  outputFile << "TAG + MAX                    = " << tagMaxCounter << std::endl;
-  outputFile << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
-  outputFile << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
-  outputFile << counter     << " "
-             << tagCounter  << " "
-             << tagClustCounter << " "
-             << tagClustPPeakCounter << " "
-             << tagMaxCounter << " "
-             << tagMaxPPeakCounter << " "
-             << tagPPeakCounter << std::endl;
-  outputFile.close();
+  outputFile->cd();
+  t1->Write();
+  outputFile->Close();
 
   return 0;
 }

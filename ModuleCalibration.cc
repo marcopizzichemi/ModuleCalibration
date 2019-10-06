@@ -308,6 +308,7 @@ int main (int argc, char** argv)
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   // bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
   // bool noTimeFitting = = config.read<bool>("noTimeFitting",0); // avoid fitting of time function, just take
+  // bool calcDOIresInternally = config.read<bool>("calcDOIresInternally",0); // calculate DOi res running on events and computing distance to calibrationGraph
 
   bool essentialOnly = config.read<bool>("essentialOnly",1); // do only essential plots, to minimize computation time - default = 1 (true)
 
@@ -3656,9 +3657,116 @@ int main (int argc, char** argv)
   } // end of main loop on modules, mppcs and crystals
 
 
+
+  // // loop on TChain to calc doi res from calibrationGraph if required
+  //
+  // if(calcDOIresInternally)
+  // {
+  //   tree->SetNotify(&formulas);
+  //   long long int nevent = tree->GetEntries();
+  //   std::cout << "Calculating doi resolutions..." << std::endl;
+  //   std::cout << "Total events in input = " << nevent << std::endl;
+  //   for (long long int i=0;i<nevent;i++)
+  //   {
+  //     tree->GetEvent(i);              //read complete accepted event in memory
+  //     for (long long int i=0;i<nevent;i++)
+  //     {
+  //       tree->GetEvent(i);              //read complete accepted event in memory
+  //
+  //
+  //       for(int iModule = 0; iModule < nmodulex ; iModule++) // start of module
+  //       {
+  //         for(int jModule = 0; jModule < nmoduley ; jModule++)
+  //         {
+  //           for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
+  //           {
+  //             for(int jMppc = 0; jMppc < nmppcy ; jMppc++)
+  //             {
+  //               //but proceed only if the MPPC is "on" for modular analysis
+  //               if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForModular())
+  //               {
+  //                 for(int iCry = 0; iCry < ncrystalsx ; iCry++)
+  //                 {
+  //                   for(int jCry = 0; jCry < ncrystalsy ; jCry++)
+  //                   {
+  //                     if(crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)]->GetIsOnForModular())
+  //                     {
+  //
+  //                       // get a pointer to this crystal
+  //                       Crystal *CurrentCrystal = crystal[(iModule*nmppcx*ncrystalsx)+(iMppc*ncrystalsx)+(iCry)][(jModule*nmppcy*ncrystalsy)+(jMppc*ncrystalsy)+(jCry)];
+  //                       if(CurrentCrystal->CrystalIsOn())
+  //                       {
+  //                         if(module[iModule][jModule]->GetFormulaTaggingPhotopeakCut()->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
+  //                         {
+  //                           if(CurrentCrystal->GetFormulaGeoCut()->EvalInstance())  //if in geo cut of crystal
+  //                           {
+  //                             if(CurrentCrystal->GetFormulaEnergyCut()->EvalInstance())  //if in geo cut of crystal
+  //                             {
+  //
+  //                               // find w of this event
+  //                               // calculate FloodZ aka w
+  //                               Float_t FloodZ;
+  //                               float centralChargeOriginal;
+  //                               float centralSaturation;
+  //                               float centralPedestal;
+  //                               Float_t division = 0.0;
+  //                               // int detectorChannel = ;
+  //
+  //                               centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
+  //                               for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+  //                               {
+  //                                 if( detector[iSat].digitizerChannel  == centralChargeChannel)
+  //                                 {
+  //                                   centralSaturation = detector[iSat].saturation;
+  //                                   centralPedestal = detector[iSat].pedestal;
+  //                                 }
+  //                               }
+  //                               float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+  //
+  //                               for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
+  //                               {
+  //                                 // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
+  //                                 float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
+  //
+  //                                 float saturationCh;
+  //                                 float pedestalCorr;
+  //                                 for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+  //                                 {
+  //                                   if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
+  //                                   {
+  //                                     saturationCh = detector[iSat].saturation;
+  //                                     pedestalCorr = detector[iSat].pedestal;
+  //                                   }
+  //                                 }
+  //                                 // std::cout << originalCh << " "
+  //                                 //           << saturationCh << " "
+  //                                 //           << pedestalCorr << " "
+  //                                 //           << std::endl;
+  //                                 division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+  //                               }
+  //
+  //                               FloodZ = centralChargeCorr / division;
+  //
+  //
+  //
+  //                             }
+  //                           }
+  //                         }
+  //                       }
+  //                     }
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
   // loop on TChain to complete time calibration
   //
-
   if(timingCorrection)
   {
     tree->SetNotify(&formulas);
