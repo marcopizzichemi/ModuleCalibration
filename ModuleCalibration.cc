@@ -322,6 +322,7 @@ int main (int argc, char** argv)
   bool lowStat = config.read<bool>("lowStat",1); // if low statistics, apply fits to slices - default 1 (true)
   // bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
   bool dumpImages =  config.read<bool>("dumpImages",0); // dump images of some plots for quick check - default 0 (false)
+  bool applyTriggerCut = config.read<bool>("applyTriggerCut",1); // apply trigger cut (channel in analysis has biggest charge in the event) 
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -1276,6 +1277,11 @@ int main (int argc, char** argv)
             cut << TriggerChannel.str().c_str() << " == " << thisChannel.string.c_str();
             TCut TriggerChannelCut = cut.str().c_str();
             TCut CutTrigger = cut.str().c_str();
+
+            if(!applyTriggerCut)
+            {
+              CutTrigger="";
+            }
 
 
 
