@@ -322,7 +322,36 @@ int main (int argc, char** argv)
   bool lowStat = config.read<bool>("lowStat",1); // if low statistics, apply fits to slices - default 1 (true)
   // bool gexp = config.read<bool>("gexp",0); // use the EMG gaussian fit - default 0 (false)
   bool dumpImages =  config.read<bool>("dumpImages",0); // dump images of some plots for quick check - default 0 (false)
-  bool applyTriggerCut = config.read<bool>("applyTriggerCut",1); // apply trigger cut (channel in analysis has biggest charge in the event) 
+  bool applyTriggerCut = config.read<bool>("applyTriggerCut",1); // apply trigger cut (channel in analysis has biggest charge in the event)
+
+  // FIXME hardcoded
+  bool manualCutG = config.read<bool>("manualCutG",0);  // read the cutg from external file - default = 0 (false). FIXME this is HIGHLY hardcode fo the moment, will work just on 1-to-1 coupling crystal mppc and fo rjust 1 crystal per ModuleCalibration run!!!
+  // it works like this.
+  // 1. run standard modulecalibration without manualCutG option
+  // 2. maybe no cluster found, or you don't like the cluster
+  // 3. take a look at the 2d projections of Flood Histogram 3D for the mppc under analysis (the _zx and _zy ones)
+  // 4. create a graphical cut for one of them
+  //    a) open toolbar in gui
+  //    b) click on scissors symbol (Graphical Cut)
+  //    c) draw a cut by left clicking on points, then close it with double click (cut has to be a closed line)
+  //    d) retrieve from ROOT "world" and change name
+  //        TCutG *mycutg1;
+  //        mycutg1 = (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
+  //        mycutg1->SetName("cutg_0");
+  //    e) do the same as c) for the other plot
+  //    f) same as d) for this plot
+  //        TCutG *mycutg2;
+  //        mycutg2 = (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
+  //        mycutg2->SetName("cutg_1");
+  //    g) save both in a tfile (cutgs.root)
+  //        TFile *fOut = new TFile("cutgs.root","RECREATE")
+  //        fOut->cd()
+  //        mycutg1->Write()
+  //        mycutg2->Write()
+  //        fOut->Close()
+  //    h) re-run ModuleCalibration by adding the manualCutG = 1 key
+
+
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -1630,6 +1659,22 @@ int main (int argc, char** argv)
             sname.str("");
             var.str("");
 
+            // add the two projections on zx zy, for a possible manual cutg
+            sname << spectrum3dMPPC->GetName() << "_zx";
+            spectrum3dMPPC->Project3D("zx");
+            TH2D *proj_zx = (TH2D*) gDirectory->Get(sname.str().c_str());
+            sname.str("");
+
+            sname << spectrum3dMPPC->GetName() << "_zy";
+            spectrum3dMPPC->Project3D("zy");
+            TH2D *proj_zy = (TH2D*) gDirectory->Get(sname.str().c_str());
+            sname.str("");
+
+            mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D_zx(proj_zx);
+            mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetFloodMap3D_zy(proj_zy);
+
+
+
             // another 3d plot same data as before, but with histo limits same as global plot,
             // to make some plot possible
             sname << "spectrum3dMPPC_large - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
@@ -1663,6 +1708,7 @@ int main (int argc, char** argv)
             int right_ncrystalsx;
 
 
+
             if(usingTaggingBench)
             { //with tagging crystal setup, use only one row of crystals
               right_ncrystalsx =1;
@@ -1686,12 +1732,42 @@ int main (int argc, char** argv)
               {
                 if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForDoi())
                 {
-                  found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,1,ncrystalsy,FloodXYZ);
+                  if(manualCutG)
+                  {
+                    TFile *_file0 = TFile::Open("cutgs.root");// FIXME hardcoded
+                    cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
+                    cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
+                    cutg[0][0][0]->SetVarX(FloodXYZ[0]);
+                    cutg[0][0][0]->SetVarY(FloodXYZ[2]);
+                    cutg[1][0][0]->SetVarX(FloodXYZ[1]);
+                    cutg[1][0][0]->SetVarY(FloodXYZ[2]);
+                    found = true;
+                  }
+                  else
+                  {
+                    found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,1,ncrystalsy,FloodXYZ);
+                  }
+
                 }
               }
               else
               {
-                found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,ncrystalsx,ncrystalsy,FloodXYZ);
+                if(manualCutG)
+                {
+                  TFile *_file0 = TFile::Open("cutgs.root");// FIXME hardcoded
+                  cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
+                  cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
+                  cutg[0][0][0]->SetVarX(FloodXYZ[0]);
+                  cutg[0][0][0]->SetVarY(FloodXYZ[2]);
+                  cutg[1][0][0]->SetVarX(FloodXYZ[1]);
+                  cutg[1][0][0]->SetVarY(FloodXYZ[2]);
+                  found = true;
+                }
+                else
+                {
+                  found = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->FindCrystalCuts(cutg,ncrystalsx,ncrystalsy,FloodXYZ);
+                }
+
               }
             }
             else // do not apply 3d cut. of course this makes sens only when just one crystal is considered
@@ -4714,6 +4790,24 @@ int main (int argc, char** argv)
             mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D()->Draw();
             C_spectrum->Write();
             delete C_spectrum;
+
+
+            // 3d flood map projected on zx
+            C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+            C_spectrum->SetName(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D_zx()->GetName());
+            C_spectrum->cd();
+            mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D_zx()->Draw("COLZ");
+            C_spectrum->Write();
+            delete C_spectrum;
+
+            // 3d flood map projected on zy
+            C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+            C_spectrum->SetName(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D_zy()->GetName());
+            C_spectrum->cd();
+            mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetFloodMap3D_zy()->Draw("COLZ");
+            C_spectrum->Write();
+            delete C_spectrum;
+
 
 
             // C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);

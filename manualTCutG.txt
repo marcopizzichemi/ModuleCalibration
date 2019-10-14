@@ -1,0 +1,13 @@
+TCutG *mycutg1;
+mycutg1 = (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
+mycutg1->SetName("cutg_0");
+
+TCutG *mycutg2;
+mycutg2 = (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
+mycutg2->SetName("cutg_1");
+
+TFile *fOut = new TFile("cutgs.root","RECREATE")
+fOut->cd()
+mycutg1->Write()
+mycutg2->Write()
+fOut->Close()

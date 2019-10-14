@@ -74,6 +74,8 @@ protected:
   //3d histos
   TH3I*                FloodMap3D;          ///< u,v,w map for this element
   TH3I*                FloodMap3DSeparation;
+  TH2D*                FloodMap3D_zx;
+  TH2D*                FloodMap3D_zy;
   TH1F*                TimeSpectrum;
   // TH1F*                DeltaTimeWRTTagging;
   TH2F*                deltaTvsW;
@@ -126,6 +128,9 @@ public:
   //   TH2F*                GetCornerMap()                            {return &CornerMap;};
   //   TH2F*                GetCentralMap()                           {return &CentralMap;};
   TH3I*                GetFloodMap3D()                           {return FloodMap3D;};
+
+  TH2D*                GetFloodMap3D_zx()                        {return FloodMap3D_zx;};
+  TH2D*                GetFloodMap3D_zy()                        {return FloodMap3D_zy;};
   TH3I*                GetFloodMap3DSeparation()                           {return FloodMap3DSeparation;};
   std::string          GetXvariable()                            {return variableX;};
   std::string          GetYvariable()                            {return variableY;};
@@ -157,7 +162,10 @@ public:
   void                 SetDeltaTvsCH(TH2F* aHisto)                {deltaTvsCH = aHisto;};
 
   void                 SetFloodMap3D(TH3I* aHisto)                {FloodMap3D = aHisto;};
-  void                 SetFloodMap3DSeparation(TH3I* aHisto)                {FloodMap3DSeparation = aHisto;};
+
+  void                 SetFloodMap3D_zx(TH2D* aHisto)             {FloodMap3D_zx = aHisto;};
+  void                 SetFloodMap3D_zy(TH2D* aHisto)             {FloodMap3D_zy = aHisto;};
+  void                 SetFloodMap3DSeparation(TH3I* aHisto)      {FloodMap3DSeparation = aHisto;};
   //   void                 SetLateralMap(TH2F aHisto)                {LateralMap = aHisto;};
   //   void                 SetCornerMap(TH2F aHisto)                 {CornerMap = aHisto;};
   //   void                 SetCentralMap(TH2F aHisto)                {CentralMap = aHisto;};
