@@ -172,6 +172,8 @@ int main (int argc, char** argv)
   bool linear = false;
   bool light = false;
   bool oldLight = false;
+  int tChannel = 28;
+  int dChannel = 28;
 
 
   // parse arguments
@@ -185,6 +187,8 @@ int main (int argc, char** argv)
       { "linear", no_argument, 0, 0 },
       { "light", no_argument, 0, 0 },
       { "oldLight", no_argument, 0, 0 },
+      { "tChannel", no_argument, 0, 0 },
+      { "dChannel", no_argument, 0, 0 },
       // { "sim",no_argument,0,0},
       // { "verbose", no_argument, 0, 0 },
       // { "tagCut", no_argument, 0, 0 },
@@ -237,6 +241,12 @@ int main (int argc, char** argv)
     }
     else if (c == 0 && optionIndex == 7){
       oldLight = true;
+    }
+    else if (c == 0 && optionIndex == 8){
+      tChannel = atoi((char *)optarg);
+    }
+    else if (c == 0 && optionIndex == 9){
+      dChannel = atoi((char *)optarg);
     }
     // else if (c == 0 && optionIndex == 4){
     //   simulation = true;
@@ -685,33 +695,40 @@ int main (int argc, char** argv)
 
   // now built the delta RMS graph
   TGraphErrors *gDeltaRMS = new TGraphErrors(w.size(),&w[0],&deltaRMS[0],&ew[0],&deltaRMSerr[0]);
-  gDeltaRMS->SetName("gDeltaRMS t27");
+  std::stringstream sname;
+  sname << "gDeltaRMS t"  << tChannel;
+  gDeltaRMS->SetName(sname.str().c_str());
   gDeltaRMS->GetXaxis()->SetTitle("w");
   gDeltaRMS->GetYaxis()->SetTitle("RMS [s]");
   gDeltaRMS->SetMarkerStyle(21);
   gDeltaRMS->SetMarkerColor(kBlue);
+  sname.str("");
 
   TF1 *fLine_deltaRMS = new TF1("fLine_deltaRMS","pol0",0,1);
   gDeltaRMS->Fit(fLine_deltaRMS,"Q");
 
   // build a light graph
   TGraphErrors *gLight = new TGraphErrors(w.size(),&w[0],&lightCentral[0],&ew[0],&lightCentralErr[0]);
-  gLight->SetName("gLight ch27");
+  sname << "gLight c"  << dChannel;
+  gLight->SetName(sname.str().c_str());
   gLight->GetXaxis()->SetTitle("w");
   gLight->GetYaxis()->SetTitle("Light [ADC ch]");
   gLight->SetMarkerStyle(21);
   gLight->SetMarkerColor(kBlue);
+  sname.str("");
 
   TF1 *fLine_Light = new TF1("fLine_Light","pol1",0,1);
   gLight->Fit(fLine_Light,"Q");
 
   // build a light err graph
   TGraphErrors *gLightErr = new TGraphErrors(w.size(),&w[0],&lightCentralErr[0],&ew[0],&ew[0]);
-  gLightErr->SetName("gLight err ch27");
+  sname << "gLight err ch"  << dChannel;
+  gLightErr->SetName(sname.str().c_str());
   gLightErr->GetXaxis()->SetTitle("w");
   gLightErr->GetYaxis()->SetTitle("Light [ADC ch]");
   gLightErr->SetMarkerStyle(21);
   gLightErr->SetMarkerColor(kBlue);
+  sname.str("");
 
   // build a light sum graph
   TGraphErrors *gLightSum = new TGraphErrors(w.size(),&w[0],&lightSum[0],&ew[0],&lightSumErr[0]);
@@ -738,8 +755,8 @@ int main (int argc, char** argv)
   // fill the first one, i.e. the central mppc
   correction_gr_t tempCorr;
 
-  tempCorr.timingChannel = 27;
-  tempCorr.digitizerChannel = 27;
+  tempCorr.timingChannel = tChannel;
+  tempCorr.digitizerChannel = dChannel;
   tempCorr.isMainChannel = true;
   tempCorr.delay = NULL;
   tempCorr.rms = gDeltaRMS;
@@ -788,7 +805,6 @@ int main (int argc, char** argv)
       lSharingErr.push_back(inputData[i].lightSharingErr[k]);
     }
 
-    std::stringstream sname;
     gDelay = new TGraphErrors(w.size(),&w[0],&delay[0],&ew[0],&delayErr[0]);
     sname << "gDelay t" << channel;
     gDelay->SetName(sname.str().c_str());
