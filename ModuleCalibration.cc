@@ -326,6 +326,14 @@ int main (int argc, char** argv)
 
   // FIXME hardcoded
   bool manualCutG = config.read<bool>("manualCutG",0);  // read the cutg from external file - default = 0 (false). FIXME this is HIGHLY hardcode fo the moment, will work just on 1-to-1 coupling crystal mppc and fo rjust 1 crystal per ModuleCalibration run!!!
+  std::string cutgsFileName = config.read<std::string> ("cutgsFileName","cutgs.root"); // name of root file with manual cutgs - default = cutgs.root
+
+
+
+
+
+
+
   // it works like this.
   // 1. run standard modulecalibration without manualCutG option
   // 2. maybe no cluster found, or you don't like the cluster
@@ -1734,7 +1742,7 @@ int main (int argc, char** argv)
                 {
                   if(manualCutG)
                   {
-                    TFile *_file0 = TFile::Open("cutgs.root");// FIXME hardcoded
+                    TFile *_file0 = TFile::Open(cutgsFileName.c_str());
                     cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
                     cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
                     cutg[0][0][0]->SetVarX(FloodXYZ[0]);
@@ -1754,7 +1762,7 @@ int main (int argc, char** argv)
               {
                 if(manualCutG)
                 {
-                  TFile *_file0 = TFile::Open("cutgs.root");// FIXME hardcoded
+                  TFile *_file0 = TFile::Open(cutgsFileName.c_str());
                   cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
                   cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
                   cutg[0][0][0]->SetVarX(FloodXYZ[0]);
