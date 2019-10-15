@@ -2122,6 +2122,19 @@ int main (int argc, char** argv)
                       spectrumCharge->GetYaxis()->SetTitle("N");
                       sname.str("");
                       var.str("");
+
+                      //single MPPC spectrum for this crystal.
+                      sname << "Single Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                      var << thisChannel.string
+                      << " >> " << sname.str();
+                      TH1F* spectrumSingleCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax);
+                      tree->Draw(var.str().c_str(),CrystalCut);
+                      spectrumSingleCharge->GetXaxis()->SetTitle("ADC Channels");
+                      spectrumSingleCharge->GetYaxis()->SetTitle("N");
+                      sname.str("");
+                      var.str("");
+                      CurrentCrystal->SetSingleChargeSpectrum(spectrumSingleCharge);
+
                       if(lightYieldComputation)
                       {
                         //SumSpectrum in Ph/MeV -- CAREFUL this is not as accurate as measuring LY on PMTs
@@ -5002,6 +5015,13 @@ int main (int argc, char** argv)
                         CurrentCrystal->GetHighlightedSpectrum()->Draw("same");
                         CurrentCrystal->GetFit()->Draw("same");
                       }
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",1200,800);
+                      C_spectrum->SetName(CurrentCrystal->GetSingleChargeSpectrum()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetSingleChargeSpectrum()->Draw();
                       C_spectrum->Write();
                       delete C_spectrum;
 

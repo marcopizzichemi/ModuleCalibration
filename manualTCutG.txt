@@ -13,6 +13,4 @@ mycutg2->Write()
 fOut->Close()
 
 manualCutG = 1
-
-
-time ModuleCalibration -c conf.cfg TTree_0_* && time ModuleCalibration -c conf_manual.cfg TTree_0_*
+cutgsFileName = cutgs.root # or any other name you chose above
