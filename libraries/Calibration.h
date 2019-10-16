@@ -239,9 +239,9 @@ void readCalibration(TFile* calibrationFile,                        // file with
          std::string lightAll_prefix("Sum spectrum highlighted");
          std::string basicCTR_prefix("Basic CTR histogram");
 
-         bool dirExists      = false;
-         bool dirDelayExists = false;
-         bool dirRMSExists   = false;
+         bool dirExists      = true;
+         bool dirDelayExists = true;
+         bool dirRMSExists   = true;
          std::string TimeCorrection_prefix("TimeCorrection");
          std::string Delay_prefix         ("DelayDir");
          std::string RMS_prefix           ("RMSDir");
@@ -413,18 +413,18 @@ void readCalibration(TFile* calibrationFile,                        // file with
              temp_crystal.fwhmForPolishedCorrection = v[0];
            }
 
-           if(!keysCryName[i].compare(0,TimeCorrection_prefix.size(),TimeCorrection_prefix))
-           {
-             dirExists = true;
-           }
-           if(!keysCryName[i].compare(0,Delay_prefix.size(),Delay_prefix))
-           {
-             dirDelayExists = true;
-           }
-           if(!keysCryName[i].compare(0,RMS_prefix.size(),RMS_prefix))
-           {
-             dirRMSExists = true;
-           }
+           // if(!keysCryName[i].compare(0,TimeCorrection_prefix.size(),TimeCorrection_prefix))
+           // {
+           //   dirExists = true;
+           // }
+           // if(!keysCryName[i].compare(0,Delay_prefix.size(),Delay_prefix))
+           // {
+           //   dirDelayExists = true;
+           // }
+           // if(!keysCryName[i].compare(0,RMS_prefix.size(),RMS_prefix))
+           // {
+           //   dirRMSExists = true;
+           // }
 
 
 
@@ -719,6 +719,8 @@ void readCalibration(TFile* calibrationFile,                        // file with
                    std::string tChannelStringFromRms   = rmsName.substr(found  +1);
 
                    int rmsCh   = atoi( tChannelStringFromRms.c_str() );
+
+                   std::cout << rmsCh << std::endl;
 
                    temp_graph.timingChannel = rmsCh;
                    temp_graph.graph = calibGraph;

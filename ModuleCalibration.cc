@@ -3027,7 +3027,7 @@ int main (int argc, char** argv)
                           CTRvsIntegral1ch->GetXaxis()->SetTitle("Integral 1 ch [ADC channels]");
                           CTRvsIntegral1ch->GetYaxis()->SetTitle("T crystal - T tagging [S]");
                           CurrentCrystal->SetCTRvsIntegral1ch(CTRvsIntegral1ch);
-                          std::cout << var.str() << std::endl;
+                          // std::cout << var.str() << std::endl;
                           var.str("");
                           sname.str("");
 
