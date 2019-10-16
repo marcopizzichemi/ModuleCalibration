@@ -47,6 +47,9 @@ private:
   TH1F*                LScentralSpectrum;
   TH2F*                CTRvsTimeSpectrum;
   TH2F*                AmplitudeVsIntegralSpectrum;
+
+  TH2F*                CTRvsIntegral1ch;
+  TH2F*                CTRvsIntegral9ch;
   // TH1F*                LSSpectrum;
 
   TH1D*                SlicesMean;           ///< histogram of fitted mean values of profiles from TH2F ADCvsW distribution
@@ -267,6 +270,7 @@ public:
   TH1F*                GetLScentralSpectrum(){return LScentralSpectrum;};
   TH2F*                GetCTRvsTimeSpectrum(){return CTRvsTimeSpectrum;};
   TH2F*                GetAmplitudeVsIntegralSpectrum(){return AmplitudeVsIntegralSpectrum;};
+
   // TH1F*                GetLSSpectrum(){return LSSpectrum;};
 
 
@@ -369,6 +373,9 @@ public:
   std::vector<multiGraphAligned_t>         GetAlignedGraphRMS(){return ctr_aligned_rms_graph;};
 
   TH1D*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
+
+  TH2F*                GetCTRvsIntegral1ch(){return CTRvsIntegral1ch;};
+  TH2F*                GetCTRvsIntegral9ch(){return CTRvsIntegral9ch;};
 
   void                 SetDeltaTimeWRTTagging(TH1D* aHisto)       {DeltaTimeWRTTagging = aHisto;};
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
@@ -484,6 +491,8 @@ public:
   std::vector<TH1D*>   GetAlignedSlice(){return alignedSlice;};
   void                 AddPolishedHisto(TH1D* aHisto){polishedHisto.push_back(aHisto);};
   std::vector<TH1D*>   GetPolishedHisto(){return polishedHisto;};
+  void                 SetCTRvsIntegral1ch(TH2F* aHisto){CTRvsIntegral1ch = aHisto;};
+  void                 SetCTRvsIntegral9ch(TH2F* aHisto){CTRvsIntegral9ch = aHisto;};
 
 
 

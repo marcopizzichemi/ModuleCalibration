@@ -2990,9 +2990,6 @@ int main (int argc, char** argv)
 
 
                           sname << "Basic CTR - Crystal " << CurrentCrystal->GetID();
-                          // var << "t" << detector[thisChannelID].timingChannel
-                          // << "- t" << taggingCrystalTimingChannel
-                          // << " >> " << sname.str();
 
                           TH1D* aSpectrum =  spectrumCrystalDeltaTvsW->ProjectionY(sname.str().c_str());
                           // new TH1F(sname.str().c_str(),sname.str().c_str(),CTRbins,CTRmin,CTRmax);
@@ -3003,6 +3000,42 @@ int main (int argc, char** argv)
                           CurrentCrystal->SetDeltaTimeWRTTagging(aSpectrum);
                           var.str("");
                           sname.str("");
+
+                          sname << "Basic CTR vs. Integral 1ch - Crystal " << CurrentCrystal->GetID();
+                          var << "t" << detector[thisChannelID].timingChannel
+                          << "- t" << taggingCrystalTimingChannel
+                          << " : "
+                          << thisChannel.string
+                          << " >> " << sname.str() ;
+
+                          TH2F* CTRvsIntegral1ch = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax,CTRbins,CTRmin,CTRmax);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                          CTRvsIntegral1ch->SetTitle(sname.str().c_str());
+                          CTRvsIntegral1ch->GetXaxis()->SetTitle("Integral 1 ch [ADC channels]");
+                          CTRvsIntegral1ch->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                          CurrentCrystal->SetCTRvsIntegral1ch(CTRvsIntegral1ch);
+                          std::cout << var.str() << std::endl;
+                          var.str("");
+                          sname.str("");
+
+                          sname << "Basic CTR vs. Integral 9ch - Crystal " << CurrentCrystal->GetID();
+                          var << "t" << detector[thisChannelID].timingChannel
+                          << "- t" << taggingCrystalTimingChannel
+                          << " : "
+                          << SumChannels
+                          << " >> " << sname.str() ;
+
+                          TH2F* CTRvsIntegral9ch = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,1,histo1Dmax,CTRbins,CTRmin,CTRmax);
+                          tree->Draw(var.str().c_str(),CrystalCut+PhotopeakEnergyCut+noZerosCut,"COLZ");
+                          CTRvsIntegral9ch->SetTitle(sname.str().c_str());
+                          CTRvsIntegral9ch->GetXaxis()->SetTitle("Integral 9 ch [ADC channels]");
+                          CTRvsIntegral9ch->GetYaxis()->SetTitle("T crystal - T tagging [S]");
+                          CurrentCrystal->SetCTRvsIntegral9ch(CTRvsIntegral9ch);
+                          var.str("");
+                          sname.str("");
+
+
+
 
 
                           if(completeAnalysis)
@@ -5227,6 +5260,8 @@ int main (int argc, char** argv)
                         {
                           // basic ctr plot
                           CurrentCrystal->GetDeltaTimeWRTTagging()->Write();
+                          CurrentCrystal->GetCTRvsIntegral1ch()->Write();
+                          CurrentCrystal->GetCTRvsIntegral9ch()->Write();
 
 
                           if(completeAnalysis)

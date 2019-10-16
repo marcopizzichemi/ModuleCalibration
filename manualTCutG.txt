@@ -14,3 +14,4 @@ fOut->Close()
 
 manualCutG = 1
 cutgsFileName = cutgs.root # or any other name you chose above
+cutgsFileName = cutgsC3.root
