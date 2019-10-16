@@ -66,6 +66,7 @@ protected:
   //   TH2F                 CentralMap;          ///< Rotated map
   TH2F*                ADCversusW;          ///< 2d histo of "energy" versus w coordinate
   TH2F*                ADCversusWComplete;  ///< 2d histo of "energy" versus w coordinate - without cuts
+  TH2F*                SingleADCversusWComplete;
   //   TGraph               ADCversusWgraph;     ///< TGraph of "energy" versus w coordinate
 
   //   TGraph               GraphFlood2D;        ///< TGraph dumped from the FloodMap2D
@@ -112,6 +113,7 @@ public:
   TH2F*                GetFloodMap2DSingleCrystalHit()           {return FloodMap2DSingleCrystalHit;};
   TH2F*                GetADCversusW()                           {return ADCversusW;};
   TH2F*                GetADCversusWComplete()                   {return ADCversusWComplete;};
+  TH2F*                GetSingleADCversusWComplete()             {return SingleADCversusWComplete;};
   TH1F*                GetTimeSpectrum()                         {return TimeSpectrum;};
   // TH1F*                GetDeltaTimeWRTTagging()                  {return DeltaTimeWRTTagging;};
   TH2F*                GetDeltaTvsW()                            {return deltaTvsW;};
@@ -153,6 +155,7 @@ public:
   void                 SetFloodMap2DSingleCrystalHit(TH2F* aHisto)  {FloodMap2DSingleCrystalHit = aHisto;};
   void                 SetADCversusW(TH2F* aHisto)                {ADCversusW = aHisto;};
   void                 SetADCversusWComplete(TH2F* aHisto)        {ADCversusWComplete = aHisto;};
+  void                 SetSingleADCversusWComplete(TH2F* aHisto)  {SingleADCversusWComplete = aHisto;};
   void                 SetIsOnForModular(bool aBool)              {isOnForModular = aBool;};
   void                 SetTimeSpectrum(TH1F* aHisto)              {TimeSpectrum = aHisto;};
   // void                 SetDeltaTimeWRTTagging(TH1F* aHisto)       {DeltaTimeWRTTagging = aHisto;};

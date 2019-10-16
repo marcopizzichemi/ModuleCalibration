@@ -2764,7 +2764,7 @@ int main (int argc, char** argv)
                       var.str("");
                       sname.str("");
 
-                      //histogram of w versus adc channels - this time without the photopeak cut (so it looks nicer in the paper...)
+                      //histogram of w versus adc channels - this time without the photopeak cut
                       sname << "Complete ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
                       var << SumChannels << ":" << FloodZ.str() << " >> " << sname.str() ;
                       TH2F* spectrum2dADCversusWComplete = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,histo1Dbins,0,histo1Dmax);
@@ -2773,6 +2773,19 @@ int main (int argc, char** argv)
                       spectrum2dADCversusWComplete->GetYaxis()->SetTitle("ADC channels");
                       spectrum2dADCversusWComplete->SetName(sname.str().c_str());
                       CurrentCrystal->SetADCversusWComplete(spectrum2dADCversusWComplete);
+                      var.str("");
+                      sname.str("");
+
+
+                      //histogram of w versus single detector adc channels - without the photopeak cut
+                      sname << "Complete Single ADC channels vs. W - Crystal " << CurrentCrystal->GetID();
+                      var << thisChannel.string << ":" << FloodZ.str() << " >> " << sname.str() ;
+                      TH2F* spectrum2dSingleADCversusWComplete = new TH2F(sname.str().c_str(),sname.str().c_str(),wHistogramsBins,histo3Dmin,histo3Dmax,histo1Dbins,0,histo1Dmax);
+                      tree->Draw(var.str().c_str(),CrystalCut,"COLZ");
+                      spectrum2dSingleADCversusWComplete->GetXaxis()->SetTitle("W");
+                      spectrum2dSingleADCversusWComplete->GetYaxis()->SetTitle("ADC channels");
+                      spectrum2dSingleADCversusWComplete->SetName(sname.str().c_str());
+                      CurrentCrystal->SetSingleADCversusWComplete(spectrum2dSingleADCversusWComplete);
                       var.str("");
                       sname.str("");
 
@@ -5170,6 +5183,14 @@ int main (int argc, char** argv)
                       C_spectrum->SetName(CurrentCrystal->GetADCversusWComplete()->GetName());
                       C_spectrum->cd();
                       CurrentCrystal->GetADCversusWComplete()->Draw("COLZ");
+                      C_spectrum->Write();
+                      delete C_spectrum;
+
+                      // single adc versus w complete
+                      C_spectrum = new TCanvas("C_spectrum","C_spectrum",800,800);
+                      C_spectrum->SetName(CurrentCrystal->GetSingleADCversusWComplete()->GetName());
+                      C_spectrum->cd();
+                      CurrentCrystal->GetSingleADCversusWComplete()->Draw("COLZ");
                       C_spectrum->Write();
                       delete C_spectrum;
 
