@@ -428,12 +428,31 @@ int main (int argc, char** argv)
       crystal[iCry].simpleCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
       sname.str("");
 
+      sname << "Polished correction - Crystal " << crystal[iCry].number;
+      crystal[iCry].poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
       sname.str("");
+
       sname << "CTR vs. W - Crystal " << crystal[iCry].number;
       crystal[iCry].ctrVSw = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,1,histoBins,histoMin,histoMax);
       sname.str("");
-      sname << "Polished correction - Crystal " << crystal[iCry].number;
-      crystal[iCry].poliCorrCTR = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
+
+      // plots vs z
+
+      sname << "Single ADC ch vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].singleADCvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,200,0,200000);
+      sname.str("");
+
+      sname << "Total ADC ch vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].totADCvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,200,0,200000);
+      sname.str("");
+
+      sname << "Basic CTR vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].basicCTRvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
+      sname.str("");
+
+      sname << "Full CTR vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].fullCTRvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
+      sname.str("");
     }
   }
 
@@ -476,6 +495,22 @@ int main (int argc, char** argv)
             {
               goodEventsAnalysis++;
 
+              //calculate FloodZ...
+              float FloodZ = calculateFloodZ(charge,crystal[iCry]);
+              // calculate reconstructed Z
+              float z_reco = crystal[iCry].calibrationGraph->Eval(FloodZ);
+
+              // calculate charge in trigger mppc (corrected by saturation)
+              float centralCharge = calculate_trigger_charge(charge,crystal[iCry]);
+
+              // calculate charge in the 9 relevant mppcs (corrected by saturation)
+              float sumCharge = calculate_sum_charge(charge,crystal[iCry]);
+
+              // Fill adc vs z scatter plots
+              crystal[iCry].singleADCvsZ->Fill(z_reco,centralCharge);
+              crystal[iCry].totADCvsZ->Fill(z_reco,sumCharge);
+
+
               //temp commented
               Float_t centralcorrection = 0.0;
               Float_t zeroCorrection    = 0.0;
@@ -485,13 +520,13 @@ int main (int argc, char** argv)
               if((timeStamp[crystal[iCry].timingChannel] != 0) && (timeStamp[crystal[iCry].taggingCrystalTimingChannel] != 0)) // no zeroes
               {
                 crystal[iCry].simpleCTR->Fill(simpleCTR);
+                crystal[iCry].basicCTRvsZ->Fill(z_reco,simpleCTR);
                 // crystal[iCry].vSimple.push_back(simpleCTR);
               }
 
               if(crystal[iCry].tw_correction)
               {
-                //calculate FloodZ...
-                float FloodZ = calculateFloodZ(charge,crystal[iCry]);
+
 
                 //skip event if is cut by min and maxAcceptedW
                 if(FloodZ > crystal[iCry].minAcceptedW && FloodZ < crystal[iCry].maxAcceptedW)
@@ -584,6 +619,7 @@ int main (int argc, char** argv)
                       double allCTR = averageTimeStamp + centralcorrection;
 
                       crystal[iCry].allCTR->Fill(allCTR);
+                      crystal[iCry].fullCTRvsZ->Fill(z_reco,allCTR);
                       // crystal[iCry].vAll.push_back(allCTR);
 
                     }
@@ -811,6 +847,12 @@ int main (int argc, char** argv)
     crystal[iCry].lightAllHisto->Fit(gaussAll,"Q");
     lightAll = gaussAll->GetParameter(1);
     crystal[iCry].lightAllHisto->Write();
+
+    crystal[iCry].singleADCvsZ->Write();
+    crystal[iCry].totADCvsZ->Write();
+    crystal[iCry].basicCTRvsZ->Write();
+    crystal[iCry].fullCTRvsZ->Write();
+
 
 
 

@@ -141,6 +141,13 @@ struct Crystal_t
   TCut* CutNoise          ;
   TCut* PhotopeakEnergyCutnergyCut;
 
+
+  TH2F *singleADCvsZ;
+  TH2F *totADCvsZ;
+  TH2F *basicCTRvsZ;
+  TH2F *fullCTRvsZ;
+
+
 };
 
 

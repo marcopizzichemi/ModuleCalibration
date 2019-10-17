@@ -156,3 +156,69 @@ float calculateFloodZ_withoutCorrectingForSaturation(T  *charge,
   FloodZ = centralChargeCorr / division;
   return FloodZ;
 }
+
+
+float calculate_trigger_charge(UShort_t  *charge,
+                               Crystal_t crystal)
+{
+  // float FloodZ;
+  float centralChargeOriginal;
+  float centralSaturation;
+  float centralPedestal;
+  // float division = 0.0;
+
+  centralChargeOriginal = charge[crystal.detectorChannel];
+  for(unsigned int iSat = 0; iSat < crystal.detectorSaturation.size(); iSat++)
+  {
+    if( crystal.detectorSaturation[iSat].digitizerChannel  == crystal.detectorChannel)
+    {
+      centralSaturation = crystal.detectorSaturation[iSat].saturation;
+      centralPedestal = crystal.detectorSaturation[iSat].pedestal;
+    }
+  }
+  float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+
+  return centralChargeCorr;
+}
+
+float calculate_sum_charge(UShort_t  *charge,
+                          Crystal_t crystal)
+{
+  // float FloodZ;
+  // float centralChargeOriginal;
+  // float centralSaturation;
+  // float centralPedestal;
+  float sum = 0.0;
+
+  // centralChargeOriginal = charge[crystal.detectorChannel];
+  // for(unsigned int iSat = 0; iSat < crystal.detectorSaturation.size(); iSat++)
+  // {
+  //   if( crystal.detectorSaturation[iSat].digitizerChannel  == crystal.detectorChannel)
+  //   {
+  //     centralSaturation = crystal.detectorSaturation[iSat].saturation;
+  //     centralPedestal = crystal.detectorSaturation[iSat].pedestal;
+  //   }
+  // }
+  // float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+
+  for (unsigned int iW = 0; iW < crystal.relevantForW.size(); iW++)
+  {
+    // std::cout << crystal.relevantForW[iW] << std::endl;
+    float originalCh = charge[crystal.relevantForW[iW]];
+
+    float saturationCh;
+    float pedestalCorr;
+    for(unsigned int iSat = 0; iSat < crystal.detectorSaturation.size(); iSat++)
+    {
+      if( crystal.detectorSaturation[iSat].digitizerChannel  == crystal.relevantForW[iW])
+      {
+        saturationCh = crystal.detectorSaturation[iSat].saturation;
+        pedestalCorr = crystal.detectorSaturation[iSat].pedestal;
+      }
+    }
+    sum += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+  }
+
+  // FloodZ = centralChargeCorr / division;
+  return sum;
+}
