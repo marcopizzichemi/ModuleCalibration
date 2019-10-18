@@ -909,6 +909,22 @@ int main (int argc, char** argv)
     if(crystal[id].accepted)
     {
       bool noZeroes = true;
+
+      // calc reconstructed doi
+      float doiFromLine;
+      if(linear)
+      {
+        doiFromLine =  fLine_zw->Eval(FloodZ);
+      }
+      else
+      {
+        doiFromLine = g_z_w->Eval(FloodZ);
+      }
+
+      // calc distance to "real" z (i.e. to tagging setup position)
+      float deltaToLine        = zFromTag - doiFromLine;
+      hDeltaToLine       ->Fill(deltaToLine); // fill histogram to calc resolution
+      
       // first check if there are no zeroes
       // this means that events where the DAQ failed to compute the timestamp of
       // one of the 9 detectors are ignored
@@ -954,20 +970,7 @@ int main (int argc, char** argv)
         // fill base ctr histo
         baseCTR_H->Fill(timeStamp[crystal[id].timingChannel] - timeStamp[crystal[id].taggingCrystalTimingChannel]);
 
-        // calc reconstructed doi
-        float doiFromLine;
-        if(linear)
-        {
-          doiFromLine =  fLine_zw->Eval(FloodZ);
-        }
-        else
-        {
-          doiFromLine = g_z_w->Eval(FloodZ);
-        }
 
-        // calc distance to "real" z (i.e. to tagging setup position)
-        float deltaToLine        = zFromTag - doiFromLine;
-        hDeltaToLine       ->Fill(deltaToLine); // fill histogram to calc resolution
 
 
         // calc doi t correction (CENTRAL)
