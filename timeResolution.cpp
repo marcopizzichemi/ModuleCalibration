@@ -529,7 +529,8 @@ int main (int argc, char** argv)
 
 
                 //skip event if is cut by min and maxAcceptedW
-                if(FloodZ > crystal[iCry].minAcceptedW && FloodZ < crystal[iCry].maxAcceptedW)
+                // if(FloodZ > crystal[iCry].minAcceptedW && FloodZ < crystal[iCry].maxAcceptedW)
+                if(true) // to avoid the w limit, it is actually useless
                 {
                   double centralCTR;
 

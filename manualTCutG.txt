@@ -19,3 +19,8 @@ cutgsFileName = cutgsC3.root
 
 
 taggingPosition =
+
+
+time timeResolution --calibration outB3_manual.root --folder ./ --prefix TTree_ --output resB3.root --histoMin -1e-9 --histoMax 1e-9 --histoBins 200 --func 1 --tagFwhm 90e-12
+
+time timeResolution --calibration outC3.root --folder ./ --prefix TTree_ --output resC3.root --histoMin -1e-9 --histoMax 1e-9 --histoBins 200 --func 1 --tagFwhm 90e-12
