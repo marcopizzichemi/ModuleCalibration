@@ -122,6 +122,17 @@ struct Crystal_t
   TH1F *centralCTR;
   TH1F *allCTR;
   TH1F *poliCorrCTR;
+
+  // std::vector<TH1F*> v_simple_CTR;
+  // std::vector<TH1F*> v_central_CTR;
+  std::vector<TH1F*> v_all_CTR;
+  std::vector<TH1F*> v_poli_CTR;
+
+  std::vector<TH2F*> v_all_CTRvsZ;
+  std::vector<TH2F*> v_poli_CTRvsZ;
+
+
+
   TH1F *likeCTR;
   TH1F *hybridCTR;
 
