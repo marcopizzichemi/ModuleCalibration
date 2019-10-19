@@ -469,12 +469,12 @@ int main (int argc, char** argv)
 
       for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
       {
-        sname << "Full correction On " << (crystal[iCry].correction_graphs.size()+1) - iDet <<  " channels - Crystal " << crystal[iCry].number;
+        sname << "Full correction On " << (crystal[iCry].correction_graphs.size()) - iDet <<  " channels - Crystal " << crystal[iCry].number;
         TH1F *tempH = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
         sname.str("");
         crystal[iCry].v_all_CTR.push_back(tempH);
 
-        sname << "Full CTR On " << (crystal[iCry].correction_graphs.size()+1) - iDet <<  " channels vs Z - Crystal " << crystal[iCry].number;
+        sname << "Full CTR On " << (crystal[iCry].correction_graphs.size()) - iDet <<  " channels vs Z - Crystal " << crystal[iCry].number;
         TH2F *tempHZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
         sname.str("");
         crystal[iCry].v_all_CTRvsZ.push_back(tempHZ);
@@ -482,12 +482,12 @@ int main (int argc, char** argv)
 
       for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
       {
-        sname << "Poli correction On " << (crystal[iCry].polished_correction.size()+1) - iPoli <<  " channels - Crystal " << crystal[iCry].number;
+        sname << "Poli correction On " << (crystal[iCry].polished_correction.size()) - iPoli <<  " channels - Crystal " << crystal[iCry].number;
         TH1F *tempH = new TH1F(sname.str().c_str(),sname.str().c_str(),histoBins,histoMin,histoMax);
         sname.str("");
         crystal[iCry].v_poli_CTR.push_back(tempH);
 
-        sname << "Poli CTR On " << (crystal[iCry].polished_correction.size()+1) - iPoli <<  " channels vs Z - Crystal " << crystal[iCry].number;
+        sname << "Poli CTR On " << (crystal[iCry].polished_correction.size()) - iPoli <<  " channels vs Z - Crystal " << crystal[iCry].number;
         TH2F *tempHZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
         sname.str("");
         crystal[iCry].v_poli_CTRvsZ.push_back(tempHZ);
