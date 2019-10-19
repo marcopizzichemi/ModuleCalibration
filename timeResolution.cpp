@@ -107,6 +107,7 @@ int main (int argc, char** argv)
   Float_t fitPercMax = 6;
   int divs       = 10000;
   Float_t tagFwhm = 88.0e-12; //s //was 70.0e-12, then measured in 88.0e-12
+  int excludeCh = -1;
 
   // parse command line arguments
   static struct option longOptions[] =
@@ -125,6 +126,7 @@ int main (int argc, char** argv)
       { "fitPercMax", required_argument, 0, 0 },
       { "divs", required_argument, 0, 0 },
       { "tagFwhm", required_argument, 0, 0 },
+      { "exclude", required_argument, 0, 0 },
 
       { NULL, 0, 0, 0 }
 	};
@@ -188,6 +190,9 @@ int main (int argc, char** argv)
     }
     else if (c == 0 && optionIndex == 13){
       tagFwhm = atof((char *)optarg);
+    }
+    else if (c == 0 && optionIndex == 14){
+      excludeCh = atoi((char *)optarg);
     }
 
 		else {
@@ -553,7 +558,7 @@ int main (int argc, char** argv)
 
                   // crystal[iCry].vCentral.push_back(centralCTR);
 
-
+                  // modify to skip excluded channel
                   if(crystal[iCry].delay.size())
                   {
                     // begin of new way
@@ -569,38 +574,31 @@ int main (int argc, char** argv)
                     for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
                     {
                       int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
-                      if(timeStamp[timingChannel] == 0)
+                      if(timingChannel == excludeCh)
                       {
-                        noZeroes = false;
+                        //ignore
                       }
+                      else
+                      {
+                        if(timeStamp[timingChannel] == 0)
+                        {
+                          noZeroes = false;
+                        }
+                      }
+
                     }
                     for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
                     {
                       int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
-                      float delay;
-                      if(crystal[iCry].correction_graphs[iDet].isMainChannel)
+
+                      if(timingChannel == excludeCh)
                       {
-                        delay = 0;
+                        //ignore
                       }
                       else
                       {
-                        delay = crystal[iCry].correction_graphs[iDet].delay->Eval(FloodZ);
-                      }
-                      float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                      if(correctedElement <=  histoMin || correctedElement >= histoMax )
-                      {
-
-                        noZeroes = false;
-                      }
-                    }
-
-                    if(noZeroes)
-                    {
-                      for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
-                      {
-                        //run on all the detectors, included the main one, but remember not to correct the main one for delay!
-                        int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
                         float delay;
+
                         if(crystal[iCry].correction_graphs[iDet].isMainChannel)
                         {
                           delay = 0;
@@ -609,11 +607,45 @@ int main (int argc, char** argv)
                         {
                           delay = crystal[iCry].correction_graphs[iDet].delay->Eval(FloodZ);
                         }
-                        float delta = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                        float weight = (1.0)/( TMath::Power(crystal[iCry].correction_graphs[iDet].rms->Eval(FloodZ),2) );
+                        float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                        if(correctedElement <=  histoMin || correctedElement >= histoMax )
+                        {
 
-                        totalWeight += weight;
-                        averageTimeStamp += delta*weight;
+                          noZeroes = false;
+                        }
+                      }
+
+                    }
+
+                    if(noZeroes)
+                    {
+                      for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
+                      {
+                        //run on all the detectors, included the main one, but remember not to correct the main one for delay!
+                        int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
+                        if(timingChannel == excludeCh)
+                        {
+                           //ignore
+                        }
+                        else
+                        {
+                          float delay;
+                          if(crystal[iCry].correction_graphs[iDet].isMainChannel)
+                          {
+                            delay = 0;
+                          }
+                          else
+                          {
+                            delay = crystal[iCry].correction_graphs[iDet].delay->Eval(FloodZ);
+                          }
+                          float delta = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                          float weight = (1.0)/( TMath::Power(crystal[iCry].correction_graphs[iDet].rms->Eval(FloodZ),2) );
+
+                          totalWeight += weight;
+                          averageTimeStamp += delta*weight;
+                        }
+
+
                       }
                       averageTimeStamp = averageTimeStamp/totalWeight;
                       crystal[iCry].ctrVSw->Fill(FloodZ,averageTimeStamp);
@@ -645,28 +677,44 @@ int main (int argc, char** argv)
                 for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
                 {
                   int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  if(timeStamp[timingChannel] == 0)
+                  if(timingChannel == excludeCh)
                   {
-                    noZeroes = false;
+                     //ignore
                   }
+                  else
+                  {
+                    if(timeStamp[timingChannel] == 0)
+                    {
+                      noZeroes = false;
+                    }
+                  }
+
                 }
                 for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
                 {
                   int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  float delay = 0;
-                  if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
+                  if(timingChannel == excludeCh)
                   {
-                    delay = 0;
+                     //ignore
                   }
                   else
                   {
-                    delay = crystal[iCry].polished_correction[iDet].mean;
+                    float delay = 0;
+                    if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
+                    {
+                      delay = 0;
+                    }
+                    else
+                    {
+                      delay = crystal[iCry].polished_correction[iDet].mean;
+                    }
+                    float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                    if(correctedElement <=  histoMin || correctedElement >= histoMax )
+                    {
+                      noZeroes = false;
+                    }
                   }
-                  float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                  if(correctedElement <=  histoMin || correctedElement >= histoMax )
-                  {
-                    noZeroes = false;
-                  }
+
                 }
 
                 if(noZeroes)
@@ -676,29 +724,30 @@ int main (int argc, char** argv)
                   {
                     // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
                     // std::cout << iPoli <<" ";
-                    float delay = 0;
-                    float weight = 0.0;
-                    if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
+                    if(crystal[iCry].polished_correction[iPoli].timingChannel == excludeCh)
                     {
-                      delay = 0;
+                       //ignore
                     }
                     else
                     {
-                      delay = crystal[iCry].polished_correction[iPoli].mean;
-                    }
-                    float rms = crystal[iCry].polished_correction[iPoli].rms;
-                    weight = pow(rms,-2);
-                    sumWeight += weight;
-                    float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
-                    meanTimeStamp += weight * correctedTimepstamp;
 
-                    // std::cout << rms << "\t"
-                    //           << weight << "\t"
-                    //           << sumWeight << "\t"
-                    //           << correctedTimepstamp << "\t"
-                    //           << meanTimeStamp << "\t"
-                    //           << std::endl;
-                    // std::cout << std::flush;
+                      float delay = 0;
+                      float weight = 0.0;
+                      if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
+                      {
+                        delay = 0;
+                      }
+                      else
+                      {
+                        delay = crystal[iCry].polished_correction[iPoli].mean;
+                      }
+                      float rms = crystal[iCry].polished_correction[iPoli].rms;
+                      weight = pow(rms,-2);
+                      sumWeight += weight;
+                      float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                      meanTimeStamp += weight * correctedTimepstamp;
+                    }
+
                   }
                   meanTimeStamp = meanTimeStamp/sumWeight;
                   double poliCorrCTR = meanTimeStamp;
@@ -1518,6 +1567,7 @@ void usage()
             << "\t\t" << "--fitPercMax <value>                               - time fit max is set to ((gauus fit mean) - fitPercMax*(gauss fit sigma))  - default = 6" << std::endl
             << "\t\t" << "--divs <value>                                     - n of divisions when looking for FWHM - default = 10000"  << std::endl
             << "\t\t" << "--tagFwhm <value>                                  - FWHM timing resolution of reference board, in sec - default = 88e-12"  << std::endl
+            << "\t\t" << "--exclude <value>                                  - number of timing channel to exclude from corrections"  << std::endl
 
 
             << std::endl;
