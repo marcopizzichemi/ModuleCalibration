@@ -458,6 +458,13 @@ int main (int argc, char** argv)
       sname << "Full CTR vs. Z - Crystal " << crystal[iCry].number;
       crystal[iCry].fullCTRvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
       sname.str("");
+
+      sname << "Polished CTR vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].poliCTRvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,histoBins,histoMin,histoMax);
+      sname.str("");
+
+
+
     }
   }
 
@@ -567,67 +574,92 @@ int main (int argc, char** argv)
 
                     //first quickly check if there are zeroes
                     bool noZeroes = true;
-                    if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0)
+
+                    // new logic : check is tag and main are not zero, and if tag - main is in the acceptable range. then write down other channels if they are
+                    // either 0 or not acceptable
+                    if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0) // no zeroes in tagging
                     {
                       noZeroes = false;
                     }
-                    for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
+
+                    for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++) // run on all ch, look for main, check if 0 or not acceptable
                     {
                       int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
-                      if(timingChannel == excludeCh)
+                      if(crystal[iCry].correction_graphs[iDet].isMainChannel) // no zeroes in main channel
                       {
-                        //ignore
-                      }
-                      else
-                      {
+                        float delay = 0;
                         if(timeStamp[timingChannel] == 0)
                         {
                           noZeroes = false;
                         }
-                      }
-
-                    }
-                    for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
-                    {
-                      int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
-
-                      if(timingChannel == excludeCh)
-                      {
-                        //ignore
-                      }
-                      else
-                      {
-                        float delay;
-
-                        if(crystal[iCry].correction_graphs[iDet].isMainChannel)
-                        {
-                          delay = 0;
-                        }
-                        else
-                        {
-                          delay = crystal[iCry].correction_graphs[iDet].delay->Eval(FloodZ);
-                        }
                         float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
                         if(correctedElement <=  histoMin || correctedElement >= histoMax )
                         {
-
                           noZeroes = false;
                         }
                       }
-
                     }
 
+                    // go on only if tag and main are not 0 and delta acceptable
                     if(noZeroes)
                     {
+                      std::vector<int> channelToIgnore;
+                      // run on ch and write down ch to ignore. they can be the excluded ch, a ch with t = 0 or not acceptable delay
+                      for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
+                      {
+                        int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
+
+                        if(timingChannel == excludeCh)
+                        {
+                          //ignore
+                          channelToIgnore.push_back(timingChannel);
+                        }
+                        else
+                        {
+                          if(timeStamp[timingChannel] == 0) // it shouldn't happen for main, because if it was the case, noZeroes would be false already
+                          {
+                            channelToIgnore.push_back(timingChannel);
+                          }
+                          else
+                          {
+                            float delay = 0;
+
+                            if(crystal[iCry].correction_graphs[iDet].isMainChannel)
+                            {
+                              delay = 0;
+                            }
+                            else
+                            {
+                              delay = crystal[iCry].correction_graphs[iDet].delay->Eval(FloodZ);
+                            }
+                            float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                            if(correctedElement <=  histoMin || correctedElement >= histoMax )
+                            {
+                              channelToIgnore.push_back(timingChannel);
+                            }
+                          }
+                        }
+                      }
+
+                      // now do the average
+
+
                       for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
                       {
                         //run on all the detectors, included the main one, but remember not to correct the main one for delay!
+
                         int timingChannel = crystal[iCry].correction_graphs[iDet].timingChannel;
-                        if(timingChannel == excludeCh)
+
+                        // ignore a channel if it's in the black list
+                        bool skip = false;
+                        for (unsigned int iIgn = 0; iIgn < channelToIgnore.size() ; iIgn++ )
                         {
-                           //ignore
+                          if(timingChannel == channelToIgnore[iIgn])
+                          {
+                            skip = true;
+                          }
                         }
-                        else
+                        if(!skip)
                         {
                           float delay;
                           if(crystal[iCry].correction_graphs[iDet].isMainChannel)
@@ -644,6 +676,14 @@ int main (int argc, char** argv)
                           totalWeight += weight;
                           averageTimeStamp += delta*weight;
                         }
+                        // if(timingChannel == excludeCh)
+                        // {
+                        //    //ignore
+                        // }
+                        // else
+                        // {
+                        //
+                        // }
 
 
                       }
@@ -653,14 +693,14 @@ int main (int argc, char** argv)
 
                       crystal[iCry].allCTR->Fill(allCTR);
                       crystal[iCry].fullCTRvsZ->Fill(z_reco,allCTR);
-                      // crystal[iCry].vAll.push_back(allCTR);
+                        // crystal[iCry].vAll.push_back(allCTR);
 
                     }
                   }
                 }
               }
 
-              if(crystal[iCry].polishedCorrection) //FIXME bugged now..
+              if(crystal[iCry].polishedCorrection)
               {
                 //central time stamp
                 // std::cout << "----------------" << std::endl;
@@ -670,43 +710,23 @@ int main (int argc, char** argv)
                 // std::cout << "crystal[iCry].fwhmForPolishedCorrection[0] = " << crystal[iCry].fwhmForPolishedCorrection[0]<< std::endl;
 
                 bool noZeroes = true;
-                if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0)
+
+                // new logic : check is tag and main are not zero, and if tag - main is in the acceptable range. then write down other channels if they are
+                // either 0 or not acceptable
+                if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0) // no zeroes in tagging
                 {
                   noZeroes = false;
                 }
-                for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+
+                for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++) // run on all ch, look for main, check if 0 or not acceptable
                 {
                   int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  if(timingChannel == excludeCh)
+                  if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel) // no zeroes in main channel
                   {
-                     //ignore
-                  }
-                  else
-                  {
+                    float delay = 0;
                     if(timeStamp[timingChannel] == 0)
                     {
                       noZeroes = false;
-                    }
-                  }
-
-                }
-                for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
-                {
-                  int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
-                  if(timingChannel == excludeCh)
-                  {
-                     //ignore
-                  }
-                  else
-                  {
-                    float delay = 0;
-                    if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
-                    {
-                      delay = 0;
-                    }
-                    else
-                    {
-                      delay = crystal[iCry].polished_correction[iDet].mean;
                     }
                     float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
                     if(correctedElement <=  histoMin || correctedElement >= histoMax )
@@ -714,21 +734,65 @@ int main (int argc, char** argv)
                       noZeroes = false;
                     }
                   }
-
                 }
 
                 if(noZeroes)
                 {
-                  // std::cout << "in " << crystal[iCry].polished_correction.size() <<  std::endl;
+                  std::vector<int> channelToIgnore;
+                  // run on ch and write down ch to ignore. they can be the excluded ch, a ch with t = 0 or not acceptable delay
+                  for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+                  {
+                    int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
+
+                    if(timingChannel == excludeCh)
+                    {
+                      //ignore
+                      channelToIgnore.push_back(timingChannel);
+                    }
+                    else
+                    {
+                      if(timeStamp[timingChannel] == 0) // it shouldn't happen for main, because if it was the case, noZeroes would be false already
+                      {
+                        channelToIgnore.push_back(timingChannel);
+                      }
+                      else
+                      {
+                        float delay = 0;
+
+                        if(timingChannel == crystal[iCry].timingChannel)
+                        {
+                          delay = 0;
+                        }
+                        else
+                        {
+                          delay = crystal[iCry].polished_correction[iDet].mean;
+                        }
+                        float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                        if(correctedElement <=  histoMin || correctedElement >= histoMax )
+                        {
+                          channelToIgnore.push_back(timingChannel);
+                        }
+                      }
+                    }
+                  }
+
                   for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
                   {
                     // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
                     // std::cout << iPoli <<" ";
-                    if(crystal[iCry].polished_correction[iPoli].timingChannel == excludeCh)
+
+                    int timingChannel = crystal[iCry].polished_correction[iPoli].timingChannel;
+
+                    // ignore a channel if it's in the black list
+                    bool skip = false;
+                    for (unsigned int iIgn = 0; iIgn < channelToIgnore.size() ; iIgn++ )
                     {
-                       //ignore
+                      if(timingChannel == channelToIgnore[iIgn])
+                      {
+                        skip = true;
+                      }
                     }
-                    else
+                    if(!skip)
                     {
 
                       float delay = 0;
@@ -748,12 +812,129 @@ int main (int argc, char** argv)
                       meanTimeStamp += weight * correctedTimepstamp;
                     }
 
+
+
+                    // if(crystal[iCry].polished_correction[iPoli].timingChannel == excludeCh)
+                    // {
+                    //    //ignore
+                    // }
+                    // else
+                    // {
+                    //
+                    //   float delay = 0;
+                    //   float weight = 0.0;
+                    //   if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
+                    //   {
+                    //     delay = 0;
+                    //   }
+                    //   else
+                    //   {
+                    //     delay = crystal[iCry].polished_correction[iPoli].mean;
+                    //   }
+                    //   float rms = crystal[iCry].polished_correction[iPoli].rms;
+                    //   weight = pow(rms,-2);
+                    //   sumWeight += weight;
+                    //   float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                    //   meanTimeStamp += weight * correctedTimepstamp;
+                    // }
+
                   }
                   meanTimeStamp = meanTimeStamp/sumWeight;
                   double poliCorrCTR = meanTimeStamp;
                   crystal[iCry].poliCorrCTR->Fill(poliCorrCTR);
-                  // crystal[iCry].vPoli.push_back(poliCorrCTR);
+                  crystal[iCry].poliCTRvsZ->Fill(z_reco,poliCorrCTR);
+
+
+
+
                 }
+
+                // -------
+                // if(timeStamp[crystal[iCry].taggingCrystalTimingChannel] == 0)
+                // {
+                //   noZeroes = false;
+                // }
+                // for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+                // {
+                //   int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
+                //   if(timingChannel == excludeCh)
+                //   {
+                //      //ignore
+                //   }
+                //   else
+                //   {
+                //     if(timeStamp[timingChannel] == 0)
+                //     {
+                //       noZeroes = false;
+                //     }
+                //   }
+                //
+                // }
+                // for(unsigned int iDet = 0; iDet < crystal[iCry].polished_correction.size(); iDet++)
+                // {
+                //   int timingChannel = crystal[iCry].polished_correction[iDet].timingChannel;
+                //   if(timingChannel == excludeCh)
+                //   {
+                //      //ignore
+                //   }
+                //   else
+                //   {
+                //     float delay = 0;
+                //     if(crystal[iCry].polished_correction[iDet].timingChannel == crystal[iCry].timingChannel)
+                //     {
+                //       delay = 0;
+                //     }
+                //     else
+                //     {
+                //       delay = crystal[iCry].polished_correction[iDet].mean;
+                //     }
+                //     float correctedElement = timeStamp[timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                //     if(correctedElement <=  histoMin || correctedElement >= histoMax )
+                //     {
+                //       noZeroes = false;
+                //     }
+                //   }
+                //
+                // }
+                //
+                // if(noZeroes)
+                // {
+                //   // std::cout << "in " << crystal[iCry].polished_correction.size() <<  std::endl;
+                //   for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
+                //   {
+                //     // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
+                //     // std::cout << iPoli <<" ";
+                //     if(crystal[iCry].polished_correction[iPoli].timingChannel == excludeCh)
+                //     {
+                //        //ignore
+                //     }
+                //     else
+                //     {
+                //
+                //       float delay = 0;
+                //       float weight = 0.0;
+                //       if(crystal[iCry].polished_correction[iPoli].timingChannel == crystal[iCry].timingChannel)
+                //       {
+                //         delay = 0;
+                //       }
+                //       else
+                //       {
+                //         delay = crystal[iCry].polished_correction[iPoli].mean;
+                //       }
+                //       float rms = crystal[iCry].polished_correction[iPoli].rms;
+                //       weight = pow(rms,-2);
+                //       sumWeight += weight;
+                //       float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
+                //       meanTimeStamp += weight * correctedTimepstamp;
+                //     }
+                //
+                //   }
+                //   meanTimeStamp = meanTimeStamp/sumWeight;
+                //   double poliCorrCTR = meanTimeStamp;
+                //   crystal[iCry].poliCorrCTR->Fill(poliCorrCTR);
+                //   crystal[iCry].poliCTRvsZ->Fill(z_reco,poliCorrCTR);
+                  // crystal[iCry].vPoli.push_back(poliCorrCTR);
+                // }
               }
               // end of temp commented
             }
@@ -902,6 +1083,7 @@ int main (int argc, char** argv)
     crystal[iCry].totADCvsZ->Write();
     crystal[iCry].basicCTRvsZ->Write();
     crystal[iCry].fullCTRvsZ->Write();
+    crystal[iCry].poliCTRvsZ->Write();
 
 
 

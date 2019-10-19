@@ -146,6 +146,7 @@ struct Crystal_t
   TH2F *totADCvsZ;
   TH2F *basicCTRvsZ;
   TH2F *fullCTRvsZ;
+  TH2F *poliCTRvsZ;
 
 
 };
