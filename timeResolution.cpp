@@ -443,6 +443,14 @@ int main (int argc, char** argv)
 
       // plots vs z
 
+      sname << "Complete Single ADC ch vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].CompleteSingleADCvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,200,0,200000);
+      sname.str("");
+
+      sname << "Complete Total ADC ch vs. Z - Crystal " << crystal[iCry].number;
+      crystal[iCry].CompleteTotADCvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,200,0,200000);
+      sname.str("");
+
       sname << "Single ADC ch vs. Z - Crystal " << crystal[iCry].number;
       crystal[iCry].singleADCvsZ = new TH2F(sname.str().c_str(),sname.str().c_str(),100,0,crystal[iCry].length,200,0,200000);
       sname.str("");
@@ -536,20 +544,30 @@ int main (int argc, char** argv)
         {
           if(crystal[iCry].FormulaTagAnalysis->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
           {
-            if(crystal[iCry].FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+            //calculate FloodZ...
+            float FloodZ = calculateFloodZ(charge,crystal[iCry]);
+            // calculate reconstructed Z
+            float z_reco = crystal[iCry].calibrationGraph->Eval(FloodZ);
+
+            // calculate charge in trigger mppc (corrected by saturation)
+            float centralCharge = calculate_trigger_charge(charge,crystal[iCry]);
+
+            // calculate charge in the 9 relevant mppcs (corrected by saturation)
+            float sumCharge = calculate_sum_charge(charge,crystal[iCry]);
+
+            if(crystal[iCry].FormulaJustCutG->EvalInstance())  //all crystal event
+            {
+              // Fill adc vs z scatter plots
+              crystal[iCry].CompleteSingleADCvsZ->Fill(z_reco,centralCharge);
+              crystal[iCry].CompleteTotADCvsZ->Fill(z_reco,sumCharge);
+            }
+
+
+            if(crystal[iCry].FormulaAnalysis->EvalInstance())  //only photopeak events of the crystal
             {
               goodEventsAnalysis++;
 
-              //calculate FloodZ...
-              float FloodZ = calculateFloodZ(charge,crystal[iCry]);
-              // calculate reconstructed Z
-              float z_reco = crystal[iCry].calibrationGraph->Eval(FloodZ);
 
-              // calculate charge in trigger mppc (corrected by saturation)
-              float centralCharge = calculate_trigger_charge(charge,crystal[iCry]);
-
-              // calculate charge in the 9 relevant mppcs (corrected by saturation)
-              float sumCharge = calculate_sum_charge(charge,crystal[iCry]);
 
               // Fill adc vs z scatter plots
               crystal[iCry].singleADCvsZ->Fill(z_reco,centralCharge);
@@ -1122,6 +1140,8 @@ int main (int argc, char** argv)
 
     crystal[iCry].singleADCvsZ->Write();
     crystal[iCry].totADCvsZ->Write();
+    crystal[iCry].CompleteSingleADCvsZ->Write();
+    crystal[iCry].CompleteTotADCvsZ->Write();
     crystal[iCry].basicCTRvsZ->Write();
     crystal[iCry].fullCTRvsZ->Write();
 

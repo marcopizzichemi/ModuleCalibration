@@ -751,6 +751,14 @@ void readCalibration(TFile* calibrationFile,                        // file with
            crystalCut += temp_crystal.cutg[1]->GetName();
          }
 
+         //save the cutg anyway
+         TCut justCutG ;
+         justCutG += temp_crystal.cutg[0]->GetName();
+         justCutG += temp_crystal.cutg[1]->GetName();
+         TTreeFormula* FormulaJustCutG = new TTreeFormula("FormulaJustCutG",justCutG,tree);
+         temp_crystal.FormulaJustCutG = FormulaJustCutG;
+         formulasAnalysis->Add(FormulaJustCutG);
+
          TTreeFormula* FormulaAnalysis = new TTreeFormula("FormulaAnalysis",crystalCut,tree);
          temp_crystal.FormulaAnalysis = FormulaAnalysis;
 

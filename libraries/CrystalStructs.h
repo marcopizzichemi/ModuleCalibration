@@ -78,6 +78,7 @@ struct Crystal_t
   TTreeFormula *Formula;
   TTreeFormula *FormulaAnalysis;
   TTreeFormula *FormulaTagAnalysis;
+  TTreeFormula *FormulaJustCutG;
   int taggingCrystalTimingChannel;
   int taggingCrystalChannel;
   float taggingPosition;
@@ -158,6 +159,9 @@ struct Crystal_t
   TH2F *basicCTRvsZ;
   TH2F *fullCTRvsZ;
   TH2F *poliCTRvsZ;
+
+  TH2F *CompleteSingleADCvsZ;
+  TH2F *CompleteTotADCvsZ;
 
 
 };
