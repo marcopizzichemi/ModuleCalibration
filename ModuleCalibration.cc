@@ -4214,17 +4214,27 @@ int main (int argc, char** argv)
                         TH1D *histoPoli = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(snamePoli.str().c_str());
                         // std::cout << "debug 1" << std::endl;
 
-                        fitWithEMG(histoPoli,resPoli);
-                        if(resPoli[0] == 0 && resPoli[1] == 0 && resPoli[2] == 0 && resPoli[3] == 0) // all fits failed, don't accept the channel
+                        if(lowStat)
                         {
+                          fitWithEMG(histoPoli,resPoli);
+                          if(resPoli[0] == 0 && resPoli[1] == 0 && resPoli[2] == 0 && resPoli[3] == 0) // all fits failed, don't accept the channel
+                          {
 
+                          }
+                          else
+                          {
+                            tChannelsForPolishedCorrection.push_back(CurrentCrystal->GetAlignedScatter()[iDet].timingChannel);
+                            // meanForPolishedCorrection.push_back(resPoli[0]);
+                            fwhmForPolishedCorrection.push_back(resPoli[1]);
+                          }
                         }
                         else
                         {
                           tChannelsForPolishedCorrection.push_back(CurrentCrystal->GetAlignedScatter()[iDet].timingChannel);
-                          // meanForPolishedCorrection.push_back(resPoli[0]);
-                          fwhmForPolishedCorrection.push_back(resPoli[1]);
+                          fwhmForPolishedCorrection.push_back(histoPoli->GetRMS());
                         }
+
+
 
                         CurrentCrystal->AddPolishedHisto(histoPoli);
 
@@ -4258,20 +4268,35 @@ int main (int argc, char** argv)
                           TH1D *histo = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(sname.str().c_str(),firstBin,lastBin);
                           // std::cout << "debug 1" << std::endl;
 
-                          fitWithEMG(histo,res);
-                          if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                          if(lowStat)
                           {
+                            fitWithEMG(histo,res);
+                            if(res[0] == 0 && res[1] == 0 && res[2] == 0 && res[3] == 0) // all fits failed, don't accept the channel
+                            {
 
+                            }
+                            else
+                            {
+                              wmean.push_back((wmax+wmin)/2.0);
+                              werr.push_back(0.0);
+                              ctr_center.push_back(res[0]);
+                              ctr_err.push_back(res[2]);
+                              rms.push_back(res[1]);
+                              rms_err.push_back(res[3]);
+                            }
                           }
                           else
                           {
                             wmean.push_back((wmax+wmin)/2.0);
                             werr.push_back(0.0);
-                            ctr_center.push_back(res[0]);
-                            ctr_err.push_back(res[2]);
-                            rms.push_back(res[1]);
-                            rms_err.push_back(res[3]);
+                            ctr_center.push_back(histo->GetMean());
+                            ctr_err.push_back(histo->GetMeanError());
+                            rms.push_back(histo->GetRMS());
+                            rms_err.push_back(histo->GetRMSError());
+
                           }
+
+
 
                           CurrentCrystal->AddAlignedSlice(histo);
                         }
