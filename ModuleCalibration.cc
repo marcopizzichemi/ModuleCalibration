@@ -4143,12 +4143,28 @@ int main (int argc, char** argv)
                                     }
                                     else
                                     {
-                                      // run on the delay TGraphs and find the one of this timingChannel
-                                      for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetGraphDelayW().size(); iGraph++ )
+                                      if(wHistogramsBins < 2)
                                       {
-                                        if (timingChannel == CurrentCrystal->GetGraphDelayW()[iGraph].timingChannel)
+                                        // get the mean for polished timing corr
+                                        std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
+                                        std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
+                                        for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
                                         {
-                                          delay = CurrentCrystal->GetGraphDelayW()[iGraph].spectrum->Eval(FloodZ);
+                                          if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
+                                          {
+                                            delay = meanForPolishedCorrection[iT];
+                                          }
+                                        }
+                                      }
+                                      else
+                                      {
+                                        // run on the delay TGraphs and find the one of this timingChannel
+                                        for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetGraphDelayW().size(); iGraph++ )
+                                        {
+                                          if (timingChannel == CurrentCrystal->GetGraphDelayW()[iGraph].timingChannel)
+                                          {
+                                            delay = CurrentCrystal->GetGraphDelayW()[iGraph].spectrum->Eval(FloodZ);
+                                          }
                                         }
                                       }
                                     }
