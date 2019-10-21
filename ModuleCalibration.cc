@@ -4073,66 +4073,12 @@ int main (int argc, char** argv)
                             {
 
                               timingCorrectionCounter++;
-
-                              int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
-                              std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
-                              // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
                               int centralTimingChannel = CurrentCrystal->GetTimingChannel();
-                              // GetGraphDelayW()
-
-                              // find w of this event
-                              // calculate FloodZ aka w
-                              Float_t FloodZ;
-                              float centralChargeOriginal;
-                              float centralSaturation;
-                              float centralPedestal;
-                              Float_t division = 0.0;
-                              // int detectorChannel = ;
-
-                              centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
-                              for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
-                              {
-                                if( detector[iSat].digitizerChannel  == centralChargeChannel)
-                                {
-                                  centralSaturation = detector[iSat].saturation;
-                                  centralPedestal = detector[iSat].pedestal;
-                                }
-                              }
-                              float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
-
-                              for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
-                              {
-                                // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
-                                float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
-
-                                float saturationCh;
-                                float pedestalCorr;
-                                for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
-                                {
-                                  if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
-                                  {
-                                    saturationCh = detector[iSat].saturation;
-                                    pedestalCorr = detector[iSat].pedestal;
-                                  }
-                                }
-                                // std::cout << originalCh << " "
-                                //           << saturationCh << " "
-                                //           << pedestalCorr << " "
-                                //           << std::endl;
-                                division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
-                              }
-
-                              FloodZ = centralChargeCorr / division;
-
-
-
-                              // std::cout << FloodZ << std::endl;
-                              //in these scatter plots, accept events only if they come from the accepted range of w
-                              if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())
+                              // DO ANOTHER CASE FOR JUST POLISHED ORR
+                              if(WrangeBinsForTiming < 2)
                               {
                                 for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++ )
                                 {
-
                                   int timingChannel = CurrentCrystal->GetAlignedScatter()[iDet].timingChannel;
                                   if((ChainTimeStamp[timingChannel] !=0) && (ChainTimeStamp[taggingCrystalTimingChannel] !=0))
                                   {
@@ -4143,35 +4089,130 @@ int main (int argc, char** argv)
                                     }
                                     else
                                     {
-                                      if(wHistogramsBins < 2)
+                                      // get the mean for polished timing corr
+                                      std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
+                                      std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
+                                      for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
                                       {
-                                        // get the mean for polished timing corr
-                                        std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
-                                        std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
-                                        for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
+                                        // std::cout << tChannelsForPolishedCorrectionMean[iT] << "" << meanForPolishedCorrection[iT] << std::endl;
+                                        if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
                                         {
-                                          if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
-                                          {
-                                            delay = meanForPolishedCorrection[iT];
-                                          }
+                                          delay = meanForPolishedCorrection[iT];
                                         }
                                       }
-                                      else
-                                      {
-                                        // run on the delay TGraphs and find the one of this timingChannel
-                                        for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetGraphDelayW().size(); iGraph++ )
-                                        {
-                                          if (timingChannel == CurrentCrystal->GetGraphDelayW()[iGraph].timingChannel)
-                                          {
-                                            delay = CurrentCrystal->GetGraphDelayW()[iGraph].spectrum->Eval(FloodZ);
-                                          }
-                                        }
-                                      }
+                                      // std::cout << "-----------------" << std::endl;
                                     }
-                                    CurrentCrystal->GetAlignedScatter()[iDet].spectrum->Fill(FloodZ,ChainTimeStamp[timingChannel]-ChainTimeStamp[taggingCrystalTimingChannel] - delay);
+                                    CurrentCrystal->GetAlignedScatter()[iDet].spectrum->Fill(0.5,ChainTimeStamp[timingChannel]-ChainTimeStamp[taggingCrystalTimingChannel] - delay);
                                   }
                                 }
                               }
+                              else
+                              {
+                                int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+                                std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
+                                // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
+
+                                // GetGraphDelayW()
+
+                                // find w of this event
+                                // calculate FloodZ aka w
+                                Float_t FloodZ;
+                                float centralChargeOriginal;
+                                float centralSaturation;
+                                float centralPedestal;
+                                Float_t division = 0.0;
+                                // int detectorChannel = ;
+
+                                centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
+                                for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+                                {
+                                  if( detector[iSat].digitizerChannel  == centralChargeChannel)
+                                  {
+                                    centralSaturation = detector[iSat].saturation;
+                                    centralPedestal = detector[iSat].pedestal;
+                                  }
+                                }
+                                float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+
+                                for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
+                                {
+                                  // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
+                                  float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
+
+                                  float saturationCh;
+                                  float pedestalCorr;
+                                  for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+                                  {
+                                    if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
+                                    {
+                                      saturationCh = detector[iSat].saturation;
+                                      pedestalCorr = detector[iSat].pedestal;
+                                    }
+                                  }
+                                  // std::cout << originalCh << " "
+                                  //           << saturationCh << " "
+                                  //           << pedestalCorr << " "
+                                  //           << std::endl;
+                                  division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+                                }
+
+                                FloodZ = centralChargeCorr / division;
+
+
+
+                                // std::cout << FloodZ << std::endl;
+                                //in these scatter plots, accept events only if they come from the accepted range of w
+                                if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())
+                                {
+                                  for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++ )
+                                  {
+
+                                    int timingChannel = CurrentCrystal->GetAlignedScatter()[iDet].timingChannel;
+                                    if((ChainTimeStamp[timingChannel] !=0) && (ChainTimeStamp[taggingCrystalTimingChannel] !=0))
+                                    {
+                                      float delay;
+                                      if(timingChannel == centralTimingChannel)
+                                      {
+                                        delay = 0;
+                                      }
+                                      else
+                                      {
+                                        if(false)
+                                        {
+                                          // // get the mean for polished timing corr
+                                          // std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
+                                          // std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
+                                          // for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
+                                          // {
+                                          //   std::cout << tChannelsForPolishedCorrectionMean[iT] << "" << meanForPolishedCorrection[iT] << std::endl;
+                                          //   if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
+                                          //   {
+                                          //     delay = meanForPolishedCorrection[iT];
+                                          //   }
+                                          // }
+                                          // std::cout << "-----------------" << std::endl;
+                                        }
+                                        else
+                                        {
+                                          // run on the delay TGraphs and find the one of this timingChannel
+                                          for(unsigned int iGraph = 0; iGraph < CurrentCrystal->GetGraphDelayW().size(); iGraph++ )
+                                          {
+                                            if (timingChannel == CurrentCrystal->GetGraphDelayW()[iGraph].timingChannel)
+                                            {
+                                              delay = CurrentCrystal->GetGraphDelayW()[iGraph].spectrum->Eval(FloodZ);
+                                            }
+                                          }
+                                        }
+                                      }
+                                      CurrentCrystal->GetAlignedScatter()[iDet].spectrum->Fill(FloodZ,ChainTimeStamp[timingChannel]-ChainTimeStamp[taggingCrystalTimingChannel] - delay);
+                                    }
+                                  }
+                                }
+                              }
+
+
+
+
                             }
                           }
                         }
