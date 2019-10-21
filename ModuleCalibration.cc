@@ -328,6 +328,8 @@ int main (int argc, char** argv)
   bool manualCutG = config.read<bool>("manualCutG",0);  // read the cutg from external file - default = 0 (false). FIXME this is HIGHLY hardcode fo the moment, will work just on 1-to-1 coupling crystal mppc and fo rjust 1 crystal per ModuleCalibration run!!!
   std::string cutgsFileName = config.read<std::string> ("cutgsFileName","cutgs.root"); // name of root file with manual cutgs - default = cutgs.root
 
+  float minTimestamp = config.read<float>("minTimestamp",-70e-9);
+  float maxTimestamp = config.read<float>("maxTimestamp",-40e-9);
 
 
 
@@ -2962,6 +2964,13 @@ int main (int argc, char** argv)
 
                           TCut noZerosCut;
                           std::stringstream sNoZerosCut;
+                          // complete change in noZeroes cut
+                          // instead of asking just != 0, ask it to be within "reasonable limits"
+                          // defined by user
+
+
+
+
                           // // noZerosCut for Basic CTR
                           // sNoZerosCut <<  "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
                           // << "t" << taggingCrystalTimingChannel << "!= 0)";
@@ -2982,8 +2991,11 @@ int main (int argc, char** argv)
                           << " >> " << sname.str() ;
 
                           //noZerosCut
-                          sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
-                          << "t" << taggingCrystalTimingChannel << "!= 0)";
+                          sNoZerosCut << "((t" << detector[thisChannelID].timingChannel << " > " << minTimestamp << ") && "
+                                      << "(t" << detector[thisChannelID].timingChannel << " < " << maxTimestamp << ") && "
+                                      << "(t" << taggingCrystalTimingChannel << " > " << minTimestamp << ") && "
+                                      << "(t" << taggingCrystalTimingChannel << " < " << maxTimestamp << ")) ";
+
                           noZerosCut = sNoZerosCut.str().c_str();
                           sNoZerosCut.str("");
 
@@ -3078,10 +3090,10 @@ int main (int argc, char** argv)
                             << thisChannel.string
                             << " >> " << sname.str() ;
                             //noZerosCut
-                            sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
-                            << "t" << taggingCrystalTimingChannel << "!= 0)";
-                            noZerosCut = sNoZerosCut.str().c_str();
-                            sNoZerosCut.str("");
+                            // sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                            // << "t" << taggingCrystalTimingChannel << "!= 0)";
+                            // noZerosCut = sNoZerosCut.str().c_str();
+                            // sNoZerosCut.str("");
 
                             TH2F* spectrumCrystalDeltaTvsCH = new TH2F(sname.str().c_str(),sname.str().c_str(),
                             histo1Dbins,
@@ -3127,8 +3139,13 @@ int main (int argc, char** argv)
                               << " - t" << taggingCrystalTimingChannel
                               << ":" << FloodZ.str() <<" >> " << sname.str() ;
                               //noZerosCut
-                              sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
-                              << "t" << iNeighTimingChannel << "!= 0)";
+                              sNoZerosCut << "((t" << iNeighTimingChannel << " > " << minTimestamp << ") && "
+                                          << "(t" << iNeighTimingChannel << " < " << maxTimestamp << ") && "
+                                          << "(t" << taggingCrystalTimingChannel << " > " << minTimestamp << ") && "
+                                          << "(t" << taggingCrystalTimingChannel << " < " << maxTimestamp << ")) ";
+
+                              // sNoZerosCut << "(t" << taggingCrystalTimingChannel << "!= 0) && ("
+                              // << "t" << iNeighTimingChannel << "!= 0)";
                               noZerosCut = sNoZerosCut.str().c_str();
                               sNoZerosCut.str("");
 
@@ -3414,8 +3431,13 @@ int main (int argc, char** argv)
                             << " - t" << detector[thisChannelID].timingChannel
                             << ":" << FloodZ.str() <<" >> " << sname.str() ;
                             //noZerosCut
-                            sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
-                            << "t" << iNeighTimingChannel << "!= 0)";
+                            sNoZerosCut << "((t" << detector[thisChannelID].timingChannel << " > " << minTimestamp << ") && "
+                                        << "(t" << detector[thisChannelID].timingChannel << " < " << maxTimestamp << ") && "
+                                        << "(t" << iNeighTimingChannel << " > " << minTimestamp << ") && "
+                                        << "(t" << iNeighTimingChannel << " < " << maxTimestamp << ")) ";
+
+                            // sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                            // << "t" << iNeighTimingChannel << "!= 0)";
                             noZerosCut = sNoZerosCut.str().c_str();
                             sNoZerosCut.str("");
                             spectrumCrystalDeltaT2vsW = new TH2F(sname.str().c_str(),
@@ -3503,8 +3525,12 @@ int main (int argc, char** argv)
                               << " - t" << detector[thisChannelID].timingChannel
                               << ":"    << neighbourChannels[neighID].string <<" >> " << sname.str() ;
                               //noZerosCut
-                              sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
-                              << "t" << iNeighTimingChannel << "!= 0)";
+                              sNoZerosCut << "((t" << detector[thisChannelID].timingChannel << " > " << minTimestamp << ") && "
+                                          << "(t" << detector[thisChannelID].timingChannel << " < " << maxTimestamp << ") && "
+                                          << "(t" << iNeighTimingChannel << " > " << minTimestamp << ") && "
+                                          << "(t" << iNeighTimingChannel << " < " << maxTimestamp << ")) ";
+                              // sNoZerosCut << "(t" << detector[thisChannelID].timingChannel << "!= 0) && ("
+                              // << "t" << iNeighTimingChannel << "!= 0)";
                               noZerosCut = sNoZerosCut.str().c_str();
                               sNoZerosCut.str("");
                               //get the limits from the corresponding light sharing plot
@@ -4074,101 +4100,108 @@ int main (int argc, char** argv)
 
                               timingCorrectionCounter++;
                               int centralTimingChannel = CurrentCrystal->GetTimingChannel();
-                              // DO ANOTHER CASE FOR JUST POLISHED ORR
-                              if(WrangeBinsForTiming < 2)
+
+                              int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
+                              std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
+                              // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
+
+                              // GetGraphDelayW()
+
+                              // find w of this event
+                              // calculate FloodZ aka w
+                              Float_t FloodZ;
+                              float centralChargeOriginal;
+                              float centralSaturation;
+                              float centralPedestal;
+                              Float_t division = 0.0;
+                              // int detectorChannel = ;
+
+                              centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
+                              for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
                               {
-                                for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++ )
+                                if( detector[iSat].digitizerChannel  == centralChargeChannel)
                                 {
-                                  int timingChannel = CurrentCrystal->GetAlignedScatter()[iDet].timingChannel;
-                                  if((ChainTimeStamp[timingChannel] !=0) && (ChainTimeStamp[taggingCrystalTimingChannel] !=0))
-                                  {
-                                    float delay;
-                                    if(timingChannel == centralTimingChannel)
-                                    {
-                                      delay = 0;
-                                    }
-                                    else
-                                    {
-                                      // get the mean for polished timing corr
-                                      std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
-                                      std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
-                                      for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
-                                      {
-                                        // std::cout << tChannelsForPolishedCorrectionMean[iT] << "" << meanForPolishedCorrection[iT] << std::endl;
-                                        if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
-                                        {
-                                          delay = meanForPolishedCorrection[iT];
-                                        }
-                                      }
-                                      // std::cout << "-----------------" << std::endl;
-                                    }
-                                    CurrentCrystal->GetAlignedScatter()[iDet].spectrum->Fill(0.5,ChainTimeStamp[timingChannel]-ChainTimeStamp[taggingCrystalTimingChannel] - delay);
-                                  }
+                                  centralSaturation = detector[iSat].saturation;
+                                  centralPedestal = detector[iSat].pedestal;
                                 }
                               }
-                              else
+                              float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+
+                              for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
                               {
-                                int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
-                                std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
-                                // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
+                                // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
+                                float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
 
-                                // GetGraphDelayW()
-
-                                // find w of this event
-                                // calculate FloodZ aka w
-                                Float_t FloodZ;
-                                float centralChargeOriginal;
-                                float centralSaturation;
-                                float centralPedestal;
-                                Float_t division = 0.0;
-                                // int detectorChannel = ;
-
-                                centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
+                                float saturationCh;
+                                float pedestalCorr;
                                 for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
                                 {
-                                  if( detector[iSat].digitizerChannel  == centralChargeChannel)
+                                  if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
                                   {
-                                    centralSaturation = detector[iSat].saturation;
-                                    centralPedestal = detector[iSat].pedestal;
+                                    saturationCh = detector[iSat].saturation;
+                                    pedestalCorr = detector[iSat].pedestal;
                                   }
                                 }
-                                float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
+                                // std::cout << originalCh << " "
+                                //           << saturationCh << " "
+                                //           << pedestalCorr << " "
+                                //           << std::endl;
+                                division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+                              }
 
-                                for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
+                              FloodZ = centralChargeCorr / division;
+
+                              // DO ANOTHER CASE FOR JUST POLISHED CORR
+                              if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())
+                              {
+                                if(WrangeBinsForTiming < 2)
                                 {
-                                  // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
-                                  float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
-
-                                  float saturationCh;
-                                  float pedestalCorr;
-                                  for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+                                  for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++ )
                                   {
-                                    if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
+                                    int timingChannel = CurrentCrystal->GetAlignedScatter()[iDet].timingChannel;
+                                    // use the other logic for noZeroes
+                                    if((ChainTimeStamp[timingChannel] > minTimestamp) &&
+                                       (ChainTimeStamp[timingChannel] < maxTimestamp) &&
+                                       (ChainTimeStamp[taggingCrystalTimingChannel] > minTimestamp) &&
+                                       (ChainTimeStamp[taggingCrystalTimingChannel] < maxTimestamp)
+                                      )
                                     {
-                                      saturationCh = detector[iSat].saturation;
-                                      pedestalCorr = detector[iSat].pedestal;
+                                      float delay;
+                                      if(timingChannel == centralTimingChannel)
+                                      {
+                                        delay = 0;
+                                      }
+                                      else
+                                      {
+                                        // get the mean for polished timing corr
+                                        std::vector<double> meanForPolishedCorrection = CurrentCrystal->GetMeanForPolishedCorrection();
+                                        std::vector<int> tChannelsForPolishedCorrectionMean = CurrentCrystal->GetTChannelsForPolishedCorrectionMean();
+                                        for(unsigned int iT = 0; iT < tChannelsForPolishedCorrectionMean.size(); iT++ )
+                                        {
+                                          // std::cout << tChannelsForPolishedCorrectionMean[iT] << "" << meanForPolishedCorrection[iT] << std::endl;
+                                          if(timingChannel == tChannelsForPolishedCorrectionMean[iT])
+                                          {
+                                            delay = meanForPolishedCorrection[iT];
+                                          }
+                                        }
+                                        // std::cout << "-----------------" << std::endl;
+                                      }
+                                      CurrentCrystal->GetAlignedScatter()[iDet].spectrum->Fill(FloodZ,ChainTimeStamp[timingChannel]-ChainTimeStamp[taggingCrystalTimingChannel] - delay);
                                     }
                                   }
-                                  // std::cout << originalCh << " "
-                                  //           << saturationCh << " "
-                                  //           << pedestalCorr << " "
-                                  //           << std::endl;
-                                  division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
                                 }
-
-                                FloodZ = centralChargeCorr / division;
-
-
-
-                                // std::cout << FloodZ << std::endl;
-                                //in these scatter plots, accept events only if they come from the accepted range of w
-                                if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())
+                                else
                                 {
                                   for(unsigned int iDet = 0; iDet < CurrentCrystal->GetAlignedScatter().size(); iDet++ )
                                   {
 
                                     int timingChannel = CurrentCrystal->GetAlignedScatter()[iDet].timingChannel;
-                                    if((ChainTimeStamp[timingChannel] !=0) && (ChainTimeStamp[taggingCrystalTimingChannel] !=0))
+                                    if((ChainTimeStamp[timingChannel] > minTimestamp) &&
+                                       (ChainTimeStamp[timingChannel] < maxTimestamp) &&
+                                       (ChainTimeStamp[taggingCrystalTimingChannel] > minTimestamp) &&
+                                       (ChainTimeStamp[taggingCrystalTimingChannel] < maxTimestamp)
+                                      )
+                                    // if((ChainTimeStamp[timingChannel] !=0) && (ChainTimeStamp[taggingCrystalTimingChannel] !=0))
                                     {
                                       float delay;
                                       if(timingChannel == centralTimingChannel)
@@ -4209,10 +4242,6 @@ int main (int argc, char** argv)
                                   }
                                 }
                               }
-
-
-
-
                             }
                           }
                         }
