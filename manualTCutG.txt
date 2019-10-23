@@ -6,12 +6,15 @@ TCutG *mycutg2;
 mycutg2 = (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
 mycutg2->SetName("cutg_1");
 
-TFile *fOut = new TFile("cutgs.root","RECREATE")
-TFile *fOut = new TFile("cutgsC3.root","RECREATE")
+TFile *fOut = new TFile("cutgsB3.root","RECREATE")
 fOut->cd()
 mycutg1->Write()
 mycutg2->Write()
 fOut->Close()
+
+
+TFile *fOut = new TFile("cutgsC3.root","RECREATE")
+
 
 manualCutG = 1
 cutgsFileName = cutgs.root # or any other name you chose above

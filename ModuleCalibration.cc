@@ -4298,6 +4298,7 @@ int main (int argc, char** argv)
                         // int divisions = 10000;
                         Double_t resPoli[4];
                         TH1D *histoPoli = CurrentCrystal->GetAlignedScatter()[iDet].spectrum->ProjectionY(snamePoli.str().c_str());
+                        histoPoli->Rebin(2); // little hack
                         // std::cout << "debug 1" << std::endl;
 
                         if(lowStat)
