@@ -1311,7 +1311,7 @@ int main (int argc, char** argv)
 
         else
         { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRwithGauss(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
         }
       }
 
@@ -1428,7 +1428,7 @@ int main (int argc, char** argv)
         }
         else
         { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRwithGauss(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
         }
       }
       std::cout << "# Condition" << "\t"
@@ -1541,7 +1541,7 @@ int main (int argc, char** argv)
         }
         else
         { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+          extractCTRwithGauss(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
         }
       }
 
