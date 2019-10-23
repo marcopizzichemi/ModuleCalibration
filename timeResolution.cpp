@@ -1192,10 +1192,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].simpleCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        // else
-        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-        //   FindSmallestInterval(ret,crystal[iCry].simpleCTR,0.68,true,tagFwhm);
-        // }
+        else
+        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+        }
       }
 
       std::cout << "# Condition" << "\t"
@@ -1308,10 +1308,11 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].centralCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].centralCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        // else
-        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-        //   FindSmallestInterval(ret,crystal[iCry].centralCTR,0.68,true,tagFwhm);
-        // }
+
+        else
+        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+        }
       }
 
 
@@ -1425,10 +1426,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].allCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        // else
-        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-        //   FindSmallestInterval(ret,crystal[iCry].allCTR,0.68,true,tagFwhm);
-        // }
+        else
+        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+        }
       }
       std::cout << "# Condition" << "\t"
                 << "CTRfwhm"<< "\t"
@@ -1538,10 +1539,10 @@ int main (int argc, char** argv)
           extractCTRWithEMG_withRef(crystal[iCry].poliCorrCTR,divs,tagFwhm,ret,fitRes);
           // extractWithGaussAndExp(crystal[iCry].poliCorrCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret);
         }
-        // else
-        // { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
-        //   FindSmallestInterval(ret,crystal[iCry].poliCorrCTR,0.68,true,tagFwhm);
-        // }
+        else
+        { //(double* retValues, TH1F* histo, const float& fraction, const bool& verbosity)
+          extractCTRwithGauss(crystal[iCry].simpleCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
+        }
       }
 
 

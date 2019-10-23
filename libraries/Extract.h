@@ -48,7 +48,16 @@ void extractCTRWithEMG_withRef(T* histo,int divs, Double_t tagFwhm,Double_t* res
 template <class T>
 void fitWithEMG_core(T* histo,Double_t &fitMin,Double_t &fitMax,Double_t &f1min,Double_t &f1max,int &fType,double *fParams); // actual EMG fitting routine
 
+
+
+
+
 // routines
+
+
+
+
+
 template <class T>
 void fitWithEMG(T* histo,Double_t* res)
 {
@@ -522,7 +531,38 @@ void fitWithEMG_core(T* histo,Double_t &fitMin,Double_t &fitMax,Double_t &f1min,
   delete cTemp;
 }
 
+void extractCTRwithGauss(TH1F* histo,Double_t fitPercMin,Double_t fitPercMax, int divs, Double_t tagFwhm, Double_t* res, Double_t* fitRes)
+{
+  // gauss fit
+  TCanvas *cTemp  = new TCanvas("temp","temp");
+  TF1 *gaussDummy = new TF1("gauss","gaus");
+  // resctrict the fitting range of gauss function
 
+  gaussDummy->SetLineColor(kRed);
+  Double_t fitGaussMin = histo->GetMean()-2.0*histo->GetRMS();
+  Double_t fitGaussMax = histo->GetMean()+2.0*histo->GetRMS();
+  Double_t f1min = histo->GetXaxis()->GetXmin();
+  Double_t f1max = histo->GetXaxis()->GetXmax();
+  if(fitGaussMin < f1min)
+  {
+    fitGaussMin = f1min;
+  }
+  if(fitGaussMax > f1max)
+  {
+    fitGaussMax = f1max;
+  }
+  TFitResultPtr rGauss = histo->Fit(gaussDummy,"QNS","",fitGaussMin,fitGaussMax);
+  Int_t fitStatusGauss= rGauss;
+
+  res[0] = sqrt(2)*sqrt(pow(2.355*gaussDummy->GetParameter(2),2)-pow(tagFwhm,2));
+  res[1] = sqrt(2)*sqrt(pow(4.29*gaussDummy->GetParameter(2),2)-pow((tagFwhm/2.355)*4.29,2));
+  res[2] = 0;
+  res[3] = 0;
+
+  fitRes[0] = gaussDummy->GetChisquare();
+  fitRes[1] = gaussDummy->GetNDF();
+  fitRes[2] = gaussDummy->GetProb();
+}
 
 void extractCTR(TH1F* histo,Double_t fitPercMin,Double_t fitPercMax, int divs, Double_t tagFwhm, Double_t* res, Double_t* fitRes)
 {
