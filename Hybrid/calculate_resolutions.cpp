@@ -884,7 +884,7 @@ int main (int argc, char** argv)
   // build the histograms to calculate the DOI RES with second and third method, i.e.
   // -> for each event, calculate the distance between real DOI given by tag and the one derived using the linear interpolation
   // use both RMS and gauss fit to compute final values
-  TH1F *hDeltaToLine = new TH1F("hDeltaToLine","hDeltaToLine",100,-10,10);
+  TH1F *hDeltaToLine = new TH1F("hDeltaToLine","hDeltaToLine",200,-20,20);
   TH1F* rawCTR_H = new TH1F("rawCTR_H","rawCTR_H",100,-1e-9,1e-9);
   TH1F* baseCTR_H = new TH1F("baseCTR_H","baseCTR_H",100,-1e-9,1e-9);
   TH1F* centralCorrH = new TH1F("centralCorrH","centralCorrH",100,-1e-9,1e-9);
@@ -924,7 +924,7 @@ int main (int argc, char** argv)
       // calc distance to "real" z (i.e. to tagging setup position)
       float deltaToLine        = zFromTag - doiFromLine;
       hDeltaToLine       ->Fill(deltaToLine); // fill histogram to calc resolution
-      
+
       // first check if there are no zeroes
       // this means that events where the DAQ failed to compute the timestamp of
       // one of the 9 detectors are ignored
