@@ -163,6 +163,8 @@ struct Crystal_t
   TH2F *CompleteSingleADCvsZ;
   TH2F *CompleteTotADCvsZ;
 
+  TF1* singleFit;
+
 
 };
 

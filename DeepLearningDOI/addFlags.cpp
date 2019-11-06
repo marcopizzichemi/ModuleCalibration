@@ -1,5 +1,5 @@
 // compile with
-// g++ -o ../../build/clusteringEfficiency clusteringEfficiency.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+// g++ -o ../../build/addFlags addFlags.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 
 // small program to take doi bench data and filter events in one cyrstal, producing an output for deeplearning study
 // this version is for input from MINI pet electronics
@@ -110,10 +110,10 @@ int main (int argc, char** argv)
     return 1;
   }
   std::string inputFileName = "";
-  std::string outputFileName = "";
+  // std::string outputFileName = "";
   std::string calibrationFileName = "";
   std::string outputRootFileName = "";
-  int selectedCrystal = -1;
+  // int selectedCrystal = 2;
   bool verbose = false;
   bool UseAllCuts             = true;
   bool UseTaggingPhotopeakCut = false;
@@ -129,7 +129,6 @@ int main (int argc, char** argv)
 			{ "input", required_argument, 0, 0 },
       { "output", required_argument, 0, 0 },
       { "calibration", required_argument, 0, 0 },
-      { "crystal", required_argument, 0, 0 },
       { "verbose", no_argument, 0, 0 },
       { "tagCut", no_argument, 0, 0 },
       { "triggerCut", no_argument, 0, 0 },
@@ -143,7 +142,7 @@ int main (int argc, char** argv)
 
   while(1) {
 		int optionIndex = 0;
-		int c = getopt_long(argc, argv, "i:o:c:n:", longOptions, &optionIndex);
+		int c = getopt_long(argc, argv, "i:o:c:", longOptions, &optionIndex);
 		if (c == -1) {
 			break;
 		}
@@ -151,56 +150,53 @@ int main (int argc, char** argv)
 			inputFileName = (char *)optarg;
     }
 		else if (c == 'o'){
-      outputFileName = (char *)optarg;
+      outputRootFileName = (char *)optarg;
     }
     else if (c == 'c'){
       calibrationFileName = (char *)optarg;
-    }
-    else if (c == 'n'){
-      selectedCrystal = atoi((char *)optarg);
     }
     else if (c == 0 && optionIndex == 0){
       inputFileName = (char *)optarg;
     }
     else if (c == 0 && optionIndex == 1){
-      outputFileName = (char *)optarg;
+      outputRootFileName = (char *)optarg;
     }
     else if (c == 0 && optionIndex == 2){
       calibrationFileName = (char *)optarg;
     }
+    // else if (c == 0 && optionIndex == 3){
+    //   selectedCrystal = atoi((char *)optarg);
+    // }
     else if (c == 0 && optionIndex == 3){
-      selectedCrystal = atoi((char *)optarg);
-    }
-    else if (c == 0 && optionIndex == 4){
       verbose = true;
     }
-    else if (c == 0 && optionIndex == 5){
+    else if (c == 0 && optionIndex == 4){
       UseAllCuts = false;
       UseTaggingPhotopeakCut = true;
     }
-    else if (c == 0 && optionIndex == 6){
+    else if (c == 0 && optionIndex == 5){
       UseAllCuts = false;
       UseTriggerChannelCut = true;
     }
-    else if (c == 0 && optionIndex == 7){
+    else if (c == 0 && optionIndex == 6){
       UseAllCuts = false;
       UseBroadCut = true;
     }
-    else if (c == 0 && optionIndex == 8){
+    else if (c == 0 && optionIndex == 7){
       UseAllCuts = false;
       UseCutNoise = true;
     }
-    else if (c == 0 && optionIndex == 9){
+    else if (c == 0 && optionIndex == 8){
       UseAllCuts = false;
       UsePhotopeakEnergyCut = true;
     }
-    else if (c == 0 && optionIndex == 10){
+    else if (c == 0 && optionIndex == 9){
       UseAllCuts = false;
       UseCutgs = true;
     }
-    else if (c == 0 && optionIndex == 11){
-      outputRootFileName = (char *)optarg;
-    }
+    // else if (c == 0 && optionIndex == 10){
+    //   outputRootFileName = (char *)optarg;
+    // }
 		else {
       std::cout	<< "Usage: " << argv[0] << std::endl;
 			usage();
@@ -210,8 +206,8 @@ int main (int argc, char** argv)
 
 
   // TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
-  std::ofstream outputFile;
-  outputFile.open (outputFileName.c_str(),std::ofstream::out);
+  // std::ofstream outputFile;
+  // outputFile.open (outputFileName.c_str(),std::ofstream::out);
   TFile *outputRootFile = new TFile(outputRootFileName.c_str(),"RECREATE");
 
   if(UseAllCuts)
@@ -425,46 +421,53 @@ int main (int argc, char** argv)
   //----------------------------------------------------------//
 
 
-  // switch off crystals if they were not chosen (only one chosen crystal allowed, sorry)
-  int crystalsFound = 0;
-  int id = -1;
-  for(unsigned int i = 0 ;  i < crystal.size() ; i++)
-  {
-    if(crystal[i].accepted)
-    {
-      if(crystal[i].number != selectedCrystal)
-      {
-        crystal[i].accepted = false;
-      }
-      else
-      {
-        crystalsFound++;
-        id = i;
-      }
-    }
-  }
 
-  if(crystalsFound == 0)
-  {
-    std::cout << "ERROR: No chosen crystal found? Aborting." << std::endl;
-    return 1;
-  }
-  if(crystalsFound > 1)
-  {
-    std::cout << "ERROR: More than one chosen crystal found?? Aborting."<< std::endl << "crystalsFound = " << crystalsFound << std::endl;
-    return 1;
-  }
-  if(crystalsFound == 1 )
-  {
-    if(id == -1 )
-    {
-      std::cout << "ERROR: This cannot happen. Aborting." << std::endl
-                << "crystalsFound = " << crystalsFound << std::endl
-                << "id            = " << id << std::endl;
-      return 1;
-    }
-  }
-  std::cout << "Chosen crystal = " << crystal[id].number << std::endl;
+
+
+
+
+
+
+  // switch off crystals if they were not chosen (only one chosen crystal allowed, sorry)
+  // int crystalsFound = 0;
+  // int id = -1;
+  // for(unsigned int i = 0 ;  i < crystal.size() ; i++)
+  // {
+  //   if(crystal[i].accepted)
+  //   {
+  //     if(crystal[i].number != selectedCrystal)
+  //     {
+  //       crystal[i].accepted = false;
+  //     }
+  //     else
+  //     {
+  //       crystalsFound++;
+  //       id = i;
+  //     }
+  //   }
+  // }
+  //
+  // if(crystalsFound == 0)
+  // {
+  //   std::cout << "ERROR: No chosen crystal found? Aborting." << std::endl;
+  //   return 1;
+  // }
+  // if(crystalsFound > 1)
+  // {
+  //   std::cout << "ERROR: More than one chosen crystal found?? Aborting."<< std::endl << "crystalsFound = " << crystalsFound << std::endl;
+  //   return 1;
+  // }
+  // if(crystalsFound == 1 )
+  // {
+  //   if(id == -1 )
+  //   {
+  //     std::cout << "ERROR: This cannot happen. Aborting." << std::endl
+  //               << "crystalsFound = " << crystalsFound << std::endl
+  //               << "id            = " << id << std::endl;
+  //     return 1;
+  //   }
+  // }
+  // std::cout << "Chosen crystal = " << crystal[id].number << std::endl;
 
 
   //----------------------------------------------------------//
@@ -475,12 +478,12 @@ int main (int argc, char** argv)
   std::cout << "Total number of events = " << nevent << std::endl;
   // prepare counters
   long int counter = 0;
-  long int tagCounter = 0;
-  long int tagClustPPeakCounter = 0;
-  long int tagPPeakCounter = 0;
-  long int tagMaxCounter = 0;
-  long int tagMaxPPeakCounter = 0;
-  long int tagClustCounter = 0;
+  // long int tagCounter = 0;
+  // long int tagClustPPeakCounter = 0;
+  // long int tagPPeakCounter = 0;
+  // long int tagMaxCounter = 0;
+  // long int tagMaxPPeakCounter = 0;
+  // long int tagClustCounter = 0;
   // notify the formulas to the tree
   tree->SetNotify(formulasAnalysis);
   // loop on events
@@ -505,100 +508,125 @@ int main (int argc, char** argv)
     // -----------
 
     // filter on TAG
-    if(crystal[id].FormulaTagAnalysis->EvalInstance()) // filter on photopeak of tagging crystal
+
+    for(unsigned int id = 0 ;  id < crystal.size() ; id++)
     {
-      tagCounter++; // increase counter of events that pass the tagging photopeak cut (TAG)
-      out_tag = 1; // write flag in output file
-
-      // calculate the charge corrected by saturation, but just for the
-      // "central" or trigger MPPC, since we are going to use single spectrum to cut photopeak
-      UShort_t corrected_charge = 0;
-      int iCh = crystal[id].detectorChannel;
-      for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
-      {
-        // saturation correction is
-        // - q_max * ln( 1 - (ch - ped)/(q_max))
-        // where
-        // q_max    = saturation
-        // ch       = charge not corrected
-        // ped      = pedestal (not corrected)
-        // sat data is stored in the calibration file
-
-        if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+      if(crystal[id].accepted)
         {
-          corrected_charge = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
-        }
-      }
-
-      // prapare flags. possibly not a great logical implementation, but it comes from stratification
-      // and there's no time to change it now.
-      bool isTriggerPhotopeak = false;
-      bool isMax = true;
-
-      // photopeak of trigger (aka central) mppc
-      // luckily all single photopeaks are the same (no big surprise, since light sharing is ignored)
-      // so the photopeak cut is beautifully hardcoded (shame!)
-      if((corrected_charge > 30000) && (corrected_charge < 45000)  )
-      {
-        isTriggerPhotopeak = true; // set that trigger charge is in the photpeak of trigger spectrum
-        out_ppeak = 1; // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
-      }
-
-      // charge in trigger is max
-      // the loop is made on detectorSaturation structure just because it holds all crystals.
-      // strictly speaking this is not really elegant, but anyway...
-      for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
-      {
-        if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
-        {
-          // skip, it would compare charge with itself
-        }
-        else
-        {
-          // compare charges before saturation correction, it would make small difference
-          // to correct before comparison (just detail)
-          if(charge[iCh] < charge[crystal[id].detectorSaturation[iDet].digitizerChannel])
+          // set a flag to true, for tag cut. the idea is that this will be useful only if the user wanted to use the tag cut, otherwise it will always be true
+          bool passTagCut = true;
+          // check tag cut, if the user wanted to
+          if(UseTaggingPhotopeakCut)
           {
-            isMax = false; // set that trigger charge is not max charge in the event
+            if(!crystal[id].FormulaTagAnalysis->EvalInstance())
+            {
+              passTagCut = false;
+            }
+          }
+
+          if(passTagCut) // filter on photopeak of tagging crystal
+          {
+            // tagCounter++; // increase counter of events that pass the tagging photopeak cut (TAG)
+            out_tag = 1; // write flag in output file
+
+            // calculate the charge corrected by saturation, but just for the
+            // "central" or trigger MPPC, since we are going to use single spectrum to cut photopeak
+            // UShort_t corrected_charge = 0;
+            int iCh = crystal[id].detectorChannel;
+            // calculate charge in trigger mppc (corrected by saturation)
+            float corrected_charge = calculate_trigger_charge(charge,crystal[id]);
+            // for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+            // {
+            //   // saturation correction is
+            //   // - q_max * ln( 1 - (ch - ped)/(q_max))
+            //   // where
+            //   // q_max    = saturation
+            //   // ch       = charge not corrected
+            //   // ped      = pedestal (not corrected)
+            //   // sat data is stored in the calibration file
+            //
+            //   if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+            //   {
+            //     corrected_charge = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
+            //   }
+            // }
+
+            // prapare flags. possibly not a great logical implementation, but it comes from stratification
+            // and there's no time to change it now.
+            bool isTriggerPhotopeak = false;
+            bool isMax = true;
+
+            // photopeak of trigger (aka central) mppc
+            // luckily all single photopeaks are the same (no big surprise, since light sharing is ignored)
+            // so the photopeak cut is beautifully hardcoded (shame!)
+            // std::cout << crystal[id].singleFit->GetParameter(1) - 2.0*crystal[id].singleFit->GetParameter(2) << " " << (crystal[id].singleFit->GetParameter(1) + 2.0*crystal[id].singleFit->GetParameter(2)) << std::endl ;
+
+            if((corrected_charge > (crystal[id].singleFit->GetParameter(1) - 2.0*crystal[id].singleFit->GetParameter(2)) ) && (corrected_charge < (crystal[id].singleFit->GetParameter(1) + 2.0*crystal[id].singleFit->GetParameter(2)))  )
+            {
+              isTriggerPhotopeak = true; // set that trigger charge is in the photpeak of trigger spectrum
+              out_ppeak = 1; // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
+            }
+
+            // charge in trigger is max
+            // the loop is made on detectorSaturation structure just because it holds all crystals.
+            // strictly speaking this is not really elegant, but anyway...
+            for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
+            {
+              if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
+              {
+                // skip, it would compare charge with itself
+              }
+              else
+              {
+                // compare charges before saturation correction, it would make small difference
+                // to correct before comparison (just detail)
+                if(charge[iCh] < charge[crystal[id].detectorSaturation[iDet].digitizerChannel])
+                {
+                  isMax = false; // set that trigger charge is not max charge in the event
+                }
+              }
+            }
+
+            if(isMax) // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
+            {
+              out_max = 1;
+            }
+
+            // if(isTriggerPhotopeak)
+            // {
+            //   tagPPeakCounter++; // increase counter of events in cut TAG + PPEAK
+            // }
+
+            // if(isMax)
+            // {
+            //   tagMaxCounter++; // increase counter of events in cut TAG + MAX
+            // }
+
+            // if(isTriggerPhotopeak)
+            // {
+            //   if(isMax)
+            //   {
+            //     tagMaxPPeakCounter++; // increase counter of events in cut TAG + MAX + PPEAK
+            //   }
+            // }
+
+            // apply full crystal cut (on the basis of what has been chosen by user with cmd line options)
+            if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
+            {
+              // tagClustCounter++; // increase counter of events in cut TAG + CLUST
+              out_clust = 1;
+              out_crystalNumber = crystal[id].number;
+              // if(isTriggerPhotopeak)
+              // {
+              //   tagClustPPeakCounter++; // increase counter of events in cut TAG + CLUST + PPEAK
+              // }
+            }
           }
         }
-      }
-
-      if(isMax) // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
-      {
-        out_max = 1;
-      }
-
-      if(isTriggerPhotopeak)
-      {
-        tagPPeakCounter++; // increase counter of events in cut TAG + PPEAK
-      }
-
-      if(isMax)
-      {
-        tagMaxCounter++; // increase counter of events in cut TAG + MAX
-      }
-
-      if(isTriggerPhotopeak)
-      {
-        if(isMax)
-        {
-          tagMaxPPeakCounter++; // increase counter of events in cut TAG + MAX + PPEAK
-        }
-      }
-
-      // apply full crystal cut (on the basis of what has been chosen by user with cmd line options)
-      if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
-      {
-        tagClustCounter++; // increase counter of events in cut TAG + CLUST
-        out_clust = 1;
-        out_crystalNumber = crystal[id].number;
-        if(isTriggerPhotopeak)
-        {
-          tagClustPPeakCounter++; // increase counter of events in cut TAG + CLUST + PPEAK
-        }
-      }
     }
+
+
+
 
     // write the event in the output tree
 
@@ -614,53 +642,53 @@ int main (int argc, char** argv)
 
   std::cout  << std::endl;
   // textfile.close();
-  std::cout  << "# Legend " << std::endl;
-  std::cout  << "# TAG   = events in photopeak of tagging crystal " << std::endl;
-  std::cout  << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
-  std::cout  << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
-  std::cout  << "# MAX   = events for which the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
-  std::cout  << std::endl;
-  std::cout  << "All events                   = " << counter     << std::endl;
-  std::cout  << "TAG                          = " << tagCounter  << std::endl;
-  std::cout  << "TAG + CLUST                  = " << tagClustCounter << std::endl;
-  std::cout  << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
-  std::cout  << "TAG + MAX                    = " << tagMaxCounter << std::endl;
-  std::cout  << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
-  std::cout  << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
-  std::cout  << counter     << " "
-             << tagCounter  << " "
-             << tagClustCounter << " "
-             << tagClustPPeakCounter << " "
-             << tagMaxCounter << " "
-             << tagMaxPPeakCounter << " "
-             << tagPPeakCounter << std::endl;
-  std::cout  << std::endl;
-
-  // outputFile->cd();
-  // t1->Write();
-  // outputFile->Close();
-
-  outputFile << "# Legend " << std::endl;
-  outputFile << "# TAG   = events in photopeak of tagging crystal " << std::endl;
-  outputFile << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
-  outputFile << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
-  outputFile << "# MAX   = events for with the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
-  outputFile << std::endl;
-  outputFile << "All events                   = " << counter     << std::endl;
-  outputFile << "TAG                          = " << tagCounter  << std::endl;
-  outputFile << "TAG + CLUST                  = " << tagClustCounter << std::endl;
-  outputFile << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
-  outputFile << "TAG + MAX                    = " << tagMaxCounter << std::endl;
-  outputFile << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
-  outputFile << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
-  outputFile << counter     << " "
-             << tagCounter  << " "
-             << tagClustCounter << " "
-             << tagClustPPeakCounter << " "
-             << tagMaxCounter << " "
-             << tagMaxPPeakCounter << " "
-             << tagPPeakCounter << std::endl;
-  outputFile.close();
+  // std::cout  << "# Legend " << std::endl;
+  // std::cout  << "# TAG   = events in photopeak of tagging crystal " << std::endl;
+  // std::cout  << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
+  // std::cout  << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
+  // std::cout  << "# MAX   = events for which the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
+  // std::cout  << std::endl;
+  // std::cout  << "All events                   = " << counter     << std::endl;
+  // std::cout  << "TAG                          = " << tagCounter  << std::endl;
+  // std::cout  << "TAG + CLUST                  = " << tagClustCounter << std::endl;
+  // std::cout  << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
+  // std::cout  << "TAG + MAX                    = " << tagMaxCounter << std::endl;
+  // std::cout  << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
+  // std::cout  << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
+  // std::cout  << counter     << " "
+  //            << tagCounter  << " "
+  //            << tagClustCounter << " "
+  //            << tagClustPPeakCounter << " "
+  //            << tagMaxCounter << " "
+  //            << tagMaxPPeakCounter << " "
+  //            << tagPPeakCounter << std::endl;
+  // std::cout  << std::endl;
+  //
+  // // outputFile->cd();
+  // // t1->Write();
+  // // outputFile->Close();
+  //
+  // outputFile << "# Legend " << std::endl;
+  // outputFile << "# TAG   = events in photopeak of tagging crystal " << std::endl;
+  // outputFile << "# CLUST = events in 3D cut, from clustering algorithm, for crystal aligned with tagging " << std::endl;
+  // outputFile << "# PPEAK = events in photopeak SiPM0, i.e. the SiPM coupled to the crystal of the 4x4 array that is aligned with tagging" << std::endl;
+  // outputFile << "# MAX   = events for with the charge of SiPM0 is greater than all the other charges recorded" << std::endl;
+  // outputFile << std::endl;
+  // outputFile << "All events                   = " << counter     << std::endl;
+  // outputFile << "TAG                          = " << tagCounter  << std::endl;
+  // outputFile << "TAG + CLUST                  = " << tagClustCounter << std::endl;
+  // outputFile << "TAG + CLUST + PPEAK          = " << tagClustPPeakCounter << std::endl;
+  // outputFile << "TAG + MAX                    = " << tagMaxCounter << std::endl;
+  // outputFile << "TAG + MAX + PPEAK            = " << tagMaxPPeakCounter << std::endl;
+  // outputFile << "TAG + PPEAK                  = " << tagPPeakCounter << std::endl;
+  // outputFile << counter     << " "
+  //            << tagCounter  << " "
+  //            << tagClustCounter << " "
+  //            << tagClustPPeakCounter << " "
+  //            << tagMaxCounter << " "
+  //            << tagMaxPPeakCounter << " "
+  //            << tagPPeakCounter << std::endl;
+  // outputFile.close();
 
 
   outputRootFile->cd();

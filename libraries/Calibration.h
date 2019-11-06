@@ -190,6 +190,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
        temp_crystal.polishedCorrection = false;
        temp_crystal.detectorSaturation = detectorSaturation;
        temp_crystal.FormulaAnalysis = NULL;
+       temp_crystal.singleFit = NULL;
 
        //set taggingPhotopeakCut Formula if it is found in calibration file
        if((temp_crystal.taggingCrystalTimingChannel != -1) && (temp_crystal.taggingCrystalChannel != -1) )
@@ -246,6 +247,8 @@ void readCalibration(TFile* calibrationFile,                        // file with
          std::string Delay_prefix         ("DelayDir");
          std::string RMS_prefix           ("RMSDir");
 
+         std::string SingleFit_prefix ("Single Charge Spectrum");
+
          for(unsigned int i = 0 ; i < keysCryName.size() ; i++)
          {
            if(!keysCryName[i].compare(0,calibration_prefix.size(),calibration_prefix)) //find calibration graph
@@ -259,6 +262,25 @@ void readCalibration(TFile* calibrationFile,                        // file with
              if(calibGraph)
                temp_crystal.calibrationGraph = calibGraph;
            }
+
+           if(!keysCryName[i].compare(0,SingleFit_prefix.size(),SingleFit_prefix)) //find single spectrum, get fit
+           {
+            //  std::cout << keysCryName[i] << std::endl;
+             TCanvas* C_histo = NULL;
+             TH1F *histo = NULL;
+             C_histo = (TCanvas*) gDirectory->Get(keysCryName[i].c_str());
+             if(C_histo)
+               histo = (TH1F*) C_histo->GetPrimitive(keysCryName[i].c_str());
+             if(histo)
+             {
+               TList *ll = (TList*)  histo->GetListOfFunctions();
+               TF1* temp_f = (TF1*) ll->At(1);
+               temp_crystal.singleFit = temp_f;
+             }
+
+           }
+
+
 
            if(!keysCryName[i].compare(0,wz_prefix.size(),wz_prefix)) //find calibration graph
            {

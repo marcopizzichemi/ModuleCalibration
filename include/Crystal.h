@@ -104,6 +104,7 @@ private:
   TF1*                 ThetaFit;
   TF1*                 deltaWfit;
   TF1*                 deltaWfit_2;
+  TF1*                 SingleFit;
   //   TF1                  ProfileXFit;
   TF1*                 SlicesMeanFit;
   std::vector<TF1*>    saturationFits;
@@ -258,6 +259,7 @@ public:
   TGraph*              GetCalibrationGraph(){return calibrationGraph;};
   TGraph*              GetDoiResZ(){return doiResZ;};
   TF1*                 GetFit(){return Fit;};
+  TF1*                 GetSingleFit(){return SingleFit;};
   TF1*                 GetLYFit(){return LYFit;};
   TF1*                 GetSimFit(){return SimFit;};
   TF1*                 GetHistoWfit(){return Wfit;};
@@ -403,6 +405,7 @@ public:
   void                 SetDoiResolutions(TH1F* aHisto){resolutions = aHisto;};
   void                 SetDensityHisto(TH1F* aHisto){DensityHisto = aHisto;};
   void                 SetFit(TF1* aFit){Fit = aFit;};
+  void                 SetSingleFit(TF1* aFit){SingleFit = aFit;};
   void                 SetLYFit(TF1* aFit){LYFit = aFit;};
   void                 SetHistoWfwhm(double a){w_fwhm = a;};
   void                 SetHistoWrms(double a){w_rms = a;};

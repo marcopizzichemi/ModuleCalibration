@@ -2204,8 +2204,8 @@ int main (int argc, char** argv)
                         var << thisChannel.rawAmplitude << " >> " << sname.str();
                         TH1F* spectrumAmplitude = new TH1F(sname.str().c_str(),sname.str().c_str(),4000,0,4000);
                         tree->Draw(var.str().c_str(),CrystalCut);
-                        spectrumCharge->GetXaxis()->SetTitle("Ampltitude");
-                        spectrumCharge->GetYaxis()->SetTitle("N");
+                        spectrumAmplitude->GetXaxis()->SetTitle("Ampltitude");
+                        spectrumAmplitude->GetYaxis()->SetTitle("N");
                         CurrentCrystal->SetAmplitudeSpectrum(spectrumAmplitude);
                         sname.str("");
                         var.str("");
@@ -2237,6 +2237,51 @@ int main (int argc, char** argv)
                       //find peaks in each crystal spectrum, with TSpectrum
                       if(!backgroundRun)// do it only if this is NOT a background run
                       {
+                        // on single spectrum
+                        TSpectrum *single_s;
+                        single_s = new TSpectrum(20);
+
+                        spectrumSingleCharge->GetXaxis()->SetRangeUser(spectrumSearchMin,spectrumSearchMax);
+                        Int_t single_CrystalPeaksN = single_s->Search(spectrumSingleCharge,2,"",0.5);
+                        Double_t *single_CrystalPeaks =  single_s->GetPositionX();
+                        Double_t *single_CrystalPeaksY = single_s->GetPositionY();
+                        float single_maxPeak = 0.0;
+                        int single_peakID = 0;
+                        for (int single_peakCounter = 0 ; single_peakCounter < single_CrystalPeaksN ; single_peakCounter++ ) //highest peak?
+                        {
+                          // std::cout << peakCounter << "\t" << CrystalPeaks[peakCounter] << "\t" << CrystalPeaksY[peakCounter] << std::endl;
+                          if(single_CrystalPeaksY[single_peakCounter] > single_maxPeak)
+                          {
+                            single_maxPeak = single_CrystalPeaksY[single_peakCounter];
+                            single_peakID = single_peakCounter;
+                          }
+                        }
+
+                        spectrumSingleCharge->GetXaxis()->SetRangeUser(1,histo1Dmax);
+                        Float_t single_par0 =   single_CrystalPeaksY[single_peakID];
+                        Float_t single_par1 =   single_CrystalPeaks [single_peakID];
+                        Float_t single_par2 =   (single_CrystalPeaks[single_peakID]*0.20)/2.35;
+                        Float_t single_fitmin = single_par1-photopeakFitRangeMin*single_par2;
+                        Float_t single_fitmax = single_par1+photopeakFitRangeMax*single_par2;
+
+                        sname << "SingleGaussCharge - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                        TF1 *single_gauss = new TF1(sname.str().c_str(),  "[0]*exp(-0.5*((x-[1])/[2])**2)",single_fitmin,single_fitmax);
+                        single_gauss->SetParameter(0,single_par0);
+                        single_gauss->SetParameter(1,single_par1);
+                        single_gauss->SetParameter(2,single_par2);
+
+                        spectrumSingleCharge->Fit(single_gauss,"Q","",single_fitmin,single_fitmax);
+
+                        // CurrentCrystal->SetSinglePhotopeak(single_gauss->GetParameter(1),std::abs(single_gauss->GetParameter(2)));
+                        // CurrentCrystal->SetSingleFit(single_gauss);
+
+                        sname.str("");
+
+
+
+
+
+                        // on sum spectrum
                         TSpectrum *s;
                         s = new TSpectrum(20);
                         // 		Input[i].SumSpectraCanvas->cd(j+1);
