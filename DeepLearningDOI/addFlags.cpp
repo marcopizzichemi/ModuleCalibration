@@ -327,11 +327,12 @@ int main (int argc, char** argv)
   ULong64_t out_ExtendedTimeTag = 0;
   UShort_t  out_charge[64];
   Float_t   out_timestamp[64];
-  UShort_t  out_tag = 0;
-  UShort_t  out_clust = 0;
-  UShort_t  out_ppeak = 0;
-  UShort_t  out_max = 0;
-  Short_t   out_crystalNumber = -1;
+  Int_t     out_tag = 0;
+  Int_t     out_clust = 0;
+  Int_t     out_ppeak = -1;
+  Int_t     out_max = -1;
+  Int_t     out_nppeak = 0;
+  Int_t     out_crystalNumber = -1;
   //the ttree variable
   TTree *t1 ;
   //strings for the names
@@ -369,11 +370,12 @@ int main (int argc, char** argv)
     types = stypes.str();
     t1->Branch(names.c_str(),&out_timestamp[i],types.c_str());
   }
-  t1->Branch("tag",     &out_tag,   "tag/s");
-  t1->Branch("clust",   &out_clust, "clust/s");
-  t1->Branch("ppeak",    &out_ppeak,  "ppeak/s");
-  t1->Branch("max",     &out_max,   "max/s");
-  t1->Branch("crystal", &out_crystalNumber,   "crystal/S");
+  t1->Branch("tag",     &out_tag,   "tag/I");
+  t1->Branch("clust",   &out_clust, "clust/I");
+  t1->Branch("ppeak",    &out_ppeak,  "ppeak/I");
+  t1->Branch("max",     &out_max,   "max/I");
+  t1->Branch("nppeak", &out_nppeak,   "nppeak/I");
+  t1->Branch("crystal", &out_crystalNumber,   "crystal/I");
 
 
   //---------------------------------------------------------//
@@ -410,6 +412,13 @@ int main (int argc, char** argv)
                  );
 
   // list the crystals with calibration data found
+
+  if(crystal.size() == 0)
+  {
+    std::cout << "No calibration data found, aborting..." << std::endl;
+    return 1;
+  }
+
   std::cout << "Calibration data found for crystals: " << std::endl;
   for(unsigned int i = 0 ;  i < crystal.size() ; i++)
   {
@@ -495,134 +504,88 @@ int main (int argc, char** argv)
     // copy ref time, charges and timestamps for all events. initialize flags
     out_DeltaTimeTag = ChainExtendedTimeTag;
     out_ExtendedTimeTag = ChainExtendedTimeTag;
+    // also, independently of the event tag etc, check an record which detector has the maximum charge
+    UShort_t maxCharge = 0;
+    out_max = -1;
     for (int iCh = 0 ; iCh < 64 ; iCh++)
     {
-      out_charge[iCh]    = charge[iCh] ;
+      out_charge[iCh]    = charge[iCh];
       out_timestamp[iCh] = timeStamp[iCh];
+
     }
+
+    // to run only on the detector channels of the detector array, take the first crystal (or only crystal) found
+    // and run on the vector of saturation channels (because it holds all the detector channels)
+    for(int iDet = 0 ; iDet < crystal[0].detectorSaturation.size(); iDet++)
+    {
+      // compare charges before saturation correction, it would make small difference
+      // to correct before comparison (just detail)
+      if(charge[crystal[0].detectorSaturation[iDet].digitizerChannel] > maxCharge)
+      {
+        maxCharge = charge[crystal[0].detectorSaturation[iDet].digitizerChannel];
+        out_max = crystal[0].detectorSaturation[iDet].digitizerChannel;
+      }
+    }
+
     out_tag = 0;
     out_clust = 0;
-    out_ppeak = 0;
-    out_max = 0;
+    out_ppeak = -1;
+
+    out_nppeak = 0;
     out_crystalNumber = -1;
     // -----------
-
-    // filter on TAG
 
     for(unsigned int id = 0 ;  id < crystal.size() ; id++)
     {
       if(crystal[id].accepted)
+      {
+
+        // ---------TAG
+        // set a flag to true, for tag cut. the idea is that this will be useful only if the user wanted to use the tag cut, otherwise it will always be true
+        bool passTagCut = true;
+        // check tag cut, if the user wanted to
+        if(UseTaggingPhotopeakCut)
         {
-          // set a flag to true, for tag cut. the idea is that this will be useful only if the user wanted to use the tag cut, otherwise it will always be true
-          bool passTagCut = true;
-          // check tag cut, if the user wanted to
-          if(UseTaggingPhotopeakCut)
+          if(!crystal[id].FormulaTagAnalysis->EvalInstance())
           {
-            if(!crystal[id].FormulaTagAnalysis->EvalInstance())
-            {
-              passTagCut = false;
-            }
-          }
-
-          if(passTagCut) // filter on photopeak of tagging crystal
-          {
-            // tagCounter++; // increase counter of events that pass the tagging photopeak cut (TAG)
-            out_tag = 1; // write flag in output file
-
-            // calculate the charge corrected by saturation, but just for the
-            // "central" or trigger MPPC, since we are going to use single spectrum to cut photopeak
-            // UShort_t corrected_charge = 0;
-            int iCh = crystal[id].detectorChannel;
-            // calculate charge in trigger mppc (corrected by saturation)
-            float corrected_charge = calculate_trigger_charge(charge,crystal[id]);
-            // for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
-            // {
-            //   // saturation correction is
-            //   // - q_max * ln( 1 - (ch - ped)/(q_max))
-            //   // where
-            //   // q_max    = saturation
-            //   // ch       = charge not corrected
-            //   // ped      = pedestal (not corrected)
-            //   // sat data is stored in the calibration file
-            //
-            //   if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
-            //   {
-            //     corrected_charge = -crystal[id].detectorSaturation[iDet].saturation * TMath::Log(1.0 - ( (charge[iCh] - crystal[id].detectorSaturation[iDet].pedestal ) / (crystal[id].detectorSaturation[iDet].saturation) ) );
-            //   }
-            // }
-
-            // prapare flags. possibly not a great logical implementation, but it comes from stratification
-            // and there's no time to change it now.
-            bool isTriggerPhotopeak = false;
-            bool isMax = true;
-
-            // photopeak of trigger (aka central) mppc
-            // luckily all single photopeaks are the same (no big surprise, since light sharing is ignored)
-            // so the photopeak cut is beautifully hardcoded (shame!)
-            // std::cout << crystal[id].singleFit->GetParameter(1) - 2.0*crystal[id].singleFit->GetParameter(2) << " " << (crystal[id].singleFit->GetParameter(1) + 2.0*crystal[id].singleFit->GetParameter(2)) << std::endl ;
-
-            if((corrected_charge > (crystal[id].singleFit->GetParameter(1) - 2.0*crystal[id].singleFit->GetParameter(2)) ) && (corrected_charge < (crystal[id].singleFit->GetParameter(1) + 2.0*crystal[id].singleFit->GetParameter(2)))  )
-            {
-              isTriggerPhotopeak = true; // set that trigger charge is in the photpeak of trigger spectrum
-              out_ppeak = 1; // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
-            }
-
-            // charge in trigger is max
-            // the loop is made on detectorSaturation structure just because it holds all crystals.
-            // strictly speaking this is not really elegant, but anyway...
-            for(int iDet = 0 ; iDet < crystal[id].detectorSaturation.size(); iDet++)
-            {
-              if( iCh == crystal[id].detectorSaturation[iDet].digitizerChannel)
-              {
-                // skip, it would compare charge with itself
-              }
-              else
-              {
-                // compare charges before saturation correction, it would make small difference
-                // to correct before comparison (just detail)
-                if(charge[iCh] < charge[crystal[id].detectorSaturation[iDet].digitizerChannel])
-                {
-                  isMax = false; // set that trigger charge is not max charge in the event
-                }
-              }
-            }
-
-            if(isMax) // since this has already passed the TAG cut, strictly speaking the definition here is flawed, but it's not very important for now. they should be defined independently of TAG, but for sure the events not in TAG are ignored, so...
-            {
-              out_max = 1;
-            }
-
-            // if(isTriggerPhotopeak)
-            // {
-            //   tagPPeakCounter++; // increase counter of events in cut TAG + PPEAK
-            // }
-
-            // if(isMax)
-            // {
-            //   tagMaxCounter++; // increase counter of events in cut TAG + MAX
-            // }
-
-            // if(isTriggerPhotopeak)
-            // {
-            //   if(isMax)
-            //   {
-            //     tagMaxPPeakCounter++; // increase counter of events in cut TAG + MAX + PPEAK
-            //   }
-            // }
-
-            // apply full crystal cut (on the basis of what has been chosen by user with cmd line options)
-            if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
-            {
-              // tagClustCounter++; // increase counter of events in cut TAG + CLUST
-              out_clust = 1;
-              out_crystalNumber = crystal[id].number;
-              // if(isTriggerPhotopeak)
-              // {
-              //   tagClustPPeakCounter++; // increase counter of events in cut TAG + CLUST + PPEAK
-              // }
-            }
+            passTagCut = false;
           }
         }
+        if(passTagCut)
+        {
+          out_tag = 1; // write flag in output file. repeating this for each crystal for each event is a bit stupid,
+                       //because for calibration files with more than one crystal, the tag cut is true for all crystals...
+        }
+
+
+        // ---------PPEAK
+        // calculate the charge corrected by saturation, but just for the
+        // "central" or trigger MPPC, since we are going to use single spectrum to cut photopeak
+        int iCh = crystal[id].detectorChannel;
+        // calculate charge in trigger mppc (corrected by saturation)
+        float corrected_charge = calculate_trigger_charge(charge,crystal[id]);
+        // check if the corrected charge is in the photopeak of this crystal, in the crystals loop.
+        // in that case, save the detector channel, and save (actually add) the charge
+        // the add is done so that we can identify weird events where two detectors see charge in the photopeak of two crystals...
+        // possibly this will not make sense in 4-to-1 and 9-to-1. No, better, it won't for sure. But then we'll think about something else..
+        if((corrected_charge > (crystal[id].singleFit->GetParameter(1) - 2.0*crystal[id].singleFit->GetParameter(2)) ) && (corrected_charge < (crystal[id].singleFit->GetParameter(1) + 2.0*crystal[id].singleFit->GetParameter(2)))  )
+        {
+          out_ppeak = iCh;
+          out_nppeak ++;
+        }
+
+        // ---------CLUST
+        // apply full crystal cut
+        if(crystal[id].FormulaAnalysis->EvalInstance())  //cut of crystal
+        {
+          // tagClustCounter++; // increase counter of events in cut TAG + CLUST
+          out_clust = 1;
+          out_crystalNumber = crystal[id].number;
+
+        }
+
+
+      }
     }
 
 
