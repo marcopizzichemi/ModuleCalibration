@@ -2211,12 +2211,12 @@ int main (int argc, char** argv)
                         var.str("");
 
                         //draw amplitude vs. rawCharge 2d spectrum
-                        sname << "Raw Amplitude vs. Raw Charge Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
-                        var << thisChannel.rawAmplitude << ":" << thisChannel.rawCharge <<  " >> " << sname.str();
-                        TH2F* amplitudeVsIntegral = new TH2F(sname.str().c_str(),sname.str().c_str(),histo1Dbins,0,histo1Dmax/2.0,4000,0,4000);
+                        sname << "Raw Charge vs. Raw Amplitude Spectrum - Crystal " << CurrentCrystal->GetID() << " - MPPC " << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel();
+                        var << thisChannel.rawCharge <<  ":" << thisChannel.rawAmplitude <<  " >> " << sname.str();
+                        TH2F* amplitudeVsIntegral = new TH2F(sname.str().c_str(),sname.str().c_str(),4096,0,4096,histo1Dbins,0,histo1Dmax/2.0);
                         tree->Draw(var.str().c_str(),CrystalCut);
-                        amplitudeVsIntegral->GetYaxis()->SetTitle("Ampltitude [ADC Channels]");
-                        amplitudeVsIntegral->GetXaxis()->SetTitle("Integral [ADC Channels]");
+                        amplitudeVsIntegral->GetXaxis()->SetTitle("Ampltitude [ADC Channels]");
+                        amplitudeVsIntegral->GetYaxis()->SetTitle("Integral [ADC Channels]");
                         CurrentCrystal->SetAmplitudeVsIntegralSpectrum(amplitudeVsIntegral);
                         sname.str("");
                         var.str("");
