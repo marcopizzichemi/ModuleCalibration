@@ -255,7 +255,7 @@ int main (int argc, char** argv)
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous
   UShort_t      *charge;
-  Short_t      *s_charge;
+  UShort_t      *s_charge;
   Float_t      *timeStamp;
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
@@ -263,7 +263,7 @@ int main (int argc, char** argv)
   TBranch      **btimeStamp;
   TBranch      *b_zFromTag;
   charge = new UShort_t[numOfCh];
-  s_charge = new Short_t[numOfCh];
+  s_charge = new UShort_t[numOfCh];
   timeStamp = new Float_t[numOfT];
   bCharge = new TBranch*[numOfCh];
   btimeStamp = new TBranch*[numOfT];
