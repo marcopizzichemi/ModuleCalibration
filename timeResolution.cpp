@@ -516,6 +516,7 @@ int main (int argc, char** argv)
   {
     if(crystal[i].accepted)
     {
+      crystal[i].polishedCorrection = false; // FIXME hardcode stop to polish correction
       std::cout << crystal[i].number << std::endl;
     }
   }
@@ -544,6 +545,7 @@ int main (int argc, char** argv)
         {
           if(crystal[iCry].FormulaTagAnalysis->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
           {
+
             //calculate FloodZ...
             float FloodZ = calculateFloodZ(charge,crystal[iCry]);
             // calculate reconstructed Z
@@ -554,6 +556,7 @@ int main (int argc, char** argv)
 
             // calculate charge in the 9 relevant mppcs (corrected by saturation)
             float sumCharge = calculate_sum_charge(charge,crystal[iCry]);
+
 
             if(crystal[iCry].FormulaJustCutG->EvalInstance())  //all crystal event
             {
@@ -566,6 +569,8 @@ int main (int argc, char** argv)
             if(crystal[iCry].FormulaAnalysis->EvalInstance())  //only photopeak events of the crystal
             {
               goodEventsAnalysis++;
+
+
 
 
 
@@ -597,6 +602,8 @@ int main (int argc, char** argv)
                 {
                   double centralCTR;
 
+
+
                   if(fitCorrection)
                   {
                     centralcorrection = crystal[iCry].tw_correction_line->Eval(crystal[iCry].wz->Eval(crystal[iCry].length*doiFraction)) - crystal[iCry].tw_correction_line->Eval(FloodZ);
@@ -619,6 +626,7 @@ int main (int argc, char** argv)
                   // modify to skip excluded channel
                   if(crystal[iCry].delay.size())
                   {
+
                     // begin of new way
                     float averageTimeStamp = 0.0;
                     float totalWeight = 0.0;
@@ -697,6 +705,7 @@ int main (int argc, char** argv)
                       // now do the average
 
 
+
                       for(unsigned int iDet = 0; iDet < crystal[iCry].correction_graphs.size(); iDet++)
                       {
                         //run on all the detectors, included the main one, but remember not to correct the main one for delay!
@@ -740,6 +749,7 @@ int main (int argc, char** argv)
 
 
                       }
+
                       averageTimeStamp = averageTimeStamp/totalWeight;
                       crystal[iCry].ctrVSw->Fill(FloodZ,averageTimeStamp);
                       double allCTR = averageTimeStamp + centralcorrection;
@@ -751,15 +761,17 @@ int main (int argc, char** argv)
                       crystal[iCry].v_all_CTRvsZ[channelToIgnore.size()]->Fill(z_reco,allCTR);
                         // crystal[iCry].vAll.push_back(allCTR);
 
+
                     }
                   }
                 }
               }
 
+              // if(false)
               if(crystal[iCry].polishedCorrection)
               {
                 //central time stamp
-                // std::cout << "----------------" << std::endl;
+
 
                 float meanTimeStamp = 0.0;
                 float sumWeight = 0.0;
@@ -791,6 +803,7 @@ int main (int argc, char** argv)
                     }
                   }
                 }
+
 
                 if(noZeroes)
                 {
@@ -832,9 +845,10 @@ int main (int argc, char** argv)
                     }
                   }
 
+
                   for(unsigned int iPoli = 0; iPoli < crystal[iCry].polished_correction.size(); iPoli++)
                   {
-                    // std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
+                    std::cout << "ciao " << crystal[iCry].polished_correction.size() <<  std::endl;
                     // std::cout << iPoli <<" ";
 
                     int timingChannel = crystal[iCry].polished_correction[iPoli].timingChannel;
@@ -850,6 +864,7 @@ int main (int argc, char** argv)
                     }
                     if(!skip)
                     {
+
 
                       float delay = 0;
                       float weight = 0.0;
@@ -867,6 +882,7 @@ int main (int argc, char** argv)
                       float correctedTimepstamp = timeStamp[crystal[iCry].polished_correction[iPoli].timingChannel] - timeStamp[crystal[iCry].taggingCrystalTimingChannel] - delay;
                       meanTimeStamp += weight * correctedTimepstamp;
                     }
+
 
 
 
@@ -895,11 +911,16 @@ int main (int argc, char** argv)
                     // }
 
                   }
+
+
                   meanTimeStamp = meanTimeStamp/sumWeight;
                   double poliCorrCTR = meanTimeStamp;
                   crystal[iCry].poliCorrCTR->Fill(poliCorrCTR);
+
                   crystal[iCry].poliCTRvsZ->Fill(z_reco,poliCorrCTR);
+
                   crystal[iCry].v_poli_CTR[channelToIgnore.size()]->Fill(poliCorrCTR);
+                  std::cout << "<<<<<<<<<<<<----------------" << std::endl;
                   crystal[iCry].v_poli_CTRvsZ[channelToIgnore.size()]->Fill(z_reco,poliCorrCTR);
 
 
@@ -1510,7 +1531,7 @@ int main (int argc, char** argv)
       // }
     }
 
-    if(crystal[iCry].poliCorrCTR)
+    if(crystal[iCry].polishedCorrection)
     {
       Int_t CTRentries = crystal[iCry].poliCorrCTR->GetEntries();
       crystal[iCry].poliCorrCTR->GetXaxis()->SetTitle("Time [s]");
