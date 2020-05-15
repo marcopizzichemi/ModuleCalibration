@@ -4162,39 +4162,57 @@ int main (int argc, char** argv)
                               // int detectorChannel = ;
 
                               centralChargeOriginal = ChainVMEadcChannel[centralChargeChannel];
-                              for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
-                              {
-                                if( detector[iSat].digitizerChannel  == centralChargeChannel)
-                                {
-                                  centralSaturation = detector[iSat].saturation;
-                                  centralPedestal = detector[iSat].pedestal;
-                                }
-                              }
-                              float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
 
-                              for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
-                              {
-                                // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
-                                float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
 
-                                float saturationCh;
-                                float pedestalCorr;
+                              if(correctingSaturation)
+                              {
                                 for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
                                 {
-                                  if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
+                                  if( detector[iSat].digitizerChannel  == centralChargeChannel)
                                   {
-                                    saturationCh = detector[iSat].saturation;
-                                    pedestalCorr = detector[iSat].pedestal;
+                                    centralSaturation = detector[iSat].saturation;
+                                    centralPedestal = detector[iSat].pedestal;
                                   }
                                 }
-                                // std::cout << originalCh << " "
-                                //           << saturationCh << " "
-                                //           << pedestalCorr << " "
-                                //           << std::endl;
-                                division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
-                              }
+                                float centralChargeCorr = ( -centralSaturation * TMath::Log(1.0 - ( ( (centralChargeOriginal-centralPedestal))/(centralSaturation)) ) );
 
-                              FloodZ = centralChargeCorr / division;
+                                for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
+                                {
+                                  // std::cout << crystal[iCry].relevantForW[iW] << std::endl;
+                                  float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
+
+                                  float saturationCh;
+                                  float pedestalCorr;
+                                  for(unsigned int iSat = 0; iSat < detector.size(); iSat++)
+                                  {
+                                    if( detector[iSat].digitizerChannel  == channelsNumRelevantForW[iW])
+                                    {
+                                      saturationCh = detector[iSat].saturation;
+                                      pedestalCorr = detector[iSat].pedestal;
+                                    }
+                                  }
+                                  // std::cout << originalCh << " "
+                                  //           << saturationCh << " "
+                                  //           << pedestalCorr << " "
+                                  //           << std::endl;
+                                  division += ( -saturationCh * TMath::Log(1.0 - ( ( (originalCh-pedestalCorr))/(saturationCh)) ) );
+                                }
+
+                                FloodZ = centralChargeCorr / division;
+                              }
+                              else
+                              {
+                                // centralChargeOriginal = charge[crystal.detectorChannel];
+                                float centralChargeCorr = centralChargeOriginal;
+
+                                for (unsigned int iW = 0; iW < channelsNumRelevantForW.size(); iW++)
+                                {
+                                  float originalCh = ChainVMEadcChannel[channelsNumRelevantForW[iW]];
+                                  division += originalCh;
+                                }
+
+                                FloodZ = centralChargeCorr / division;
+                              }
 
                               // DO ANOTHER CASE FOR JUST POLISHED CORR
                               if(FloodZ > CurrentCrystal->GetMinAcceptedW() && FloodZ < CurrentCrystal->GetMaxAcceptedW())

@@ -1138,6 +1138,8 @@ int main (int argc, char** argv)
     Double_t fitRes[3];
     Float_t lightCentral;
     Float_t lightAll;
+    Float_t enResFWHM;
+    // int entries = crystal[iCry].lightAllHisto->GetEntries();
 
     // crystal[iCry].crtVSw_gr->Write();
     crystal[iCry].ctrVSw->Write();
@@ -1157,6 +1159,7 @@ int main (int argc, char** argv)
     TF1 *gaussAll = new TF1("gaussAll","gaus");
     crystal[iCry].lightAllHisto->Fit(gaussAll,"Q");
     lightAll = gaussAll->GetParameter(1);
+    enResFWHM = 2.355*gaussAll->GetParameter(2)/gaussAll->GetParameter(1);
     crystal[iCry].lightAllHisto->Write();
 
     crystal[iCry].singleADCvsZ->Write();
@@ -1188,6 +1191,58 @@ int main (int argc, char** argv)
 
 
 
+    textfile  << std::setw(10)
+              << "#CrystalN"
+              << std::setw(20)
+              << "entries"
+              << std::setw(20)
+              << "lightCentral"
+              << std::setw(20)
+              << "lightAll"
+              << std::setw(20)
+              << "EnResFWHM"
+              << std::setw(20)
+              << "CTRfwhm_base"
+              << std::setw(20)
+              << "CTRfwhm_cent"
+              << std::setw(20)
+              << "CTRfwhm_full"
+              << std::setw(20)
+              // << "ChiSquare"
+              // << std::setw(20)
+              // << "NDF"
+              // << std::setw(20)
+              // << "Prob"
+              // << std::setw(20)
+              << std::endl;
+
+    //
+    Int_t entries = crystal[iCry].allCTR->GetEntries();
+    textfile  << std::setw(10)
+              << crystal[iCry].number
+              << std::setw(20)
+              << entries
+              << std::setw(20)
+              << lightCentral
+              << std::setw(20)
+              << lightAll
+              << std::setw(20)
+              << enResFWHM;
+
+
+              // << std::setw(20)
+              // << ret[0]*1e12
+              // << std::setw(20)
+              // << ret[1]*1e12
+              // << std::setw(20)
+              //
+              // << std::setw(20)
+              // << fitRes[0]
+              // << std::setw(20)
+              // << fitRes[1]
+              // << std::setw(20)
+              // << fitRes[2]
+              // << std::endl;
 
 
 
@@ -1219,52 +1274,118 @@ int main (int argc, char** argv)
         }
       }
 
-      std::cout << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
+      std::cout << std::setw(20)
+                << "########## Condition"
+                << std::setw(20)
+                << "CrystalN"
+                << std::setw(20)
+                // << "Entries"
+                // << std::setw(20)
+                << "CTRfwhm"
+                << std::setw(20)
+                << "CTRfwtm"
+                << std::setw(20)
+                << "CTRentries"
+                << std::setw(20)
+                << "lightCentral"
+                << std::setw(20)
+                << "lightAll"
+                << std::setw(20)
+                << "EnResFWHM"
+                << std::setw(20)
+                << "ChiSquare"
+                << std::setw(20)
+                << "NDF"
+                << std::setw(20)
+                << "Prob"
+                << std::setw(20)
                 << std::endl;
 
-      std::cout << "No corr    - cry " << crystal[iCry].number << "\t"
-                << ret[0]*1e12 << "\t"
-                << ret[1]*1e12 << "\t"
-                << CTRentries << "\t"
-                << lightCentral << "\t"
-                << lightAll << "\t"
-                << fitRes[0] << "\t"
-                << fitRes[1] << "\t"
-                << fitRes[2] << "\t"
+      std::cout << std::setw(20)
+                << "No corr"
+                << std::setw(20)
+                << crystal[iCry].number
+                // << std::setw(20)
+                // << entries
+                << std::setw(20)
+                << ret[0]*1e12
+                << std::setw(20)
+                << ret[1]*1e12
+                << std::setw(20)
+                << CTRentries
+                << std::setw(20)
+                << lightCentral
+                << std::setw(20)
+                << lightAll
+                << std::setw(20)
+                << enResFWHM
+                << std::setw(20)
+                << fitRes[0]
+                << std::setw(20)
+                << fitRes[1]
+                << std::setw(20)
+                << fitRes[2]
                 << std::endl;
 
 
       //
-      textfile << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
-                << std::endl;
-
-
-      textfile  << "No corr    - cry " << crystal[iCry].number << "\t"
-                << ret[0]*1e12 << "\t"
-                << ret[1]*1e12 << "\t"
-                << CTRentries << "\t"
-                << lightCentral << "\t"
-                << lightAll << "\t"
-                << fitRes[0] << "\t"
-                << fitRes[1] << "\t"
-                << fitRes[2] << "\t"
-                << std::endl;
+      textfile  << std::setw(20)
+                << ret[0]*1e12;
+      // textfile  << std::setw(20)
+      //           << "########## Condition"
+      //           << std::setw(20)
+      //           << "CrystalN"
+      //           << std::setw(20)
+      //           // << "Entries"
+      //           // << std::setw(20)
+      //           << "CTRfwhm"
+      //           << std::setw(20)
+      //           << "CTRfwtm"
+      //           << std::setw(20)
+      //           << "CTRentries"
+      //           << std::setw(20)
+      //           << "lightCentral"
+      //           << std::setw(20)
+      //           << "lightAll"
+      //           << std::setw(20)
+      //           << "EnResFWHM"
+      //           << std::setw(20)
+      //           << "ChiSquare"
+      //           << std::setw(20)
+      //           << "NDF"
+      //           << std::setw(20)
+      //           << "Prob"
+      //           << std::setw(20)
+      //           << std::endl;
+      //
+      //
+      // textfile  << std::setw(20)
+      //           << "No corr"
+      //           << std::setw(20)
+      //           << crystal[iCry].number
+      //           << std::setw(20)
+      //           // << entries
+      //           // << std::setw(20)
+      //           // << entries
+      //           // << std::setw(20)
+      //           << ret[0]*1e12
+      //           << std::setw(20)
+      //           << ret[1]*1e12
+      //           << std::setw(20)
+      //           << CTRentries
+      //           << std::setw(20)
+      //           << lightCentral
+      //           << std::setw(20)
+      //           << lightAll
+      //           << std::setw(20)
+      //           << enResFWHM
+      //           << std::setw(20)
+      //           << fitRes[0]
+      //           << std::setw(20)
+      //           << fitRes[1]
+      //           << std::setw(20)
+      //           << fitRes[2]
+      //           << std::endl;
 
       realBasicCTRfwhm = ret[0]*1e12;
       realBasicCTRfwtm = ret[1]*1e12;
@@ -1337,50 +1458,116 @@ int main (int argc, char** argv)
       }
 
 
-      std::cout << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
+      std::cout << std::setw(20)
+                << "########## Condition"
+                << std::setw(20)
+                << "CrystalN"
+                << std::setw(20)
+                // << "Entries"
+                // << std::setw(20)
+                << "CTRfwhm"
+                << std::setw(20)
+                << "CTRfwtm"
+                << std::setw(20)
+                << "CTRentries"
+                << std::setw(20)
+                << "lightCentral"
+                << std::setw(20)
+                << "lightAll"
+                << std::setw(20)
+                << "EnResFWHM"
+                << std::setw(20)
+                << "ChiSquare"
+                << std::setw(20)
+                << "NDF"
+                << std::setw(20)
+                << "Prob"
+                << std::setw(20)
+                << std::endl;
+
+      std::cout << std::setw(20)
+                << "Central corr"
+                << std::setw(20)
+                << crystal[iCry].number
+                << std::setw(20)
+                // << entries
+                // << std::setw(20)
+                << ret[0]*1e12
+                << std::setw(20)
+                << ret[1]*1e12
+                << std::setw(20)
+                << CTRentries
+                << std::setw(20)
+                << lightCentral
+                << std::setw(20)
+                << lightAll
+                << std::setw(20)
+                << enResFWHM
+                << std::setw(20)
+                << fitRes[0]
+                << std::setw(20)
+                << fitRes[1]
+                << std::setw(20)
+                << fitRes[2]
                 << std::endl;
 
 
-      std::cout << "Central    - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
-
-      textfile << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
-                << std::endl;
-
-      textfile  << "Central    - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
+      //
+      textfile  << std::setw(20)
+                << ret[0]*1e12;
+      // textfile  << std::setw(20)
+      //           << "########## Condition"
+      //           << std::setw(20)
+      //           << "CrystalN"
+      //           << std::setw(20)
+      //           // << "Entries"
+      //           // << std::setw(20)
+      //           << "CTRfwhm"
+      //           << std::setw(20)
+      //           << "CTRfwtm"
+      //           << std::setw(20)
+      //           << "CTRentries"
+      //           << std::setw(20)
+      //           << "lightCentral"
+      //           << std::setw(20)
+      //           << "lightAll"
+      //           << std::setw(20)
+      //           << "EnResFWHM"
+      //           << std::setw(20)
+      //           << "ChiSquare"
+      //           << std::setw(20)
+      //           << "NDF"
+      //           << std::setw(20)
+      //           << "Prob"
+      //           << std::setw(20)
+      //           << std::endl;
+      //
+      //
+      // textfile  << std::setw(20)
+      //           << "Central corr"
+      //           << std::setw(20)
+      //           << crystal[iCry].number
+      //           << std::setw(20)
+      //           // << entries
+      //           // << std::setw(20)
+      //           << ret[0]*1e12
+      //           << std::setw(20)
+      //           << ret[1]*1e12
+      //           << std::setw(20)
+      //           << CTRentries
+      //           << std::setw(20)
+      //           << lightCentral
+      //           << std::setw(20)
+      //           << lightAll
+      //           << std::setw(20)
+      //           << enResFWHM
+      //           << std::setw(20)
+      //           << fitRes[0]
+      //           << std::setw(20)
+      //           << fitRes[1]
+      //           << std::setw(20)
+      //           << fitRes[2]
+      //           << std::endl;
 
       realCentralCTRfwhm = ret[0]*1e12;
       realCentralCTRfwtm = ret[1]*1e12;
@@ -1452,49 +1639,118 @@ int main (int argc, char** argv)
           extractCTRwithGauss(crystal[iCry].allCTR,fitPercMin,fitPercMax,divs,tagFwhm,ret,fitRes);
         }
       }
-      std::cout << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
+
+      std::cout << std::setw(20)
+                << "########## Condition"
+                << std::setw(20)
+                << "CrystalN"
+                << std::setw(20)
+                // << "Entries"
+                // << std::setw(20)
+                << "CTRfwhm"
+                << std::setw(20)
+                << "CTRfwtm"
+                << std::setw(20)
+                << "CTRentries"
+                << std::setw(20)
+                << "lightCentral"
+                << std::setw(20)
+                << "lightAll"
+                << std::setw(20)
+                << "EnResFWHM"
+                << std::setw(20)
+                << "ChiSquare"
+                << std::setw(20)
+                << "NDF"
+                << std::setw(20)
+                << "Prob"
+                << std::setw(20)
                 << std::endl;
 
-      std::cout << "Full corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
-
-      textfile << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
+      std::cout << std::setw(20)
+                << "Full corr"
+                << std::setw(20)
+                << crystal[iCry].number
+                << std::setw(20)
+                // << entries
+                // << std::setw(20)
+                << ret[0]*1e12
+                << std::setw(20)
+                << ret[1]*1e12
+                << std::setw(20)
+                << CTRentries
+                << std::setw(20)
+                << lightCentral
+                << std::setw(20)
+                << lightAll
+                << std::setw(20)
+                << enResFWHM
+                << std::setw(20)
+                << fitRes[0]
+                << std::setw(20)
+                << fitRes[1]
+                << std::setw(20)
+                << fitRes[2]
                 << std::endl;
 
-      textfile  << "Full corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
+
+      //
+      textfile  << std::setw(20)
+                << ret[0]*1e12
+                << std::endl;
+      // textfile  << std::setw(20)
+      //           << "########## Condition"
+      //           << std::setw(20)
+      //           << "CrystalN"
+      //           << std::setw(20)
+      //           // << "Entries"
+      //           // << std::setw(20)
+      //           << "CTRfwhm"
+      //           << std::setw(20)
+      //           << "CTRfwtm"
+      //           << std::setw(20)
+      //           << "CTRentries"
+      //           << std::setw(20)
+      //           << "lightCentral"
+      //           << std::setw(20)
+      //           << "lightAll"
+      //           << std::setw(20)
+      //           << "EnResFWHM"
+      //           << std::setw(20)
+      //           << "ChiSquare"
+      //           << std::setw(20)
+      //           << "NDF"
+      //           << std::setw(20)
+      //           << "Prob"
+      //           << std::setw(20)
+      //           << std::endl;
+      //
+      //
+      // textfile  << std::setw(20)
+      //           << "Full corr"
+      //           << std::setw(20)
+      //           << crystal[iCry].number
+      //           << std::setw(20)
+      //           // << entries
+      //           // << std::setw(20)
+      //           << ret[0]*1e12
+      //           << std::setw(20)
+      //           << ret[1]*1e12
+      //           << std::setw(20)
+      //           << CTRentries
+      //           << std::setw(20)
+      //           << lightCentral
+      //           << std::setw(20)
+      //           << lightAll
+      //           << std::setw(20)
+      //           << enResFWHM
+      //           << std::setw(20)
+      //           << fitRes[0]
+      //           << std::setw(20)
+      //           << fitRes[1]
+      //           << std::setw(20)
+      //           << fitRes[2]
+      //           << std::endl;
 
       realAllCTRfwhm = ret[0]*1e12;
       realAllCTRfwtm = ret[1]*1e12;
@@ -1589,50 +1845,114 @@ int main (int argc, char** argv)
 
 
       //
-      std::cout << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
+      std::cout << std::setw(20)
+                << "########## Condition"
+                << std::setw(20)
+                << "CrystalN"
+                << std::setw(20)
+                // << "Entries"
+                // << std::setw(20)
+                << "CTRfwhm"
+                << std::setw(20)
+                << "CTRfwtm"
+                << std::setw(20)
+                << "CTRentries"
+                << std::setw(20)
+                << "lightCentral"
+                << std::setw(20)
+                << "lightAll"
+                << std::setw(20)
+                << "EnResFWHM"
+                << std::setw(20)
+                << "ChiSquare"
+                << std::setw(20)
+                << "NDF"
+                << std::setw(20)
+                << "Prob"
+                << std::setw(20)
+                << std::endl;
+
+      std::cout << std::setw(20)
+                << "Polished corr"
+                << std::setw(20)
+                << crystal[iCry].number
+                // << std::setw(20)
+                // << entries
+                << std::setw(20)
+                << ret[0]*1e12
+                << std::setw(20)
+                << ret[1]*1e12
+                << std::setw(20)
+                << CTRentries
+                << std::setw(20)
+                << lightCentral
+                << std::setw(20)
+                << lightAll
+                << std::setw(20)
+                << enResFWHM
+                << std::setw(20)
+                << fitRes[0]
+                << std::setw(20)
+                << fitRes[1]
+                << std::setw(20)
+                << fitRes[2]
                 << std::endl;
 
 
-      std::cout << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
-
-      textfile << "# Condition" << "\t"
-                << "CTRfwhm"<< "\t"
-                << "CTRfwtm"<< "\t"
-                << "CTRentries"<< "\t"
-                << "lightCentral"<< "\t"
-                << "lightAll"<< "\t"
-                << "ChiSquare"<< "\t"
-                << "NDF"<< "\t"
-                << "Prob"<< "\t"
-                << std::endl;
-
-      textfile  << "Polished corr. - cry " << crystal[iCry].number << "\t"
-      << ret[0]*1e12 << "\t"
-      << ret[1]*1e12 << "\t"
-      << CTRentries << "\t"
-      << lightCentral << "\t"
-      << lightAll << "\t"
-      << fitRes[0] << "\t"
-      << fitRes[1] << "\t"
-      << fitRes[2] << "\t"
-      << std::endl;
+      // //
+      // textfile  << std::setw(20)
+      //           << "########## Condition"
+      //           << std::setw(20)
+      //           << "CrystalN"
+      //           << std::setw(20)
+      //           // << "Entries"
+      //           // << std::setw(20)
+      //           << "CTRfwhm"
+      //           << std::setw(20)
+      //           << "CTRfwtm"
+      //           << std::setw(20)
+      //           << "CTRentries"
+      //           << std::setw(20)
+      //           << "lightCentral"
+      //           << std::setw(20)
+      //           << "lightAll"
+      //           << std::setw(20)
+      //           << "EnResFWHM"
+      //           << std::setw(20)
+      //           << "ChiSquare"
+      //           << std::setw(20)
+      //           << "NDF"
+      //           << std::setw(20)
+      //           << "Prob"
+      //           << std::setw(20)
+      //           << std::endl;
+      //
+      //
+      // textfile  << std::setw(20)
+      //           << "Polished corr"
+      //           << std::setw(20)
+      //           << crystal[iCry].number
+      //           << std::setw(20)
+      //           // << entries
+      //           // << std::setw(20)
+      //           << ret[0]*1e12
+      //           << std::setw(20)
+      //           << ret[1]*1e12
+      //           << std::setw(20)
+      //           << CTRentries
+      //           << std::setw(20)
+      //           << lightCentral
+      //           << std::setw(20)
+      //           << lightAll
+      //           << std::setw(20)
+      //           << enResFWHM
+      //           << std::setw(20)
+      //           << fitRes[0]
+      //           << std::setw(20)
+      //           << fitRes[1]
+      //           << std::setw(20)
+      //           << fitRes[2]
+      //           << std::endl;
 
       poliCorrCTRfwhm = ret[0]*1e12;
       poliCorrCTRfwtm = ret[1]*1e12;
@@ -1816,8 +2136,6 @@ int main (int argc, char** argv)
   return 0;
 }
 // end of main program
-
-
 
 
 // feedback to user
