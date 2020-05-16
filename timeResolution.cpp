@@ -58,6 +58,8 @@
 #include <gsl/gsl_matrix_double.h>
 #include <gsl/gsl_linalg.h>
 
+#include <iomanip>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
