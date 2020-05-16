@@ -33,10 +33,12 @@ else
     g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
     cd ..
     echo "Compiling ModuleCalibration..."
+    cp CMakeLists.lxplus CMakeLists.txt
     cd ../build
-    cmake --verbose -DCMAKE_CXX_FLAGS=-std=c++17 -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../code
+    cmake --verbose -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../code
     make
     cd ../code
+    cp CMakeLists.local CMakeLists.txt
     echo "Done."
   else
     echo "Invalid argument $1 - You can either provide no arg (and the script will use machine compiler), or lxplus, and the script will source the lxplus variables"
