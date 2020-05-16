@@ -34,7 +34,7 @@ else
     cd ..
     echo "Compiling ModuleCalibration..."
     cd ../build
-    cmake --verbose -DCMAKE_CXX_FLAGS=-std=c++17 -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../
+    cmake --verbose -DCMAKE_CXX_FLAGS=-std=c++17 -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../code
     make
     cd ../code
     echo "Done."
