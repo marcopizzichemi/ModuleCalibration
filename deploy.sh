@@ -31,7 +31,7 @@ else
     g++ -o ../build/extractConfiguration extractConfiguration.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore
     cd DeepLearningDOI
     g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-
+    cd ..
     echo "Compiling ModuleCalibration..."
     cd ../build
     cmake --verbose -DCMAKE_CXX_FLAGS=-std=c++17 -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../
