@@ -110,6 +110,7 @@ int main (int argc, char** argv)
   int divs       = 10000;
   Float_t tagFwhm = 88.0e-12; //s //was 70.0e-12, then measured in 88.0e-12
   int excludeCh = -1;
+  bool cluster = false;
 
   // parse command line arguments
   static struct option longOptions[] =
@@ -129,6 +130,7 @@ int main (int argc, char** argv)
       { "divs", required_argument, 0, 0 },
       { "tagFwhm", required_argument, 0, 0 },
       { "exclude", required_argument, 0, 0 },
+      { "cluster", no_argument, 0, 0 },
 
       { NULL, 0, 0, 0 }
 	};
@@ -195,6 +197,9 @@ int main (int argc, char** argv)
     }
     else if (c == 0 && optionIndex == 14){
       excludeCh = atoi((char *)optarg);
+    }
+    else if (c == 0 && optionIndex == 15){
+      cluster = true;
     }
 
 		else {
@@ -369,8 +374,10 @@ int main (int argc, char** argv)
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous
   UShort_t      *charge;
   Float_t      *timeStamp;
+  Short_t      CrystalNumber;
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
+  TBranch      *bCrystalNumber;
   TBranch      **bCharge;
   TBranch      **btimeStamp;
   charge = new UShort_t[numOfCh];
@@ -390,6 +397,10 @@ int main (int argc, char** argv)
     sname << "t" << detector_channels[i];
     tree->SetBranchAddress(sname.str().c_str(),&timeStamp[detector_channels[i]],&btimeStamp[detector_channels[i]]);
     sname.str("");
+  }
+  if(cluster)
+  {
+    tree->SetBranchAddress("CrystalNumber", &CrystalNumber, &bCrystalNumber);
   }
 
 
@@ -524,8 +535,6 @@ int main (int argc, char** argv)
   }
 
 
-
-
   // MAIN LOOP
   long long int counter = 0;
   tree->SetNotify(formulasAnalysis);
@@ -533,6 +542,54 @@ int main (int argc, char** argv)
   std::cout << "Total number of events in analysis file = " << neventAnalysis << std::endl;
   long int goodEventsAnalysis = 0;
   long int counterAnalysis = 0;
+  // cluster analysis, optional
+  long int inCrystal = 0;
+  long int inCrystalGood = 0;
+  long int inCrystalBad = 0;
+  long int outOfCrystalButGood = 0;
+  if(cluster)
+  {
+    for (long long int i=0;i<neventAnalysis;i++)
+    {
+      tree->GetEvent(i);              //read complete accepted event in memory
+      for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+      {
+        if(crystal[iCry].accepted)
+        {
+          if(crystal[iCry].FormulaJustCutG->EvalInstance())  //all crystal event
+          {
+            // cluster marked event in crystal
+            inCrystal++;
+            if(crystal[iCry].number == CrystalNumber)
+            {
+              inCrystalGood++;
+            }
+            else
+            {
+              inCrystalBad++;
+            }
+            // check num
+          }
+          else
+          {
+            if(crystal[iCry].number == CrystalNumber)
+            {
+              outOfCrystalButGood++;
+            }
+
+          }
+        }
+      }
+    }
+  }
+  std::cout << "inCrystal           = " << inCrystal           << std::endl;
+  std::cout << "inCrystalGood       = " << inCrystalGood       << std::endl;
+  std::cout << "inCrystalBad        = " << inCrystalBad        << std::endl;
+  std::cout << "outOfCrystalButGood = " << outOfCrystalButGood << std::endl;
+
+  goodEventsAnalysis = 0;
+  counterAnalysis = 0;
+  counter = 0;
   for (long long int i=0;i<neventAnalysis;i++)
   {
 
@@ -1210,12 +1267,13 @@ int main (int argc, char** argv)
               << std::setw(20)
               << "CTRfwhm_full"
               << std::setw(20)
-              // << "ChiSquare"
-              // << std::setw(20)
-              // << "NDF"
-              // << std::setw(20)
-              // << "Prob"
-              // << std::setw(20)
+              << "inCrystal"
+              << std::setw(20)
+              << "inCrystalGood"
+              << std::setw(20)
+              << "inCrystalBad"
+              << std::setw(20)
+              << "outOfCrystalButGood"
               << std::endl;
 
     //
@@ -1698,8 +1756,8 @@ int main (int argc, char** argv)
 
       //
       textfile  << std::setw(20)
-                << ret[0]*1e12
-                << std::endl;
+                << ret[0]*1e12;
+                // << std::endl;
       // textfile  << std::setw(20)
       //           << "########## Condition"
       //           << std::setw(20)
@@ -1992,7 +2050,15 @@ int main (int argc, char** argv)
       // }
     }
 
-
+    textfile << std::setw(20)
+             << inCrystal
+             << std::setw(20)
+             << inCrystalGood
+             << std::setw(20)
+             << inCrystalBad
+             << std::setw(20)
+             << outOfCrystalButGood
+             << std::endl;
 
     sname.str("");
 
