@@ -18,6 +18,7 @@
 #include "TError.h"
 #include "TEllipse.h"
 #include "TROOT.h"
+#include <numeric>
 
 // struct Point // definition fo a point (it is used in the binary output)
 // {
@@ -61,6 +62,8 @@ InputFile::InputFile (ConfigFile& config)
   yPositions_s                = config.read<std::string>("yPositions");
   pedestal_s                  = config.read<std::string>("pedestal","0");
   noise_s                     = config.read<std::string>("noise","0");
+  gain_s                     = config.read<std::string>("gain","0");
+
   if(correctingSaturation)
   {
     saturation_s                = config.read<std::string>("saturation");
@@ -186,6 +189,43 @@ InputFile::InputFile (ConfigFile& config)
     }
   }
 
+  if (gain_s.compare("0") == 0) // default gain key, means that all pedestals are set to 1 automatically
+  {
+    for(unsigned int i = 0; i <  digitizer.size(); i++)
+    {
+      gain.push_back(1.0);
+    }
+  }
+  else
+  {
+    config.split( gain_f, gain_s, "," );
+    for(unsigned int i = 0 ; i < digitizer_f.size() ; i++)
+    {
+      config.trim(gain_f[i]);
+      gain.push_back(atof(gain_f[i].c_str()));
+    }
+    // and immediately equalize
+    // find average
+    unsigned int n_gain = gain.size();
+    float average_gain = 0.0f;
+    if ( n_gain != 0) {
+         average_gain = std::accumulate( gain.begin(), gain.end(), 0.0) / n_gain;
+    }
+    // calculate gain to average
+    for(unsigned int i = 0 ; i < gain.size() ; i++)
+    {
+      gain[i] = average_gain/gain[i];
+    }
+
+
+
+
+  }
+
+
+
+
+
 
   //check if the vectors just built have the same size
   assert( (digitizer.size() == mppc_label.size() ) &&
@@ -193,6 +233,7 @@ InputFile::InputFile (ConfigFile& config)
           (digitizer.size() == xPositions.size()) &&
           (digitizer.size() == yPositions.size()) &&
           (digitizer.size() == noise.size()) &&
+          (digitizer.size() == gain.size()) &&
           (digitizer.size() == pedestal.size()));
   if(correctingSaturation)
   {
@@ -322,6 +363,8 @@ InputFile::InputFile (ConfigFile& config)
       det.pedestal         = pedestal[i];
       det.noise            = noise[i];
     }
+
+    det.gain = gain[i]; // FIXME is this enough? should i consider also saturation, noise, pedestal? or we do this always on top of saturation correction, pedestal etc, so it should be ok
 
 
     det.OnForDOI         = 0;
@@ -596,7 +639,7 @@ InputFile::InputFile (ConfigFile& config)
   std::cout << "------------------------" << std::endl;
   std::cout << " Channels configuration " << std::endl;
   std::cout << "------------------------" << std::endl;
-  std::cout << "ADC input\tTime Ch\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNoise[ADC ch]\tNeighbour channels" << std::endl;
+  std::cout << "ADC input\tTime Ch\tMPPC ch\tCanvas\tx[mm]\ty[mm]\tPedestal[ADC ch]\tNoise[ADC ch]\tGain\tNeighbour channels" << std::endl;
   std::cout << "------------------------" << std::endl;
   for(unsigned int i = 0 ; i < digitizer.size() ; i++)
   {
@@ -614,7 +657,8 @@ InputFile::InputFile (ConfigFile& config)
               << detector[i].xPosition << "\t"
               << detector[i].yPosition << "\t"
               << detector[i].pedestal << "\t\t\t"
-              << detector[i].noise << "\t\t\t";
+              << detector[i].noise << "\t\t"
+              << detector[i].gain  << "\t\t\t";
     for(unsigned int iNeighbour = 0; iNeighbour < detector[i].neighbourChannels.size(); iNeighbour++)
         std::cout << detector[i].neighbourChannels[iNeighbour] << " ";
     std::cout << std::endl;

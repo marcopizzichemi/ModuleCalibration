@@ -11,6 +11,7 @@ struct detector_t
   float yPosition;
   float pedestal;
   float noise;
+  float gain;
   int OnForDOI;
   std::vector<int> neighbourChannels;
   bool OnForModular;

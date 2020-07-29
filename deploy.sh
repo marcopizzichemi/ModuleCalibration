@@ -10,6 +10,7 @@ if [ -z "$1" ]
     cd DeepLearningDOI
     g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
     g++ -o ../../build/filterForDeepLearning_MiniPET filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+    g++ -o ../../build/filterForDOIscan filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
     cd ..
     echo "Compiling ModuleCalibration..."
     cd ../build
@@ -33,6 +34,7 @@ else
     cd DeepLearningDOI
     g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
     g++ -o ../../build/filterForDeepLearning_MiniPET filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+    g++ -o ../../build/filterForDOIscan filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
     cd ..
     echo "Compiling ModuleCalibration..."
     cp CMakeLists.lxplus CMakeLists.txt

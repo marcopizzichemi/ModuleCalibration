@@ -43,13 +43,16 @@ void readCalibration(TFile* calibrationFile,                        // file with
   std::vector<int> *pChannels;
   std::vector<float> *pSaturation;
   std::vector<float> *pPedestal;
+  std::vector<float> *pGain;
   gDirectory->GetObject("channels",pChannels);
   gDirectory->GetObject("saturation",pSaturation);
   gDirectory->GetObject("pedestal",pPedestal);
+  gDirectory->GetObject("gain",pGain);
 
   std::vector<int> DetChannels = pChannels[0];
   std::vector<float> saturation = pSaturation[0];
   std::vector<float> pedestal = pPedestal[0];
+  std::vector<float> gain = pGain[0];
 
   std::vector<detector_t> detectorSaturation;
 
@@ -59,6 +62,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
     tempDetector.digitizerChannel = DetChannels[iSat];
     tempDetector.saturation = saturation[iSat];
     tempDetector.pedestal = pedestal[iSat];
+    tempDetector.gain = gain[iSat];
     detectorSaturation.push_back(tempDetector);
   }
 
@@ -195,6 +199,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
        //set taggingPhotopeakCut Formula if it is found in calibration file
        if((temp_crystal.taggingCrystalTimingChannel != -1) && (temp_crystal.taggingCrystalChannel != -1) )
        {
+         // std::cout << taggingPhotopeakCut->GetTitle()<< std::endl;
          TTreeFormula* FormulaTagAnalysis = new TTreeFormula("FormulaTagAnalysis",
                                                              taggingPhotopeakCut->GetTitle(),
                                                              tree);
@@ -240,9 +245,9 @@ void readCalibration(TFile* calibrationFile,                        // file with
          std::string lightAll_prefix("Sum spectrum highlighted");
          std::string basicCTR_prefix("Basic CTR histogram");
 
-         bool dirExists      = true;
-         bool dirDelayExists = true;
-         bool dirRMSExists   = true;
+         bool dirExists      = false;
+         bool dirDelayExists = false;
+         bool dirRMSExists   = false;
          std::string TimeCorrection_prefix("TimeCorrection");
          std::string Delay_prefix         ("DelayDir");
          std::string RMS_prefix           ("RMSDir");
@@ -435,18 +440,18 @@ void readCalibration(TFile* calibrationFile,                        // file with
              temp_crystal.fwhmForPolishedCorrection = v[0];
            }
 
-           // if(!keysCryName[i].compare(0,TimeCorrection_prefix.size(),TimeCorrection_prefix))
-           // {
-           //   dirExists = true;
-           // }
-           // if(!keysCryName[i].compare(0,Delay_prefix.size(),Delay_prefix))
-           // {
-           //   dirDelayExists = true;
-           // }
-           // if(!keysCryName[i].compare(0,RMS_prefix.size(),RMS_prefix))
-           // {
-           //   dirRMSExists = true;
-           // }
+           if(!keysCryName[i].compare(0,TimeCorrection_prefix.size(),TimeCorrection_prefix))
+           {
+             dirExists = true;
+           }
+           if(!keysCryName[i].compare(0,Delay_prefix.size(),Delay_prefix))
+           {
+             dirDelayExists = true;
+           }
+           if(!keysCryName[i].compare(0,RMS_prefix.size(),RMS_prefix))
+           {
+             dirRMSExists = true;
+           }
 
 
 

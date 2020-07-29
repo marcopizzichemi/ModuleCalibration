@@ -16,6 +16,7 @@ private:
   std::vector<int> detChData;
   std::vector<float> saturationData;
   std::vector<float> pedestalData;
+  std::vector<float> gainData;
 
   UInt_t seed;
   std::vector<detector_t> detector;
@@ -41,10 +42,12 @@ public:
   void                   SetDetChData(std::vector<int> aVec){detChData = aVec;};
   void                   SetSaturationData(std::vector<float> aVec){saturationData = aVec;};
   void                   SetPedestalData(std::vector<float> aVec){pedestalData = aVec;};
+  void                   SetGainData(std::vector<float> aVec){gainData = aVec;};
 
   std::vector<int>       GetDetChData(){return detChData;};
   std::vector<float>     GetSaturationData(){return saturationData;};
   std::vector<float>     GetPedestalData(){return pedestalData;};
+  std::vector<float>     GetGainData(){return gainData;};
 
   int                    GetMppcsNumber(){return vMppc.size();};
   Mppc*                  GetMppc(int pi, int pj);

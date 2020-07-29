@@ -3,6 +3,7 @@ struct detector_t
   int digitizerChannel;
   float saturation;
   float pedestal;
+  float gain;
 };
 
 struct slice_t

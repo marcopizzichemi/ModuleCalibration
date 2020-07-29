@@ -52,6 +52,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <algorithm>    // std::sort
+#include <iomanip>    // std::sort
 #include <sys/types.h>
 
 #include "../libraries/CrystalStructs.h"        // Crystal_t , detector_t
@@ -64,10 +65,14 @@
 
 void usage()
 {
-  std::cout << "\t\t" << "[-i|--input] <file_prefix>  [-o|--output] <output.txt> " << std::endl
-            << "\t\t" << "<file_prefix>                                     - prefix of TTree files to analyze"   << std::endl
-            << "\t\t" << "<output.txt>                                      - output file name"   << std::endl
-            << "\t\t" << "<output.txt>                                      - output file name"   << std::endl
+  std::cout << "\t\t" << "[-i|--input] <input.root>  [-o|--output] <output> [-c|--calibration] [-n|--crystal] <crystal> [OPTIONS]" << std::endl
+            << "\t\t" << "<input.root>                          - input file name"   << std::endl
+            << "\t\t" << "<output>                              - prefix of output files (i.e. WITHOUT extension)"   << std::endl
+            << "\t\t" << "<calibration.root>                    - calibration file name"   << std::endl
+            << "\t\t" << "<crystal>                             - crystal number"   << std::endl
+            << "\t\t" << "--sim                                 - use this flag if the input file comes from a simulation"   << std::endl
+            << "\t\t" << "--zmin <value>                        - upper limit of z for DOI resolution calculations"   << std::endl
+            << "\t\t" << "--zmax <value>                        - lower limit of z for DOI resolution calculations"   << std::endl
             << "\t\t" << std::endl;
 }
 
@@ -89,6 +94,8 @@ int main (int argc, char** argv)
   std::string calibrationFileName = "";
   int selectedCrystal = -1;
   bool simulation = false;
+  float zmin = -INFINITY;
+  float zmax = +INFINITY;
 
 
   // parse arguments
@@ -99,6 +106,8 @@ int main (int argc, char** argv)
       { "calibration", required_argument, 0, 0 },
       { "crystal", required_argument, 0, 0 },
       { "sim",no_argument,0,0},
+      { "zmin", required_argument, 0, 0 },
+      { "zmax", required_argument, 0, 0 },
       // { "verbose", no_argument, 0, 0 },
       // { "tagCut", no_argument, 0, 0 },
       // { "triggerCut", no_argument, 0, 0 },
@@ -142,9 +151,12 @@ int main (int argc, char** argv)
     else if (c == 0 && optionIndex == 4){
       simulation = true;
     }
-    // else if (c == 0 && optionIndex == 4){
-    //   verbose = true;
-    // }
+    else if (c == 0 && optionIndex == 5){
+      zmin = atof((char *)optarg);
+    }
+    else if (c == 0 && optionIndex == 6){
+      zmax = atof((char *)optarg);
+    }
     // else if (c == 0 && optionIndex == 5){
     //   UseAllCuts = false;
     //   UseTaggingPhotopeakCut = true;
@@ -432,21 +444,25 @@ int main (int argc, char** argv)
       {
         // if(crystal[iCry].FormulaTagAnalysis->EvalInstance()) // if in photopeak of tagging crystal - or if in simulation
         // {
-        if(simulation)
+
+        if(zFromTag >= zmin && zFromTag <= zmax)
         {
-          if(crystal[id].FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+          if(simulation)
           {
-            Float_t w = calculateFloodZ_withoutCorrectingForSaturation(s_charge,crystal[id]);
+            if(crystal[id].FormulaAnalysis->EvalInstance())  //if in global cut of crystal
+            {
+              Float_t w = calculateFloodZ_withoutCorrectingForSaturation(s_charge,crystal[id]);
 
-            h2->Fill(w,-(RealZ-7.5));
+              h2->Fill(w,-(RealZ-7.5));
 
 
+            }
           }
-        }
-        else
-        {
-          Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
-          h2->Fill(w,zFromTag);
+          else
+          {
+            Float_t w = calculateFloodZ_withoutCorrectingForSaturation(charge,crystal[id]);
+            h2->Fill(w,zFromTag);
+          }
         }
       }
     // }
@@ -552,8 +568,9 @@ int main (int argc, char** argv)
   // -> for each event, calculate the distance between real DOI given by tag and computed doi given by calibration curve
   // -> same, but using the linear interpolation as calibration curve
   // in both cases, use both RMS and gauss fit to compute final values
-  TH1F *hDeltaToCalibration = new TH1F("hDeltaToCalibration","hDeltaToCalibration",100,-10,10);
-  TH1F *hDeltaToLine = new TH1F("hDeltaToLine","hDeltaToLine",100,-10,10);
+  TH1F *hDeltaToCalibration = new TH1F("hDeltaToCalibration","hDeltaToCalibration",200,-20,20);
+  TH1F *hDeltaToLine = new TH1F("hDeltaToLine","hDeltaToLine",200,-20,20);
+  TH1F *hDeltaToSpline = new TH1F("hDeltaToSpline","hDeltaToSpline",200,-20,20);
 
   //MAIN LOOP
   // long int passCounter = 0;
@@ -591,10 +608,14 @@ int main (int argc, char** argv)
           // std::cout << w << std::endl;
           float doiFromCalibration =  crystal[id].calibrationGraph->Eval(w);
           float doiFromLine        =  fLine->Eval(w);
+          float doiFromSpline      =  g->Eval(w);
+
           float deltaToCalibration = zFromTag - doiFromCalibration;
           float deltaToLine        = zFromTag - doiFromLine;
+          float deltaToSpline      = zFromTag - doiFromSpline;
           hDeltaToCalibration->Fill(deltaToCalibration);
           hDeltaToLine       ->Fill(deltaToLine);
+          hDeltaToSpline     ->Fill(deltaToSpline);
         }
 
         // }
@@ -613,38 +634,77 @@ int main (int argc, char** argv)
   }
   std::cout << std::endl;
 
-  TF1 *fGaussCalib = new TF1("fGaussCalib","gaus",0,1);
-  hDeltaToCalibration->Fit(fGaussCalib,"Q");
+  TCanvas *c_hDeltaToCalibration = new TCanvas("c_hDeltaToCalibration","c_hDeltaToCalibration",1200,800);
+  hDeltaToCalibration->Draw("HIST");
+  TF1 *fGaussCalib = new TF1("fGaussCalib","gaus",-20,20);
+  hDeltaToCalibration->Fit(fGaussCalib,"0Q","",hDeltaToCalibration->GetMean()-hDeltaToCalibration->GetRMS(),hDeltaToCalibration->GetMean()+hDeltaToCalibration->GetRMS());
+  fGaussCalib->SetRange(-20,20);
+  fGaussCalib->Draw("same");
 
-  TF1 *fGaussLinear = new TF1("fGaussLinear","gaus",0,1);
-  hDeltaToLine->Fit(fGaussLinear,"Q");
+  TCanvas *c_hDeltaToLine = new TCanvas("c_hDeltaToLine","c_hDeltaToLine",1200,800);
+  hDeltaToLine->Draw("HIST");
+  TF1 *fGaussLinear = new TF1("fGaussLinear","gaus",-20,20);
+  hDeltaToLine->Fit(fGaussLinear,"0Q","",hDeltaToLine->GetMean()-hDeltaToLine->GetRMS(),hDeltaToLine->GetMean()+hDeltaToLine->GetRMS());
+  fGaussLinear->SetRange(-20,20);
+  fGaussLinear->Draw("same");
+
+  TCanvas *c_hDeltaToSpline = new TCanvas("c_hDeltaToSpline","c_hDeltaToSpline",1200,800);
+  hDeltaToSpline->Draw("HIST");
+  TF1 *fGaussSpline = new TF1("fGaussSpline","gaus",-20,20);
+  hDeltaToSpline->Fit(fGaussSpline,"0Q","",hDeltaToSpline->GetMean()-hDeltaToSpline->GetRMS(),hDeltaToSpline->GetMean()+hDeltaToSpline->GetRMS());
+  fGaussSpline->SetRange(-20,20);
+  fGaussSpline->Draw("same");
 
   // write in text file
   // crystalNumber DOIres1 DOIres2(rms) DOIres2(fit) DOIres3(rms) DOIres3(fit)
 
   std::ofstream textfile (textFileName.c_str(), std::ofstream::out);
-  textfile << "# crystal line_propagation HistoWidth_calib HistoFit_calib HistoWidth_line HistoFit_line " << std::endl;
-  textfile << crystal[id].number << " "
-           << calculatedDoiRes              *2.355 << " "
-           << hDeltaToCalibration->GetRMS() *2.355 << " "
-           << fGaussCalib->GetParameter(2)  *2.355 << " "
-           << hDeltaToLine->GetRMS()        *2.355 << " "
-           << fGaussLinear->GetParameter(2) *2.355 << " "
+  textfile << std::setw(20) << "# crystal"
+           << std::setw(20) << "line_propagation"
+           << std::setw(20) << "RMS_calib"
+           << std::setw(20) << "FIT_calib"
+           << std::setw(20) << "RMS_line"
+           << std::setw(20) << "FIT_line"
+           << std::setw(20) << "RMS_spline"
+           << std::setw(20) << "FIT_spline"
+           << std::endl;
+  textfile << std::setw(20) << crystal[id].number
+           << std::setw(20) << calculatedDoiRes              *2.355
+           << std::setw(20) << hDeltaToCalibration->GetRMS() *2.355
+           << std::setw(20) << fGaussCalib->GetParameter(2)  *2.355
+           << std::setw(20) << hDeltaToLine->GetRMS()        *2.355
+           << std::setw(20) << fGaussLinear->GetParameter(2) *2.355
+           << std::setw(20) << hDeltaToSpline->GetRMS()      *2.355
+           << std::setw(20) << fGaussSpline->GetParameter(2) *2.355
            << std::endl;
   textfile.close();
 
-  std::cout << "# crystal line_propagation HistoWidth_calib HistoFit_calib HistoWidth_line HistoFit_line " << std::endl;
-  std::cout << crystal[id].number << " "
-            << calculatedDoiRes              *2.355 << " "
-            << hDeltaToCalibration->GetRMS() *2.355 << " "
-            << fGaussCalib->GetParameter(2)  *2.355 << " "
-            << hDeltaToLine->GetRMS()        *2.355 << " "
-            << fGaussLinear->GetParameter(2) *2.355 << " "
-            << std::endl;
+  std::cout << std::setw(20) << "# crystal"
+           << std::setw(20) << "line_propagation"
+           << std::setw(20) << "RMS_calib"
+           << std::setw(20) << "FIT_calib"
+           << std::setw(20) << "RMS_line"
+           << std::setw(20) << "FIT_line"
+           << std::setw(20) << "RMS_spline"
+           << std::setw(20) << "FIT_spline"
+           << std::endl;
+  std::cout << std::setw(20) << crystal[id].number
+           << std::setw(20) << calculatedDoiRes              *2.355
+           << std::setw(20) << hDeltaToCalibration->GetRMS() *2.355
+           << std::setw(20) << fGaussCalib->GetParameter(2)  *2.355
+           << std::setw(20) << hDeltaToLine->GetRMS()        *2.355
+           << std::setw(20) << fGaussLinear->GetParameter(2) *2.355
+           << std::setw(20) << hDeltaToSpline->GetRMS()      *2.355
+           << std::setw(20) << fGaussSpline->GetParameter(2) *2.355
+           << std::endl;
 
   outputFile->cd();
+  c_hDeltaToCalibration->Write();
+  c_hDeltaToLine->Write();
+  c_hDeltaToSpline->Write();
   hDeltaToCalibration->Write();
   hDeltaToLine->Write();
+  hDeltaToSpline->Write();
   h2->Write();
   if(!simulation)
   {

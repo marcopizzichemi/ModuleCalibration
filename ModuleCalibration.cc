@@ -331,7 +331,7 @@ int main (int argc, char** argv)
   float minTimestamp = config.read<float>("minTimestamp",-70e-9);
   float maxTimestamp = config.read<float>("maxTimestamp",-40e-9);
 
-
+  bool dumpSinglePeaks = config.read<bool>("dumpSinglePeaks",0); // dump a string with single peaks positions, to use to equalize 511 kev positons (hence gains) in following ModuleCalibration run
 
 
 
@@ -361,7 +361,12 @@ int main (int argc, char** argv)
   //        fOut->Close()
   //    h) re-run ModuleCalibration by adding the manualCutG = 1 key
 
-
+  //
+  std::ofstream singlePeaksFile;
+  if(dumpSinglePeaks)
+  {
+    singlePeaksFile.open("singlePeaksFile.txt", std::ofstream::out);
+  }
 
   // channels to exclude from time correction (will affect only polished correction)
   std::string excludeChannels_s =  config.read<std::string>("excludeChannels",""); //channels to exclude from time correction (will affect only polished correction, the others have to be specified in timeAnalysis)
@@ -807,6 +812,7 @@ int main (int argc, char** argv)
       std::vector<int> allModuleChID;
       std::vector<float> saturationData;
       std::vector<float> pedestalData;
+      std::vector<float> gainData;
       std::vector<int> detChData;
       for(unsigned int iDet = 0; iDet < detector.size() ; iDet++)
       {
@@ -814,11 +820,14 @@ int main (int argc, char** argv)
         detChData.push_back(detector[iDet].digitizerChannel);
         saturationData.push_back(detector[iDet].saturation);
         pedestalData.push_back(detector[iDet].pedestal);
+        gainData.push_back(detector[iDet].gain);
+
       }
 
       module[iModule][jModule]->SetDetChData(detChData);
       module[iModule][jModule]->SetSaturationData(saturationData);
       module[iModule][jModule]->SetPedestalData(pedestalData);
+      module[iModule][jModule]->SetGainData(gainData);
 
 
       // //DEBUG OUTPUT
@@ -1166,7 +1175,8 @@ int main (int argc, char** argv)
             {
               // this channel charge
               var.str("");
-              var <<  "("
+              var <<  detector[thisChannelID].gain
+              <<  "*("
               << -detector[thisChannelID].saturation
               << " * TMath::Log(1.0 - ( ((ch"
               << detector[thisChannelID].digitizerChannel
@@ -1184,7 +1194,8 @@ int main (int argc, char** argv)
               // neighbour channels
               for(unsigned int iNeigh = 0; iNeigh < neighbourChID.size(); iNeigh++)
               {
-                var <<  "("
+                var <<  detector[neighbourChID[iNeigh]].gain
+                <<  "*("
                 << -detector[neighbourChID[iNeigh]].saturation
                 << " * TMath::Log(1.0 - ( ((ch"
                 << detector[neighbourChID[iNeigh]].digitizerChannel
@@ -1203,7 +1214,8 @@ int main (int argc, char** argv)
               //all channels
               for(unsigned int iAll = 0; iAll < allModuleChID.size(); iAll++)
               {
-                var <<  "("
+                var <<  detector[allModuleChID[iAll]].gain
+                <<  "*("
                 << -detector[allModuleChID[iAll]].saturation
                 << " * TMath::Log(1.0 - ( ((ch"
                 << detector[allModuleChID[iAll]].digitizerChannel
@@ -1238,7 +1250,8 @@ int main (int argc, char** argv)
             {
               // this channel
               var.str("");
-              var <<  "(ch" <<  detector[thisChannelID].digitizerChannel << "-" << detector[thisChannelID].pedestal << ")";
+              var <<  detector[thisChannelID].gain
+              <<  "*(ch" <<  detector[thisChannelID].digitizerChannel << "-" << detector[thisChannelID].pedestal << ")";
               thisChannel.string = var.str();
               thisChannel.detectorIndex = thisChannelID;
               var.str("");
@@ -1246,7 +1259,8 @@ int main (int argc, char** argv)
               // neighbour channels
               for(unsigned int iNeigh = 0; iNeigh < neighbourChID.size(); iNeigh++)
               {
-                var <<  "(ch" <<  detector[neighbourChID[iNeigh]].digitizerChannel << "-" << detector[neighbourChID[iNeigh]].pedestal << ")";
+                var <<  detector[neighbourChID[iNeigh]].gain
+                <<  "*(ch" <<  detector[neighbourChID[iNeigh]].digitizerChannel << "-" << detector[neighbourChID[iNeigh]].pedestal << ")";
                 multi_channel_t tempMultiChannel;
                 tempMultiChannel.string = var.str();
                 tempMultiChannel.detectorIndex = neighbourChID[iNeigh];
@@ -1257,7 +1271,8 @@ int main (int argc, char** argv)
               //all channels
               for(unsigned int iAll = 0; iAll < allModuleChID.size(); iAll++)
               {
-                var <<  "(ch" <<  detector[allModuleChID[iAll]].digitizerChannel << "-" << detector[allModuleChID[iAll]].pedestal << ")";
+                var <<  detector[allModuleChID[iAll]].gain
+                <<  "*(ch" <<  detector[allModuleChID[iAll]].digitizerChannel << "-" << detector[allModuleChID[iAll]].pedestal << ")";
                 multi_channel_t tempMultiChannel;
                 tempMultiChannel.string = var.str();
                 tempMultiChannel.detectorIndex = allModuleChID[iAll];
@@ -2272,8 +2287,17 @@ int main (int argc, char** argv)
 
                         spectrumSingleCharge->Fit(single_gauss,"Q","",single_fitmin,single_fitmax);
 
+
+                        if(dumpSinglePeaks)
+                        {
+                          singlePeaksFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " "
+                                          << single_gauss->GetParameter(1)
+                                          << std::endl;
+                        }
                         // CurrentCrystal->SetSinglePhotopeak(single_gauss->GetParameter(1),std::abs(single_gauss->GetParameter(2)));
                         // CurrentCrystal->SetSingleFit(single_gauss);
+
+
 
                         sname.str("");
 
@@ -4613,6 +4637,10 @@ int main (int argc, char** argv)
   TCanvas* C_multi;
   TCanvas* C_multi_2d;
 
+  TCanvas* C_all_3d;
+  TCanvas* C_all_2d;
+
+
   //----------------------------------------------------------//
   // Produce some Canvases                                    //
   //----------------------------------------------------------//
@@ -4630,8 +4658,10 @@ int main (int argc, char** argv)
   TCanvas* GlobalFlood2DClean = new TCanvas("Flood Histogram 2D Clean","",800,800);
   TCanvas* GlobalFlood3D = new TCanvas("Flood Histogram 3D","Flood Histogram 3D",800,800);
   TCanvas* BigSpectraCanvas = new TCanvas("BigSpectra","",800,800);
+  TCanvas* BigSingleSpectraCanvas = new TCanvas("BigSingleSpectra","",800,800);
   TCanvas* BigLYCanvas = new TCanvas("BigLY","",800,800);
   BigSpectraCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
+  BigSingleSpectraCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
   BigLYCanvas->Divide(ncrystalsx*nmppcx*nmodulex,ncrystalsy*nmppcy*nmoduley);
 
   // fill and draw multi canvas of BIG SPECTRA
@@ -4722,6 +4752,17 @@ int main (int argc, char** argv)
         crystal[iCrystal][jCrystal]->GetLYSpectrum()->SetFillColor(kBlue);
         crystal[iCrystal][jCrystal]->GetLYSpectrum()->Draw();
       }
+      BigSingleSpectraCanvas->cd(canvascounter);
+      if(crystal[iCrystal][jCrystal]->GetIsOnForModular())
+      {
+        if(crystal[iCrystal][jCrystal]->CrystalIsOn())
+        {
+          crystal[iCrystal][jCrystal]->GetSingleChargeSpectrum()->SetFillStyle(3001);
+          crystal[iCrystal][jCrystal]->GetSingleChargeSpectrum()->SetFillColor(kBlue);
+          crystal[iCrystal][jCrystal]->GetSingleChargeSpectrum()->Draw();
+        }
+      }
+
       canvascounter++;
     }
   }
@@ -4939,6 +4980,7 @@ int main (int argc, char** argv)
       RawCanvas->Write();
       TriggerCanvas->Write();
       BigSpectraCanvas->Write();
+      BigSingleSpectraCanvas->Write();
 
       if(usingTaggingBench || calcDoiResWithCalibration || taggingForTiming)
       {
@@ -4982,9 +5024,11 @@ int main (int argc, char** argv)
       std::vector<int> detChData = module[iModule][jModule]->GetDetChData();
       std::vector<float> saturationData = module[iModule][jModule]->GetSaturationData();
       std::vector<float> pedestalData = module[iModule][jModule]->GetPedestalData();
+      std::vector<float> gainData = module[iModule][jModule]->GetGainData();
       gDirectory->WriteObject(&detChData, "channels");
       gDirectory->WriteObject(&saturationData, "saturation");
       gDirectory->WriteObject(&pedestalData, "pedestal");
+      gDirectory->WriteObject(&gainData, "gain");
 
       //write marginWZgraph for this module
       std::stringstream sMargin;
@@ -5004,6 +5048,11 @@ int main (int argc, char** argv)
       sWrangeBinsForTiming.str("");
 
       //
+
+      //prepare a Canvas for the all 3D cuts
+      C_all_3d = new TCanvas("All_3D_cuts","All_3D_cuts",1200,1200);
+      int all_cut_counter = 1;
+      C_all_2d = new TCanvas("All_2D_cuts","All_2D_cuts",1200,1200);
 
       for(int iMppc = 0; iMppc < nmppcx ; iMppc++)
       {
@@ -5134,6 +5183,23 @@ int main (int argc, char** argv)
                     CurrentCrystal->GetFloodMap2D()->Draw("same");
                     legend_2d->Draw();
                     counter++;
+
+
+                    //fill the global distributions histograms
+                    //draw also the 3d cuts in the common canvas of this mppc
+                    C_all_3d->cd();
+                    CurrentCrystal->GetFloodMap3D()->SetMarkerColor(all_cut_counter);
+                    CurrentCrystal->GetFloodMap3D()->SetFillColor(all_cut_counter);
+                    if(all_cut_counter == 1) CurrentCrystal->GetFloodMap3D()->Draw();
+                    else CurrentCrystal->GetFloodMap3D()->Draw("same");
+
+                    C_all_2d->cd();
+                    CurrentCrystal->GetFloodMap2D()->SetMarkerColor(all_cut_counter);
+                    CurrentCrystal->GetFloodMap2D()->SetFillColor(all_cut_counter);
+                    if(all_cut_counter == 1) CurrentCrystal->GetFloodMap2D()->Draw();
+                    else CurrentCrystal->GetFloodMap2D()->Draw("same");
+                    all_cut_counter++;
+
                     //
                     //
                     if(saturationRun)
@@ -5982,7 +6048,14 @@ int main (int argc, char** argv)
       }
 
 
+
+
+
+
       directory[iModule+jModule][0][0]->cd(); // go back to main directory
+
+      C_all_3d->Write();
+      C_all_2d->Write();
 
 
       if(!backgroundRun)
@@ -6060,7 +6133,10 @@ int main (int argc, char** argv)
 
 
 
-
+  if(dumpSinglePeaks)
+  {
+    singlePeaksFile.close();
+  }
 
   if(saveAnalysisTree) // save the TTree created for the analysis, if the user requires it in the config file
   {
