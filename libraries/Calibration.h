@@ -245,9 +245,9 @@ void readCalibration(TFile* calibrationFile,                        // file with
          std::string lightAll_prefix("Sum spectrum highlighted");
          std::string basicCTR_prefix("Basic CTR histogram");
 
-         bool dirExists      = false;
-         bool dirDelayExists = false;
-         bool dirRMSExists   = false;
+         bool dirExists      = true;
+         bool dirDelayExists = true;
+         bool dirRMSExists   = true;
          std::string TimeCorrection_prefix("TimeCorrection");
          std::string Delay_prefix         ("DelayDir");
          std::string RMS_prefix           ("RMSDir");

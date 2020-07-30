@@ -1176,6 +1176,32 @@ int main (int argc, char** argv)
   outputFile->cd();
   // write whatever you want to save
 
+  textfile  << std::setw(10)
+            << "#CrystalN"
+            << std::setw(20)
+            << "entries"
+            << std::setw(20)
+            << "lightCentral"
+            << std::setw(20)
+            << "lightAll"
+            << std::setw(20)
+            << "EnResFWHM"
+            << std::setw(20)
+            << "CTRfwhm_base"
+            << std::setw(20)
+            << "CTRfwhm_cent"
+            << std::setw(20)
+            << "CTRfwhm_full"
+            << std::setw(20)
+            << "inCrystal"
+            << std::setw(20)
+            << "inCrystalGood"
+            << std::setw(20)
+            << "inCrystalBad"
+            << std::setw(20)
+            << "outOfCrystalButGood"
+            << std::endl;
+
   for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
   {
 
@@ -1250,31 +1276,31 @@ int main (int argc, char** argv)
 
 
 
-    textfile  << std::setw(10)
-              << "#CrystalN"
-              << std::setw(20)
-              << "entries"
-              << std::setw(20)
-              << "lightCentral"
-              << std::setw(20)
-              << "lightAll"
-              << std::setw(20)
-              << "EnResFWHM"
-              << std::setw(20)
-              << "CTRfwhm_base"
-              << std::setw(20)
-              << "CTRfwhm_cent"
-              << std::setw(20)
-              << "CTRfwhm_full"
-              << std::setw(20)
-              << "inCrystal"
-              << std::setw(20)
-              << "inCrystalGood"
-              << std::setw(20)
-              << "inCrystalBad"
-              << std::setw(20)
-              << "outOfCrystalButGood"
-              << std::endl;
+    // textfile  << std::setw(10)
+    //           << "#CrystalN"
+    //           << std::setw(20)
+    //           << "entries"
+    //           << std::setw(20)
+    //           << "lightCentral"
+    //           << std::setw(20)
+    //           << "lightAll"
+    //           << std::setw(20)
+    //           << "EnResFWHM"
+    //           << std::setw(20)
+    //           << "CTRfwhm_base"
+    //           << std::setw(20)
+    //           << "CTRfwhm_cent"
+    //           << std::setw(20)
+    //           << "CTRfwhm_full"
+    //           << std::setw(20)
+    //           << "inCrystal"
+    //           << std::setw(20)
+    //           << "inCrystalGood"
+    //           << std::setw(20)
+    //           << "inCrystalBad"
+    //           << std::setw(20)
+    //           << "outOfCrystalButGood"
+    //           << std::endl;
 
     //
     Int_t entries = crystal[iCry].allCTR->GetEntries();
