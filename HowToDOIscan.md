@@ -49,16 +49,23 @@ where you should list the data written in the ```singlePeaksFile.txt```, but we 
 
 #### Produce calibration file
 
-You can now re-run ModuleCalibration with the same command as before. This will overwrite the output file
+You can now re-run ModuleCalibration with the same command as before. If needed, you can also run already the timing correction analysis on the TOP dataset, by setting
+
+```
+timingCorrection = 1
+timingCorrectionForPolished = 1
+```
+
+Running the **ModuleCalibration** command exactly as above will overwrite the output file
 
 ```
 calibration.root
 ```
 
-(actual file name anyway depends on the value of key ```output``` in config file) that will contain the information about the crystal limits.
+(actual file name anyway depends on the value of key ```output``` in config file, so if you want you can change that and avoid overwrite) that will contain the information about the crystal limits (and the timing correction plots if you've run the timing correction analysis).
 
 
-#### Perform lateral scan analysis
+## 2. Perform lateral scan analysis
 
 Move to one line folder of the lateral scan. Copy the script
 
@@ -82,7 +89,7 @@ where
 So for example for folder 4 (assuming it's the rightmost line of the array), you would give the command
 
 ```
-./start.sh /path/to/calibration.root 4 11 15 12 13 14 15
+./startDOIscanAnalysis.sh /path/to/calibration.root 4 11 15 12 13 14 15
 ```
 
 assuming you want to analyze only from z=4 to z=11 and you took 15 z points in the scan, and the crystals in this line are number 12 13 14 and 15.
@@ -114,4 +121,27 @@ plotsN.txt
 plotsN.root
 ```
 
-the .txt file has the DOI FWHM results. You are interested in the column ```FIT_calib```. Repeat the operation for all lines.
+The ROOT file contains several plots:
+
+```
+
+```
+
+The .txt file has the DOI FWHM results. You are interested in the column ```FIT_calib```. Repeat the operation for all lines.
+
+
+## 3. Perform timing and energy resolution analysis
+
+If you have run **ModuleCalibration** with timing correction ON, you can now complete the analysis on the TOP dataset. It's more convenient to run on a dataset that includes all crystals, so that it can be done in one go. If you move to the main folder (the one that contains both lateral and top folders), you can merge datasets of different crystals doing
+
+```
+hadd -f total.root top_4_sectors/Run_top_scan_ACQ_0.0_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_43200/RootTTrees/TTree_0_1.root top_4_sectors/Run_top_scan_ACQ_1.0_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_21600/RootTTrees/TTree_0_1.root top_4_sectors/Run_top_scan_ACQ_2.0_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_21600/RootTTrees/TTree_0_1.root top_4_sectors/Run_top_scan_ACQ_3.0_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_21600/RootTTrees/TTree_0_1.root
+```
+
+This will produce a complete dataset file in total.root. The command above assumes that your TOP folder is **top_4_sectors**, and that it consisted of 4 acquisitions, but of course you need to adjust it to reflect your specific case.
+
+Now you can analyze the entire dataset with
+
+```
+timeResolution --calibration analysis.root --folder ./ --prefix total --output timeTot.root --histoMin -2e-9 --histoMax 2e-9 --histoBins 200 --func 1 --tagFwhm 90e-12
+```
