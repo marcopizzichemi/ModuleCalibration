@@ -363,6 +363,18 @@ int main (int argc, char** argv)
 
   //
   std::ofstream singlePeaksFile;
+  std::map<std::string, float>   mapGain;
+  std::string                    mppc_s;                             // input string of the mppc key from config file
+  std::vector <std::string>      mppc_f;                             // tokenization of above strings
+  std::vector <std::string>      mppc_label;                         // above tokenized string transformed in the proper variable types
+  mppc_s = config.read<std::string>("mppc");
+  config.split( mppc_f, mppc_s, "," );
+  for(unsigned int i = 0 ; i < mppc_f.size() ; i++)
+  {
+    config.trim(mppc_f[i]);
+    mppc_label.push_back(mppc_f[i]);
+  }
+
   if(dumpSinglePeaks)
   {
     singlePeaksFile.open("singlePeaksFile.txt", std::ofstream::out);
@@ -2293,6 +2305,7 @@ int main (int argc, char** argv)
                           singlePeaksFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << " "
                                           << single_gauss->GetParameter(1)
                                           << std::endl;
+                          mapGain.insert(std::make_pair(std::string(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel()),single_gauss->GetParameter(1)));
                         }
                         // CurrentCrystal->SetSinglePhotopeak(single_gauss->GetParameter(1),std::abs(single_gauss->GetParameter(2)));
                         // CurrentCrystal->SetSingleFit(single_gauss);
@@ -6135,6 +6148,25 @@ int main (int argc, char** argv)
 
   if(dumpSinglePeaks)
   {
+    for(int i = 0 ; i < mppc_label.size(); i++)
+    {
+      float gainValue;
+      std::map<std::string, float> ::const_iterator iterGain = mapGain.find(mppc_label[i]);
+      if(iterGain != mapGain.end())
+      {
+        // iter is item pair in the map. The value will be accessible as `iter->second`.
+        gainValue = (iterGain->second);
+      }
+      singlePeaksFile << gainValue;
+      if(i != (mppc_label.size()-1))
+      {
+        singlePeaksFile << ",";
+      }
+      else
+      {
+        singlePeaksFile << std::endl;
+      }
+    }
     singlePeaksFile.close();
   }
 
