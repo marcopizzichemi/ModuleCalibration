@@ -6148,6 +6148,7 @@ int main (int argc, char** argv)
 
   if(dumpSinglePeaks)
   {
+    singlePeaksFile << "gain = ";
     for(int i = 0 ; i < mppc_label.size(); i++)
     {
       float gainValue;
