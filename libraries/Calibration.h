@@ -47,7 +47,9 @@ void readCalibration(TFile* calibrationFile,                        // file with
   gDirectory->GetObject("channels",pChannels);
   gDirectory->GetObject("saturation",pSaturation);
   gDirectory->GetObject("pedestal",pPedestal);
+
   gDirectory->GetObject("gain",pGain);
+
 
   std::vector<int> DetChannels = pChannels[0];
   std::vector<float> saturation = pSaturation[0];
@@ -777,6 +779,8 @@ void readCalibration(TFile* calibrationFile,                        // file with
            crystalCut += temp_crystal.cutg[0]->GetName();
            crystalCut += temp_crystal.cutg[1]->GetName();
          }
+
+         // std::cout << crystalCut << std::endl;
 
          //save the cutg anyway
          TCut justCutG ;

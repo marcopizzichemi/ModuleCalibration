@@ -16,7 +16,7 @@ do
   do
     # echo $j $i
     VAR+="output_cry${j}_z${i}.root "
-    filterForDOIscan -f Run_scan_doi_ACQ_0.${i}_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_3600/RootTTrees/ -p TTree_0_0.root -c ${calibration} -o output_cry${j}_z${i}.root -n $j --tagCh 35 --manTagMin 40580.2 --manTagMax 43541.8 --tagCut --cutgCut --photopeakCut --tagPos $i
+    filterForDOIscan -f Run_scan_doi_ACQ_0.${i}_Angle1_0.0_Angle2_0.0_V1_59_V2_62_t_3600/RootTTrees/ -p TTree_0_0.root -c ${calibration} -o output_cry${j}_z${i}.root -n $j --tagCh 35 --manTagMin 40580.2 --manTagMax 43541.8 --triggerCut --tagCut --cutgCut --photopeakCut --tagPos $i
   done
   # rm -rf crystal${i}.root
   # echo $VAR
