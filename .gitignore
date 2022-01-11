@@ -1,0 +1,52 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+#*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Root files
+#*.root
+
+# dictionaries
+dictionaries.cxx
+dictionaries_rdict.pcm
+data_dictionaries.cxx
+data_dictionaries_rdict.pcm
+
+# All files in build folder
+# but with a trick to keep the empty folder (you cannot commit empty folders in git)
+build/*
+!build/.gitkeep
+
+# no MAC trash files please
+.DS_Store
+
+# and no visual studio trash folders either
+.vscode/*

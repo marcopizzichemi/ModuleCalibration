@@ -1,50 +1,59 @@
 #!/bin/bash
 
-mkdir -p ../build
+# Marco Pizzichemi 11.1.2022 marco.pizzichemi@cern.ch
+
+# This script compiles the simulation toolkit and all the support programs
+# Run it from main git directory, with 
+#
+# ./deploy.sh [OPTION]
+#
+# Argument OPTION is optional. If not given, machine compiler is used.
+# The only other possible option is lxplus
+#
+# ./deploy.sh lxplus
+#
+# which will source LGC97python3 environment. 
+# If you want to add other options, you need to properly modify the SET ENV VARIABLES section
+
+# exit when any command fails
+set -e
+# keep track of the last executed command
+trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+# echo an error message before exiting
+trap 'echo "Last command \"${last_command}\" returned with exit code $?."' EXIT
+
+
+### MAKE BUILD FOLDER (IF NOT THERE ALREADY)
+mkdir -p build
+CMAKE_ARGS=""
+
 if [ -z "$1" ]
   then
     echo "No argument supplied, so compiling with machine compiler..."
-    echo "Compiling support programs..."
-    g++ -o ../build/timeResolution timeResolution.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../build/extractConfiguration extractConfiguration.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore
-    cd DeepLearningDOI
-    g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../../build/filterForDeepLearning_MiniPET filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../../build/filterForDOIscan filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    cd ..
-    echo "Compiling ModuleCalibration..."
-    cd ../build
-    cmake ../code
-    make
-    cd ../code
-    echo "Done."
-
 else
   if [ $1 = "lxplus" ]; then
     set --
     echo "Sourcing compiler for lxplus..."
     source /cvmfs/sft.cern.ch/lcg/views/LCG_97python3/x86_64-centos7-gcc9-opt/setup.sh
-    ### old sources, left here for reference
-    #source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.06.08/x86_64-slc6-gcc49-opt/root/bin/thisroot.sh
-    #source /cvmfs/sft.cern.ch/lcg/external/gcc/4.9.1/x86_64-slc6/setup.sh
-    #source /cvmfs/geant4.cern.ch/geant4/10.3/x86_64-slc6-gcc49-opt/bin/geant4.sh
-    echo "Compiling support programs..."
-    g++ -o ../build/timeResolution timeResolution.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../build/extractConfiguration extractConfiguration.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore
-    cd DeepLearningDOI
-    g++ -o ../../build/calcDOIres calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../../build/filterForDeepLearning_MiniPET filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    g++ -o ../../build/filterForDOIscan filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
-    cd ..
-    echo "Compiling ModuleCalibration..."
-    cp CMakeLists.lxplus CMakeLists.txt
-    cd ../build
-    cmake --verbose -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc` ../code
-    make
-    cd ../code
-    cp CMakeLists.local CMakeLists.txt
-    echo "Done."
+    CMAKE_ARGS="--verbose -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`"
   else
     echo "Invalid argument $1 - You can either provide no arg (and the script will use machine compiler), or lxplus, and the script will source the lxplus variables"
   fi
 fi
+
+### SUPPORT PROGRAMS
+echo "Compiling support programs..."
+g++ -o build/timeResolution timeResolution.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+g++ -o build/extractConfiguration extractConfiguration.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore
+g++ -o build/calcDOIres DeepLearningDOI/calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+g++ -o build/filterForDeepLearning_MiniPET DeepLearningDOI/filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+g++ -o build/filterForDOIscan DeepLearningDOI/filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+
+### MODULE CALIBRATION
+echo "Compiling ModuleCalibration..."
+cd build
+echo "Running cmake command as: cmake $CMAKE_ARGS ../"
+cmake $CMAKE_ARGS ../
+make
+cd ../
+echo "Done."
