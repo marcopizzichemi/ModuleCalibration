@@ -328,7 +328,7 @@ int main (int argc, char** argv)
   bool manualCutG = config.read<bool>("manualCutG",0);  // read the cutg from external file - default = 0 (false). FIXME this is HIGHLY hardcode fo the moment, will work just on 1-to-1 coupling crystal mppc and fo rjust 1 crystal per ModuleCalibration run!!!
   std::string cutgsFileName = config.read<std::string> ("cutgsFileName","cutgs.root"); // name of root file with manual cutgs - default = cutgs.root
 
-  float minTimestamp = config.read<float>("minTimestamp",-70e-9);
+  float minTimestamp = config.read<float>("minTimestamp",-90e-9);
   float maxTimestamp = config.read<float>("maxTimestamp",-40e-9);
 
   bool dumpSinglePeaks = config.read<bool>("dumpSinglePeaks",0); // dump a string with single peaks positions, to use to equalize 511 kev positons (hence gains) in following ModuleCalibration run
@@ -533,6 +533,8 @@ int main (int argc, char** argv)
       calcDoiResWithDelta = false;
     }
   }
+    std::ofstream NoiseFile;
+      NoiseFile.open("NoiseData.txt", std::ofstream::out);
   //saturation run part
   std::vector<SaturationPeak_t> saturationPeak;
   if(saturationRun)
@@ -1363,6 +1365,14 @@ int main (int argc, char** argv)
             tree->Draw(var.str().c_str(),BasicCut);
             spectrumRaw->GetXaxis()->SetTitle("ADC Channels");
             spectrumRaw->GetYaxis()->SetTitle("N");
+            spectrumRaw->GetXaxis()->SetRangeUser(0,10000);
+            TF1 *gauss_ = new TF1("gauss_",  "[0]*exp(-0.5*((x-[1])/[2])**2)",20,1000);
+            gauss_->SetParameter(0,100);
+            gauss_->SetParameter(1,0);
+            gauss_->SetParameter(2,100);
+            gauss_->SetParLimits(2,0, 2000);
+            spectrumRaw->Fit(gauss_,"Q","",20,1000);
+            NoiseFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "  " <<2*gauss_->GetParameter(2)<<std::endl;
             mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->SetRawSpectrum(spectrumRaw);
             var.str("");
             sname.str("");
@@ -2011,7 +2021,7 @@ int main (int argc, char** argv)
                       << chargeBinningADC
                       <<  ") >> " << sname.str();
                       TH1F* spectrumSingleCharge = new TH1F(sname.str().c_str(),sname.str().c_str(),histoSingleChargeBin,0,histoSingleChargeMax);
-                      tree->Draw(var.str().c_str(),CrystalCut);
+                      tree->Draw(var.str().c_str(),BasicCut + CutTrigger);
                       spectrumSingleCharge->GetXaxis()->SetTitle("Charge [C]");
                       spectrumSingleCharge->GetYaxis()->SetTitle("N");
                       sname.str("");
@@ -2105,12 +2115,26 @@ int main (int argc, char** argv)
                             }
                           }
 
-
-                          TF1 *satGauss = new TF1(sname.str().c_str(),  "gaus",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
+                          TF1 *satGauss;
+                          if(saturationPeak[iSaturation].energy == 1061 || saturationPeak[iSaturation].energy == 88){
+                          satGauss = new TF1(sname.str().c_str(),  "gaus+pol1(3)",saturationPeak[iSaturation].peakMin,saturationPeak[iSaturation].peakMax);
+                          //satGauss->SetParameter(1,8.2e-09);
+                          satGauss->SetParameter(1, 1.9e-09);
+                          satGauss->SetParameter(0,1.97167e+02);
+                          satGauss->SetParLimits(0,0, 1e+05);
+                          satGauss->SetParLimits(1,1e-9, 9e-9);
+                          satGauss->SetParLimits(2,1e-11, 1e-9);
+                          satGauss->SetParameter(3,4e+03);
+                          satGauss->SetParameter(4,-5e+11);
+                          spectrumWhereToSearch->Fit(sname.str().c_str(),"QN","",saturationPeak[iSaturation].peakMin,saturationPeak[iSaturation].peakMax);
+                          gaussFitSaturation.push_back(satGauss);
+                          } else {
+                          satGauss = new TF1(sname.str().c_str(),  "gaus",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
                           satGauss->SetParameter(1,CrystalPeaks[peakID]);
                           satGauss->SetParameter(0,CrystalPeaksY[peakID]);
                           spectrumWhereToSearch->Fit(sname.str().c_str(),"QN","",CrystalPeaks[peakID]-CrystalPeaks[peakID]*saturationPeakFractionLow,CrystalPeaks[peakID]+CrystalPeaks[peakID]*saturationPeakFractionHigh);
                           gaussFitSaturation.push_back(satGauss);
+                          }
                           saturationFile << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetLabel() << "\t"
                           << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetI() << "\t"
                           << mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetJ() << "\t"
@@ -4802,7 +4826,7 @@ int main (int argc, char** argv)
           if(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetIsOnForModular())
           {
             RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());
-            RawCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition())->SetLogy();
+          
             mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetRawSpectrum()->Draw();
 
             TriggerCanvas->cd(mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetCanvasPosition());

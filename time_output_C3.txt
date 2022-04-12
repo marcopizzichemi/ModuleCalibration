@@ -1,0 +1,2 @@
+ #CrystalN             entries        lightCentral            lightAll           EnResFWHM        CTRfwhm_base        CTRfwhm_cent        CTRfwhm_full           inCrystal       inCrystalGood        inCrystalBad outOfCrystalButGood
+        10               44463             32274.2             69414.5            0.115598              248.78              215.87             197.934                   0                   0                   0                   0
