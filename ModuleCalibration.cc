@@ -638,8 +638,10 @@ int main (int argc, char** argv)
   // ChainAdcChannel        = new Int_t [adcChannels];
   ChainDesktopAdcChannel = new Short_t [adcChannels]; // input from ADC desktop
   ChainVMEadcChannel     = new UShort_t [adcChannels]; // input from VME
+  // ChainVMEadcChannel     = new Float_t [adcChannels]; // input from VME
   ChainVMEAmplitudeChannel = new UShort_t [adcChannels]; // input amplitude from VME
   ChainTimeStamp         = new Float_t[adcChannels];
+  // ChainTimeStamp         = new Long_t[adcChannels];
   // TDCBinning             = new Float_t[adcChannels];
   // DigitizerChannelOn     = new bool[adcChannels];
   bChainAdcChannel       = new TBranch* [adcChannels];

@@ -90,7 +90,9 @@ invert_a_matrix(gsl_matrix *matrix,size_t size)
 }
 
 
-float calculateFloodZ(UShort_t  *charge,
+float calculateFloodZ( 
+                     UShort_t  *charge,
+                      // Float_t  *charge,
                       Crystal_t crystal)
 {
   float FloodZ;
@@ -158,7 +160,9 @@ float calculateFloodZ_withoutCorrectingForSaturation(T  *charge,
 }
 
 
-float calculate_trigger_charge(UShort_t  *charge,
+float calculate_trigger_charge(
+                              UShort_t  *charge,
+                              //  Float_t  *charge,
                                Crystal_t crystal)
 {
   // float FloodZ;
@@ -181,7 +185,9 @@ float calculate_trigger_charge(UShort_t  *charge,
   return centralChargeCorr;
 }
 
-float calculate_sum_charge(UShort_t  *charge,
+float calculate_sum_charge(
+                          UShort_t  *charge, 
+                          //  Float_t  *charge,
                           Crystal_t crystal)
 {
   // float FloodZ;

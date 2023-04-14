@@ -209,7 +209,7 @@ int main (int argc, char** argv)
 		}
 	}
 
-
+  
 
   // check if required are given and files actually exists
   // first, input given and not empty
@@ -372,15 +372,23 @@ int main (int argc, char** argv)
   //set variables and branches
   ULong64_t     ChainExtendedTimeTag;                                // extended time tag
   ULong64_t     ChainDeltaTimeTag;                                   // delta tag from previous
+  // Float_t      *charge;
   UShort_t      *charge;
+  // Long_t      *timeStamp;
   Float_t      *timeStamp;
+  Short_t      CrystalsHit;
   Short_t      CrystalNumber;
+  Float_t      TotalEnergyDeposited;
   TBranch      *bChainExtendedTimeTag;                               // branches for above data
   TBranch      *bChainDeltaTimeTag;                                  // branches for above data
+  TBranch      *bCrystalsHit;
   TBranch      *bCrystalNumber;
+  TBranch      *bTotalEnergyDeposited;
   TBranch      **bCharge;
   TBranch      **btimeStamp;
+  // charge = new Float_t[numOfCh];
   charge = new UShort_t[numOfCh];
+  // timeStamp = new Long_t[numOfCh];
   timeStamp = new Float_t[numOfCh];
   bCharge = new TBranch*[numOfCh];
   btimeStamp = new TBranch*[numOfCh];
@@ -400,9 +408,12 @@ int main (int argc, char** argv)
   }
   if(cluster)
   {
+    tree->SetBranchAddress("CrystalsHit", &CrystalsHit, &bCrystalsHit);
     tree->SetBranchAddress("CrystalNumber", &CrystalNumber, &bCrystalNumber);
+    tree->SetBranchAddress("TotalEnergyDeposited", &TotalEnergyDeposited, &bTotalEnergyDeposited);
   }
-
+  
+  
 
   TList *formulasAnalysis = new TList();
   std::vector<Crystal_t> crystal;
@@ -423,8 +434,11 @@ int main (int argc, char** argv)
 
 
   }
+  // std::cout << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" << std::endl;
   // optionally set w and z limits, and write values into crystal struct
   setWandZcuts(crystal);
+
+  
 
 
 
@@ -547,45 +561,7 @@ int main (int argc, char** argv)
   long int inCrystalGood = 0;
   long int inCrystalBad = 0;
   long int outOfCrystalButGood = 0;
-  if(cluster)
-  {
-    for (long long int i=0;i<neventAnalysis;i++)
-    {
-      tree->GetEvent(i);              //read complete accepted event in memory
-      for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
-      {
-        if(crystal[iCry].accepted)
-        {
-          if(crystal[iCry].FormulaJustCutG->EvalInstance())  //all crystal event
-          {
-            // cluster marked event in crystal
-            inCrystal++;
-            if(crystal[iCry].number == CrystalNumber)
-            {
-              inCrystalGood++;
-            }
-            else
-            {
-              inCrystalBad++;
-            }
-            // check num
-          }
-          else
-          {
-            if(crystal[iCry].number == CrystalNumber)
-            {
-              outOfCrystalButGood++;
-            }
-
-          }
-        }
-      }
-    }
-  }
-  std::cout << "inCrystal           = " << inCrystal           << std::endl;
-  std::cout << "inCrystalGood       = " << inCrystalGood       << std::endl;
-  std::cout << "inCrystalBad        = " << inCrystalBad        << std::endl;
-  std::cout << "outOfCrystalButGood = " << outOfCrystalButGood << std::endl;
+  
 
   goodEventsAnalysis = 0;
   counterAnalysis = 0;
@@ -1173,7 +1149,86 @@ int main (int argc, char** argv)
 
   std::cout << "Saving results..." << std::endl;
   TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
+
+  TTree *TreeCluster;
+  if(cluster)
+  {
+    TreeCluster = new TTree("cluster","cluster");
+    int cryNum = -1;
+    float totalEn = 0.;
+    Short_t inCry      = 0;
+    Short_t inCryGood  = 0;
+    Short_t inCryBad   = 0;
+    Short_t outCryGood = 0;
+
+    TreeCluster->Branch("CrystalsHit",&CrystalsHit,"CrystalsHit/S");
+    TreeCluster->Branch("CrystalNumber",&CrystalNumber,"CrystalNumber/S");
+    TreeCluster->Branch("TotalEnergyDeposited",&TotalEnergyDeposited,"TotalEnergyDeposited/F");
+    TreeCluster->Branch("inCrystal",&inCry,"inCrystal/S");
+    TreeCluster->Branch("inCrystalGood",&inCryGood,"inCrystalGood/S");
+    TreeCluster->Branch("inCrystalBad",&inCryBad,"inCrystalBad/S");
+    TreeCluster->Branch("outOfCrystalButGood",&outCryGood,"outOfCrystalButGood/S");
+
+    for (long long int i=0;i<neventAnalysis;i++)
+    {
+      inCry = -1;
+      inCryGood = -1;
+      inCryBad  = -1;
+      outCryGood = -1;
+      tree->GetEvent(i);              //read complete accepted event in memory
+      for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
+      {
+        if(crystal[iCry].accepted)
+        {
+          if(crystal[iCry].FormulaJustCutG->EvalInstance())  //all crystal event
+          {
+            // cluster marked event in crystal
+            inCrystal++;
+            inCry = 1;
+            if(crystal[iCry].number == CrystalNumber)
+            {
+              inCrystalGood++;
+              inCryGood = 1;
+              inCryBad = 0;
+            }
+            else
+            {
+              inCrystalBad++;
+              inCryGood = 0;
+              inCryBad = 1;
+            }
+            // check num
+          }
+          else
+          {
+            inCry = 0;
+            if(crystal[iCry].number == CrystalNumber)
+            {
+              outOfCrystalButGood++;
+              outCryGood = 1;
+            }
+            else 
+            {
+              outCryGood = 0;
+            }
+
+          }
+        }
+        TreeCluster->Fill();
+      }
+    }
+  }
+  std::cout << "inCrystal           = " << inCrystal           << std::endl;
+  std::cout << "inCrystalGood       = " << inCrystalGood       << std::endl;
+  std::cout << "inCrystalBad        = " << inCrystalBad        << std::endl;
+  std::cout << "outOfCrystalButGood = " << outOfCrystalButGood << std::endl;
+
   outputFile->cd();
+
+
+  
+  
+  TreeCluster->Write();
   // write whatever you want to save
 
   textfile  << std::setw(10)

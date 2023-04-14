@@ -12,11 +12,11 @@ import threading
 import time
 import multiprocessing
 
-def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection,excludeChannels,excludeChannelsList,inputCalibFolder,inputTimeFolder):
+def worker(buildPath,name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPercMin,fitPercMax,prefix_name,func,fitCorrection,excludeChannels,excludeChannelsList,inputCalibFolder,inputTimeFolder,tagFwhm):
     """thread worker function"""
     # value = 1
-
-    cmd = ['ModuleCalibration','-c', name]
+    executable = buildPath + '/ModuleCalibration'
+    cmd = [executable,'-c', name]
 
     # filesMod = ""
     for i in filesCalib.split():
@@ -40,7 +40,8 @@ def worker(name,filesCalib,filesTime,element,histoMin,histoMax,histoBins,fitPerc
     print ("Element %s calibration done" %element )
     print ("Running time analysis on Element %s..." %element )
     #timeResolution --input-folder ./ --input TTree_ --calibration ../calibrationDataset/calibration6.root -o output6.root --histoMin -0.5e-9 --histoMax 1.5e-9 --histoBins 500 --func 0 --fitPercMin 6.0 --fitPercMax 5.0
-    cmd = ['timeResolution','--input-folder', inputTimeFolder,'-i', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax) ]
+    executable = buildPath + '/timeResolution'
+    cmd = [executable,'-f', inputTimeFolder,'-p', filesTime,'-o', 'time_' + prefix_name + element + '.root', '-c' , prefix_name + element + '.root','--histoMin',str(histoMin) ,'--histoMax',str(histoMax) ,'--histoBins',str(histoBins),'--func',str(func),'--fitPercMin', str(fitPercMin),'--fitPercMax', str(fitPercMax),'--tagFwhm', str(tagFwhm) ]
     if fitCorrection == 1:
         cmd.append('--fitCorrection')
     if excludeChannels == 1:
@@ -77,8 +78,10 @@ def main(argv):
    parser.add_argument('-g','--fitPercMax' , help='Upper bound of CTR fit, in numb of sigmas - default = 5.0',required=False)
    parser.add_argument('-o','--output'     , help='Prefix of output file - default = pOutput_',required=False)
    parser.add_argument('-y','--func'       , help='Function for time fit. 0 = crystalball, 1 = gauss+exp   - default = 0',required=False)
+   parser.add_argument('-q','--tagFwhm'    , help='FWHM of reference crystal - default = 88.0e-12',required=False)
    parser.add_argument('-k','--fitCorrection'       , help='0 = no fit, 1 = use fit   - default = 0',required=False)
    parser.add_argument('-j','--excludeChannels'       , help='csv list of channels to exclude from time corrections   - default = ""',required=False)
+   parser.add_argument('-x','--build'     , help='Path to build folder',required=True )
    args = parser.parse_args()
 
    # threads = 0
@@ -114,6 +117,8 @@ def main(argv):
        args.fitPercMax = 5.0
    if args.excludeChannels != None:
        excludeChannels = 1
+   if args.tagFwhm == None:
+       args.tagFwhm = 88.0e-12
 
    elements = ""
    BaseParaStr = ""
@@ -140,6 +145,7 @@ def main(argv):
    print ("Calibration files prefix    = %s" % args.filesCalib )
    print ("Time analysis files folder  = %s" % inputTimeFolder )
    print ("Time analysis files prefix  = %s" % args.filesTime )
+   print ("Build folder                = %s" % args.build )
    print ("")
    # print ("Number of threads = %s" % args.threads )
 
@@ -173,7 +179,7 @@ def main(argv):
            fOut.write("\n")
        fOut.write(original)
        fOut.close()
-       proc = multiprocessing.Process(target=worker, args=(fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels,inputCalibFolder,inputTimeFolder))
+       proc = multiprocessing.Process(target=worker, args=(args.build,fOutName,args.filesCalib,args.filesTime,i,args.histoMin,args.histoMax,args.histoBins,args.fitPercMin,args.fitPercMax,prefix_name,func,fitCorrection,excludeChannels,args.excludeChannels,inputCalibFolder,inputTimeFolder,args.tagFwhm))
        processList.append(proc)
 
    #start processes
