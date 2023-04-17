@@ -1151,6 +1151,7 @@ int main (int argc, char** argv)
   TFile *outputFile = new TFile(outputFileName.c_str(),"RECREATE");
 
   TTree *TreeCluster;
+  // PLEASE DON'T USE THIS, IT'S VERY WRONG!!!
   if(cluster)
   {
     TreeCluster = new TTree("cluster","cluster");
@@ -1160,6 +1161,11 @@ int main (int argc, char** argv)
     Short_t inCryGood  = 0;
     Short_t inCryBad   = 0;
     Short_t outCryGood = 0;
+    // also save the ch and t data
+    UShort_t *out_charge; //adc type
+    out_charge = new UShort_t[numOfCh];
+    Float_t *out_timestamp;
+    out_timestamp = new Float_t[numOfCh];
 
     TreeCluster->Branch("CrystalsHit",&CrystalsHit,"CrystalsHit/S");
     TreeCluster->Branch("CrystalNumber",&CrystalNumber,"CrystalNumber/S");
@@ -1168,6 +1174,34 @@ int main (int argc, char** argv)
     TreeCluster->Branch("inCrystalGood",&inCryGood,"inCrystalGood/S");
     TreeCluster->Branch("inCrystalBad",&inCryBad,"inCrystalBad/S");
     TreeCluster->Branch("outOfCrystalButGood",&outCryGood,"outOfCrystalButGood/S");
+    std::stringstream out_snames,out_stypes;
+    for (int i = 0 ; i < numOfCh ; i++)
+    {
+      //empty the stringstreams
+      out_snames.str("");
+      out_stypes.str("");
+      out_charge[i] = 0;
+
+      out_snames << "ch" << i;
+      out_stypes << "ch" << i << "/s";
+      TreeCluster->Branch(out_snames.str().c_str(),&out_charge[i],out_stypes.str().c_str());
+      out_snames.str("");
+      out_stypes.str("");
+
+    }
+    for (int i = 0 ; i < numOfCh ; i++)
+    {
+      //empty the stringstreams
+      out_snames.str("");
+      out_stypes.str("");
+      out_timestamp[i] = 0;
+      out_snames << "t" << i;
+      out_stypes << "t" << i << "/F";
+      TreeCluster->Branch(out_snames.str().c_str(),&out_timestamp[i],out_stypes.str().c_str());
+      out_snames.str("");
+      out_stypes.str("");
+    }
+
 
     for (long long int i=0;i<neventAnalysis;i++)
     {
@@ -1176,6 +1210,12 @@ int main (int argc, char** argv)
       inCryBad  = -1;
       outCryGood = -1;
       tree->GetEvent(i);              //read complete accepted event in memory
+      // assign out charges and timestamps
+      for (int c = 0 ; c < numOfCh ; c++)
+      {
+        out_charge[c] = charge[c];
+        out_timestamp[c] = timeStamp[c];
+      }
       for(unsigned int iCry = 0 ;  iCry < crystal.size() ; iCry++)
       {
         if(crystal[iCry].accepted)
@@ -1215,6 +1255,10 @@ int main (int argc, char** argv)
           }
         }
         TreeCluster->Fill();
+        inCry      = -1;
+        inCryGood  = -1;
+        inCryBad   = -1;
+        outCryGood = -1;
       }
     }
   }

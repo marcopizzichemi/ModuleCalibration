@@ -749,7 +749,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
 
                    int rmsCh   = atoi( tChannelStringFromRms.c_str() );
 
-                   std::cout << rmsCh << std::endl;
+                  //  std::cout << rmsCh << std::endl;
 
                    temp_graph.timingChannel = rmsCh;
                    temp_graph.graph = calibGraph;
