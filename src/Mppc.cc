@@ -468,14 +468,14 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
 
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;
-  cutg = new TCutG**[2]; // two planes of cuts, their intersection will create a 3d cut
-  for(int iCut =0 ; iCut < 2 ; iCut++)
+  cutg = new TCutG**[3]; // now 3 planes, x-y needed only for compton analysis
+  for(int iCut =0 ; iCut < 3 ; iCut++)
   {
     cutg[iCut] = new TCutG*[numbOfCrystals];
   }
 
   TH3I *histogram_original = this->FloodMap3D; // get the 3D map of this channel
-
+  
 
   // cycle to find the N separated volumes, with N = numb of crystals connected to the mppc
   int NbinX = histogram_original->GetXaxis()->GetNbins();
@@ -637,7 +637,6 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
         break;
     }
   }
-
   //delete done;
 
 
@@ -721,8 +720,10 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
     TH2D* mask_zy[numbOfCrystals];
     TCanvas *C_contours[numbOfCrystals];
     TCanvas *C_graph[numbOfCrystals];
-    TString plane[2] = {"zx","zy"};
-    TString varX[2] = {FloodXYZ[0],FloodXYZ[1]};
+    TString plane[3] = {"zx","zy","yx"};
+    TString plane_names[3] = {"xz","yz","xy"};
+    TString varX[3] = {FloodXYZ[0],FloodXYZ[1],FloodXYZ[0]};
+    TString varY[3] = {FloodXYZ[2],FloodXYZ[2],FloodXYZ[1]};
     Double_t contours[2] = {0.5,1}; //fixed level to get the all the points
     for(int iMasks =0 ; iMasks < numbOfCrystals ; iMasks++)
     {
@@ -737,7 +738,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
       C_graph[iMasks] = new TCanvas(name.str().c_str(),name.str().c_str(),1200,600);
       C_graph[iMasks]->Divide(2,1);
 
-      for(int iCut =0 ; iCut < 2 ; iCut++)
+      for(int iCut =0 ; iCut < 3 ; iCut++)
       {
         name.str("");
         name << mask[iMasks]->GetName() << "_" << plane[iCut];
@@ -772,10 +773,11 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
         curv->Draw("alp");
 
         name.str("");
-        name << "cutg_" << iCut << "_" << iMasks << "_" << this->GetLabel();
+        name << "cutg_" << plane_names[iCut] << "_" << iMasks << "_" << this->GetLabel();
+        // std::cout << name.str() << std::endl;
         cutg[iCut][iMasks] = new TCutG(name.str().c_str(),curv->GetN(),curv->GetX(),curv->GetY());
         cutg[iCut][iMasks]->SetVarX(varX[iCut]);
-        cutg[iCut][iMasks]->SetVarY(FloodXYZ[2]);
+        cutg[iCut][iMasks]->SetVarY(varY[iCut]);
 
       }
     }
@@ -798,6 +800,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
               {
                 cutg_external[0][iCry][jCry] = cutg[0][mask_pos[iMasks].maskID];
                 cutg_external[1][iCry][jCry] = cutg[1][mask_pos[iMasks].maskID];
+                cutg_external[2][iCry][jCry] = cutg[2][mask_pos[iMasks].maskID];
               }
             }
           }

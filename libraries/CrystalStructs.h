@@ -69,6 +69,7 @@ struct Crystal_t
   int timingChannel;
   float length;
   std::vector<int> relevantForW;
+  std::vector<int> relevantForUV;
   std::vector<int> delayTimingChannels;
   TCut *CrystalCut;
   TCut *CrystalCutWithoutCutG;

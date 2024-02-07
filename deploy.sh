@@ -48,6 +48,7 @@ g++ -o build/extractConfiguration extractConfiguration.cpp `root-config --cflags
 g++ -o build/calcDOIres DeepLearningDOI/calcDOIres.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 g++ -o build/filterForDeepLearning_MiniPET DeepLearningDOI/filterForDeepLearning_MiniPET.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 g++ -o build/filterForDOIscan DeepLearningDOI/filterForDOIscan.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
+g++ -o build/compton_volumes Cluster/compton_volumes.cpp `root-config --cflags --glibs` -Wl,--no-as-needed -lHist -lCore -lMathCore -lTree -lTreePlayer -lgsl -lgslcblas
 
 ### MODULE CALIBRATION
 echo "Compiling ModuleCalibration..."
