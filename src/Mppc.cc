@@ -465,7 +465,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
 
   //  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
   //  int ncrystalsy = jChildren;
-
+  // std::cout << "here" << std::endl;
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;
   cutg = new TCutG**[3]; // now 3 planes, x-y needed only for compton analysis
