@@ -6,9 +6,10 @@ void readCalibration(TFile* calibrationFile,                        // file with
                     bool UseBroadCut,                               // include broadCut in crystalCut
                     bool UseCutNoise,                               // include CutNoise in crystalCut
                     bool UsePhotopeakEnergyCut,                     // include PhotopeakEnergyCut in crystalCut
-                    bool UseCutgs)                                   // include CutGs in crystalCut
+                    bool UseCutgs                                   // include CutGs in crystalCut
                     // std::vector<detector_t> &detectorSaturation,    // collection of detector structures
                     // std::vector<int> forbidden_channels)            // channels excluded from timing correction. this can be an empty vector, and all channels will be included. The number of the channel is the number after "ch_" in the name of the "Graph Delay ch_" and "RMS Graph Delay ch_" graphs located inside the "TimeCorrection" folder of each crystal. The number corresponds to the ADC channel number, i.e. the channel number of the V1740 pair of digitizer (it can go from 0 to 63)
+                    )
 {
 
 
@@ -231,6 +232,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
          // std::string photopeakEnergyCut_prefix("PhotopeakEnergyCut");
          std::string channel_prefix("digitizerChannel");
          std::string w_channels_prefix("channelsNumRelevantForW");
+         std::string uv_channels_prefix("channelsNumRelevantForUV");
          std::string timing_channel_prefix("timingChannel");
          std::string wz_prefix("w(z)");
          std::string t_channels_for_poli_mean_prefix("tChannelsForPolishedCorrectionMean");
@@ -403,13 +405,16 @@ void readCalibration(TFile* calibrationFile,                        // file with
              std::stringstream snameCh;
              std::vector<int> *v;
              gDirectory->GetObject("channelsNumRelevantForW",v);
-             // snameCh << ((TNamed*) gDirectory->Get(keysCryName[i].c_str()))->GetTitle();
-             //  TCut* cut = (TCut*) gDirectory->Get( keysCryName[i].c_str());
-            //  istringstream()
              temp_crystal.relevantForW = v[0];
-             //  std::cout <<temp_crystal.detectorChannel << std::endl;
-            //  std::cout << gDirectory->Get(keysCryName[i].c_str())->GetTitle() << "\t"
-                      //  << temp_crystal.detectorChannel << std::endl;
+           }
+
+           if(!keysCryName[i].compare(0,uv_channels_prefix.size(),uv_channels_prefix)) // find detector channel
+           {
+             //  std::cout << keysCryName[i] << std::endl;
+             std::stringstream snameCh;
+             std::vector<int> *v;
+             gDirectory->GetObject("channelsNumRelevantForUV",v);
+             temp_crystal.relevantForUV = v[0];
            }
 
            if(!keysCryName[i].compare(0,t_channels_for_poli_mean_prefix.size(),t_channels_for_poli_mean_prefix))
@@ -776,16 +781,21 @@ void readCalibration(TFile* calibrationFile,                        // file with
          if(UsePhotopeakEnergyCut)      crystalCut += temp_crystal.PhotopeakEnergyCut->GetTitle();
          if(UseCutgs)
          {
-           crystalCut += temp_crystal.cutg[0]->GetName();
-           crystalCut += temp_crystal.cutg[1]->GetName();
+           for(int gg = 0 ; gg < temp_crystal.cutg.size(); gg++)
+           {
+             crystalCut += temp_crystal.cutg[gg]->GetName();
+           }
          }
 
          // std::cout << crystalCut << std::endl;
 
          //save the cutg anyway
          TCut justCutG ;
-         justCutG += temp_crystal.cutg[0]->GetName();
-         justCutG += temp_crystal.cutg[1]->GetName();
+         for(int gg = 0 ; gg < temp_crystal.cutg.size(); gg++)
+         {
+           justCutG += temp_crystal.cutg[gg]->GetName();
+         }
+         
          TTreeFormula* FormulaJustCutG = new TTreeFormula("FormulaJustCutG",justCutG,tree);
          temp_crystal.FormulaJustCutG = FormulaJustCutG;
          formulasAnalysis->Add(FormulaJustCutG);
@@ -809,7 +819,7 @@ void readCalibration(TFile* calibrationFile,                        // file with
 
 
 
-int setWandZcuts(std::vector<Crystal_t> &crystal)
+void setWandZcuts(std::vector<Crystal_t> &crystal)
 {
   //------------------------------------------------//
   //------------------------------------------------//

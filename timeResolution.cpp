@@ -1261,6 +1261,8 @@ int main (int argc, char** argv)
         outCryGood = -1;
       }
     }
+
+    TreeCluster->Write();
   }
   std::cout << "inCrystal           = " << inCrystal           << std::endl;
   std::cout << "inCrystalGood       = " << inCrystalGood       << std::endl;
@@ -1272,7 +1274,7 @@ int main (int argc, char** argv)
 
   
   
-  TreeCluster->Write();
+  
   // write whatever you want to save
 
   textfile  << std::setw(10)

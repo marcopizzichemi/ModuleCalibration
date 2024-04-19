@@ -360,7 +360,8 @@ int main (int argc, char** argv)
   //        mycutg2->Write()
   //        fOut->Close()
   //    h) re-run ModuleCalibration by adding the manualCutG = 1 key
-
+  
+  
   //
   std::ofstream singlePeaksFile;
   std::map<std::string, float>   mapGain;
@@ -1743,7 +1744,7 @@ int main (int argc, char** argv)
 
             TCutG**** cutg; // prepare the graphical cuts
             //const int numbOfCrystals = 4;
-            cutg = new TCutG***[2]; // two planes of cuts, their intersection will create a 3d cut
+            cutg = new TCutG***[3]; // now three planes of cuts
             int right_ncrystalsx;
 
 
@@ -1756,7 +1757,7 @@ int main (int argc, char** argv)
             {
               right_ncrystalsx =ncrystalsx;
             }
-            for(int iCut =0 ; iCut < 2 ; iCut++)
+            for(int iCut =0 ; iCut < 3 ; iCut++)
             {
               cutg[iCut] = new TCutG**[right_ncrystalsx];
               for(int iCry = 0; iCry < right_ncrystalsx ; iCry++)
@@ -1776,10 +1777,13 @@ int main (int argc, char** argv)
                     TFile *_file0 = TFile::Open(cutgsFileName.c_str());
                     cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
                     cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
+                    cutg[2][0][0] = (TCutG*) gDirectory->Get("cutg_2");// FIXME hardcoded
                     cutg[0][0][0]->SetVarX(FloodXYZ[0]);
                     cutg[0][0][0]->SetVarY(FloodXYZ[2]);
                     cutg[1][0][0]->SetVarX(FloodXYZ[1]);
                     cutg[1][0][0]->SetVarY(FloodXYZ[2]);
+                    cutg[2][0][0]->SetVarX(FloodXYZ[0]);
+                    cutg[2][0][0]->SetVarY(FloodXYZ[1]);
                     found = true;
                   }
                   else
@@ -1796,10 +1800,13 @@ int main (int argc, char** argv)
                   TFile *_file0 = TFile::Open(cutgsFileName.c_str());
                   cutg[0][0][0] = (TCutG*) gDirectory->Get("cutg_0");// FIXME hardcoded
                   cutg[1][0][0] = (TCutG*) gDirectory->Get("cutg_1");// FIXME hardcoded
+                  cutg[2][0][0] = (TCutG*) gDirectory->Get("cutg_2");// FIXME hardcoded
                   cutg[0][0][0]->SetVarX(FloodXYZ[0]);
                   cutg[0][0][0]->SetVarY(FloodXYZ[2]);
                   cutg[1][0][0]->SetVarX(FloodXYZ[1]);
                   cutg[1][0][0]->SetVarY(FloodXYZ[2]);
+                  cutg[2][0][0]->SetVarX(FloodXYZ[0]);
+                  cutg[2][0][0]->SetVarY(FloodXYZ[1]);
                   found = true;
                 }
                 else
@@ -1839,6 +1846,7 @@ int main (int argc, char** argv)
                     {
                       CurrentCrystal->SetZXCut(cutg[0][iCry][jCry]);
                       CurrentCrystal->SetZYCut(cutg[1][iCry][jCry]);
+                      CurrentCrystal->SetYXCut(cutg[2][iCry][jCry]);
                     }
 
                     //prepare the struct element that will be save into the output file
@@ -1854,6 +1862,15 @@ int main (int argc, char** argv)
                     }
 
                     CurrentCrystal->SetRelevantForW(channelsNumRelevantForW);
+
+                    //get charge ch numbers used for u and v 
+                    std::vector<int> channelsNumRelevantForUV;
+                    for(unsigned int iRel = 0; iRel < relevantForUV.size(); iRel++)
+                    {
+                      channelsNumRelevantForUV.push_back(detector[relevantForUV[iRel].detectorIndex].digitizerChannel);
+                    }
+
+                    CurrentCrystal->SetRelevantForUV(channelsNumRelevantForUV);
 
                     // create "sum channels" string, a string to have the variable "sum of all channels" to be used later
                     // it can be either all channels selected as input
@@ -1937,6 +1954,7 @@ int main (int argc, char** argv)
                     {
                       CrystalCut += CurrentCrystal->GetZXCut()->GetName();
                       CrystalCut += CurrentCrystal->GetZYCut()->GetName();
+                      CrystalCut += CurrentCrystal->GetYXCut()->GetName();
                     }
 
 
@@ -4187,6 +4205,7 @@ int main (int argc, char** argv)
 
                               int centralChargeChannel = mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel();
                               std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
+                              std::vector<int> channelsNumRelevantForUV = CurrentCrystal->GetRelevantForUV();
                               // std::vector<int> DelayTimingChannelsNum = CurrentCrystal->GetDelayTimingChannels();
 
                               // GetGraphDelayW()
@@ -5883,6 +5902,7 @@ int main (int argc, char** argv)
                       {
                         CurrentCrystal->GetZYCut()->Write();
                         CurrentCrystal->GetZXCut()->Write();
+                        CurrentCrystal->GetYXCut()->Write();
                       }
 
 
@@ -5937,6 +5957,10 @@ int main (int argc, char** argv)
                       //write charge channels used for W calculation for this crystal
                       std::vector<int> channelsNumRelevantForW = CurrentCrystal->GetRelevantForW();
                       gDirectory->WriteObject(&channelsNumRelevantForW, "channelsNumRelevantForW");
+                      
+                      //write charge channels used for UV calculation for this crystal
+                      std::vector<int> channelsNumRelevantForUV = CurrentCrystal->GetRelevantForUV();
+                      gDirectory->WriteObject(&channelsNumRelevantForUV, "channelsNumRelevantForUV");
 
                       //write position in tcanvas of big plots
 

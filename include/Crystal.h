@@ -71,7 +71,7 @@ private:
   TGraph*              SimGraph;
   TCut                 Ellipses;             ///< the elliptical TCut
   TCut                 w20percCut;           ///< TCut from first bin above 20% to last bin above 20% for the w plot
-  TCutG               *cutg[2];
+  TCutG               *cutg[3];
   TCut                 crytalCut;
   TCut                 crytalCutWithoutCutG;
   TCut                 photopeakEnergyCut;
@@ -117,6 +117,7 @@ private:
   double               deltaW;               ///< delta of w for a fixed position, as calculated from the gaussian fit of rise in w plot
   double               averageDoiResolution;
   std::vector<int>     channelsNumRelevantForW;
+  std::vector<int>     channelsNumRelevantForUV;
   int                  bigCanvasPosition;
   std::vector<int>     DelayTimingChannelsNum;
   std::vector<int>     AlignedTimingChannels;
@@ -319,6 +320,7 @@ public:
   TF1*                 GetFitCorrected(){return FitCorrected;};
   TCutG*               GetZXCut(){return cutg[0];};
   TCutG*               GetZYCut(){return cutg[1];};
+  TCutG*               GetYXCut(){return cutg[2];};
   TCut                 GetCrystalCut(){return crytalCut;};
   TCut                 GetCrystalCutWithoutCutG(){return crytalCutWithoutCutG;};
   TCut                 GetPhotopeakEnergyCut(){return photopeakEnergyCut;};
@@ -346,6 +348,7 @@ public:
   int                  GetBigCanvasPosition(){return bigCanvasPosition;};
 
   std::vector<int>    GetRelevantForW(){return channelsNumRelevantForW;};
+  std::vector<int>    GetRelevantForUV(){return channelsNumRelevantForUV;};
   std::vector<int>    GetDelayTimingChannels(){return DelayTimingChannelsNum;};
   std::vector<int>    GetAlignedTimingChannels(){return AlignedTimingChannels;};
 
@@ -383,6 +386,7 @@ public:
   void                 SetCorrectedSpectrumSearchArea(TH1F * aHisto){CorrectedSpectrumSearchArea = aHisto;};
   void                 SetZXCut(TCutG *aCut){cutg[0] = aCut;};
   void                 SetZYCut(TCutG *aCut){cutg[1] = aCut;};
+  void                 SetYXCut(TCutG *aCut){cutg[2] = aCut;};
   void                 SetCrystalCut(TCut aCut){crytalCut = aCut;};
   void                 SetCrystalCutWithoutCutG(TCut aCut){crytalCutWithoutCutG = aCut;};
   void                 SetPhotopeakEnergyCut(TCut aCut){photopeakEnergyCut = aCut;};
@@ -468,6 +472,7 @@ public:
   void                 AddDelayTHistos(TH1D* aHisto){DelayHistos.push_back(aHisto);};
   void                 AddTvsQHistos(TH2F* aHisto){TvsQHistos.push_back(aHisto);};
   void                 SetRelevantForW(std::vector<int> aVect){channelsNumRelevantForW = aVect;};
+  void                 SetRelevantForUV(std::vector<int> aVect){channelsNumRelevantForUV = aVect;};
   void                 SetTimingChannel(int aNum){timingChannel = aNum;};
   void                 SetDelayTimingChannels(std::vector<int> aVect){DelayTimingChannelsNum = aVect;};
   void                 SetAlignedTimingChannels(std::vector<int> aVect){AlignedTimingChannels = aVect;};
