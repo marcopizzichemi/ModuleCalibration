@@ -31,7 +31,7 @@ private:
   int                    histo3DchannelBin;
   float                  histo3Dmin;
   float                  histo3Dmax;
-  int                    div;
+  int                    nDiv;
   double                 clusterVolumeCut;
   // std::vector<int>       neighbours;
 
@@ -139,13 +139,13 @@ public:
   int                    GetHisto3DchannelBin(){return histo3DchannelBin;};
   float                  GetHisto3Dmin(){return histo3Dmin;};
   float                  GetHisto3Dmax(){return histo3Dmax;};
-  int                    GetClusterLevelPrecision(){return div;};
+  int                    GetClusterLevelPrecision(){return nDiv;};
   double                 GetClusterVolumeCut(){return clusterVolumeCut;};
 
   void                   SetHisto3DchannelBin(int a){histo3DchannelBin = a;};
   void                   SetHisto3Dmin(float a){histo3Dmin = a;};
   void                   SetHisto3Dmax(float a){histo3Dmax = a;};
-  void                   SetClusterLevelPrecision(int a){div = a;};
+  void                   SetClusterLevelPrecision(int a){nDiv = a;};
   void                   SetClusterVolumeCut(double a){clusterVolumeCut = a;};
 
   // methods to analyze the mppc

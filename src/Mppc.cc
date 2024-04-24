@@ -445,7 +445,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
   /**Finds ncrystalsx*ncrystalsy clusters in 3D points for this mppc channel
    * It works like this:
    * it finds the voxel with maximum amount of events in the 3D map of this mppc
-   * sets a threshold equal to the numbers of events in that voxel divided by div
+   * sets a threshold equal to the numbers of events in that voxel nDivided by nDiv
    * starting by that voxel, checks the 26 voxel around to see if the number of events in them is above the threshold
    * for the ones above threshold, checks in the same way the 26 voxel around (skipping of course the ones already checked)
    * goes on until there's no voxel above threshold left. the collection of voxels above threshold found are the first crystal volume
@@ -457,7 +457,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
    * cutg_external     = the pointer to the matrix of cutg that will be used in the main program to select the crystals
    * histo3DchannelBin = the bin numb on x,y,z of the 3d plots. this is drammatically changing the amount of RAM used by the program. 100 is a reasonable choice.
    *                         The parameter is set in the config file (default to 100)
-   * div               = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
+   * nDiv               = precision for the search of minimum level that separates the ncrystalsx*ncrystalsy clusters. It affects the speed of the program and its accuracy. The highest, the more accurate but slower.
    * ncrystalsx        = number of crystal "columns" to look for. It's the number of columns of crystals connected to this mppc, if this is a standard acq. If it's a DOI tagging run, insstead, only 1 column is considered and
    *                         therefore this number is fixed to 1 when the function is called
    * ncrystalsy        = number of crystal "rows" to look for
@@ -465,7 +465,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
 
   //  int ncrystalsx = iChildren; // take the crystal numbers in x and y directions from the mppc element itself
   //  int ncrystalsy = jChildren;
-  // std::cout << "here" << std::endl;
+  std::cout << "here" << std::endl;
   TCutG*** cutg;
   const int numbOfCrystals = ncrystalsx*ncrystalsy;
   cutg = new TCutG**[3]; // now 3 planes, x-y needed only for compton analysis
@@ -512,8 +512,13 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
   Int_t u,v,w;
   histogram_original->GetMaximumBin(u,v,w); // get the maximum bin of the 3d histo
   double max = histogram_original->GetBinContent(u,v,w); //get ax bin content
-  double step = max/((double) div); // calculated the step of the separation search
-
+  double step = max/((double) nDiv); // calculated the step of the separation search
+  
+  // std::cout << "---> " << u << " "
+  //                      << v << " "
+  //                      << w << " "
+  //                      << max << " "
+  //                      << nDiv << std::endl;
   double threshold = step;
 
   bool found = false;
@@ -627,6 +632,7 @@ bool Mppc::FindCrystalCuts(TCutG**** cutg_external,int ncrystalsx,int ncrystalsy
     else
     {
       threshold += step;  // increase the threshold for next search
+      std::cout << "increasing to " << threshold << std::endl;
       for(int i = 0 ; i < numbOfCrystals ; i++) // delete the masks and done histos you've created at this step of the while cylce
       {
         delete mask[i];
@@ -829,6 +835,6 @@ void Mppc::PrintSpecific()
   std::cout << "Digitizer Ch. \t\t = " << digitizerChannel << std::endl;
   std::cout << "Staus for Doi \t\t = " << IsOnForDoi << std::endl;
   std::cout << "histo3DchannelBin \t = " << histo3DchannelBin << std::endl;
-  std::cout << "div \t\t\t = " << div << std::endl;
+  std::cout << "nDiv \t\t\t = " << nDiv << std::endl;
   std::cout << "clusterVolumeCut \t = " << clusterVolumeCut << std::endl;
 }

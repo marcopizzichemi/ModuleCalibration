@@ -304,6 +304,7 @@ int main (int argc, char** argv)
   float photopeakFitRangeMax = config.read<float>("photopeakFitRangeMax",1.2);
   int TimeCorrectionFitFunction = config.read<int>("TimeCorrectionFitFunction",0); // function to be used on time correction slice fitting. 0 = crystalball, 1 = gauss+exp
   bool applyNoiseCut = config.read<bool>("applyNoiseCut",1); // apply or not the noise cut - default = 1 (true)
+  bool applyMaxAllowedCut = config.read<bool>("applyMaxAllowedCut",1); // apply or not the cut on max allowed charge, to avoid overflows - default = 1 (true)
   int noiseCutLevel = config.read<int>("noiseCutLevel",0); // number of channels that can be equal to 0 for an event to be accepted. So noiseCutLevel = 0 means ALL channels have to be different to 0 for an event to be accepted, 1 means that 1 channel can be 0, etc...
   bool apply3Dcut = config.read<bool>("apply3Dcut",1); // apply or not the 3D cut - default = 1 (true)
   // bool likelihoodCorrection = config.read<bool>("likelihoodCorrection",0); // perform likelihood correction
@@ -1115,7 +1116,9 @@ int main (int argc, char** argv)
             // 8. Compose an additional trigger condition, cutting the noise                                                       ---> relevantForNoiseCut
             //                                                                                                                     ---> noiseCut
             //                                                                                                                     ---> summed to CutTrigger
-
+            // 9. Compose yet another condition, to discard channels in charge overflow                                            ---> relevantForMaxAllowedCut
+            //                                                                                                                     ---> maxAllowedCut
+            //                                                                                                                     ---> also summed to CutTrigger
 
             // 1. Get the index of this MPPC in the detector array
             //    Simply, run on all the entries of detector array and get the one where detector[i].digitizerChannel == mppc[(iModule*nmppcx)+iMppc][(jModule*nmppcy)+jMppc]->GetDigitizerChannel()
@@ -1650,6 +1653,43 @@ int main (int argc, char** argv)
               CutTrigger += CutNoise;
             }
 
+            // 9. Compose an additional trigger condition, cutting on the overflows
+            //    the idea is that sometimes (especially if there is any correction, like saturation)
+            //    the value of a charge channel can be in the overflow bin of the Short_t or UShort_t data length.
+            //    Hence, simply ignore events where the charge is exactly 2^16-1=65536-1 for short or  
+
+            int maxAllowed = SHRT_MAX;
+            if(digitizerType == 1) maxAllowed = USHRT_MAX;
+            // 
+            std::vector<multi_channel_t> relevantFormaxAllowedCut;
+            if(relevantForUV.size() > relevantForW.size())
+            {
+              relevantFormaxAllowedCut = relevantForUV;
+            }
+            else
+            {
+              relevantFormaxAllowedCut = relevantForW;
+            }
+
+            std::stringstream maxAllowedCut;
+            maxAllowedCut << "(";
+            for(unsigned int iRel = 0 ; iRel < relevantFormaxAllowedCut.size(); iRel++)
+            {
+              maxAllowedCut << "("
+                            << relevantFormaxAllowedCut[iRel].string << " < "
+                            << maxAllowed
+                            << ")";
+              if(iRel < (relevantFormaxAllowedCut.size()-1) ) maxAllowedCut << " && ";
+            }
+            maxAllowedCut << ")";
+            TCut CutMaxAllowed = maxAllowedCut.str().c_str();
+            // to make things easier, we add this directly to the CutTrigger. FIXME Not a clean solution, but ehi...
+            if(applyMaxAllowedCut)
+            {
+              CutTrigger += CutMaxAllowed;
+            }
+
+            // std::cout << CutMaxAllowed << std::endl;
 
 
             //standard 2d plot
