@@ -1687,9 +1687,10 @@ int main (int argc, char** argv)
             if(applyMaxAllowedCut)
             {
               CutTrigger += CutMaxAllowed;
+              // std::cout << CutMaxAllowed << std::endl;
             }
 
-            // std::cout << CutMaxAllowed << std::endl;
+            
 
 
             //standard 2d plot
